@@ -599,7 +599,14 @@ export function OnboardingWizard({ userId, email, displayName }: OnboardingWizar
     setDraftField("targetDate", dateStr);
   }
 
+  const toast = {
+    error(message: string) {
+      setStatus(message);
+    }
+  };
+
   async function handleSubmit() {
+    console.log("SUBMIT START");
     const allErrors = validateStep(0, draft);
     Object.assign(
       allErrors,
@@ -622,7 +629,8 @@ export function OnboardingWizard({ userId, email, displayName }: OnboardingWizar
 
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      setStatus("Please establish backend config parameters to sync assessment profiles.");
+      console.error("SUBMIT ERROR", new Error("Supabase browser client unavailable"));
+      toast.error("Please establish backend config parameters to sync assessment profiles.");
       return;
     }
 
@@ -636,6 +644,8 @@ export function OnboardingWizard({ userId, email, displayName }: OnboardingWizar
         throw new Error("User not authenticated");
       }
 
+      console.log("AFTER GET USER", user.id);
+
       const goal = draft.targetRole.trim() || `${draft.goalType} path`;
 
       const profilePatch = {
@@ -647,13 +657,17 @@ export function OnboardingWizard({ userId, email, displayName }: OnboardingWizar
       };
 
       await seedWorkspace(supabase, user.id, draft.fullName.trim() || displayName || email || "Career Architect", goal, draft.experienceLevel);
+      console.log("AFTER SEED WORKSPACE");
       await updateProfile(supabase, user.id, profilePatch);
+      console.log("AFTER UPDATE PROFILE");
 
       window.localStorage.removeItem(storageKey);
-      router.push("/dashboard");
-      router.refresh();
+      console.log("SUBMIT SUCCESS");
+      router.replace("/dashboard");
     } catch (error) {
+      console.error("SUBMIT ERROR", error);
       setStatus(error instanceof Error ? error.message : "Diagnostic sync failed. Retrying...");
+    } finally {
       setSubmitting(false);
     }
   }
@@ -1920,7 +1934,10 @@ export function OnboardingWizard({ userId, email, displayName }: OnboardingWizar
             ) : (
               <MagneticButton
                 type="button"
-                onClick={() => void handleSubmit()}
+                onClick={() => {
+                  console.log("FINISH BUTTON CLICKED");
+                  void handleSubmit();
+                }}
                 disabled={submitting}
                 className="tactile-btn tactile-btn-primary inline-flex items-center gap-2 rounded-full px-6 py-2 text-sm font-bold text-black shadow-[0_4px_12px_rgba(34,211,238,0.25)] hover:shadow-[0_6px_18px_rgba(34,211,238,0.4)] disabled:opacity-40"
               >
