@@ -8,6 +8,14 @@ import type {
   RoadmapStatus
 } from "./supabase/types";
 
+function createUuid() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 function toArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
@@ -541,7 +549,7 @@ function buildRoadmapCard(params: {
   const completionDate = addWeeks(params.referenceDate, Math.max(1, totalDuration));
 
   return {
-    id: crypto.randomUUID(),
+    id: createUuid(),
     title: params.title,
     status: statusForProgress(params.progress),
     summary: params.summary,

@@ -3,6 +3,14 @@ import { createStarterWorkspace } from "./workspace";
 import { buildRoadmapPlan } from "./roadmap-plan";
 import type { AppData, ChatThread, ExperienceLevel, NoteRecord, ProgressRecord, RoadmapAuditReport, RoadmapAuditSourceReport, RoadmapDifficulty, RoadmapMilestoneRecord, RoadmapRecord, RoadmapResourceLink, RoadmapStatus, RoadmapVersionRecord, UserProfileRecord, WorkspaceSnapshotRecord } from "./supabase/types";
 
+function createUuid() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 type RoadmapRow = {
   id: string;
   user_id: string;
@@ -255,7 +263,7 @@ function normalizeRoadmap(value: unknown): RoadmapRecord {
   }
 
   return {
-    id: toStringValue(roadmap.id, crypto.randomUUID()),
+    id: toStringValue(roadmap.id, createUuid()),
     title: toStringValue(roadmap.title, "Untitled roadmap"),
     status: typeof roadmap.status === "string" && ["Planned", "Active", "Done"].includes(roadmap.status) ? roadmap.status : "Planned",
     summary: toStringValue(roadmap.summary ?? roadmap.description, "Not available"),
