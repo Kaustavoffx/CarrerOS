@@ -237,7 +237,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margins = { top: 48, right: 48, bottom: 48, left: 48 };
-  const contentWidth = pageWidth - margins.left - margins.right;
+  const contentWidth = getContentWidth();
   const centerX = pageWidth / 2;
 
   let totalContentHeight = 0;
@@ -283,6 +283,26 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
     doc.text(text, x, yVal, { align: options?.align });
     ledger.pushBox(doc.getNumberOfPages(), x1, y1, x2, y2, `Text: ${text.substring(0, 15)}`);
+  }
+
+  function getContentWidth() {
+    return pageWidth - margins.left - margins.right;
+  }
+
+  function drawWrappedText(text: string, x: number, yVal: number, maxWidth: number, fontSize: number, options?: { fontColor?: string; lineSpacing?: number; align?: "left" | "right" | "center" }) {
+    doc.setFont("CMGeom", "normal");
+    doc.setFontSize(fontSize);
+    
+    const lSpacing = options?.lineSpacing || 1.25;
+    const safeText = text || "";
+    const wrappedLines = doc.splitTextToSize(safeText, maxWidth);
+    
+    wrappedLines.forEach((line: string, idx: number) => {
+      const curY = yVal + idx * fontSize * lSpacing;
+      drawText(line, x, curY, { align: options?.align, fontSize, fontColor: options?.fontColor });
+    });
+
+    return wrappedLines.length * fontSize * lSpacing;
   }
 
   function drawRoundedCard(x: number, yVal: number, width: number, height: number, rx = 4, ry = 4, style = "FD", fillColor = "#ffffff", strokeColor = "#e2e8f0", strokeWidth = 0.4) {
@@ -457,10 +477,8 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     ];
     
     let maxContentH = 0;
-    doc.setFontSize(fontSizes.body);
     const contentHeights = values.map((val) => {
-      const valLines = doc.splitTextToSize(val, colW - 16);
-      const wrappedH = valLines.length * 11 * 1.25;
+      const wrappedH = getTextHeight(val, colW - 16, fontSizes.body);
       // Label(11.25pt) + gap(8pt) + wrapped val height
       return 11.25 + 8 + wrappedH;
     });
@@ -476,11 +494,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
       const offset = (snapH - contentHeights[idx]) / 2;
       drawText(labels[idx], cardX + 8, y + offset + 9, { fontSize: fontSizes.meta, fontColor: "#64748b" });
       
-      doc.setFontSize(fontSizes.body);
-      const valLines = doc.splitTextToSize(val, colW - 16);
-      valLines.forEach((lineText: string, lIdx: number) => {
-        drawText(lineText, cardX + 8, y + offset + 9 + 8 + 11 + lIdx * 14, { fontSize: fontSizes.body, fontColor: "#0f172a" });
-      });
+      drawWrappedText(val, cardX + 8, y + offset + 9 + 8 + 11, colW - 16, fontSizes.body, { fontColor: "#0f172a" });
     });
 
     totalContentHeight += snapH;
@@ -578,11 +592,9 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   totalContentHeight += 24;
 
   const baselinePurposeText = `This report details the highly structured learning progression resolved for the target career path. By pacing milestones through individual sprints, the student accumulates demonstrable portfolio assets and practices core technical behaviors required by industry-grade recruitment teams. Use the subsequent pages as a weekly planner and deliverables checklist.`;
-  const wrappedPurpose = doc.splitTextToSize(baselinePurposeText, contentWidth);
-  wrappedPurpose.forEach((lineText: string, idx: number) => {
-    drawText(lineText, margins.left, y + idx * 14, { fontSize: fontSizes.body, fontColor: "#475569" });
-  });
-  totalContentHeight += wrappedPurpose.length * 14;
+  const purposeHeight = drawWrappedText(baselinePurposeText, margins.left, y, contentWidth, fontSizes.body, { fontColor: "#475569", lineSpacing: 14 / fontSizes.body });
+  totalContentHeight += purposeHeight;
+  y += purposeHeight;
 
   // ==========================================
   // PAGES 2 TO 4: DEDICATED SPRINT PAGES
@@ -631,7 +643,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
       const itemX = margins.left + col * (colWidth + 24);
       const itemY = y + row * 16 + 11;
       const truncMTitle = m.title.length > 28 ? m.title.substring(0, 25) + "..." : m.title;
-      drawText(`• Phase ${idx + 1}: ${truncMTitle} (${m.estimated_duration_weeks} wks)`, itemX, itemY, { fontSize: fontSizes.body, fontColor: "#475569" });
+      drawWrappedText(`• Phase ${idx + 1}: ${truncMTitle} (${m.estimated_duration_weeks} wks)`, itemX, itemY, colWidth, fontSizes.body, { fontColor: "#475569" });
     });
 
     const plannerRows = Math.ceil(sprint.milestones.length / 2);
@@ -645,10 +657,11 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
     sprint.milestones.forEach((milestone, mIdx) => {
       // Dynamic Height Calculation for Milestone Card
-      const titleText = milestone.title;
-      const inlineMeta = `(${milestone.estimated_duration_weeks} wk · ${milestone.difficulty_level})`;
-      const fullHeader = `${titleText} ${inlineMeta}`;
-      const headerH = getTextHeight(fullHeader, contentWidth - 24, fontSizes.cardTitle);
+      doc.setFontSize(7.5);
+      const mBadgeW = doc.getTextWidth(`M${String(mIdx + 1).padStart(2, "0")}`) + 8;
+      const titleMaxW = contentWidth - 24 - mBadgeW - 6 - 90; // leave 90pt for metadata on the right
+      
+      const headerH = getTextHeight(milestone.title, titleMaxW, fontSizes.cardTitle);
 
       const objectiveText = `Objective: ${milestone.why_it_matters}`;
       const objH = getTextHeight(objectiveText, contentWidth - 24, fontSizes.body);
@@ -669,29 +682,25 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
       drawRoundedCard(margins.left, y, contentWidth, mileCardH, 4, 4, "FD", "#ffffff");
 
       const mColor = colorsPalette[(sIndex * 3 + mIdx) % colorsPalette.length];
-      const mBadgeW = drawBadge(`M${String(mIdx + 1).padStart(2, "0")}`, margins.left + 12, y + 16 + 5, mColor, "#0f172a", 7.5);
+      drawBadge(`M${String(mIdx + 1).padStart(2, "0")}`, margins.left + 12, y + 16 + 5, mColor, "#0f172a", 7.5);
 
-      drawText(milestone.title, margins.left + 12 + mBadgeW + 6, y + 13 + 5, { fontSize: fontSizes.cardTitle });
+      // Draw title wrapped
+      drawWrappedText(milestone.title, margins.left + 12 + mBadgeW + 6, y + 13 + 5, titleMaxW, fontSizes.cardTitle);
       
-      const metaX = margins.left + 12 + mBadgeW + 6 + doc.getTextWidth(milestone.title) + 6;
-      drawText(inlineMeta, metaX, y + 13 + 5, { fontSize: fontSizes.meta, fontColor: "#64748b" });
+      // Draw metadata right-aligned
+      const inlineMeta = `(${milestone.estimated_duration_weeks} wk · ${milestone.difficulty_level})`;
+      drawText(inlineMeta, margins.left + contentWidth - 12, y + 13 + 5, { align: "right", fontSize: fontSizes.meta, fontColor: "#64748b" });
 
       let cardY = y + cardPadding + headerH + 8;
       
       // Objective wrapped text
-      const wrappedObj = doc.splitTextToSize(objectiveText, contentWidth - 24);
-      wrappedObj.forEach((lineText: string, oIdx: number) => {
-        drawText(lineText, margins.left + 12, cardY + oIdx * 13, { fontSize: fontSizes.body, fontColor: "#64748b" });
-      });
-      cardY += objH + 8;
+      const realObjH = drawWrappedText(objectiveText, margins.left + 12, cardY, contentWidth - 24, fontSizes.body, { fontColor: "#64748b" });
+      cardY += realObjH + 8;
 
       // Tasks wrapped list
       uniqueTasks.forEach((task) => {
-        const wrappedTask = doc.splitTextToSize(`- ${task}`, contentWidth - 24);
-        wrappedTask.forEach((tLine: string, tIdx: number) => {
-          drawText(tLine, margins.left + 12, cardY + tIdx * 13, { fontSize: fontSizes.body, fontColor: "#475569" });
-        });
-        cardY += wrappedTask.length * 13 + 4;
+        const taskH = drawWrappedText(`- ${task}`, margins.left + 12, cardY, contentWidth - 24, fontSizes.body, { fontColor: "#475569" });
+        cardY += taskH + 4;
       });
 
       totalContentHeight += mileCardH;
@@ -733,13 +742,13 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
         drawRoundedCard(leftX, y, resColW, maxRowH, 4, 4, "FD", "#f8fafc");
         
         let ry = y + 8 + 9;
-        drawText(row.left.label, leftX + 8, ry, { fontSize: fontSizes.body });
-        ry += getTextHeight(row.left.label, resColW - 16, fontSizes.body) + 4;
+        const leftLabelH = drawWrappedText(row.left.label, leftX + 8, ry, resColW - 16, fontSizes.body);
+        ry += leftLabelH + 4;
         
-        drawText(row.left.provider, leftX + 8, ry, { fontSize: fontSizes.meta, fontColor: "#64748b" });
-        ry += 9 + 4;
+        const leftProviderH = drawWrappedText(row.left.provider, leftX + 8, ry, resColW - 16, fontSizes.meta, { fontColor: "#64748b" });
+        ry += leftProviderH + 4;
         
-        drawText(row.left.url, leftX + 8, ry, { fontSize: fontSizes.meta, fontColor: "#7777FF" });
+        drawWrappedText(row.left.url, leftX + 8, ry, resColW - 16, fontSizes.meta, { fontColor: "#7777FF" });
 
         // Draw right resource if present
         if (row.right) {
@@ -747,13 +756,13 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
           drawRoundedCard(rightX, y, resColW, maxRowH, 4, 4, "FD", "#f8fafc");
 
           let rry = y + 8 + 9;
-          drawText(row.right.label, rightX + 8, rry, { fontSize: fontSizes.body });
-          rry += getTextHeight(row.right.label, resColW - 16, fontSizes.body) + 4;
+          const rightLabelH = drawWrappedText(row.right.label, rightX + 8, rry, resColW - 16, fontSizes.body);
+          rry += rightLabelH + 4;
 
-          drawText(row.right.provider, rightX + 8, rry, { fontSize: fontSizes.meta, fontColor: "#64748b" });
-          rry += 9 + 4;
+          const rightProviderH = drawWrappedText(row.right.provider, rightX + 8, rry, resColW - 16, fontSizes.meta, { fontColor: "#64748b" });
+          rry += rightProviderH + 4;
 
-          drawText(row.right.url, rightX + 8, rry, { fontSize: fontSizes.meta, fontColor: "#7777FF" });
+          drawWrappedText(row.right.url, rightX + 8, rry, resColW - 16, fontSizes.meta, { fontColor: "#7777FF" });
         }
 
         y += maxRowH + 8;
@@ -774,13 +783,11 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     const sprintOutcomes = Array.from(new Set(sprint.milestones.flatMap(m => getSafeArray<string>(m.expected_outcomes)))).slice(0, 3);
     if (sprintOutcomes.length) {
       sprintOutcomes.forEach((outcome) => {
-        const wrappedOutcome = doc.splitTextToSize(`[ ]  ${outcome}`, contentWidth);
-        const outH = wrappedOutcome.length * 14;
+        const outcomeText = `[ ]  ${outcome}`;
+        const outH = getTextHeight(outcomeText, contentWidth, fontSizes.body, 14 / fontSizes.body);
         
         ensureSpace(outH + 16);
-        wrappedOutcome.forEach((lineText: string, oIdx: number) => {
-          drawText(lineText, margins.left, y + oIdx * 14 + 11, { fontSize: fontSizes.body, fontColor: "#475569" });
-        });
+        drawWrappedText(outcomeText, margins.left, y + 11, contentWidth, fontSizes.body, { fontColor: "#475569", lineSpacing: 14 / fontSizes.body });
         y += outH + 8;
         totalContentHeight += outH + 8;
       });
@@ -836,27 +843,23 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     }
 
     checklistRows.forEach((row) => {
-      const leftWrapped = doc.splitTextToSize(`□  ${row.left}`, listColW);
-      const leftH = leftWrapped.length * 15;
+      const leftText = `□  ${row.left}`;
+      const leftH = getTextHeight(leftText, listColW, fontSizes.body, 15 / fontSizes.body);
       
       let rightH = 0;
-      let rightWrapped: string[] = [];
+      let rightText = "";
       if (row.right) {
-        rightWrapped = doc.splitTextToSize(`□  ${row.right}`, listColW);
-        rightH = rightWrapped.length * 15;
+        rightText = `□  ${row.right}`;
+        rightH = getTextHeight(rightText, listColW, fontSizes.body, 15 / fontSizes.body);
       }
 
       const maxRowH = Math.max(leftH, rightH);
       ensureSpace(maxRowH + 12);
 
-      leftWrapped.forEach((lineText: string, idx: number) => {
-        drawText(lineText, margins.left, y + idx * 15 + 11, { fontSize: fontSizes.body, fontColor: "#475569" });
-      });
+      drawWrappedText(leftText, margins.left, y + 11, listColW, fontSizes.body, { fontColor: "#475569", lineSpacing: 15 / fontSizes.body });
 
       if (row.right) {
-        rightWrapped.forEach((lineText: string, idx: number) => {
-          drawText(lineText, margins.left + listColW + 24, y + idx * 15 + 11, { fontSize: fontSizes.body, fontColor: "#475569" });
-        });
+        drawWrappedText(rightText, margins.left + listColW + 24, y + 11, listColW, fontSizes.body, { fontColor: "#475569", lineSpacing: 15 / fontSizes.body });
       }
 
       y += maxRowH + 8;
@@ -938,13 +941,11 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   }
 
   readinessPoints.forEach((point) => {
-    const wrappedPoint = doc.splitTextToSize(`□  ${point}`, contentWidth);
-    const pointH = wrappedPoint.length * 15;
+    const pointText = `□  ${point}`;
+    const pointH = getTextHeight(pointText, contentWidth, fontSizes.body, 15 / fontSizes.body);
     ensureSpace(pointH + 12);
 
-    wrappedPoint.forEach((lineText: string, idx: number) => {
-      drawText(lineText, margins.left, y + idx * 15 + 11, { fontSize: fontSizes.body, fontColor: "#475569" });
-    });
+    drawWrappedText(pointText, margins.left, y + 11, contentWidth, fontSizes.body, { fontColor: "#475569", lineSpacing: 15 / fontSizes.body });
 
     y += pointH + 8;
     totalContentHeight += pointH + 8;
@@ -975,27 +976,23 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     }
 
     trackerRows.forEach((row) => {
-      const leftWrapped = doc.splitTextToSize(`□  ${row.left}`, listColW);
-      const leftH = leftWrapped.length * 15;
+      const leftText = `□  ${row.left}`;
+      const leftH = getTextHeight(leftText, listColW, fontSizes.body, 15 / fontSizes.body);
 
       let rightH = 0;
-      let rightWrapped: string[] = [];
+      let rightText = "";
       if (row.right) {
-        rightWrapped = doc.splitTextToSize(`□  ${row.right}`, listColW);
-        rightH = rightWrapped.length * 15;
+        rightText = `□  ${row.right}`;
+        rightH = getTextHeight(rightText, listColW, fontSizes.body, 15 / fontSizes.body);
       }
 
       const maxRowH = Math.max(leftH, rightH);
       ensureSpace(maxRowH + 12);
 
-      leftWrapped.forEach((lineText: string, idx: number) => {
-        drawText(lineText, margins.left, y + idx * 15 + 11, { fontSize: fontSizes.body, fontColor: "#475569" });
-      });
+      drawWrappedText(leftText, margins.left, y + 11, listColW, fontSizes.body, { fontColor: "#475569", lineSpacing: 15 / fontSizes.body });
 
       if (row.right) {
-        rightWrapped.forEach((lineText: string, idx: number) => {
-          drawText(lineText, margins.left + listColW + 24, y + idx * 15 + 11, { fontSize: fontSizes.body, fontColor: "#475569" });
-        });
+        drawWrappedText(rightText, margins.left + listColW + 24, y + 11, listColW, fontSizes.body, { fontColor: "#475569", lineSpacing: 15 / fontSizes.body });
       }
 
       y += maxRowH + 8;
