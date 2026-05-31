@@ -4,6 +4,17 @@ import { buildRoadmapPlan } from "./roadmap-plan";
 import { generateId } from "./id";
 import type { AppData, ChatThread, ExperienceLevel, NoteRecord, ProgressRecord, RoadmapAuditReport, RoadmapAuditSourceReport, RoadmapDifficulty, RoadmapMilestoneRecord, RoadmapRecord, RoadmapResourceLink, RoadmapStatus, RoadmapVersionRecord, UserProfileRecord, WorkspaceSnapshotRecord } from "./supabase/types";
 
+type ProfileWritePayload = {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  goal: string | null;
+  readiness_score: number;
+  experience_level: ExperienceLevel | null;
+  onboarding_complete: boolean;
+  updated_at: string;
+};
+
 type RoadmapRow = {
   id: string;
   user_id: string;
@@ -451,14 +462,13 @@ export async function seedWorkspace(client: SupabaseClient, userId: string, full
   const seed = createStarterWorkspace(goal, experience);
   const normalizedRoadmaps = normalizeRoadmapArray(seed.workspace.roadmaps);
 
-  const profile: UserProfileRecord = {
-    ...seed.profile,
+  const profile: ProfileWritePayload = {
     id: userId,
     full_name: fullName || seed.profile.full_name,
     avatar_url: avatarUrl ?? seed.profile.avatar_url,
     goal,
-    experience_level: experience,
     readiness_score: seed.profile.readiness_score,
+    experience_level: experience,
     onboarding_complete: true,
     updated_at: new Date().toISOString()
   };
@@ -492,7 +502,7 @@ export async function seedWorkspace(client: SupabaseClient, userId: string, full
   }
 }
 
-export async function updateProfile(client: SupabaseClient, userId: string, patch: Partial<UserProfileRecord>) {
+export async function updateProfile(client: SupabaseClient, userId: string, patch: Partial<Pick<UserProfileRecord, "full_name" | "avatar_url" | "goal" | "readiness_score" | "experience_level" | "onboarding_complete">>) {
   const payload = {
     id: userId,
     updated_at: new Date().toISOString(),
