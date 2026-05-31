@@ -28,12 +28,15 @@ function buildReadinessScore(experience: ExperienceLevel) {
   }
 }
 
-export function createStarterWorkspace(goal: string, experience: ExperienceLevel) {
-  const baseScore = buildReadinessScore(experience);
+export function createStarterWorkspace(goal: string, experience: ExperienceLevel, readinessScore?: number) {
+  const baseScore = typeof readinessScore === "number"
+    ? Math.max(0, Math.min(100, Math.round(readinessScore)))
+    : buildReadinessScore(experience);
   const roadmaps = buildRoadmapPlan({
     goal,
     experience,
     weeklyHours: 10,
+    readinessScore: baseScore,
     referenceDate: new Date(now)
   }).map((roadmap) => ({
     ...roadmap,

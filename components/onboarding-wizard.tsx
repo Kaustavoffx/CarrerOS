@@ -656,7 +656,7 @@ export function OnboardingWizard({ userId, email, displayName }: OnboardingWizar
         onboarding_complete: true
       };
 
-      await seedWorkspace(supabase, user.id, draft.fullName.trim() || displayName || email || "Career Architect", goal, draft.experienceLevel);
+      await seedWorkspace(supabase, user.id, draft.fullName.trim() || displayName || email || "Career Architect", goal, draft.experienceLevel, undefined, summary.readinessEstimate);
       console.log("AFTER SEED WORKSPACE");
       await updateProfile(supabase, user.id, profilePatch);
       console.log("AFTER UPDATE PROFILE");

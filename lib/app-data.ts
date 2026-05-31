@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createStarterWorkspace } from "./workspace";
-import { buildRoadmapPlan } from "./roadmap-plan";
+import { auditRoadmapQuality, buildRoadmapPlan, resolveDomainProfile, validateRoadmapDomainConsistency } from "./roadmap-plan";
 import { generateId } from "./id";
 import type { AppData, ChatThread, ExperienceLevel, NoteRecord, ProgressRecord, RoadmapAuditReport, RoadmapAuditSourceReport, RoadmapDifficulty, RoadmapMilestoneRecord, RoadmapRecord, RoadmapResourceLink, RoadmapStatus, RoadmapVersionRecord, UserProfileRecord, WorkspaceSnapshotRecord } from "./supabase/types";
 
@@ -349,8 +349,12 @@ function toRoadmapRow(roadmap: RoadmapRecord, userId: string): RoadmapRow {
 async function resolveAuthenticatedUserId(client: SupabaseClient, fallbackUserId: string) {
   const { data } = await client.auth.getUser();
   const authUserId = data?.user?.id ?? fallbackUserId;
-  console.log("AUTH USER ID", authUserId);
   return authUserId;
+}
+
+async function resolveCareerGoal(client: SupabaseClient, userId: string, fallbackGoal: string) {
+  const { data } = await client.from("profiles").select("goal").eq("id", userId).maybeSingle<{ goal: string | null }>();
+  return data?.goal || fallbackGoal;
 }
 
 async function getNextRoadmapVersion(client: SupabaseClient, userId: string) {
@@ -367,13 +371,25 @@ async function getNextRoadmapVersion(client: SupabaseClient, userId: string) {
 
 async function persistRoadmaps(client: SupabaseClient, userId: string, roadmaps: RoadmapRecord[], version: number) {
   const authUserId = await resolveAuthenticatedUserId(client, userId);
-  await client.from("roadmaps").delete().eq("user_id", authUserId);
-
   const safeRoadmaps = normalizeRoadmapArray(roadmaps);
 
   if (!safeRoadmaps.length) {
     return;
   }
+
+  const careerGoal = await resolveCareerGoal(client, authUserId, safeRoadmaps[0]?.career_domain ?? "Career roadmap");
+  const domainProfile = resolveDomainProfile(careerGoal);
+
+  safeRoadmaps.forEach((roadmap) => validateRoadmapDomainConsistency(roadmap, domainProfile));
+
+  const audit = auditRoadmapQuality(safeRoadmaps, domainProfile);
+  console.log("ROADMAP QUALITY AUDIT", { userId: authUserId, careerGoal, qualityScore: audit.qualityScore, reasons: audit.reasons });
+
+  if (audit.qualityScore < 85) {
+    throw new Error(`Roadmap quality below threshold: ${audit.qualityScore}`);
+  }
+
+  await client.from("roadmaps").delete().eq("user_id", authUserId);
 
   const rows: RoadmapRow[] = safeRoadmaps.map((roadmap) => toRoadmapRow({ ...roadmap, roadmap_version: version }, authUserId));
   console.log("ROADMAP INSERT PAYLOAD", JSON.stringify(rows, null, 2));
@@ -392,6 +408,16 @@ async function persistRoadmapVersion(client: SupabaseClient, userId: string, roa
   if (!safeRoadmaps.length) {
     return;
   }
+  const domainProfile = resolveDomainProfile(careerGoal);
+  safeRoadmaps.forEach((roadmap) => validateRoadmapDomainConsistency(roadmap, domainProfile));
+
+  const audit = auditRoadmapQuality(safeRoadmaps, domainProfile);
+  console.log("ROADMAP VERSION QUALITY AUDIT", { userId: authUserId, careerGoal, qualityScore: audit.qualityScore, reasons: audit.reasons });
+
+  if (audit.qualityScore < 85) {
+    throw new Error(`Roadmap quality below threshold: ${audit.qualityScore}`);
+  }
+
   const primaryRoadmap = safeRoadmaps[0];
   const aiReasoning = primaryRoadmap.ai_reasoning || `CareerOS roadmap version ${version} generated from ${careerGoal}.`;
 
@@ -468,8 +494,8 @@ export async function loadAppData(client: SupabaseClient, userId: string): Promi
   };
 }
 
-export async function seedWorkspace(client: SupabaseClient, userId: string, fullName: string, goal: string, experience: ExperienceLevel, avatarUrl?: string | null) {
-  const seed = createStarterWorkspace(goal, experience);
+export async function seedWorkspace(client: SupabaseClient, userId: string, fullName: string, goal: string, experience: ExperienceLevel, avatarUrl?: string | null, readinessScore?: number) {
+  const seed = createStarterWorkspace(goal, experience, readinessScore);
   const normalizedRoadmaps = normalizeRoadmapArray(seed.workspace.roadmaps);
 
   const profile: ProfileWritePayload = {

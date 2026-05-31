@@ -124,11 +124,6 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
         profile,
         currentRoadmaps: safeWorkspaceRoadmaps
       };
-      console.log("ROADMAP REPLAN REQUEST SHAPE", {
-        profileKeys: profile ? Object.keys(profile) : [],
-        currentRoadmapsLength: safeWorkspaceRoadmaps.length,
-        requestKeys: Object.keys(requestPayload)
-      });
       const response = await fetch("/api/replan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -136,12 +131,6 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
       });
 
       const data = await response.json();
-      console.log("ROADMAP REPLAN RESPONSE SHAPE", {
-        ok: response.ok,
-        status: response.status,
-        keys: data ? Object.keys(data) : [],
-        roadmapsLength: Array.isArray(data?.roadmaps) ? data.roadmaps.length : 0
-      });
 
       if (!response.ok) {
         console.error("ROADMAP REPLAN FAILED", data || response.statusText);

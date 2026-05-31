@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { FREE_GENERATIONS } from "@/lib/config";
-import { buildRoadmapPlanDetails, buildRoadmapPlanPrompt } from "@/lib/roadmap-plan";
+import { auditRoadmapQuality, buildRoadmapPlanDetails, buildRoadmapPlanPrompt, resolveDomainProfile, validateRoadmapDomainConsistency } from "@/lib/roadmap-plan";
 
 const ResourceLinkSchema = z.object({
   label: z.string(),
@@ -55,6 +55,7 @@ const ProfileSchema = z.object({
   full_name: z.string().nullable().optional(),
   goal: z.string().nullable().optional(),
   experience_level: z.string().nullable().optional(),
+  readiness_score: z.number().int().min(0).max(100).optional(),
   avatar_url: z.string().nullable().optional(),
   onboarding_complete: z.boolean().optional()
 });
@@ -130,12 +131,6 @@ async function generateWithOpenAI(prompt: ReturnType<typeof buildRoadmapPlanProm
 export async function POST(req: Request) {
   try {
     const rawBody = await req.json();
-    console.log("ROADMAP REPLAN REQUEST SHAPE", {
-      keys: Object.keys(rawBody ?? {}),
-      hasProfile: Boolean(rawBody?.profile),
-      hasCurrentRoadmaps: Array.isArray(rawBody?.currentRoadmaps),
-      currentRoadmapsLength: Array.isArray(rawBody?.currentRoadmaps) ? rawBody.currentRoadmaps.length : 0
-    });
     const parsedInput = RequestSchema.safeParse(rawBody);
 
     if (!parsedInput.success) {
@@ -149,6 +144,8 @@ export async function POST(req: Request) {
     const goal = profile?.goal || "Frontend Engineer";
     const level = (profile?.experience_level || "Junior") as "Student" | "Junior" | "Mid" | "Senior" | "Switcher";
     const timeCommit = currentRoadmaps?.[0]?.weekly_hours || "10 hours / week";
+    const readinessScore = profile?.readiness_score ?? 0;
+    const domainProfile = resolveDomainProfile(goal);
 
     const supabase = await getSupabaseServerClient();
     if (!supabase) {
@@ -191,6 +188,7 @@ export async function POST(req: Request) {
       goal,
       experience: level,
       weeklyHours: timeCommit,
+      readinessScore,
       budget: "Free / Low-cost",
       skills: [],
       weaknesses: [],
@@ -203,24 +201,34 @@ export async function POST(req: Request) {
     if (aiPayload) {
       const validated = ResponseSchema.safeParse(aiPayload);
       if (validated.success) {
-        console.log("ROADMAP REPLAN RESPONSE SHAPE", {
-          keys: Object.keys(validated.data ?? {}),
-          roadmapsLength: validated.data.roadmaps.length
-        });
-        return NextResponse.json(validated.data);
+        try {
+          validated.data.roadmaps.forEach((roadmap) => validateRoadmapDomainConsistency(roadmap, domainProfile));
+          const audit = auditRoadmapQuality(validated.data.roadmaps, domainProfile);
+
+          if (audit.qualityScore >= 85) {
+            return NextResponse.json(validated.data);
+          }
+
+          console.error("INVALID AI ROADMAP QUALITY", { qualityScore: audit.qualityScore, reasons: audit.reasons, payload: aiPayload });
+        } catch (error) {
+          console.error("INVALID AI ROADMAP DOMAIN", { error, payload: aiPayload });
+        }
       }
 
-      console.error("INVALID AI ROADMAP PAYLOAD", {
-        issues: validated.error.issues,
-        payload: aiPayload
-      });
+      if (!validated.success) {
+        console.error("INVALID AI ROADMAP PAYLOAD", {
+          issues: validated.error.issues,
+          payload: aiPayload
+        });
+      }
     }
 
     const fallback = buildRoadmapPlanDetails(roadmapInput);
-    console.log("ROADMAP REPLAN RESPONSE SHAPE", {
-      keys: Object.keys(fallback ?? {}),
-      roadmapsLength: fallback.roadmaps.length
-    });
+    fallback.roadmaps.forEach((roadmap) => validateRoadmapDomainConsistency(roadmap, domainProfile));
+    const fallbackAudit = auditRoadmapQuality(fallback.roadmaps, domainProfile);
+    if (fallbackAudit.qualityScore < 85) {
+      throw new Error(`Fallback roadmap quality below threshold: ${fallbackAudit.qualityScore}`);
+    }
     return NextResponse.json({ ...fallback, roadmaps: fallback.roadmaps });
   } catch (error) {
     console.error("ROADMAP REPLAN FAILED", error);
