@@ -7,6 +7,7 @@ import { ArrowRight, Sparkles, Trash2, Check, TrendingUp, X, PlusCircle, Briefca
 import { MagneticButton } from "./magnetic-button";
 import { FeatureStatusBadge } from "./feature-status";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { generateId } from "@/lib/id";
 import { updateWorkspace } from "@/lib/app-data";
 import type { NoteRecord, ProgressRecord, UserProfileRecord, WorkspaceSnapshotRecord } from "@/lib/supabase/types";
 
@@ -82,7 +83,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
   async function handleCreateNote() {
     if (!workspace) return;
     const newNote: NoteRecord = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       title: noteTitle.trim() || "Untitled strategy",
       content: noteContent.trim() || "No content details.",
       tag: noteTag,
@@ -108,7 +109,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
   async function handleAddProgress() {
     if (!workspace) return;
     const newLog: ProgressRecord = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       label: progressLabel.trim() || "General Momentum",
       value: progressValue,
       date: "Today",

@@ -5,6 +5,7 @@ import { Send, Sparkles, User, MessageSquare, Cpu, Clock } from "lucide-react";
 import { MagneticButton } from "./magnetic-button";
 import { FeatureStatusBadge } from "./feature-status";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { generateId } from "@/lib/id";
 import { updateWorkspace } from "@/lib/app-data";
 import type { ChatThread, ChatMessage, UserProfileRecord, WorkspaceSnapshotRecord } from "@/lib/supabase/types";
 
@@ -69,7 +70,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
 
     // 1. Create and append user message
     const userMsg: ChatMessage = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       role: "user",
       content: userMsgText,
       created_at: new Date().toISOString()
@@ -110,7 +111,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
 
       // Create and append mentor reply
       const mentorMsg: ChatMessage = {
-        id: crypto.randomUUID(),
+        id: generateId(),
         role: "mentor",
         content: mentorReplyText,
         created_at: new Date().toISOString()
@@ -131,7 +132,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
       // Local fallback in case of connection limits
       const fallbackReply = getSimulatedResponse(userMsgText);
       const mentorMsg: ChatMessage = {
-        id: crypto.randomUUID(),
+        id: generateId(),
         role: "mentor",
         content: fallbackReply,
         created_at: new Date().toISOString()
@@ -169,13 +170,13 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
   async function handleCreateThread() {
     if (!workspace) return;
     const newThread: ChatThread = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       title: `Sprint Calibrator ${workspace.ai_chats.length + 1}`,
       topic: profile?.goal || "Career strategy",
       updated_at: new Date().toISOString(),
       messages: [
         {
-          id: crypto.randomUUID(),
+          id: generateId(),
           role: "mentor",
           content: `Hello! I have loaded your diagnostic profile. Targeting "${profile?.goal || "Frontend role"}". Let's use this thread to calibrate strategy sprints and technical tradeoffs.`,
           created_at: new Date().toISOString()

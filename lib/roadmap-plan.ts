@@ -1,4 +1,3 @@
-import crypto from "crypto";
 import type {
   ExperienceLevel,
   RoadmapDifficulty,
@@ -7,14 +6,7 @@ import type {
   RoadmapResourceLink,
   RoadmapStatus
 } from "./supabase/types";
-
-function createUuid() {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
+import { generateId } from "./id";
 
 function toArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
@@ -365,7 +357,15 @@ function toIsoDate(date: Date) {
 }
 
 function hashSeed(...parts: string[]) {
-  return crypto.createHash("sha256").update(parts.join("|")).digest("hex");
+  const input = parts.join("|");
+  let hash = 2166136261;
+
+  for (let index = 0; index < input.length; index += 1) {
+    hash ^= input.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return (hash >>> 0).toString(16).padStart(8, "0");
 }
 
 function pickDomain(goal: string) {
@@ -549,7 +549,7 @@ function buildRoadmapCard(params: {
   const completionDate = addWeeks(params.referenceDate, Math.max(1, totalDuration));
 
   return {
-    id: createUuid(),
+    id: generateId(),
     title: params.title,
     status: statusForProgress(params.progress),
     summary: params.summary,

@@ -8,10 +8,10 @@ import type {
   WorkspaceSnapshotRecord
 } from "./supabase/types";
 import { buildRoadmapPlan } from "./roadmap-plan";
-import { randomUUID } from "crypto";
+import { generateId } from "./id";
 
 const now = new Date().toISOString();
-const newId = () => randomUUID();
+const newId = () => generateId();
 
 function buildReadinessScore(experience: ExperienceLevel) {
   switch (experience) {
