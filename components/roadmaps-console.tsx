@@ -175,6 +175,8 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
   async function handlePdfDownload() {
     if (!safeWorkspaceRoadmaps.length) return;
     const bundle = buildRoadmapExportBundle(safeWorkspaceRoadmaps, `${profile?.goal ?? "CareerOS"} Roadmap`);
+    bundle.pdf.report.careerGoal = profile?.goal;
+    bundle.pdf.report.readinessScore = profile?.readiness_score;
     await downloadPdfFile(bundle.pdf.filename, bundle.pdf.report);
     showToast("PDF downloaded.");
   }
