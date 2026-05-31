@@ -359,7 +359,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
       const paddingY = 2;
       const badgeW = textW + paddingX * 2;
       const badgeH = 6.5 + paddingY * 2;
-      const badgeX = margins.left + 155;
+      const badgeX = centerX - badgeW / 2;
       
       doc.setFillColor("#FFAE77");
       doc.roundedRect(badgeX, 32 - 6.5 - paddingY + 1, badgeW, badgeH, 1.5, 1.5, "F");
@@ -419,13 +419,46 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   // ==========================================
   // PAGE 1: EXECUTIVE ROADMAP OVERVIEW
   // ==========================================
-  drawText("CAREER ROADMAP REPORT", centerX, y, { align: "center", fontSize: fontSizes.title });
-  totalContentHeight += 26;
-  y += 16;
-  
-  drawText(`GENERATED ON ${new Date(report.exportedAt).toLocaleDateString()}  ·  VERIFIED BY CAREEROS`, centerX, y, { align: "center", fontSize: fontSizes.meta, fontColor: "#64748b" });
-  totalContentHeight += 9;
-  y += 24;
+  // Spacing Rules & Safe Header Zone (0-60pt) Validation
+  const headerBottomY = 36; // Divider line is at y = 36
+  const reservedZoneTop = 60; // Safe Header Zone is 0-60pt
+
+  // Define bounding boxes for layout validation
+  const headerBox = { y1: 24, y2: 36 };
+  doc.setFontSize(6.5);
+  const paddingY = 2;
+  const badgeBox = !validReport ? { y1: 32 - 6.5 - paddingY + 1, y2: 32 - 6.5 - paddingY + 1 + 6.5 + paddingY * 2 } : { y1: 0, y2: 0 };
+
+  // Spacing after header row: minimum 24pt vertical spacing
+  let titleTop = headerBottomY + 24; // 60
+
+  // Validation: Check intersections with header labels, quality badge, and reserved zone
+  const reservedHeaderBottom = Math.max(headerBox.y2, badgeBox.y2, reservedZoneTop);
+  if (titleTop < reservedHeaderBottom) {
+    // If overlap exists: auto-adjust Y positions
+    titleTop = reservedHeaderBottom;
+  }
+
+  const titleHeight = fontSizes.title; // 26
+  const calculatedTitleY = titleTop + titleHeight; // 86
+
+  let subtitleTop = calculatedTitleY + 12; // 12pt spacing after title (bottom is baseline, so gap is to subtitle top)
+  if (subtitleTop < calculatedTitleY + 12) {
+    subtitleTop = calculatedTitleY + 12;
+  }
+
+  const subtitleHeight = fontSizes.meta; // 9
+  const calculatedSubtitleY = subtitleTop + subtitleHeight; // 107
+
+  // Draw Title & Subtitle centered
+  drawText("CAREER ROADMAP REPORT", centerX, calculatedTitleY, { align: "center", fontSize: fontSizes.title });
+  totalContentHeight += titleHeight;
+
+  drawText(`GENERATED ON ${new Date(report.exportedAt).toLocaleDateString()}  ·  VERIFIED BY CAREEROS`, centerX, calculatedSubtitleY, { align: "center", fontSize: fontSizes.meta, fontColor: "#64748b" });
+  totalContentHeight += subtitleHeight;
+
+  // The first content card starts 24pt below the subtitle bottom
+  y = calculatedSubtitleY + 24; // 107 + 24 = 131
 
   const readinessScore = report.readinessScore || 0;
   const totalDuration = safeRoadmaps.reduce((sum, rm) => sum + (rm.total_duration_weeks || 0), 0);
