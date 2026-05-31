@@ -3,11 +3,11 @@ import type { Config } from "tailwindcss";
 const config: Config = {
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./pages/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
   theme: {
+    fontFamily: {
+      sans: ["var(--font-geom)"],
+      geom: ["var(--font-geom)"],
+    },
     extend: {
-      fontFamily: {
-        geom: ["var(--font-geom)", "system-ui", "-apple-system", "sans-serif"],
-        sinistre: ["var(--font-sinistre)", "serif"],
-      },
       fontSize: {
         "hero-display": ["72px", { lineHeight: "1.0", letterSpacing: "-0.05em" }],
         "hero": ["56px", { lineHeight: "1.05", letterSpacing: "-0.04em" }],

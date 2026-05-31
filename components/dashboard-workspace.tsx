@@ -143,7 +143,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
             initial={{ opacity: 0, y: 12, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.95 }}
-            className="fixed bottom-6 right-6 z-50 rounded-xl border border-cyan-400/25 bg-[#0a0a0c] px-4 py-3 text-xs font-semibold text-cyan-200 shadow-[0_4px_12px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.08),0_0_20px_rgba(34,211,238,0.2)]"
+            className="fixed bottom-6 right-6 z-50 rounded-xl border border-cyan-400/25 bg-[#0a0a0c] px-4 py-3 text-xs font-medium text-cyan-200 shadow-[0_4px_12px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.08),0_0_20px_rgba(34,211,238,0.2)]"
           >
             {toastMessage}
           </motion.div>
@@ -162,7 +162,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
             <p className="caption text-cyan-400">Active Workspace</p>
           </div>
           
-          <h2 className="mt-4 font-sinistre text-4xl font-black text-white sm:text-5xl leading-none relative z-10">
+          <h2 className="mt-4 text-4xl font-medium text-white sm:text-5xl leading-none relative z-10">
             Welcome back. The OS is initialized.
           </h2>
           <p className="mt-4 max-w-xl body text-slate-400 relative z-10">
@@ -171,14 +171,14 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
 
           <div className="mt-8 flex flex-wrap gap-3 relative z-10">
             <MagneticButton asChild>
-              <Link href="/roadmaps" className="tactile-btn tactile-btn-primary inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-xs font-bold text-black shadow-[0_4px_12px_rgba(34,211,238,0.2)]">
+              <Link href="/roadmaps" className="tactile-btn tactile-btn-primary inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-xs font-medium text-black shadow-[0_4px_12px_rgba(34,211,238,0.2)]">
                 Open roadmaps
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </MagneticButton>
             
             <MagneticButton asChild>
-              <Link href="/mentor" className="tactile-btn inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-xs font-bold text-slate-300 hover:text-white">
+              <Link href="/mentor" className="tactile-btn inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-xs font-medium text-slate-300 hover:text-white">
                 <Sparkles className="h-4 w-4 text-cyan-400" />
                 Interact with Mentor
               </Link>
@@ -200,8 +200,8 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
           <div className="liquid-card rounded-2xl p-4 hover:bg-[#141418]">
             <p className="caption text-slate-500">Readiness Score Index</p>
             <div className="mt-3 flex items-end gap-2.5">
-              <span className="text-dashboard font-sinistre font-black text-cyan-300">{readinessScore > 0 ? `${readinessScore}%` : "Coming Soon"}</span>
-              <span className="pb-0.5 small text-cyan-400 font-bold">{readinessScore > 0 ? "Active" : "Beta"}</span>
+              <span className="text-dashboard font-medium text-cyan-300">{readinessScore > 0 ? `${readinessScore}%` : "Coming Soon"}</span>
+              <span className="pb-0.5 small text-cyan-400 font-medium">{readinessScore > 0 ? "Active" : "Beta"}</span>
             </div>
             <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[#040405] border border-[#141418] relative shadow-[inset_0_1px_1px_rgba(0,0,0,0.8)]">
               <div
@@ -248,7 +248,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
               <div key={r.id} className="liquid-card rounded-2xl p-5 hover:bg-[#141418]">
                 <div className="flex items-center justify-between gap-3">
                   <h4 className="heading-card text-white">{r.title}</h4>
-                  <span className="rounded-full bg-[#082f49] border border-cyan-400/25 px-2.5 py-0.5 font-sinistre font-black text-cyan-200 shadow-[0_2px_4px_rgba(0,0,0,0.4)]">
+                  <span className="rounded-full bg-[#082f49] border border-cyan-400/25 px-2.5 py-0.5 font-medium text-cyan-200 shadow-[0_2px_4px_rgba(0,0,0,0.4)]">
                     {r.progress}%
                   </span>
                 </div>
@@ -316,7 +316,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
               workspace.notes.map((note) => (
                 <div key={note.id} className="liquid-card rounded-2xl p-4.5 group relative hover:bg-[#141418]">
                   <div className="flex items-center justify-between">
-                    <span className="rounded-md bg-[#082f49] border border-cyan-400/25 px-2 py-0.5 caption font-semibold text-cyan-200">
+                    <span className="rounded-md bg-[#082f49] border border-cyan-400/25 px-2 py-0.5 caption font-medium text-cyan-200">
                       {note.tag}
                     </span>
                     <button
@@ -365,7 +365,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <span className="caption text-slate-500">{item.label}</span>
-                    <p className="text-card font-sinistre font-black text-cyan-300 mt-1">{item.value}%</p>
+                    <p className="text-card font-medium text-cyan-300 mt-1">{item.value}%</p>
                   </div>
                   <span className="caption text-slate-500">{item.date}</span>
                 </div>
@@ -404,7 +404,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                 </div>
                 
                 <div className="flex items-center gap-3">
-                  <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 font-sinistre font-black text-emerald-400 tracking-wider">
+                  <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 font-medium text-emerald-400 tracking-wider">
                     {job.match} MATCH
                   </span>
                   <button
@@ -475,7 +475,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                         key={tag}
                         type="button"
                         onClick={() => setNoteTag(tag)}
-                        className={`rounded-full px-4 py-2 text-xs font-semibold border transition cursor-pointer ${
+                        className={`rounded-full px-4 py-2 text-xs font-medium border transition cursor-pointer ${
                           noteTag === tag
                             ? "border-cyan-400 bg-cyan-400/10 text-cyan-200"
                             : "border-[#202028] bg-[#0c0c0e] text-slate-400"
@@ -491,14 +491,14 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                   <button
                     type="button"
                     onClick={() => setNoteModalOpen(false)}
-                    className="tactile-btn text-slate-300 px-4 py-2 rounded-xl text-xs font-semibold"
+                    className="tactile-btn text-slate-300 px-4 py-2 rounded-xl text-xs font-medium"
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
                     onClick={handleCreateNote}
-                    className="tactile-btn tactile-btn-primary px-4 py-2 rounded-xl text-xs font-bold text-black"
+                    className="tactile-btn tactile-btn-primary px-4 py-2 rounded-xl text-xs font-medium text-black"
                   >
                     Pin Note
                   </button>
@@ -551,7 +551,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                       onChange={(e) => setProgressValue(Number(e.target.value))}
                       className="w-full accent-cyan-400 bg-[#040405] rounded-lg cursor-pointer border border-[#141417] shadow-[inset_0_1px_2px_rgba(0,0,0,0.8)]"
                     />
-                    <span className="font-bold text-sm text-cyan-200 bg-[#082f49] border border-cyan-400/25 px-4 py-2 rounded-md shrink-0 shadow-[0_4px_8px_rgba(0,0,0,0.4)]">
+                    <span className="font-medium text-sm text-cyan-200 bg-[#082f49] border border-cyan-400/25 px-4 py-2 rounded-md shrink-0 shadow-[0_4px_8px_rgba(0,0,0,0.4)]">
                       {progressValue}%
                     </span>
                   </div>
@@ -572,14 +572,14 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                   <button
                     type="button"
                     onClick={() => setProgressModalOpen(false)}
-                    className="tactile-btn text-slate-300 px-4 py-2 rounded-xl text-xs font-semibold"
+                    className="tactile-btn text-slate-300 px-4 py-2 rounded-xl text-xs font-medium"
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
                     onClick={handleAddProgress}
-                    className="tactile-btn tactile-btn-primary px-4 py-2 rounded-xl text-xs font-bold text-black"
+                    className="tactile-btn tactile-btn-primary px-4 py-2 rounded-xl text-xs font-medium text-black"
                   >
                     Log Progress
                   </button>

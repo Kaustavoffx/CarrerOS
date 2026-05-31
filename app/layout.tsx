@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { LazyMotion, MotionConfig, domAnimation } from "framer-motion";
 import { AppAtmosphere } from "@/components/app-atmosphere";
 import { AuthProvider } from "@/components/auth-provider";
-import { geom, sinistre } from "@/lib/fonts";
+import { geom } from "@/lib/fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -23,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark scroll-smooth">
-      <body className={`${geom.variable} ${sinistre.variable} bg-black text-white antialiased`}>
+      <body className={`${geom.variable} bg-black text-white antialiased`}>
         <MotionConfig reducedMotion="user">
           <LazyMotion features={domAnimation}>
             <AuthProvider>

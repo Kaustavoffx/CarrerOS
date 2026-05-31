@@ -8,7 +8,7 @@ import { MagneticButton } from "./magnetic-button";
 import { FeatureGateButton, FeatureStatusBadge } from "./feature-status";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { normalizeRoadmapArray, normalizeRoadmapVersionArray, updateWorkspace } from "@/lib/app-data";
-import { buildRoadmapExportBundle } from "@/lib/roadmap-export";
+import { buildRoadmapExportBundle, generateRoadmapPdfBlob } from "@/lib/roadmap-export";
 import type { AiProviderStatusRecord, RoadmapRecord, RoadmapVersionRecord, UserProfileRecord, WorkspaceSnapshotRecord } from "@/lib/supabase/types";
 
 type RoadmapsConsoleProps = {
@@ -28,23 +28,14 @@ function downloadTextFile(filename: string, content: string, mimeType: string) {
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
-async function downloadPdfFile(filename: string, html: string) {
-  const { jsPDF } = await import("jspdf");
-  const doc = new jsPDF({ unit: "pt", format: "letter" });
-  const text = html
-    .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/\s+/g, " ")
-    .trim();
-
-  const lines = doc.splitTextToSize(text, 540);
-  doc.text(lines, 36, 48);
-  doc.save(filename);
+async function downloadPdfFile(filename: string, report: Parameters<typeof generateRoadmapPdfBlob>[0]) {
+  const blob = await generateRoadmapPdfBlob(report);
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapHistory, aiProviders }: RoadmapsConsoleProps) {
@@ -184,7 +175,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
   async function handlePdfDownload() {
     if (!safeWorkspaceRoadmaps.length) return;
     const bundle = buildRoadmapExportBundle(safeWorkspaceRoadmaps, `${profile?.goal ?? "CareerOS"} Roadmap`);
-    await downloadPdfFile(bundle.pdf.filename, bundle.pdf.html);
+    await downloadPdfFile(bundle.pdf.filename, bundle.pdf.report);
     showToast("PDF downloaded.");
   }
 

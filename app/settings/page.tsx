@@ -4,7 +4,6 @@ import { WorkspaceShell } from "@/components/workspace-shell";
 import { AiProvidersPanel } from "@/components/ai-providers-panel";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { createStarterWorkspace } from "@/lib/workspace";
 import { loadAppData } from "@/lib/app-data";
 import { loadAiProviderStatuses } from "@/lib/ai-provider-store";
 import type { AiProviderStatusRecord } from "@/lib/supabase/types";
@@ -39,9 +38,7 @@ export default async function SettingsPage() {
       redirect("/onboarding");
     }
   } else {
-    const demo = createStarterWorkspace("Front-end role at a startup", "Junior");
-    profile = demo.profile;
-    workspace = demo.workspace;
+    redirect("/login");
   }
 
   return (

@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { WorkspaceShell } from "@/components/workspace-shell";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { createStarterWorkspace } from "@/lib/workspace";
 import { loadAppData } from "@/lib/app-data";
 import { MentorChatConsole } from "@/components/mentor-chat-console";
 
@@ -33,9 +32,7 @@ export default async function MentorPage() {
       redirect("/onboarding");
     }
   } else {
-    const demo = createStarterWorkspace("Front-end role at a startup", "Junior");
-    profile = demo.profile;
-    workspace = demo.workspace;
+    redirect("/login");
   }
 
   return (

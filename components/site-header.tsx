@@ -24,7 +24,7 @@ export function SiteHeader() {
             <Sparkles className="h-5 w-5 text-cyan-300" />
           </span>
           <span className="flex flex-col leading-none">
-            <span className="font-sinistre text-lg font-black tracking-[0.08em] text-white">CareerOS</span>
+            <span className="text-lg font-medium tracking-[0.08em] text-white">CareerOS</span>
             <span className="caption text-slate-500">Private career workspace</span>
           </span>
         </Link>
@@ -40,7 +40,7 @@ export function SiteHeader() {
         <div className="hidden items-center gap-3 lg:flex">
           <Link
             href="/login"
-            className="rounded-full px-4 py-2 small font-bold tactile-btn text-slate-200"
+            className="rounded-full px-4 py-2 small font-medium tactile-btn text-slate-200"
           >
             Sign in
           </Link>
@@ -71,7 +71,7 @@ export function SiteHeader() {
             <Link
               href="/login"
               onClick={() => setMenuOpen(false)}
-              className="mt-1 rounded-2xl px-4 py-3 small font-bold text-center text-white tactile-btn-primary"
+              className="mt-1 rounded-2xl px-4 py-3 small font-medium text-center text-white tactile-btn-primary"
             >
               Sign in
             </Link>

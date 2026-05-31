@@ -4,7 +4,6 @@ import { FeatureStatusBadge } from "@/components/feature-status";
 import { ProfileEditor } from "@/components/profile-editor";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { createStarterWorkspace } from "@/lib/workspace";
 import { loadAppData } from "@/lib/app-data";
 
 export default async function ProfilePage() {
@@ -36,10 +35,7 @@ export default async function ProfilePage() {
       redirect("/onboarding");
     }
   } else {
-    const demo = createStarterWorkspace("Front-end role at a startup", "Junior");
-    profile = demo.profile;
-    workspace = demo.workspace;
-    userId = demo.profile.id;
+    redirect("/login");
   }
 
   return (
@@ -54,7 +50,7 @@ export default async function ProfilePage() {
             <div className="mt-6 space-y-4">
               <div className="liquid-card rounded-2xl p-4">
                 <p className="caption text-slate-400">Name</p>
-                <p className="mt-2 body font-semibold text-white">{profile?.full_name ?? "Unnamed"}</p>
+                  <p className="mt-2 body text-white">{profile?.full_name ?? "Unnamed"}</p>
               </div>
               <div className="liquid-card rounded-2xl p-4">
                 <p className="caption text-slate-400">Avatar</p>

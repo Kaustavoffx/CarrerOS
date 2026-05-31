@@ -25,16 +25,12 @@ body {
   overflow-x: hidden;
   background: #050505;
   color: var(--foreground);
-  font-family: var(--font-geom), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-family: var(--font-geom);
 }
 
-/* Premium Typography utilities mimicking Linear & Apple */
+/* Premium Typography utilities using CMGeom only */
 .font-geom {
-  font-family: var(--font-geom), ui-sans-serif, system-ui, -apple-system, sans-serif;
-}
-
-.font-sinistre {
-  font-family: var(--font-sinistre), Georgia, serif;
+  font-family: var(--font-geom);
 }
 
 /* Typography System Hierarchy */
@@ -109,8 +105,8 @@ body {
 
 /* Standard class shortcuts for strict visual rhythm */
 .heading-hero {
-  font-family: var(--font-geom), ui-sans-serif, system-ui, -apple-system, sans-serif;
-  font-weight: 800;
+  font-family: var(--font-geom);
+  font-weight: 500;
   line-height: 1.0;
   letter-spacing: -0.05em;
   font-size: 48px;
@@ -121,8 +117,8 @@ body {
 }
 
 .heading-section {
-  font-family: var(--font-geom), ui-sans-serif, system-ui, -apple-system, sans-serif;
-  font-weight: 700;
+  font-family: var(--font-geom);
+  font-weight: 500;
   line-height: 1.1;
   letter-spacing: -0.03em;
   font-size: 32px;
@@ -133,8 +129,8 @@ body {
 }
 
 .heading-dashboard {
-  font-family: var(--font-geom), ui-sans-serif, system-ui, -apple-system, sans-serif;
-  font-weight: 750;
+  font-family: var(--font-geom);
+  font-weight: 500;
   line-height: var(--leading-snug);
   letter-spacing: -0.02em;
   font-size: 26px;
@@ -145,15 +141,15 @@ body {
 }
 
 .heading-card {
-  font-family: var(--font-geom), ui-sans-serif, system-ui, -apple-system, sans-serif;
-  font-weight: 600;
+  font-family: var(--font-geom);
+  font-weight: 500;
   line-height: 1.25;
   letter-spacing: -0.015em;
   font-size: 20px;
 }
 
 .body-large {
-  font-family: var(--font-geom), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-family: var(--font-geom);
   font-weight: 400;
   font-size: 16px;
   line-height: var(--leading-regular);
@@ -161,7 +157,7 @@ body {
 }
 
 .body {
-  font-family: var(--font-geom), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-family: var(--font-geom);
   font-weight: 400;
   font-size: 16px;
   line-height: var(--leading-regular);
@@ -169,15 +165,15 @@ body {
 }
 
 .small {
-  font-family: var(--font-geom), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-family: var(--font-geom);
   font-weight: 400;
   font-size: 14px;
   line-height: 1.4;
 }
 
 .caption {
-  font-family: var(--font-geom), ui-sans-serif, system-ui, -apple-system, sans-serif;
-  font-weight: 600;
+  font-family: var(--font-geom);
+  font-weight: 500;
   font-size: 12px;
   letter-spacing: 0.28em;
   text-transform: uppercase;
@@ -190,10 +186,6 @@ body {
 ::selection {
   background: rgba(34, 211, 238, 0.25);
   color: #ffffff;
-}
-
-.font-display {
-  font-family: var(--font-geom), ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
 
 /* Custom dark liquid interface container classes */

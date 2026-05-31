@@ -126,7 +126,7 @@ const workModes: WorkMode[] = ["Remote", "Hybrid", "On-site", "Flexible"];
 const experienceOptions: { value: ExperienceLevel; label: string; desc: string }[] = [
   { value: "Student", label: "Student", desc: "Currently studying full-time" },
   { value: "Junior", label: "Junior", desc: "Early career (0-2 years)" },
-  { value: "Mid", label: "Mid-Level", desc: "Growing builder (2-5 years)" },
+  { value: "Mid", label: "Mid-Level", desc: "Builder with experience (2-5 years)" },
   { value: "Senior", label: "Senior", desc: "Experienced leader (5+ years)" },
   { value: "Switcher", label: "Switcher", desc: "Transitioning career tracks" }
 ];
@@ -146,7 +146,7 @@ const industryOptions = [
 const languageOptions = ["English", "Spanish", "German", "French", "Mandarin", "Japanese", "Hindi"];
 const timelineOptions: TimelineBucket[] = ["0-3 months", "3-6 months", "6-12 months", "12+ months"];
 const learningStylesInfo: { value: LearningStyle; label: string; desc: string }[] = [
-  { value: "Hands-on", label: "Hands-On", desc: "Build mock projects, write real code, sandbox labs." },
+  { value: "Hands-on", label: "Hands-On", desc: "Engage in practical projects, write actual code, sandbox labs." },
   { value: "Visual", label: "Visual", desc: "Video walkthroughs, concept diagrams, process charts." },
   { value: "Structured", label: "Structured", desc: "Comprehensive step-by-step documentation, books." },
   { value: "Mentored", label: "Mentored", desc: "1-on-1 code reviews, direct critiques, active guidance." },
@@ -606,7 +606,6 @@ export function OnboardingWizard({ userId, email, displayName }: OnboardingWizar
   };
 
   async function handleSubmit() {
-    console.log("SUBMIT START");
     const allErrors = validateStep(0, draft);
     Object.assign(
       allErrors,
@@ -629,7 +628,6 @@ export function OnboardingWizard({ userId, email, displayName }: OnboardingWizar
 
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      console.error("SUBMIT ERROR", new Error("Supabase browser client unavailable"));
       toast.error("Please establish backend config parameters to sync assessment profiles.");
       return;
     }
@@ -644,8 +642,6 @@ export function OnboardingWizard({ userId, email, displayName }: OnboardingWizar
         throw new Error("User not authenticated");
       }
 
-      console.log("AFTER GET USER", user.id);
-
       const goal = draft.targetRole.trim() || `${draft.goalType} path`;
 
       const profilePatch = {
@@ -657,12 +653,9 @@ export function OnboardingWizard({ userId, email, displayName }: OnboardingWizar
       };
 
       await seedWorkspace(supabase, user.id, draft.fullName.trim() || displayName || email || "Career Architect", goal, draft.experienceLevel, undefined, summary.readinessEstimate);
-      console.log("AFTER SEED WORKSPACE");
       await updateProfile(supabase, user.id, profilePatch);
-      console.log("AFTER UPDATE PROFILE");
 
       window.localStorage.removeItem(storageKey);
-      console.log("SUBMIT SUCCESS");
       router.replace("/dashboard");
     } catch (error) {
       console.error("SUBMIT ERROR", error);
@@ -799,7 +792,7 @@ export function OnboardingWizard({ userId, email, displayName }: OnboardingWizar
                     
                     {/* Full Name */}
                     <div className="space-y-2 md:col-span-1">
-                      <span className="caption uppercase tracking-[0.25em] text-slate-400 font-semibold flex items-center gap-1.5">
+                      <span className="caption uppercase tracking-[0.2em] text-slate-400 font-medium flex items-center gap-1.5">
                         <User className="h-3.5 w-3.5 text-cyan-400" /> Full Name
                       </span>
                       <motion.div
@@ -1276,7 +1269,7 @@ export function OnboardingWizard({ userId, email, displayName }: OnboardingWizar
                             onClick={() => setDraftField("timelineBucket", option)}
                             className={`rounded-2xl border p-4 text-left transition-all duration-300 cursor-pointer ${
                               draft.timelineBucket === option
-                                ? "border-cyan-400/40 bg-[#082f49] shadow-[0_4px_12px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.12),0_0_15px_rgba(34,211,238,0.15)] text-cyan-100 font-bold"
+                                ? "border-cyan-400/40 bg-[#082f49] shadow-[0_4px_12px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.12),0_0_15px_rgba(34,211,238,0.15)] text-cyan-100 font-medium"
                                 : "border-[#202028] bg-[#0c0c0e] text-slate-400 hover:border-[#30303c] hover:bg-[#141418] shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_4px_8px_rgba(0,0,0,0.4)]"
                             }`}
                           >
@@ -1288,7 +1281,7 @@ export function OnboardingWizard({ userId, email, displayName }: OnboardingWizar
 
                     {/* Target Date Custom Picker with Quick Selectors */}
                     <div className="space-y-2 md:col-span-1">
-                      <span className="caption uppercase tracking-[0.25em] text-slate-400 font-semibold">Precise Target Milestone Date</span>
+                      <span className="caption uppercase tracking-[0.2em] text-slate-400 font-medium">Precise Target Milestone Date</span>
                       
                       <motion.div
                         animate={errors.targetDate ? { x: [-5, 5, -5, 5, 0] } : {}}
@@ -1333,7 +1326,7 @@ export function OnboardingWizard({ userId, email, displayName }: OnboardingWizar
 
                     {/* Weekly Commitment Slider */}
                     <div className="space-y-2 md:col-span-1">
-                      <span className="caption uppercase tracking-[0.25em] text-slate-400 font-semibold">Weekly Study / Focus commitment</span>
+                      <span className="caption uppercase tracking-[0.2em] text-slate-400 font-medium">Weekly Study / Focus commitment</span>
                       <div className="rounded-2xl border border-[#141417] bg-[#0c0c0e] p-5 relative overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
                         
                         {/* Glow track effect */}
@@ -1349,7 +1342,7 @@ export function OnboardingWizard({ userId, email, displayName }: OnboardingWizar
                         />
                         <div className="mt-3.5 flex items-center justify-between text-xs text-slate-400 font-medium">
                           <span>2 hours</span>
-                          <span className="text-white font-bold bg-[#082f49] border border-cyan-400/25 px-2 py-0.5 rounded-md shadow-[0_4px_8px_rgba(0,0,0,0.4),0_0_10px_rgba(34,211,238,0.1)]">
+                          <span className="text-white font-medium bg-[#082f49] border border-cyan-400/25 px-2 py-0.5 rounded-md shadow-[0_4px_8px_rgba(0,0,0,0.4),0_0_10px_rgba(34,211,238,0.1)]">
                             {draft.weeklyHours} hrs / week
                           </span>
                           <span>35 hours</span>
@@ -1366,7 +1359,7 @@ export function OnboardingWizard({ userId, email, displayName }: OnboardingWizar
 
                     {/* Career Budget Bounds */}
                     <div className="space-y-2 md:col-span-1">
-                      <span className="caption uppercase tracking-[0.25em] text-slate-400 font-semibold">Career Study Budget / Expected Investment</span>
+                      <span className="caption uppercase tracking-[0.2em] text-slate-400 font-medium">Career Study Budget / Expected Investment</span>
                       <motion.div
                         animate={errors.budget ? { x: [-5, 5, -5, 5, 0] } : {}}
                         className={`carved-input flex items-center gap-3 rounded-2xl px-4 py-3.5 focus-within:border-cyan-400/60 focus-within:shadow-[inset_0_2px_4px_rgba(0,0,0,0.95),0_0_15px_rgba(34,211,238,0.25)] transition-all duration-300 ${
@@ -1724,16 +1717,6 @@ export function OnboardingWizard({ userId, email, displayName }: OnboardingWizar
                         />
                       </motion.div>
                       
-                      {/* Inspiring quick tips */}
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setDraftField("strengths", "Fast, high-fidelity UI builds; good visual consistency; solid structural systems architecture.")}
-                          className="tactile-btn text-[10px] text-cyan-300 hover:text-cyan-100 rounded-full px-2.5 py-1"
-                        >
-                          Use Sample Core Talents
-                        </button>
-                      </div>
                       {errors.strengths && <p className="text-xs text-rose-400 font-medium flex items-center gap-1"><HelpCircle className="h-3 w-3" /> {errors.strengths}</p>}
                     </div>
 

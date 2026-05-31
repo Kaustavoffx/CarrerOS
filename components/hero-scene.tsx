@@ -323,7 +323,7 @@ function HeroSceneComponent() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(255,255,255,0.06),transparent_35%),linear-gradient(180deg,transparent,rgba(0,0,0,0.4))]" />
       
       {/* Glow Title overlay */}
-      <div className="absolute left-6 top-6 z-10 flex items-center gap-2 rounded-full border border-[#141417] bg-[#0c0c0e] px-4 py-2 text-xs uppercase tracking-[0.3em] font-black text-cyan-300 shadow-[0_0_15px_rgba(34,211,238,0.15)]">
+      <div className="absolute left-6 top-6 z-10 flex items-center gap-2 rounded-full border border-[#141417] bg-[#0c0c0e] px-4 py-2 text-xs font-medium uppercase tracking-[0.24em] text-cyan-300 shadow-[0_0_15px_rgba(34,211,238,0.15)]">
         <span className="relative flex h-2 w-2 shrink-0">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75"></span>
           <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-400"></span>

@@ -7,10 +7,3 @@ export const geom = localFont({
   display: "swap",
 });
 
-// Accent font (Sinistre Variable Font)
-export const sinistre = localFont({
-  src: "../assets/fonts/SinistreVF.woff2",
-  variable: "--font-sinistre",
-  display: "swap",
-});
-

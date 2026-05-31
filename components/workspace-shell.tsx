@@ -43,7 +43,7 @@ export function WorkspaceShell({ profile, workspace, children }: WorkspaceShellP
             <Sparkles className="h-5 w-5 animate-pulse" />
           </div>
           <div>
-            <p className="font-sinistre text-card font-black tracking-[0.08em] text-white">CareerOS</p>
+            <p className="text-card font-medium tracking-[0.08em] text-white">CareerOS</p>
             <p className="caption text-slate-500">Private workspace</p>
           </div>
         </div>
@@ -71,13 +71,13 @@ export function WorkspaceShell({ profile, workspace, children }: WorkspaceShellP
         <div className="mt-auto space-y-4 rounded-[24px] border border-[#141417] bg-gradient-to-b from-[#08080a] to-[#050506] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),inset_0_-1px_1px_rgba(0,0,0,0.9)]">
           <div>
             <p className="caption text-slate-500">Signed in as</p>
-            <p className="mt-2 body font-bold text-white">{profile?.full_name ?? "Your profile"}</p>
+            <p className="mt-2 body font-medium text-white">{profile?.full_name ?? "Your profile"}</p>
             <p className="mt-1 small text-slate-400">{profile?.goal ?? "Set your goal in onboarding"}</p>
           </div>
           <MagneticButton
             type="button"
             onClick={handleSignOut}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-bold tactile-btn text-slate-200"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium tactile-btn text-slate-200"
           >
             <LogOut className="h-4 w-4" />
             Sign out
@@ -93,19 +93,19 @@ export function WorkspaceShell({ profile, workspace, children }: WorkspaceShellP
               <h1 className="mt-2 heading-dashboard text-white">
                 {navigation.find((item) => item.href === pathname)?.label ?? "Dashboard"}
               </h1>
-              <p className="mt-1 small text-slate-500 font-semibold">
+              <p className="mt-1 small text-slate-500 font-medium">
                 {workspace?.roadmaps.length ? `${workspace.roadmaps.length} saved roadmap${workspace.roadmaps.length === 1 ? "" : "s"}` : "Coming Soon"}
               </p>
             </div>
             <div className="flex items-center gap-3">
               <div className="hidden rounded-full border border-[#141417] bg-gradient-to-b from-[#08080a] to-[#050506] px-4 py-2 small text-slate-400 md:block shadow-[inset_0_1px_0_rgba(255,255,255,0.06),inset_0_-1px_1px_rgba(0,0,0,0.9)]">
-                Readiness score: <span className="text-cyan-300 font-sinistre font-black">{profile?.readiness_score ? profile.readiness_score : "Coming Soon"}</span>
+                Readiness score: <span className="text-cyan-300 font-medium">{profile?.readiness_score ? profile.readiness_score : "Coming Soon"}</span>
               </div>
               <FeatureStatusBadge status="coming-soon" featureName="Career Intelligence" />
               <MagneticButton
                 type="button"
                 onClick={() => router.push("/profile")}
-                className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold tactile-btn text-slate-200"
+                className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium tactile-btn text-slate-200"
               >
                 <UserCircle2 className="h-4 w-4" />
                 Profile

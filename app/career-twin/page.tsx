@@ -3,7 +3,6 @@ import { WorkspaceShell } from "@/components/workspace-shell";
 import { FeatureStatusBadge } from "@/components/feature-status";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { createStarterWorkspace } from "@/lib/workspace";
 import { loadAppData } from "@/lib/app-data";
 
 export default async function CareerTwinPage() {
@@ -33,9 +32,7 @@ export default async function CareerTwinPage() {
       redirect("/onboarding");
     }
   } else {
-    const demo = createStarterWorkspace("Front-end role at a startup", "Junior");
-    profile = demo.profile;
-    workspace = demo.workspace;
+    redirect("/login");
   }
 
   const progress = workspace?.progress ?? [];
@@ -53,15 +50,15 @@ export default async function CareerTwinPage() {
             <div className="mt-6 space-y-4">
               <div className="liquid-card rounded-2xl p-4">
                 <p className="caption text-slate-400">Goal</p>
-                <p className="mt-2 body font-semibold text-white">{profile?.goal ?? "Coming Soon"}</p>
+                <p className="mt-2 body text-white">{profile?.goal ?? "Coming Soon"}</p>
               </div>
               <div className="liquid-card rounded-2xl p-4">
                 <p className="caption text-slate-400">Experience</p>
-                <p className="mt-2 body font-semibold text-white">{profile?.experience_level ?? "Coming Soon"}</p>
+                <p className="mt-2 body text-white">{profile?.experience_level ?? "Coming Soon"}</p>
               </div>
               <div className="liquid-card rounded-2xl p-4">
                 <p className="caption text-slate-400">Readiness score</p>
-                <p className="mt-2 text-section font-sinistre font-black text-cyan-300">{profile?.readiness_score ? profile.readiness_score : "Coming Soon"}</p>
+                <p className="mt-2 text-section font-medium text-cyan-300">{profile?.readiness_score ? profile.readiness_score : "Coming Soon"}</p>
               </div>
             </div>
           </div>
@@ -80,7 +77,7 @@ export default async function CareerTwinPage() {
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <p className="caption text-slate-400">{item.label}</p>
-                      <h3 className="mt-2 text-dashboard font-sinistre font-black text-cyan-300">{item.value}%</h3>
+                      <h3 className="mt-2 text-dashboard font-medium text-cyan-300">{item.value}%</h3>
                     </div>
                     <span className="small text-slate-500">{item.date}</span>
                   </div>
