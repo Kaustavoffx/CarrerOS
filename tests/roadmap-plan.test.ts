@@ -198,3 +198,70 @@ test("PDF Redesign Layout Engine Verification across core roles", async () => {
     assert.ok(pdfBlob.size > 1000, `PDF size should be substantial for ${role}`);
   }
 });
+
+test("semantic domain validator correctly validates role-specific subtopics", () => {
+  const sdeGoal = "Software Development Engineer I";
+  const dsGoal = "Data Science";
+
+  // Software Engineering PASS cases
+  const sdePasses = [
+    "Programming Fundamentals",
+    "Git & GitHub",
+    "DSA",
+    "Full Stack Projects",
+    "System Design Basics"
+  ];
+  for (const title of sdePasses) {
+    const result = validateRoadmapDomainConsistency(
+      { title, career_domain: "Software Engineering", milestones: [], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any,
+      sdeGoal,
+      { throwOnError: false }
+    );
+    assert.ok(result.valid, `SDE validation should PASS for title: ${title}`);
+  }
+
+  // Software Engineering FAIL cases
+  const sdeFails = [
+    "Clinical Diagnosis",
+    "Patient Care"
+  ];
+  for (const title of sdeFails) {
+    const result = validateRoadmapDomainConsistency(
+      { title, career_domain: "Software Engineering", milestones: [], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any,
+      sdeGoal,
+      { throwOnError: false }
+    );
+    assert.ok(!result.valid, `SDE validation should FAIL for title: ${title}`);
+    assert.ok(result.warnings[0].includes("Roadmap domain mismatch"), "Warning should specify domain mismatch");
+  }
+
+  // Data Science PASS cases
+  const dsPasses = [
+    "Python for Data Analysis",
+    "Statistics",
+    "Machine Learning"
+  ];
+  for (const title of dsPasses) {
+    const result = validateRoadmapDomainConsistency(
+      { title, career_domain: "Data and Analytics", milestones: [], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any,
+      dsGoal,
+      { throwOnError: false }
+    );
+    assert.ok(result.valid, `Data Science validation should PASS for title: ${title}`);
+  }
+
+  // Data Science FAIL cases
+  const dsFails = [
+    "UI Wireframing",
+    "Nursing Procedures"
+  ];
+  for (const title of dsFails) {
+    const result = validateRoadmapDomainConsistency(
+      { title, career_domain: "Data and Analytics", milestones: [], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any,
+      dsGoal,
+      { throwOnError: false }
+    );
+    assert.ok(!result.valid, `Data Science validation should FAIL for title: ${title}`);
+    assert.ok(result.warnings[0].includes("Roadmap domain mismatch"), "Warning should specify domain mismatch");
+  }
+});

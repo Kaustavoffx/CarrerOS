@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createStarterWorkspace } from "./workspace";
-import { auditRoadmapQuality, buildRoadmapPlan, resolveDomainProfile, validateRoadmapDomainConsistency } from "./roadmap-plan";
+import { auditRoadmapQuality, buildRoadmapPlan, resolveDomainProfile, validateRoadmapDomainConsistency, validateGeneratedRoadmap } from "./roadmap-plan";
 import { generateId } from "./id";
 import type { AppData, ChatThread, ExperienceLevel, NoteRecord, ProgressRecord, RoadmapAuditReport, RoadmapAuditSourceReport, RoadmapDifficulty, RoadmapMilestoneRecord, RoadmapRecord, RoadmapResourceLink, RoadmapStatus, RoadmapVersionRecord, UserProfileRecord, WorkspaceSnapshotRecord } from "./supabase/types";
 
@@ -380,7 +380,13 @@ async function persistRoadmaps(client: SupabaseClient, userId: string, roadmaps:
   const careerGoal = await resolveCareerGoal(client, authUserId, safeRoadmaps[0]?.career_domain ?? "Career roadmap");
   const domainProfile = resolveDomainProfile(careerGoal);
 
-  safeRoadmaps.forEach((roadmap) => validateRoadmapDomainConsistency(roadmap, domainProfile));
+  safeRoadmaps.forEach((roadmap) => {
+    validateRoadmapDomainConsistency(roadmap, domainProfile);
+    const genCheck = validateGeneratedRoadmap(roadmap, careerGoal);
+    if (!genCheck.valid) {
+      console.warn("Generated Roadmap Semantic Warnings:", genCheck.warnings);
+    }
+  });
 
   const audit = auditRoadmapQuality(safeRoadmaps, domainProfile);
   console.log("ROADMAP QUALITY AUDIT", { userId: authUserId, careerGoal, qualityScore: audit.qualityScore, reasons: audit.reasons });
@@ -409,7 +415,13 @@ async function persistRoadmapVersion(client: SupabaseClient, userId: string, roa
     return;
   }
   const domainProfile = resolveDomainProfile(careerGoal);
-  safeRoadmaps.forEach((roadmap) => validateRoadmapDomainConsistency(roadmap, domainProfile));
+  safeRoadmaps.forEach((roadmap) => {
+    validateRoadmapDomainConsistency(roadmap, domainProfile);
+    const genCheck = validateGeneratedRoadmap(roadmap, careerGoal);
+    if (!genCheck.valid) {
+      console.warn("Generated Roadmap Version Semantic Warnings:", genCheck.warnings);
+    }
+  });
 
   const audit = auditRoadmapQuality(safeRoadmaps, domainProfile);
   console.log("ROADMAP VERSION QUALITY AUDIT", { userId: authUserId, careerGoal, qualityScore: audit.qualityScore, reasons: audit.reasons });

@@ -518,20 +518,379 @@ export function resolveDomainProfile(goal: string) {
   return pickDomain(goal);
 }
 
+interface DomainKnowledgeMap {
+  allowedTopics: string[];
+  allowedSkills: string[];
+  allowedSprintThemes: string[];
+  allowedProjectCategories: string[];
+}
+
+export const DOMAIN_KNOWLEDGE_MAPS: Record<string, DomainKnowledgeMap> = {
+  "Software Engineering": {
+    allowedTopics: [
+      "programming", "problem solving", "dsa", "algorithms", "data structures", "git", "github", 
+      "version control", "software design", "system design", "apis", "backend", "frontend", 
+      "web development", "databases", "cloud", "testing", "ci/cd", "devops basics", "projects", 
+      "portfolio", "interview preparation", "javascript", "python", "typescript", "react", "html", "css",
+      "node", "sql", "coding", "software engineering fundamentals", "full stack"
+    ],
+    allowedSkills: [
+      "coding", "debugging", "architecture", "database design", "api design", "testing", 
+      "version control", "refactoring", "problem solving", "data structures", "algorithms"
+    ],
+    allowedSprintThemes: [
+      "core foundations", "sprint 01", "sprint 02", "sprint 03", "portfolio", "interview",
+      "fundamentals", "setup", "frontend", "backend", "full stack", "advanced systems"
+    ],
+    allowedProjectCategories: [
+      "web app", "calculator", "todo app", "weather app", "blog platform", "expense tracker", 
+      "chat application", "project management tool", "saas", "full stack"
+    ]
+  },
+  "Data Science": {
+    allowedTopics: [
+      "python", "data analysis", "statistics", "machine learning", "pandas", "numpy", "jupyter", 
+      "scikit-learn", "data visualization", "sql", "r", "data cleaning", "feature engineering", 
+      "model evaluation", "data pipelines", "notebook", "math", "linear algebra", "probability",
+      "analytics", "big data", "tableau", "power bi"
+    ],
+    allowedSkills: [
+      "data cleaning", "model building", "statistical testing", "predictive modeling", "data storytelling",
+      "sql querying", "exploratory data analysis", "eda"
+    ],
+    allowedSprintThemes: [
+      "statistics", "data prep", "modeling", "analytics", "data pipelines", "evaluation", "storytelling"
+    ],
+    allowedProjectCategories: [
+      "predictive model", "analysis notebook", "visualization board", "forecasting workbook", "eda report"
+    ]
+  },
+  "Product Management": {
+    allowedTopics: [
+      "product management", "roadmap", "discovery", "prioritization", "metrics", "prds", "experimentation", 
+      "agile", "scrum", "user research", "stakeholder management", "strategy", "competitor analysis", 
+      "launch plan", "analytics", "market research", "customer interviews", "okrs"
+    ],
+    allowedSkills: [
+      "prioritization", "roadmap creation", "storytelling", "casing", "metrics definition", 
+      "writing specs", "user empathy", "agile orchestration"
+    ],
+    allowedSprintThemes: [
+      "strategy", "discovery", "prioritization", "metrics", "experimentation", "launch", "delivery"
+    ],
+    allowedProjectCategories: [
+      "product brief", "prd", "feature roadmap", "experiment plan", "launch tracker", "case study"
+    ]
+  },
+  "UI/UX Design": {
+    allowedTopics: [
+      "design principles", "user research", "wireframing", "figma", "prototyping", "design systems", 
+      "accessibility", "typography", "layout systems", "information architecture", "user journeys", 
+      "personas", "usability testing", "wcag", "interface design", "user experience", "visual design",
+      "interaction design", "color theory", "micro-interactions"
+    ],
+    allowedSkills: [
+      "wireframing", "prototyping", "visual hierarchy", "user interviewing", "usability testing", 
+      "component design", "information architecture", "figma craft"
+    ],
+    allowedSprintThemes: [
+      "visuals", "research", "wireframes", "prototypes", "systems", "portfolio", "figma layouts"
+    ],
+    allowedProjectCategories: [
+      "figma case study", "research notes", "component library", "app redesign", "design system", "prototype flow"
+    ]
+  },
+  "Cybersecurity": {
+    allowedTopics: [
+      "threat modeling", "identity", "access management", "logging", "monitoring", "hardening", 
+      "incident response", "security", "cyber", "infosec", "soc", "grc", 
+      "pentest", "vulnerability", "networking", "siem", "least-privilege", "compliance", "nist",
+      "firewall", "encryption", "cryptography"
+    ],
+    allowedSkills: [
+      "threat analysis", "iam configuration", "siem rules writing", "system hardening", 
+      "incident handling", "network audit", "vulnerability patching"
+    ],
+    allowedSprintThemes: [
+      "threats", "identity", "logging", "hardening", "response", "defense", "auditing"
+    ],
+    allowedProjectCategories: [
+      "vulnerability audit", "secure login flow", "threat detection lab", "policy checklist", 
+      "iam controls matrix", "incident response playbook"
+    ]
+  },
+  "Cloud Engineering": {
+    allowedTopics: [
+      "cloud", "aws", "azure", "gcp", "infrastructure", "kubernetes", "docker", "containers", 
+      "terraform", "iac", "serverless", "cloud architecture", "virtualization", "networking", 
+      "load balancing", "vpc", "iam", "cloud security", "monitoring", "scaling"
+    ],
+    allowedSkills: [
+      "cloud provisioning", "infrastructure deployment", "container orchestration", 
+      "architecture designing", "cost optimization"
+    ],
+    allowedSprintThemes: [
+      "infrastructure", "containers", "orchestration", "deployment", "scaling", "iac"
+    ],
+    allowedProjectCategories: [
+      "cloud architecture diagram", "iac deployment script", "highly available cluster", "migration plan"
+    ]
+  },
+  "DevOps": {
+    allowedTopics: [
+      "devops", "ci/cd", "pipelines", "jenkins", "github actions", "gitlab", "docker", "kubernetes", 
+      "ansible", "terraform", "monitoring", "prometheus", "grafana", "linux", "bash", "shell scripting", 
+      "configuration management", "site reliability", "sre", "gitops"
+    ],
+    allowedSkills: [
+      "pipeline building", "automation scripting", "monitoring setup", "configuration automation", 
+      "incident remediation"
+    ],
+    allowedSprintThemes: [
+      "ci/cd", "automation", "infrastructure", "monitoring", "reliability", "pipelines"
+    ],
+    allowedProjectCategories: [
+      "ci/cd pipeline", "monitoring dashboard", "infrastructure playbook", "kubernetes deployment"
+    ]
+  },
+  "AI/ML": {
+    allowedTopics: [
+      "ai", "ml", "machine learning", "artificial intelligence", "deep learning", "neural networks", 
+      "llms", "large language models", "nlp", "natural language processing", "computer vision", 
+      "rag", "prompt engineering", "model training", "fine-tuning", "vector databases", 
+      "tensorflow", "pytorch", "transformers", "reinforcement learning"
+    ],
+    allowedSkills: [
+      "model training", "fine-tuning", "prompt tuning", "rag orchestration", 
+      "deep learning modeling", "neural network designing"
+    ],
+    allowedSprintThemes: [
+      "modeling", "deep learning", "nlp", "llms", "applied ai", "evaluation", "vector db"
+    ],
+    allowedProjectCategories: [
+      "document assistant", "model card", "evaluation report", "rag chatbot", "fine-tuned model"
+    ]
+  },
+  "Business Analysis": {
+    allowedTopics: [
+      "business analysis", "requirements gathering", "process mapping", "stakeholder communication", 
+      "use cases", "user stories", "gap analysis", "functional specs", "sql", "excel", "data analysis", 
+      "business intelligence", "agile", "scrum", "jira", "metrics", "kpis"
+    ],
+    allowedSkills: [
+      "requirements elicitation", "process mapping", "gap analysis", "user story writing", 
+      "data analysis", "visual reports creation"
+    ],
+    allowedSprintThemes: [
+      "elicitation", "process mapping", "gap analysis", "requirements specification", "testing", "agile"
+    ],
+    allowedProjectCategories: [
+      "requirements document", "process map diagram", "gap analysis workbook", "business report"
+    ]
+  },
+  "Digital Marketing": {
+    allowedTopics: [
+      "marketing", "growth", "seo", "search engine optimization", "sem", "content marketing", "brand", 
+      "campaigns", "email marketing", "copywriting", "analytics", "google analytics", "hubspot", 
+      "acquisition funnels", "social media", "a/b testing", "conversion rates", "ppc", "advertising"
+    ],
+    allowedSkills: [
+      "seo copywriting", "campaign setup", "funnel design", "metrics analysis", 
+      "a/b test setup", "ads optimization"
+    ],
+    allowedSprintThemes: [
+      "seo content", "campaigns planning", "copywriting assets", "funnels analysis", "a/b testing"
+    ],
+    allowedProjectCategories: [
+      "campaign plan", "seo content system", "email funnel", "landing page test", "growth dashboard"
+    ]
+  }
+};
+
+export function getDomainKnowledgeMapKey(goal: string, domainLabel: string): string {
+  const normalizedGoal = goal.toLowerCase();
+  const normalizedDomain = domainLabel.toLowerCase();
+
+  if (
+    normalizedGoal.includes("data scientist") || 
+    normalizedGoal.includes("data science") || 
+    (normalizedDomain.includes("data") && normalizedGoal.includes("science"))
+  ) {
+    return "Data Science";
+  }
+
+  if (
+    normalizedDomain.includes("software") || 
+    normalizedDomain.includes("developer") || 
+    normalizedDomain.includes("engineering") ||
+    ["sde", "swe", "programming", "frontend", "backend", "full stack", "fullstack", "web"].some(term => normalizedGoal.includes(term))
+  ) {
+    return "Software Engineering";
+  }
+
+  if (
+    normalizedDomain.includes("devops") || 
+    normalizedGoal.includes("devops") || 
+    normalizedGoal.includes("site reliability") || 
+    normalizedGoal.includes("sre")
+  ) {
+    return "DevOps";
+  }
+
+  if (
+    normalizedDomain.includes("cloud") || 
+    normalizedGoal.includes("cloud") || 
+    normalizedGoal.includes("aws") || 
+    normalizedGoal.includes("azure") || 
+    normalizedGoal.includes("gcp")
+  ) {
+    return "Cloud Engineering";
+  }
+
+  if (
+    normalizedDomain.includes("ai") || 
+    normalizedDomain.includes("machine learning") || 
+    ["ai", "ml", "machine learning", "nlp", "llm", "rag", "neural", "deep learning"].some(term => normalizedGoal.includes(term))
+  ) {
+    return "AI/ML";
+  }
+
+  if (
+    normalizedDomain.includes("design") || 
+    normalizedDomain.includes("ux") || 
+    normalizedDomain.includes("ui") ||
+    ["design", "ux", "ui", "interaction", "experience"].some(term => normalizedGoal.includes(term))
+  ) {
+    return "UI/UX Design";
+  }
+
+  if (
+    normalizedDomain.includes("product") || 
+    ["product", "pm", "roadmap", "discovery"].some(term => normalizedGoal.includes(term))
+  ) {
+    return "Product Management";
+  }
+
+  if (
+    normalizedDomain.includes("security") || 
+    normalizedDomain.includes("cyber") || 
+    ["security", "cyber", "infosec", "pentest", "soc"].some(term => normalizedGoal.includes(term))
+  ) {
+    return "Cybersecurity";
+  }
+
+  if (
+    normalizedGoal.includes("business analyst") || 
+    normalizedGoal.includes("business analysis") || 
+    normalizedGoal.includes("requirements")
+  ) {
+    return "Business Analysis";
+  }
+
+  if (
+    normalizedDomain.includes("marketing") || 
+    normalizedDomain.includes("growth") ||
+    ["marketing", "growth", "seo", "campaign"].some(term => normalizedGoal.includes(term))
+  ) {
+    return "Digital Marketing";
+  }
+
+  if (normalizedDomain.includes("data") || normalizedDomain.includes("analytics")) {
+    return "Business Analysis";
+  }
+
+  return "Software Engineering";
+}
+
+export function isTextAlignedWithDomain(text: string, domainKey: string): boolean {
+  const normalizedText = text.toLowerCase();
+  const map = DOMAIN_KNOWLEDGE_MAPS[domainKey];
+  if (!map) return true;
+
+  // Domain key containment (e.g. "Software Engineering" matches "software engineering")
+  if (normalizedText.includes(domainKey.toLowerCase())) return true;
+  
+  // Specific cross-domain boundary leniency to prevent false-positives
+  if (domainKey === "Software Engineering" && (normalizedText.includes("software") || normalizedText.includes("developer") || normalizedText.includes("engineering") || normalizedText.includes("sde") || normalizedText.includes("swe") || normalizedText.includes("coding"))) return true;
+  if (domainKey === "Data Science" && (normalizedText.includes("data") || normalizedText.includes("analytics") || normalizedText.includes("science") || normalizedText.includes("analysis") || normalizedText.includes("statistics"))) return true;
+  if (domainKey === "AI/ML" && (normalizedText.includes("ai") || normalizedText.includes("ml") || normalizedText.includes("machine learning") || normalizedText.includes("intelligence") || normalizedText.includes("data"))) return true;
+  if (domainKey === "Business Analysis" && (normalizedText.includes("business") || normalizedText.includes("analyst") || normalizedText.includes("analysis") || normalizedText.includes("data") || normalizedText.includes("analytics") || normalizedText.includes("bi") || normalizedText.includes("requirements"))) return true;
+  if (domainKey === "UI/UX Design" && (normalizedText.includes("design") || normalizedText.includes("ux") || normalizedText.includes("ui") || normalizedText.includes("interaction") || normalizedText.includes("experience"))) return true;
+  if (domainKey === "Product Management" && (normalizedText.includes("product") || normalizedText.includes("pm") || normalizedText.includes("roadmap") || normalizedText.includes("feature"))) return true;
+  if (domainKey === "Cybersecurity" && (normalizedText.includes("security") || normalizedText.includes("cyber") || normalizedText.includes("infosec") || normalizedText.includes("protect"))) return true;
+  if (domainKey === "Cloud Engineering" && (normalizedText.includes("cloud") || normalizedText.includes("aws") || normalizedText.includes("azure") || normalizedText.includes("gcp") || normalizedText.includes("infrastructure"))) return true;
+  if (domainKey === "DevOps" && (normalizedText.includes("devops") || normalizedText.includes("ci/cd") || normalizedText.includes("pipeline") || normalizedText.includes("automation") || normalizedText.includes("sre"))) return true;
+  if (domainKey === "Digital Marketing" && (normalizedText.includes("marketing") || normalizedText.includes("growth") || normalizedText.includes("seo") || normalizedText.includes("social") || normalizedText.includes("brand"))) return true;
+
+  const checkMatch = (item: string) => {
+    if (item.length <= 2) {
+      const escaped = item.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(`(^|\\W)${escaped}(\\W|$)`, "i");
+      return regex.test(normalizedText);
+    }
+    return normalizedText.includes(item);
+  };
+
+  const matchTopic = map.allowedTopics.some(checkMatch);
+  if (matchTopic) return true;
+
+  const matchSkill = map.allowedSkills.some(checkMatch);
+  if (matchSkill) return true;
+
+  const matchTheme = map.allowedSprintThemes.some(checkMatch);
+  if (matchTheme) return true;
+
+  const matchCategory = map.allowedProjectCategories.some(checkMatch);
+  if (matchCategory) return true;
+
+  return false;
+}
+
 export function validateRoadmapDomainConsistency(
   roadmap: RoadmapRecord,
   goalOrProfile: string | DomainProfile,
   options: { throwOnError?: boolean } = { throwOnError: true }
 ): { valid: boolean; warnings: string[] } {
   const profile = typeof goalOrProfile === "string" ? pickDomain(goalOrProfile) : goalOrProfile;
+  const goalStr = typeof goalOrProfile === "string" ? goalOrProfile : profile.label;
   const roadmapDomain = normalizeText(roadmap.career_domain || "");
   const expectedDomain = normalizeText(profile.label);
   const aliasAllowed = profile.aliases.some((alias) => normalizeText(alias) === roadmapDomain);
 
   const warnings: string[] = [];
 
-  if (roadmapDomain !== expectedDomain && !aliasAllowed) {
-    const errMsg = "Roadmap domain mismatch";
+  const domainKey = getDomainKnowledgeMapKey(goalStr, profile.label);
+  const isDomainOk = 
+    roadmapDomain === expectedDomain ||
+    aliasAllowed ||
+    isTextAlignedWithDomain(roadmapDomain, domainKey) ||
+    isTextAlignedWithDomain(roadmap.title || "", domainKey);
+
+  if (!isDomainOk) {
+    const errorDetails = {
+      roadmapTitle: roadmap.title,
+      careerDomain: profile.label,
+      mismatchReason: `Critical domain mismatch: '${roadmapDomain || roadmap.title}' does not align with allowed topics for ${profile.label}`,
+      severity: "critical"
+    };
+    const errMsg = `Roadmap domain mismatch: ${JSON.stringify(errorDetails)}`;
+    if (options.throwOnError) {
+      throw new Error(errMsg);
+    } else {
+      warnings.push(errMsg);
+    }
+  }
+
+  // Check if title is semantically aligned with the domain
+  const isTitleOk = isTextAlignedWithDomain(roadmap.title || "", domainKey);
+  if (!isTitleOk) {
+    const errorDetails = {
+      roadmapTitle: roadmap.title,
+      careerDomain: profile.label,
+      mismatchReason: `Semantic Mismatch: Roadmap title '${roadmap.title}' does not align with allowed topics for ${profile.label}`,
+      severity: "warning"
+    };
+    const errMsg = `Roadmap domain mismatch: ${JSON.stringify(errorDetails)}`;
     if (options.throwOnError) {
       throw new Error(errMsg);
     } else {
@@ -543,7 +902,13 @@ export function validateRoadmapDomainConsistency(
   
   if (textContainsAny(textBlob, ["programming fundamentals"])) {
     if (["operations and strategy", "marketing and growth", "design and ux", "research and academia"].includes(expectedDomain)) {
-      const errMsg = `Semantic Mismatch: 'Programming Fundamentals' cannot map to ${profile.label}`;
+      const errorDetails = {
+        roadmapTitle: roadmap.title,
+        careerDomain: profile.label,
+        mismatchReason: `Semantic Mismatch: 'Programming Fundamentals' cannot map to ${profile.label}`,
+        severity: "warning"
+      };
+      const errMsg = `Roadmap domain mismatch: ${JSON.stringify(errorDetails)}`;
       if (options.throwOnError) {
         throw new Error(errMsg);
       } else {
@@ -554,7 +919,13 @@ export function validateRoadmapDomainConsistency(
 
   if (textContainsAny(textBlob, ["git & github", "git and github"])) {
     if (["research and academia", "design and ux", "marketing and growth"].includes(expectedDomain)) {
-      const errMsg = `Semantic Mismatch: 'Git & GitHub' cannot map to ${profile.label}`;
+      const errorDetails = {
+        roadmapTitle: roadmap.title,
+        careerDomain: profile.label,
+        mismatchReason: `Semantic Mismatch: 'Git & GitHub' cannot map to ${profile.label}`,
+        severity: "warning"
+      };
+      const errMsg = `Roadmap domain mismatch: ${JSON.stringify(errorDetails)}`;
       if (options.throwOnError) {
         throw new Error(errMsg);
       } else {
@@ -565,7 +936,13 @@ export function validateRoadmapDomainConsistency(
 
   if (textContainsAny(textBlob, ["ui design"])) {
     if (textContainsAny(textBlob, ["backend development", "backend systems", "database", "sql"])) {
-      const errMsg = `Semantic Mismatch: 'UI Design' cannot map to Backend Engineering`;
+      const errorDetails = {
+        roadmapTitle: roadmap.title,
+        careerDomain: profile.label,
+        mismatchReason: `Semantic Mismatch: 'UI Design' cannot map to Backend Engineering`,
+        severity: "warning"
+      };
+      const errMsg = `Roadmap domain mismatch: ${JSON.stringify(errorDetails)}`;
       if (options.throwOnError) {
         throw new Error(errMsg);
       } else {
@@ -576,13 +953,91 @@ export function validateRoadmapDomainConsistency(
 
   if (textContainsAny(textBlob, ["sql analytics"])) {
     if (["design and ux"].includes(expectedDomain)) {
-      const errMsg = `Semantic Mismatch: 'SQL Analytics' cannot map to ${profile.label}`;
+      const errorDetails = {
+        roadmapTitle: roadmap.title,
+        careerDomain: profile.label,
+        mismatchReason: `Semantic Mismatch: 'SQL Analytics' cannot map to ${profile.label}`,
+        severity: "warning"
+      };
+      const errMsg = `Roadmap domain mismatch: ${JSON.stringify(errorDetails)}`;
       if (options.throwOnError) {
         throw new Error(errMsg);
       } else {
         warnings.push(errMsg);
       }
     }
+  }
+
+  return {
+    valid: warnings.length === 0,
+    warnings
+  };
+}
+
+export function validateGeneratedRoadmap(
+  roadmap: RoadmapRecord,
+  goal: string,
+  options: { throwOnError?: boolean } = { throwOnError: false }
+): { valid: boolean; warnings: string[] } {
+  const profile = pickDomain(goal);
+  const domainKey = getDomainKnowledgeMapKey(goal, profile.label);
+  const warnings: string[] = [];
+
+  const addWarning = (mismatchReason: string) => {
+    const errorDetails = {
+      roadmapTitle: roadmap.title,
+      careerDomain: profile.label,
+      mismatchReason,
+      severity: "warning"
+    };
+    const errMsg = `Roadmap domain mismatch: ${JSON.stringify(errorDetails)}`;
+    warnings.push(errMsg);
+  };
+
+  const roadmapDomain = roadmap.career_domain || "";
+  const roadmapTitle = roadmap.title || "";
+  const isDomainOk = 
+    normalizeText(roadmapDomain) === normalizeText(profile.label) ||
+    profile.aliases.some(alias => normalizeText(alias) === roadmapDomain) ||
+    isTextAlignedWithDomain(roadmapDomain, domainKey) ||
+    isTextAlignedWithDomain(roadmapTitle, domainKey);
+
+  if (!isDomainOk) {
+    addWarning(`Roadmap title/domain '${roadmapDomain || roadmapTitle}' does not align with allowed skills for ${profile.label}`);
+  }
+
+  const milestones = toArray<RoadmapMilestoneRecord>(roadmap.milestones);
+  milestones.forEach((milestone, idx) => {
+    if (!isTextAlignedWithDomain(milestone.title, domainKey)) {
+      addWarning(`Milestone ${idx + 1} title '${milestone.title}' does not align with allowed skills for ${profile.label}`);
+    }
+  });
+
+  milestones.forEach((milestone, idx) => {
+    const outcomes = toArray<string>(milestone.expected_outcomes);
+    outcomes.forEach((outcome) => {
+      if (!isTextAlignedWithDomain(outcome, domainKey)) {
+        addWarning(`Milestone ${idx + 1} expected outcome '${outcome}' does not align with allowed skills for ${profile.label}`);
+      }
+    });
+  });
+
+  const learningOutcomes = toArray<string>(roadmap.learning_outcomes);
+  learningOutcomes.forEach((outcome) => {
+    if (!isTextAlignedWithDomain(outcome, domainKey)) {
+      addWarning(`Learning outcome '${outcome}' does not align with allowed skills for ${profile.label}`);
+    }
+  });
+
+  const projectTasks = toArray<string>(roadmap.project_tasks);
+  projectTasks.forEach((task) => {
+    if (!isTextAlignedWithDomain(task, domainKey)) {
+      addWarning(`Project task '${task}' does not align with allowed skills for ${profile.label}`);
+    }
+  });
+
+  if (warnings.length > 0 && options.throwOnError) {
+    throw new Error(warnings[0]);
   }
 
   return {
