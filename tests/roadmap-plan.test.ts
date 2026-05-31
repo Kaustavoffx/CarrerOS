@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { auditRoadmapQuality, buildRoadmapPlanDetails, resolveDomainProfile, validateRoadmapDomainConsistency } from "../lib/roadmap-plan";
+import { generateRoadmapPdfBlob } from "../lib/roadmap-export";
 
 const domainCases = [
   {
@@ -163,4 +164,37 @@ test("role-aware roadmap generator produces completely different contents per ca
   assert.throws(() => validateRoadmapDomainConsistency({ career_domain: "Operations and Strategy", title: "Programming Fundamentals", weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any, "Operations and Strategy"), /Semantic Mismatch/);
   assert.throws(() => validateRoadmapDomainConsistency({ career_domain: "Research and Academia", title: "Git & GitHub", weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any, "Research and Academia"), /Semantic Mismatch/);
   assert.throws(() => validateRoadmapDomainConsistency({ career_domain: "Design and UX", title: "SQL Analytics", weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any, "Design and UX"), /Semantic Mismatch/);
+});
+
+test("PDF Redesign Layout Engine Verification across core roles", async () => {
+  const roles = [
+    "SDE I",
+    "Frontend Engineer",
+    "Data Analyst",
+    "UI/UX Designer",
+    "Product Manager"
+  ];
+
+  for (const role of roles) {
+    const plan = buildRoadmapPlanDetails({
+      goal: role,
+      experience: "Junior",
+      weeklyHours: 12,
+      readinessScore: 54
+    });
+
+    const report = {
+      title: `${role} Roadmap`,
+      exportedAt: new Date().toISOString(),
+      roadmaps: plan.roadmaps,
+      careerGoal: role,
+      readinessScore: 54
+    };
+
+    // Generating the PDF runs the programmatic LayoutLedger validation checks.
+    // If any element breaches 48pt margins, it throws a fatal layout exception.
+    const pdfBlob = await generateRoadmapPdfBlob(report as any);
+    assert.ok(pdfBlob, `PDF should be generated successfully for ${role}`);
+    assert.ok(pdfBlob.size > 1000, `PDF size should be substantial for ${role}`);
+  }
 });

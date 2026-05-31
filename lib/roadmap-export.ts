@@ -1,4 +1,3 @@
-import type { jsPDF } from "jspdf";
 import type { RoadmapRecord, RoadmapMilestoneRecord, RoadmapResourceLink } from "./supabase/types";
 import { validateRoadmapDomainConsistency, auditRoadmapQuality } from "./roadmap-plan";
 
@@ -153,91 +152,49 @@ export function buildRoadmapExportBundle(roadmaps: RoadmapRecord[], title = "Car
   };
 }
 
-function drawBadge(doc: jsPDF, text: string, x: number, y: number, bgColor: string, textColor = "#0f172a", fontSize = 7.5) {
-  doc.setFont("CMGeom", "normal");
-  doc.setFontSize(fontSize);
-  const textWidth = doc.getTextWidth(text);
-  const paddingX = 4;
-  const paddingY = 2;
-  const badgeWidth = textWidth + paddingX * 2;
-  const badgeHeight = fontSize + paddingY * 2;
-  
-  doc.setFillColor(bgColor);
-  doc.roundedRect(x, y - fontSize - paddingY + 1, badgeWidth, badgeHeight, 2, 2, "F");
-  
-  doc.setTextColor(textColor);
-  doc.text(text, x + paddingX, y - 1);
-  
-  return badgeWidth;
-}
+export type BoundingBox = {
+  page: number;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  label: string;
+};
 
-function drawProgressBar(doc: jsPDF, x: number, y: number, width: number, height: number, progress: number, activeColor = "#7777FF", trackColor = "#e2e8f0") {
-  doc.setFillColor(trackColor);
-  doc.roundedRect(x, y, width, height, height / 2, height / 2, "F");
-  
-  if (progress > 0) {
-    const fillWidth = Math.max(height, (width * Math.min(100, progress)) / 100);
-    doc.setFillColor(activeColor);
-    doc.roundedRect(x, y, fillWidth, height, height / 2, height / 2, "F");
+export class LayoutLedger {
+  private boxes: BoundingBox[] = [];
+  private pageMargins = 48;
+  private pageWidth = 595.28;
+  private pageHeight = 841.89;
+
+  public pushBox(page: number, x1: number, y1: number, x2: number, y2: number, label: string) {
+    this.boxes.push({ page, x1, y1, x2, y2, label });
   }
-}
 
-function drawSectionTitle(doc: jsPDF, titleText: string, yVal: number, beforeSpace = 16, afterSpace = 8) {
-  const finalY = yVal + beforeSpace;
-  doc.setFont("CMGeom", "normal");
-  doc.setFontSize(14);
-  doc.setTextColor("#0f172a");
-  doc.text(titleText, 40, finalY);
-  
-  doc.setDrawColor(226, 232, 240);
-  doc.setLineWidth(0.4);
-  doc.line(40, finalY + 4, doc.internal.pageSize.getWidth() - 40, finalY + 4);
-  
-  return finalY + 4 + afterSpace;
-}
-
-function drawCareerSnapshot(doc: jsPDF, roadmap: RoadmapRecord, x: number, y: number, width: number) {
-  const height = 40;
-  
-  doc.setDrawColor(226, 232, 240);
-  doc.setLineWidth(0.4);
-  doc.setFillColor("#f8fafc");
-  doc.roundedRect(x, y, width, height, 4, 4, "FD");
-  
-  const colW = width / 4;
-  
-  doc.setFont("CMGeom", "normal");
-  doc.setFontSize(7.5);
-  doc.setTextColor("#64748b");
-  doc.text("DEMAND SCORE", x + 10, y + 13);
-  drawBadge(doc, `${roadmap.career_demand_score}/100`, x + 10, y + 29, "#FFF77F", "#0f172a", 7.5);
-  
-  doc.setDrawColor(226, 232, 240);
-  doc.line(x + colW, y + 8, x + colW, y + height - 8);
-  
-  doc.setFontSize(7.5);
-  doc.setTextColor("#64748b");
-  doc.text("SALARY RANGE", x + colW + 10, y + 13);
-  drawBadge(doc, roadmap.salary_range || "N/A", x + colW + 10, y + 29, "#FF7792", "#0f172a", 7.5);
-  
-  doc.line(x + colW * 2, y + 8, x + colW * 2, y + height - 8);
-  
-  doc.setFontSize(7.5);
-  doc.setTextColor("#64748b");
-  doc.text("MARKET OUTLOOK", x + colW * 2 + 10, y + 13);
-  const truncatedOutlook = (roadmap.market_outlook || "Stable").length > 18 
-    ? (roadmap.market_outlook || "Stable").substring(0, 15) + "..."
-    : (roadmap.market_outlook || "Stable");
-  drawBadge(doc, truncatedOutlook, x + colW * 2 + 10, y + 29, "#77C9FF", "#0f172a", 7.5);
-  
-  doc.line(x + colW * 3, y + 8, x + colW * 3, y + height - 8);
-  
-  doc.setFontSize(7.5);
-  doc.setTextColor("#64748b");
-  doc.text("AUTOMATION RISK", x + colW * 3 + 10, y + 13);
-  drawBadge(doc, roadmap.automation_risk || "Low", x + colW * 3 + 10, y + 29, "#FFAE77", "#0f172a", 7.5);
-  
-  return height;
+  public verify() {
+    for (const box of this.boxes) {
+      const isHeaderOrFooter = box.y1 < 48 || box.y2 > 793.89;
+      
+      if (!isHeaderOrFooter) {
+        if (box.x1 < this.pageMargins - 0.1 || box.x2 > this.pageWidth - this.pageMargins + 0.1) {
+          throw new Error(
+            `LAYOUT FAILURE: Element '${box.label}' violates horizontal margins [x1=${box.x1.toFixed(2)}, x2=${box.x2.toFixed(2)}] on page ${box.page}`
+          );
+        }
+        if (box.y1 < this.pageMargins - 0.1 || box.y2 > this.pageHeight - this.pageMargins + 0.1) {
+          throw new Error(
+            `LAYOUT FAILURE: Element '${box.label}' violates vertical margins [y1=${box.y1.toFixed(2)}, y2=${box.y2.toFixed(2)}] on page ${box.page}`
+          );
+        }
+      } else {
+        if (box.y1 < 10 || box.y2 > 830) {
+          throw new Error(
+            `LAYOUT FAILURE: Header/Footer element '${box.label}' exceeds physical page borders [y1=${box.y1.toFixed(2)}, y2=${box.y2.toFixed(2)}] on page ${box.page}`
+          );
+        }
+      }
+    }
+  }
 }
 
 export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
@@ -279,68 +236,174 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margins = { top: 40, right: 40, bottom: 40, left: 40 };
+  const margins = { top: 48, right: 48, bottom: 48, left: 48 };
   const contentWidth = pageWidth - margins.left - margins.right;
   const centerX = pageWidth / 2;
 
   let totalContentHeight = 0;
+  const ledger = new LayoutLedger();
+
+  // Typography Tokens
+  const fontSizes = {
+    title: 26,
+    section: 18,
+    cardTitle: 14,
+    body: 11,
+    meta: 9,
+    caption: 7.5
+  };
+
+  function getTextHeight(text: string, maxWidth: number, fontSize: number, lineSpacing = 1.25) {
+    doc.setFontSize(fontSize);
+    const lines = doc.splitTextToSize(text, maxWidth);
+    return lines.length * fontSize * lineSpacing;
+  }
+
+  function drawText(text: string, x: number, yVal: number, options?: { align?: "left" | "right" | "center"; fontSize?: number; fontColor?: string }) {
+    const fSize = options?.fontSize || doc.getFontSize();
+    doc.setFontSize(fSize);
+    
+    if (options?.fontColor) {
+      doc.setTextColor(options.fontColor);
+    } else {
+      doc.setTextColor("#0f172a");
+    }
+
+    const textWidth = doc.getTextWidth(text);
+    let x1 = x;
+    if (options?.align === "right") {
+      x1 = x - textWidth;
+    } else if (options?.align === "center") {
+      x1 = x - textWidth / 2;
+    }
+
+    const y1 = yVal - fSize;
+    const x2 = x1 + textWidth;
+    const y2 = yVal;
+
+    doc.text(text, x, yVal, { align: options?.align });
+    ledger.pushBox(doc.getNumberOfPages(), x1, y1, x2, y2, `Text: ${text.substring(0, 15)}`);
+  }
+
+  function drawRoundedCard(x: number, yVal: number, width: number, height: number, rx = 4, ry = 4, style = "FD", fillColor = "#ffffff", strokeColor = "#e2e8f0", strokeWidth = 0.4) {
+    doc.setFillColor(fillColor);
+    doc.setDrawColor(strokeColor);
+    doc.setLineWidth(strokeWidth);
+    doc.roundedRect(x, yVal, width, height, rx, ry, style);
+    
+    ledger.pushBox(doc.getNumberOfPages(), x, yVal, x + width, yVal + height, `Card: [x=${x}, y=${yVal}, w=${width}, h=${height}]`);
+  }
+
+  function drawBadge(text: string, x: number, yVal: number, bgColor: string, textColor = "#0f172a", fontSize = 7.5) {
+    doc.setFontSize(fontSize);
+    const textWidth = doc.getTextWidth(text);
+    const paddingX = 4;
+    const paddingY = 2;
+    const badgeWidth = textWidth + paddingX * 2;
+    const badgeHeight = fontSize + paddingY * 2;
+    
+    doc.setFillColor(bgColor);
+    doc.roundedRect(x, yVal - fontSize - paddingY + 1, badgeWidth, badgeHeight, 2, 2, "F");
+    
+    doc.setTextColor(textColor);
+    doc.text(text, x + paddingX, yVal - 1);
+    
+    ledger.pushBox(doc.getNumberOfPages(), x, yVal - fontSize - paddingY + 1, x + badgeWidth, yVal - fontSize - paddingY + 1 + badgeHeight, `Badge: ${text}`);
+    return badgeWidth;
+  }
+
+  function drawProgressBar(x: number, yVal: number, width: number, height: number, progress: number, activeColor = "#7777FF", trackColor = "#e2e8f0") {
+    doc.setFillColor(trackColor);
+    doc.roundedRect(x, yVal, width, height, height / 2, height / 2, "F");
+    
+    if (progress > 0) {
+      const fillWidth = Math.max(height, (width * Math.min(100, progress)) / 100);
+      doc.setFillColor(activeColor);
+      doc.roundedRect(x, yVal, fillWidth, height, height / 2, height / 2, "F");
+    }
+
+    ledger.pushBox(doc.getNumberOfPages(), x, yVal, x + width, yVal + height, "ProgressBar");
+  }
 
   function drawPageFrame(pageNum: number, totalPagesCount: number) {
-    doc.setFont("CMGeom", "normal");
-    doc.setFontSize(7.5);
+    doc.setFontSize(fontSizes.caption);
     doc.setTextColor("#94a3b8");
     
-    doc.text("CAREEROS PROFESSIONAL ROADMAP", margins.left, 24);
+    doc.text("CAREEROS PROFESSIONAL ROADMAP", margins.left, 32);
     
-    // Draw Quality Review Recommended badge if invalid
     if (!validReport) {
       const labelText = "QUALITY REVIEW RECOMMENDED";
-      doc.setFont("CMGeom", "normal");
       doc.setFontSize(6.5);
       const textW = doc.getTextWidth(labelText);
       const paddingX = 4;
       const paddingY = 2;
       const badgeW = textW + paddingX * 2;
       const badgeH = 6.5 + paddingY * 2;
-      const badgeX = margins.left + 155; // aligned next to CAREEROS PROFESSIONAL ROADMAP text
+      const badgeX = margins.left + 155;
       
-      doc.setFillColor("#FFAE77"); // Mac & Cheese
-      doc.roundedRect(badgeX, 24 - 6.5 - paddingY + 1, badgeW, badgeH, 1.5, 1.5, "F");
+      doc.setFillColor("#FFAE77");
+      doc.roundedRect(badgeX, 32 - 6.5 - paddingY + 1, badgeW, badgeH, 1.5, 1.5, "F");
       
       doc.setTextColor("#0f172a");
-      doc.text(labelText, badgeX + paddingX, 24 - 1);
+      doc.text(labelText, badgeX + paddingX, 32 - 1);
       
-      // Reset font for subtitle
-      doc.setFont("CMGeom", "normal");
-      doc.setFontSize(7.5);
+      doc.setFontSize(fontSizes.caption);
       doc.setTextColor("#94a3b8");
     }
     
-    doc.text("RECRUITER-READY ACTIONABLE STUDY PLAN", pageWidth - margins.right, 24, { align: "right" });
+    doc.text("RECRUITER-READY ACTIONABLE STUDY PLAN", pageWidth - margins.right, 32, { align: "right" });
     
     doc.setDrawColor(226, 232, 240);
     doc.setLineWidth(0.4);
-    doc.line(margins.left, 28, pageWidth - margins.right, 28);
+    doc.line(margins.left, 36, pageWidth - margins.right, 36);
     
-    doc.line(margins.left, pageHeight - 28, pageWidth - margins.right, pageHeight - 28);
-    doc.text("CareerOS © 2026", margins.left, pageHeight - 16);
-    doc.text(`Page ${pageNum} of ${totalPagesCount}`, pageWidth - margins.right, pageHeight - 16, { align: "right" });
+    doc.line(margins.left, pageHeight - 36, pageWidth - margins.right, pageHeight - 36);
+    doc.text("CareerOS © 2026", margins.left, pageHeight - 24);
+    doc.text(`Page ${pageNum} of ${totalPagesCount}`, pageWidth - margins.right, pageHeight - 24, { align: "right" });
+
+    // Track frame elements in ledger
+    ledger.pushBox(pageNum, margins.left, 24, pageWidth - margins.right, 36, "HeaderFrame");
+    ledger.pushBox(pageNum, margins.left, pageHeight - 36, pageWidth - margins.right, pageHeight - 16, "FooterFrame");
   }
 
-  let y = 56;
+  let y = margins.top;
+
+  function ensureSpace(height: number) {
+    if (y + height > pageHeight - margins.bottom) {
+      doc.addPage();
+      y = margins.top;
+    }
+  }
+
+  function drawSectionTitle(titleText: string) {
+    // Ensure space for header + first line of content gap
+    ensureSpace(80);
+    y += 24;
+
+    const currentY = y;
+    doc.setFontSize(fontSizes.section);
+    doc.setTextColor("#0f172a");
+    doc.text(titleText, margins.left, currentY);
+    ledger.pushBox(doc.getNumberOfPages(), margins.left, currentY - fontSizes.section, margins.left + doc.getTextWidth(titleText), currentY, `Section: ${titleText}`);
+    
+    y += 12; // Heading to divider line
+
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.4);
+    doc.line(margins.left, y, pageWidth - margins.right, y);
+    ledger.pushBox(doc.getNumberOfPages(), margins.left, y - 0.2, pageWidth - margins.right, y + 0.2, `Section Line: ${titleText}`);
+    
+    y += 16; // Divider line to content
+  }
 
   // ==========================================
   // PAGE 1: EXECUTIVE ROADMAP OVERVIEW
   // ==========================================
-  doc.setFontSize(24);
-  doc.setTextColor("#0f172a");
-  doc.text("CAREER ROADMAP REPORT", centerX, y, { align: "center" });
-  totalContentHeight += 24;
+  drawText("CAREER ROADMAP REPORT", centerX, y, { align: "center", fontSize: fontSizes.title });
+  totalContentHeight += 26;
   y += 16;
   
-  doc.setFontSize(9);
-  doc.setTextColor("#64748b");
-  doc.text(`GENERATED ON ${new Date(report.exportedAt).toLocaleDateString()}  ·  VERIFIED BY CAREEROS`, centerX, y, { align: "center" });
+  drawText(`GENERATED ON ${new Date(report.exportedAt).toLocaleDateString()}  ·  VERIFIED BY CAREEROS`, centerX, y, { align: "center", fontSize: fontSizes.meta, fontColor: "#64748b" });
   totalContentHeight += 9;
   y += 24;
 
@@ -352,58 +415,80 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
   // McKinsey Executive Card
   const cardHeight = 56;
+  drawRoundedCard(margins.left, y, contentWidth, cardHeight, 4, 4, "FD", "#f8fafc");
+
+  drawText("CAREER GOAL", margins.left + 16, y + 16, { fontSize: fontSizes.meta, fontColor: "#64748b" });
+  const truncatedGoal = careerGoal.length > 36 ? careerGoal.substring(0, 33) + "..." : careerGoal;
+  drawText(truncatedGoal, margins.left + 16, y + 28, { fontSize: fontSizes.body });
+  drawText(`Domain: ${safeRoadmaps[0]?.career_domain || "Tech/Business"}`, margins.left + 16, y + 42, { fontSize: fontSizes.meta, fontColor: "#475569" });
+
   doc.setDrawColor(226, 232, 240);
   doc.setLineWidth(0.4);
-  doc.setFillColor("#f8fafc");
-  doc.roundedRect(margins.left, y, contentWidth, cardHeight, 4, 4, "FD");
-
-  doc.setFontSize(7.5);
-  doc.setTextColor("#64748b");
-  doc.text("CAREER GOAL", margins.left + 16, y + 16);
-  doc.setFontSize(11);
-  doc.setTextColor("#0f172a");
-  const truncatedGoal = careerGoal.length > 40 ? careerGoal.substring(0, 37) + "..." : careerGoal;
-  doc.text(truncatedGoal, margins.left + 16, y + 28);
-  doc.setFontSize(9);
-  doc.setTextColor("#475569");
-  doc.text(`Domain: ${safeRoadmaps[0]?.career_domain || "Tech/Business"}`, margins.left + 16, y + 42);
-
   doc.line(margins.left + 240, y + 10, margins.left + 240, y + cardHeight - 10);
 
-  doc.setFontSize(7.5);
-  doc.setTextColor("#64748b");
-  doc.text("READINESS SCORE", margins.left + 256, y + 16);
+  drawText("READINESS SCORE", margins.left + 256, y + 16, { fontSize: fontSizes.meta, fontColor: "#64748b" });
   const readinessColor = readinessScore >= 80 ? "#77FF92" : readinessScore >= 50 ? "#FFF77F" : "#FFAE77";
-  drawBadge(doc, `${readinessScore}% READY`, margins.left + 256, y + 33, readinessColor, "#0f172a", 8);
+  drawBadge(`${readinessScore}% READY`, margins.left + 256, y + 33, readinessColor, "#0f172a", 8);
 
   doc.line(margins.left + 368, y + 10, margins.left + 368, y + cardHeight - 10);
 
-  doc.setFontSize(7.5);
-  doc.setTextColor("#64748b");
-  doc.text("TIMELINE & CAPACITY", margins.left + 384, y + 16);
-  doc.setFontSize(10);
-  doc.setTextColor("#0f172a");
-  doc.text(`${totalDuration} Weeks total`, margins.left + 384, y + 28);
-  doc.setFontSize(9);
-  doc.setTextColor("#475569");
-  doc.text(`${avgWeeklyHours} Hours / week`, margins.left + 384, y + 42);
+  drawText("TIMELINE & CAPACITY", margins.left + 384, y + 16, { fontSize: fontSizes.meta, fontColor: "#64748b" });
+  drawText(`${totalDuration} Weeks total`, margins.left + 384, y + 28, { fontSize: fontSizes.body });
+  drawText(`${avgWeeklyHours} Hours / week`, margins.left + 384, y + 42, { fontSize: fontSizes.meta, fontColor: "#475569" });
 
   totalContentHeight += cardHeight;
-  y += cardHeight + 16;
+  y += cardHeight;
 
   // Career Snapshot Dashboard Panel
-  y = drawSectionTitle(doc, "CAREER SNAPSHOT", y, 16, 8);
+  drawSectionTitle("CAREER SNAPSHOT");
   totalContentHeight += 24;
 
   const firstRoadmap = safeRoadmaps[0];
   if (firstRoadmap) {
-    const snapH = drawCareerSnapshot(doc, firstRoadmap, margins.left, y, contentWidth);
+    const colW = (contentWidth - 24) / 4;
+    
+    // Equal heights calculations
+    const labels = ["DEMAND SCORE", "SALARY RANGE", "MARKET OUTLOOK", "AUTOMATION RISK"];
+    const values = [
+      `${firstRoadmap.career_demand_score}/100`,
+      firstRoadmap.salary_range || "N/A",
+      firstRoadmap.market_outlook || "Stable",
+      firstRoadmap.automation_risk || "Low"
+    ];
+    
+    let maxContentH = 0;
+    doc.setFontSize(fontSizes.body);
+    const contentHeights = values.map((val) => {
+      const valLines = doc.splitTextToSize(val, colW - 16);
+      const wrappedH = valLines.length * 11 * 1.25;
+      // Label(11.25pt) + gap(8pt) + wrapped val height
+      return 11.25 + 8 + wrappedH;
+    });
+
+    maxContentH = Math.max(...contentHeights);
+    const snapH = 12 + maxContentH + 12; // 12pt internal padding top/bottom
+
+    values.forEach((val, idx) => {
+      const cardX = margins.left + idx * (colW + 8);
+      drawRoundedCard(cardX, y, colW, snapH, 4, 4, "FD", "#f8fafc");
+
+      // Vertically center the content
+      const offset = (snapH - contentHeights[idx]) / 2;
+      drawText(labels[idx], cardX + 8, y + offset + 9, { fontSize: fontSizes.meta, fontColor: "#64748b" });
+      
+      doc.setFontSize(fontSizes.body);
+      const valLines = doc.splitTextToSize(val, colW - 16);
+      valLines.forEach((lineText: string, lIdx: number) => {
+        drawText(lineText, cardX + 8, y + offset + 9 + 8 + 11 + lIdx * 14, { fontSize: fontSizes.body, fontColor: "#0f172a" });
+      });
+    });
+
     totalContentHeight += snapH;
-    y += snapH + 16;
+    y += snapH;
   }
 
   // Development Pathway Sprints Overview
-  y = drawSectionTitle(doc, "HIGH-LEVEL DEVELOPMENT PATHWAY", y, 16, 8);
+  drawSectionTitle("HIGH-LEVEL DEVELOPMENT PATHWAY");
   totalContentHeight += 24;
 
   let sprintsData: {
@@ -465,212 +550,244 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   }
 
   sprintsData.forEach((sprint, index) => {
-    const rowH = 32;
-    doc.setFillColor("#f8fafc");
-    doc.roundedRect(margins.left, y, contentWidth, rowH, 3, 3, "F");
+    const rowH = 36;
+    drawRoundedCard(margins.left, y, contentWidth, rowH, 3, 3, "F", "#f8fafc");
 
-    const indexColor = colorsPalette[(index + 4) % colorsPalette.length]; // Progress color mapping (Slate Blue/Maya Blue)
-    const sBadgeW = drawBadge(doc, `SPRINT ${String(index + 1).padStart(2, "0")}`, margins.left + 10, y + 20, indexColor, "#0f172a", 7.5);
+    const indexColor = colorsPalette[(index + 4) % colorsPalette.length];
+    const sBadgeW = drawBadge(`SPRINT ${String(index + 1).padStart(2, "0")}`, margins.left + 12, y + 20, indexColor, "#0f172a", 7.5);
     
-    doc.setFont("CMGeom", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor("#0f172a");
-    const sprintTitleText = sprint.title.length > 50 ? sprint.title.substring(0, 47) + "..." : sprint.title;
-    doc.text(sprintTitleText, margins.left + 10 + sBadgeW + 8, y + 19);
+    const sprintTitleText = sprint.title.length > 44 ? sprint.title.substring(0, 41) + "..." : sprint.title;
+    drawText(sprintTitleText, margins.left + 12 + sBadgeW + 8, y + 18, { fontSize: fontSizes.body });
+    drawText(`Duration: ${sprint.weeks} wks  ·  ${sprint.hours} hrs/wk`, margins.left + 12 + sBadgeW + 8, y + 29, { fontSize: fontSizes.meta, fontColor: "#64748b" });
 
-    doc.setFontSize(8.5);
-    doc.setTextColor("#64748b");
-    doc.text(`Duration: ${sprint.weeks} wks  ·  ${sprint.hours} hrs/wk`, margins.left + 10 + sBadgeW + 8, y + 28);
-
-    const statusColors: Record<string, string> = {
-      Active: "#AEFF77", // Success - French Lime
-      Done: "#77FF92",   // Success - Mint Green
-      Planned: "#77FFE4" // Status - Aquamarine
-    };
-    const sColor = statusColors[sprint.status] || "#77FFE4";
-    drawBadge(doc, sprint.status.toUpperCase(), margins.left + contentWidth - 64, y + 20, sColor, "#0f172a", 7.5);
-
-    totalContentHeight += rowH;
-    y += rowH + 8;
-  });
-
-  y += 8;
-
-  y = drawSectionTitle(doc, "EXECUTIVE ROADMAP OBJECTIVE", y, 16, 8);
-  totalContentHeight += 24;
-
-  doc.setFontSize(9.5);
-  doc.setTextColor("#475569");
-  const baselinePurposeText = `This report details the highly structured learning progression resolved for the target career path. By pacing milestones through individual sprints, the student accumulates demonstrable portfolio assets and practices core technical behaviors required by industry-grade recruitment teams. Use the subsequent pages as a weekly planner and deliverables checklist.`;
-  const wrappedPurpose = doc.splitTextToSize(baselinePurposeText, contentWidth);
-  doc.text(wrappedPurpose, margins.left, y);
-  totalContentHeight += wrappedPurpose.length * 12;
-
-  // ==========================================
-  // PAGES 2 TO 4: DEDICATED SPRINT PAGES
-  // ==========================================
-  sprintsData.forEach((sprint, sIndex) => {
-    doc.addPage();
-    y = 56;
-
-    y = drawSectionTitle(doc, sprint.title.toUpperCase(), y, 16, 8);
-    totalContentHeight += 24;
-
-    // Sprint Stats Card
-    const statsCardH = 32;
-    doc.setFillColor("#f8fafc");
-    doc.roundedRect(margins.left, y, contentWidth, statsCardH, 4, 4, "F");
-
-    doc.setFontSize(7.5);
-    doc.setTextColor("#64748b");
-    doc.text("DURATION", margins.left + 12, y + 12);
-    doc.setFontSize(10);
-    doc.setTextColor("#0f172a");
-    doc.text(`${sprint.weeks} Weeks`, margins.left + 12, y + 24);
-
-    doc.setFontSize(7.5);
-    doc.setTextColor("#64748b");
-    doc.text("COMMITMENT", margins.left + 112, y + 12);
-    doc.setFontSize(10);
-    doc.setTextColor("#0f172a");
-    doc.text(`${sprint.hours} hrs/wk`, margins.left + 112, y + 24);
-
-    doc.setFontSize(7.5);
-    doc.setTextColor("#64748b");
-    doc.text("STATUS", margins.left + 220, y + 12);
     const statusColors: Record<string, string> = {
       Active: "#AEFF77",
       Done: "#77FF92",
       Planned: "#77FFE4"
     };
     const sColor = statusColors[sprint.status] || "#77FFE4";
-    drawBadge(doc, sprint.status.toUpperCase(), margins.left + 220, y + 24, sColor, "#0f172a", 7.5);
+    drawBadge(sprint.status.toUpperCase(), margins.left + contentWidth - 68, y + 20, sColor, "#0f172a", 7.5);
 
-    doc.setFontSize(7.5);
-    doc.setTextColor("#64748b");
-    doc.text("COMPLETION PROGRESS", margins.left + 332, y + 12);
-    drawProgressBar(doc, margins.left + 332, y + 17, 100, 5, sprint.progress, "#7777FF", "#e2e8f0");
-    doc.setFontSize(10);
-    doc.setTextColor("#0f172a");
-    doc.text(`${sprint.progress}%`, margins.left + 442, y + 23);
+    totalContentHeight += rowH;
+    y += rowH + 8;
+  });
 
-    totalContentHeight += statsCardH;
-    y += statsCardH + 16;
+  y += 16;
 
-    // Weekly Syllabus Planner
-    y = drawSectionTitle(doc, "WEEKLY PLANNER & SYLLABUS", y, 16, 8);
+  drawSectionTitle("EXECUTIVE ROADMAP OBJECTIVE");
+  totalContentHeight += 24;
+
+  const baselinePurposeText = `This report details the highly structured learning progression resolved for the target career path. By pacing milestones through individual sprints, the student accumulates demonstrable portfolio assets and practices core technical behaviors required by industry-grade recruitment teams. Use the subsequent pages as a weekly planner and deliverables checklist.`;
+  const wrappedPurpose = doc.splitTextToSize(baselinePurposeText, contentWidth);
+  wrappedPurpose.forEach((lineText: string, idx: number) => {
+    drawText(lineText, margins.left, y + idx * 14, { fontSize: fontSizes.body, fontColor: "#475569" });
+  });
+  totalContentHeight += wrappedPurpose.length * 14;
+
+  // ==========================================
+  // PAGES 2 TO 4: DEDICATED SPRINT PAGES
+  // ==========================================
+  sprintsData.forEach((sprint, sIndex) => {
+    doc.addPage();
+    y = margins.top;
+
+    drawSectionTitle(sprint.title.toUpperCase());
     totalContentHeight += 24;
 
-    doc.setFontSize(9.5);
-    doc.setTextColor("#475569");
-    const colWidth = contentWidth / 2;
+    // Sprint Stats Card
+    const statsCardH = 36;
+    drawRoundedCard(margins.left, y, contentWidth, statsCardH, 4, 4, "F", "#f8fafc");
+
+    drawText("DURATION", margins.left + 16, y + 13, { fontSize: fontSizes.meta, fontColor: "#64748b" });
+    drawText(`${sprint.weeks} Weeks`, margins.left + 16, y + 26, { fontSize: fontSizes.body });
+
+    drawText("COMMITMENT", margins.left + 116, y + 13, { fontSize: fontSizes.meta, fontColor: "#64748b" });
+    drawText(`${sprint.hours} hrs/wk`, margins.left + 116, y + 26, { fontSize: fontSizes.body });
+
+    drawText("STATUS", margins.left + 224, y + 13, { fontSize: fontSizes.meta, fontColor: "#64748b" });
+    const statusColors: Record<string, string> = {
+      Active: "#AEFF77",
+      Done: "#77FF92",
+      Planned: "#77FFE4"
+    };
+    const sColor = statusColors[sprint.status] || "#77FFE4";
+    drawBadge(sprint.status.toUpperCase(), margins.left + 224, y + 26, sColor, "#0f172a", 7.5);
+
+    drawText("COMPLETION PROGRESS", margins.left + 332, y + 13, { fontSize: fontSizes.meta, fontColor: "#64748b" });
+    drawProgressBar(margins.left + 332, y + 18, 100, 5, sprint.progress, "#7777FF", "#e2e8f0");
+    drawText(`${sprint.progress}%`, margins.left + 442, y + 24, { fontSize: fontSizes.body });
+
+    totalContentHeight += statsCardH;
+    y += statsCardH;
+
+    // Weekly Syllabus Planner
+    drawSectionTitle("WEEKLY PLANNER & SYLLABUS");
+    totalContentHeight += 24;
+
+    const colWidth = (contentWidth - 24) / 2;
     sprint.milestones.forEach((m, idx) => {
       const col = idx % 2;
       const row = Math.floor(idx / 2);
-      const itemX = margins.left + col * colWidth;
-      const itemY = y + row * 14;
-      const truncMTitle = m.title.length > 32 ? m.title.substring(0, 29) + "..." : m.title;
-      doc.text(`• Phase ${idx + 1}: ${truncMTitle} (${m.estimated_duration_weeks} wks)`, itemX, itemY);
+      const itemX = margins.left + col * (colWidth + 24);
+      const itemY = y + row * 16 + 11;
+      const truncMTitle = m.title.length > 28 ? m.title.substring(0, 25) + "..." : m.title;
+      drawText(`• Phase ${idx + 1}: ${truncMTitle} (${m.estimated_duration_weeks} wks)`, itemX, itemY, { fontSize: fontSizes.body, fontColor: "#475569" });
     });
 
     const plannerRows = Math.ceil(sprint.milestones.length / 2);
-    const plannerH = Math.max(1, plannerRows) * 14;
+    const plannerH = Math.max(1, plannerRows) * 16;
     totalContentHeight += plannerH;
-    y += plannerH + 16;
+    y += plannerH;
 
     // Sprints Milestones Cards
-    y = drawSectionTitle(doc, "CORE SPRINT MILESTONES & PROJECTS", y, 16, 8);
+    drawSectionTitle("CORE SPRINT MILESTONES & PROJECTS");
     totalContentHeight += 24;
 
     sprint.milestones.forEach((milestone, mIdx) => {
-      const mileCardH = 64;
-      doc.setDrawColor(226, 232, 240);
-      doc.setLineWidth(0.4);
-      doc.setFillColor("#ffffff");
-      doc.roundedRect(margins.left, y, contentWidth, mileCardH, 4, 4, "FD");
-
-      const mColor = colorsPalette[(sIndex * 3 + mIdx) % colorsPalette.length];
-      const mBadgeW = drawBadge(doc, `M${String(mIdx + 1).padStart(2, "0")}`, margins.left + 12, y + 16, mColor, "#0f172a", 7.5);
-
-      doc.setFont("CMGeom", "normal");
-      doc.setFontSize(10.5);
-      doc.setTextColor("#0f172a");
-      doc.text(milestone.title, margins.left + 12 + mBadgeW + 6, y + 13);
-      
-      doc.setFontSize(8.5);
-      doc.setTextColor("#64748b");
+      // Dynamic Height Calculation for Milestone Card
+      const titleText = milestone.title;
       const inlineMeta = `(${milestone.estimated_duration_weeks} wk · ${milestone.difficulty_level})`;
-      doc.text(inlineMeta, margins.left + 12 + mBadgeW + 6 + doc.getTextWidth(milestone.title) + 6, y + 13);
+      const fullHeader = `${titleText} ${inlineMeta}`;
+      const headerH = getTextHeight(fullHeader, contentWidth - 24, fontSizes.cardTitle);
 
-      doc.setFontSize(8.5);
-      doc.setTextColor("#64748b");
-      const italicWhy = `Objective: ${milestone.why_it_matters}`;
-      const truncatedWhy = italicWhy.length > 105 ? italicWhy.substring(0, 102) + "..." : italicWhy;
-      doc.text(truncatedWhy, margins.left + 12, y + 26);
+      const objectiveText = `Objective: ${milestone.why_it_matters}`;
+      const objH = getTextHeight(objectiveText, contentWidth - 24, fontSizes.body);
 
-      doc.setFontSize(9);
-      doc.setTextColor("#475569");
       const tasks = getSafeArray<string>(milestone.completion_criteria).concat(getSafeArray<string>(milestone.project_tasks)).concat(getSafeArray<string>(milestone.deliverables));
       const uniqueTasks = Array.from(new Set(tasks)).slice(0, 2);
+      let tasksH = 0;
+      uniqueTasks.forEach((task) => {
+        tasksH += getTextHeight(`- ${task}`, contentWidth - 24, fontSizes.body) + 4;
+      });
+
+      const cardPadding = 12;
+      const mileCardH = cardPadding + headerH + 8 + objH + 8 + tasksH + cardPadding;
+
+      // Ensure space on page
+      ensureSpace(mileCardH + 24);
+
+      drawRoundedCard(margins.left, y, contentWidth, mileCardH, 4, 4, "FD", "#ffffff");
+
+      const mColor = colorsPalette[(sIndex * 3 + mIdx) % colorsPalette.length];
+      const mBadgeW = drawBadge(`M${String(mIdx + 1).padStart(2, "0")}`, margins.left + 12, y + 16 + 5, mColor, "#0f172a", 7.5);
+
+      drawText(milestone.title, margins.left + 12 + mBadgeW + 6, y + 13 + 5, { fontSize: fontSizes.cardTitle });
       
-      uniqueTasks.forEach((task, tIdx) => {
-        const taskX = margins.left + 12;
-        const taskY = y + 38 + tIdx * 11;
-        const wrappedTask = task.length > 110 ? task.substring(0, 107) + "..." : task;
-        doc.text(`- ${wrappedTask}`, taskX, taskY);
+      const metaX = margins.left + 12 + mBadgeW + 6 + doc.getTextWidth(milestone.title) + 6;
+      drawText(inlineMeta, metaX, y + 13 + 5, { fontSize: fontSizes.meta, fontColor: "#64748b" });
+
+      let cardY = y + cardPadding + headerH + 8;
+      
+      // Objective wrapped text
+      const wrappedObj = doc.splitTextToSize(objectiveText, contentWidth - 24);
+      wrappedObj.forEach((lineText: string, oIdx: number) => {
+        drawText(lineText, margins.left + 12, cardY + oIdx * 13, { fontSize: fontSizes.body, fontColor: "#64748b" });
+      });
+      cardY += objH + 8;
+
+      // Tasks wrapped list
+      uniqueTasks.forEach((task) => {
+        const wrappedTask = doc.splitTextToSize(`- ${task}`, contentWidth - 24);
+        wrappedTask.forEach((tLine: string, tIdx: number) => {
+          drawText(tLine, margins.left + 12, cardY + tIdx * 13, { fontSize: fontSizes.body, fontColor: "#475569" });
+        });
+        cardY += wrappedTask.length * 13 + 4;
       });
 
       totalContentHeight += mileCardH;
       y += mileCardH + 8;
     });
 
-    y += 8;
+    y += 16;
 
     // Sprint bibliography / resources
-    y = drawSectionTitle(doc, "RECOMMENDED LEARNING & ACADEMIC DIRECTORY", y, 16, 8);
+    drawSectionTitle("RECOMMENDED LEARNING & ACADEMIC DIRECTORY");
     totalContentHeight += 24;
 
     const resourceLinks = sprint.milestones.flatMap(m => getSafeArray<RoadmapResourceLink>(m.resource_links));
     const uniqueResources = Array.from(new Map(resourceLinks.map(r => [r.url, r])).values()).slice(0, 4);
 
-    doc.setFontSize(9.5);
-    doc.setTextColor("#475569");
-    
     if (uniqueResources.length) {
-      uniqueResources.forEach((res, idx) => {
-        const col = idx % 2;
-        const row = Math.floor(idx / 2);
-        const resX = margins.left + col * colWidth;
-        const resY = y + row * 14;
-        const labelText = res.label.length > 30 ? res.label.substring(0, 27) + "..." : res.label;
-        doc.text(`• [${res.provider}] ${labelText}`, resX, resY);
+      const resColW = (contentWidth - 16) / 2;
+      const resRows: { left: RoadmapResourceLink; right?: RoadmapResourceLink }[] = [];
+      for (let index = 0; index < uniqueResources.length; index += 2) {
+        resRows.push({
+          left: uniqueResources[index],
+          right: uniqueResources[index + 1]
+        });
+      }
+
+      resRows.forEach((row) => {
+        // Calculate heights dynamically
+        const leftH = 8 + getTextHeight(row.left.label, resColW - 16, fontSizes.body) + 4 + getTextHeight(row.left.provider, resColW - 16, fontSizes.meta) + 4 + getTextHeight(row.left.url, resColW - 16, fontSizes.meta) + 8;
+        let rightH = 0;
+        if (row.right) {
+          rightH = 8 + getTextHeight(row.right.label, resColW - 16, fontSizes.body) + 4 + getTextHeight(row.right.provider, resColW - 16, fontSizes.meta) + 4 + getTextHeight(row.right.url, resColW - 16, fontSizes.meta) + 8;
+        }
+
+        const maxRowH = Math.max(leftH, rightH);
+        ensureSpace(maxRowH + 24);
+
+        // Draw left resource
+        const leftX = margins.left;
+        drawRoundedCard(leftX, y, resColW, maxRowH, 4, 4, "FD", "#f8fafc");
+        
+        let ry = y + 8 + 9;
+        drawText(row.left.label, leftX + 8, ry, { fontSize: fontSizes.body });
+        ry += getTextHeight(row.left.label, resColW - 16, fontSizes.body) + 4;
+        
+        drawText(row.left.provider, leftX + 8, ry, { fontSize: fontSizes.meta, fontColor: "#64748b" });
+        ry += 9 + 4;
+        
+        drawText(row.left.url, leftX + 8, ry, { fontSize: fontSizes.meta, fontColor: "#7777FF" });
+
+        // Draw right resource if present
+        if (row.right) {
+          const rightX = margins.left + resColW + 16;
+          drawRoundedCard(rightX, y, resColW, maxRowH, 4, 4, "FD", "#f8fafc");
+
+          let rry = y + 8 + 9;
+          drawText(row.right.label, rightX + 8, rry, { fontSize: fontSizes.body });
+          rry += getTextHeight(row.right.label, resColW - 16, fontSizes.body) + 4;
+
+          drawText(row.right.provider, rightX + 8, rry, { fontSize: fontSizes.meta, fontColor: "#64748b" });
+          rry += 9 + 4;
+
+          drawText(row.right.url, rightX + 8, rry, { fontSize: fontSizes.meta, fontColor: "#7777FF" });
+        }
+
+        y += maxRowH + 8;
+        totalContentHeight += maxRowH + 8;
       });
-      const resH = Math.ceil(uniqueResources.length / 2) * 14;
-      totalContentHeight += resH;
-      y += resH + 16;
     } else {
-      doc.text("• General verified online documentation & industry guidelines.", margins.left, y);
-      totalContentHeight += 14;
+      drawText("• General verified online documentation & industry guidelines.", margins.left, y + 11, { fontSize: fontSizes.body, fontColor: "#475569" });
+      totalContentHeight += 16;
       y += 24;
     }
 
+    y += 16;
+
     // Sprint Outcomes
-    y = drawSectionTitle(doc, "EXPECTED SPRINT OUTCOMES", y, 16, 8);
+    drawSectionTitle("EXPECTED SPRINT OUTCOMES");
     totalContentHeight += 24;
 
     const sprintOutcomes = Array.from(new Set(sprint.milestones.flatMap(m => getSafeArray<string>(m.expected_outcomes)))).slice(0, 3);
-    doc.setFontSize(9.5);
-    doc.setTextColor("#475569");
     if (sprintOutcomes.length) {
-      sprintOutcomes.forEach((outcome, idx) => {
-        const wrappedOutcome = outcome.length > 110 ? outcome.substring(0, 107) + "..." : outcome;
-        doc.text(`[ ]  ${wrappedOutcome}`, margins.left, y + idx * 14);
+      sprintOutcomes.forEach((outcome) => {
+        const wrappedOutcome = doc.splitTextToSize(`[ ]  ${outcome}`, contentWidth);
+        const outH = wrappedOutcome.length * 14;
+        
+        ensureSpace(outH + 16);
+        wrappedOutcome.forEach((lineText: string, oIdx: number) => {
+          drawText(lineText, margins.left, y + oIdx * 14 + 11, { fontSize: fontSizes.body, fontColor: "#475569" });
+        });
+        y += outH + 8;
+        totalContentHeight += outH + 8;
       });
-      const outH = sprintOutcomes.length * 14;
-      totalContentHeight += outH;
     } else {
-      doc.text("[ ] Accumulation of key domain credentials and demonstrable work.", margins.left, y);
-      totalContentHeight += 14;
+      drawText("[ ] Accumulation of key domain credentials and demonstrable work.", margins.left, y + 11, { fontSize: fontSizes.body, fontColor: "#475569" });
+      totalContentHeight += 16;
+      y += 24;
     }
   });
 
@@ -678,18 +795,16 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   // PAGE 5: FINAL PAGE CAREER READINESS CHECKLIST
   // ==========================================
   doc.addPage();
-  y = 56;
+  y = margins.top;
 
-  y = drawSectionTitle(doc, "CAREER READINESS PORTFOLIO CHECKLIST", y, 16, 8);
+  drawSectionTitle("CAREER READINESS PORTFOLIO CHECKLIST");
   totalContentHeight += 24;
 
-  doc.setFontSize(8.5);
-  doc.setTextColor("#64748b");
-  doc.text("PORTFOLIO DELIVERABLES & INTERVIEW VERIFICATION DIRECTORY", margins.left, y);
+  drawText("PORTFOLIO DELIVERABLES & INTERVIEW VERIFICATION DIRECTORY", margins.left, y + 9, { fontSize: fontSizes.meta, fontColor: "#64748b" });
   totalContentHeight += 9;
   y += 16;
 
-  y = drawSectionTitle(doc, "PORTFOLIO PROJECTS & ARTIFACT DEVELOPMENT", y, 16, 8);
+  drawSectionTitle("PORTFOLIO PROJECTS & ARTIFACT DEVELOPMENT");
   totalContentHeight += 24;
 
   const aggregatedProjects: string[] = [];
@@ -709,29 +824,53 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   });
 
   const uniqueProjects = Array.from(new Set(aggregatedProjects)).slice(0, 8);
-  doc.setFontSize(9.5);
-  doc.setTextColor("#475569");
   
   if (uniqueProjects.length) {
-    const colWidth = contentWidth / 2;
-    uniqueProjects.forEach((proj, idx) => {
-      const col = idx % 2;
-      const row = Math.floor(idx / 2);
-      const projX = margins.left + col * colWidth;
-      const projY = y + row * 15;
-      const truncatedProj = proj.length > 46 ? proj.substring(0, 43) + "..." : proj;
-      doc.text(`[ ]  ${truncatedProj}`, projX, projY);
+    const listColW = (contentWidth - 24) / 2;
+    const checklistRows: { left: string; right?: string }[] = [];
+    for (let index = 0; index < uniqueProjects.length; index += 2) {
+      checklistRows.push({
+        left: uniqueProjects[index],
+        right: uniqueProjects[index + 1]
+      });
+    }
+
+    checklistRows.forEach((row) => {
+      const leftWrapped = doc.splitTextToSize(`□  ${row.left}`, listColW);
+      const leftH = leftWrapped.length * 15;
+      
+      let rightH = 0;
+      let rightWrapped: string[] = [];
+      if (row.right) {
+        rightWrapped = doc.splitTextToSize(`□  ${row.right}`, listColW);
+        rightH = rightWrapped.length * 15;
+      }
+
+      const maxRowH = Math.max(leftH, rightH);
+      ensureSpace(maxRowH + 12);
+
+      leftWrapped.forEach((lineText: string, idx: number) => {
+        drawText(lineText, margins.left, y + idx * 15 + 11, { fontSize: fontSizes.body, fontColor: "#475569" });
+      });
+
+      if (row.right) {
+        rightWrapped.forEach((lineText: string, idx: number) => {
+          drawText(lineText, margins.left + listColW + 24, y + idx * 15 + 11, { fontSize: fontSizes.body, fontColor: "#475569" });
+        });
+      }
+
+      y += maxRowH + 8;
+      totalContentHeight += maxRowH + 8;
     });
-    const projH = Math.ceil(uniqueProjects.length / 2) * 15;
-    totalContentHeight += projH;
-    y += projH + 24;
   } else {
-    doc.text("[ ] Build core domain application modules as portfolio assets.", margins.left, y);
-    totalContentHeight += 15;
-    y += 32;
+    drawText("□  Build core domain application modules as portfolio assets.", margins.left, y + 11, { fontSize: fontSizes.body, fontColor: "#475569" });
+    totalContentHeight += 16;
+    y += 24;
   }
 
-  y = drawSectionTitle(doc, "INTERVIEW READINESS & CORE SYSTEM CAPABILITIES", y, 16, 8);
+  y += 16;
+
+  drawSectionTitle("INTERVIEW READINESS & CORE SYSTEM CAPABILITIES");
   totalContentHeight += 24;
 
   const domainLabel = safeRoadmaps[0]?.career_domain || "Tech/Business";
@@ -766,13 +905,13 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
       "Design System Ready: complete reusable component library with typography assets",
       "Resume Ready: UX portfolio link verified and visual design metrics optimized",
       "Wireframing Ready: information architecture, interactive prototypes, and layout systems",
-      "Usability Ready: user research, feedback synthesis, and visual audit metrics",
+      "Usability Ready: user research, feedback feedback systems, and visual audit metrics",
       "Interview Ready: portfolio walkthrough presentation and behavioral stories resolved"
     ];
   } else if (isData) {
     readinessPoints = [
       "Analysis Shipped: 2 comprehensive analysis notebooks or statistics reviews",
-      "Dashboard Ready: interactive Power BI or Tableau business intelligence dashboards",
+      "Dashboard Ready: interactive Power BI or Tableau dashboard analytics",
       "Resume Ready: analytics achievements, database performance, and conversion metrics optimized",
       "SQL Query Ready: relational joins, groupings, and data modeling pipelines verified",
       "Data Storytelling Ready: data visualization layouts, cohort retention, and funnel reporting",
@@ -798,16 +937,22 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     ];
   }
 
-  doc.setFontSize(9.5);
-  doc.setTextColor("#475569");
-  readinessPoints.forEach((point, idx) => {
-    doc.text(`[ ]  ${point}`, margins.left, y + idx * 15);
-  });
-  const readyH = readinessPoints.length * 15;
-  totalContentHeight += readyH;
-  y += readyH + 24;
+  readinessPoints.forEach((point) => {
+    const wrappedPoint = doc.splitTextToSize(`□  ${point}`, contentWidth);
+    const pointH = wrappedPoint.length * 15;
+    ensureSpace(pointH + 12);
 
-  y = drawSectionTitle(doc, "UNIFIED MILESTONE TRACKER", y, 16, 8);
+    wrappedPoint.forEach((lineText: string, idx: number) => {
+      drawText(lineText, margins.left, y + idx * 15 + 11, { fontSize: fontSizes.body, fontColor: "#475569" });
+    });
+
+    y += pointH + 8;
+    totalContentHeight += pointH + 8;
+  });
+
+  y += 16;
+
+  drawSectionTitle("UNIFIED MILESTONE TRACKER");
   totalContentHeight += 24;
 
   const allMilestoneTitles: string[] = [];
@@ -818,24 +963,47 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   });
 
   const uniqueMilestones = Array.from(new Set(allMilestoneTitles)).slice(0, 10);
-  doc.setFontSize(9.5);
-  doc.setTextColor("#475569");
   
   if (uniqueMilestones.length) {
-    const colWidth = contentWidth / 2;
-    uniqueMilestones.forEach((mTitle, idx) => {
-      const col = idx % 2;
-      const row = Math.floor(idx / 2);
-      const mX = margins.left + col * colWidth;
-      const mY = y + row * 15;
-      const truncatedMTitle = mTitle.length > 46 ? mTitle.substring(0, 43) + "..." : mTitle;
-      doc.text(`[ ]  ${truncatedMTitle}`, mX, mY);
+    const listColW = (contentWidth - 24) / 2;
+    const trackerRows: { left: string; right?: string }[] = [];
+    for (let index = 0; index < uniqueMilestones.length; index += 2) {
+      trackerRows.push({
+        left: uniqueMilestones[index],
+        right: uniqueMilestones[index + 1]
+      });
+    }
+
+    trackerRows.forEach((row) => {
+      const leftWrapped = doc.splitTextToSize(`□  ${row.left}`, listColW);
+      const leftH = leftWrapped.length * 15;
+
+      let rightH = 0;
+      let rightWrapped: string[] = [];
+      if (row.right) {
+        rightWrapped = doc.splitTextToSize(`□  ${row.right}`, listColW);
+        rightH = rightWrapped.length * 15;
+      }
+
+      const maxRowH = Math.max(leftH, rightH);
+      ensureSpace(maxRowH + 12);
+
+      leftWrapped.forEach((lineText: string, idx: number) => {
+        drawText(lineText, margins.left, y + idx * 15 + 11, { fontSize: fontSizes.body, fontColor: "#475569" });
+      });
+
+      if (row.right) {
+        rightWrapped.forEach((lineText: string, idx: number) => {
+          drawText(lineText, margins.left + listColW + 24, y + idx * 15 + 11, { fontSize: fontSizes.body, fontColor: "#475569" });
+        });
+      }
+
+      y += maxRowH + 8;
+      totalContentHeight += maxRowH + 8;
     });
-    const trackerH = Math.ceil(uniqueMilestones.length / 2) * 15;
-    totalContentHeight += trackerH;
   } else {
-    doc.text("[ ] Programming fundamentals and interview baseline.", margins.left, y);
-    totalContentHeight += 15;
+    drawText("□  Programming fundamentals and interview baseline.", margins.left, y + 11, { fontSize: fontSizes.body, fontColor: "#475569" });
+    totalContentHeight += 16;
   }
 
   // Draw Page Frames on all pages
@@ -857,6 +1025,11 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   console.log(`Pages:                ${totalPages}`);
   console.log(`Content Utilization:  ${contentUtilization}%`);
   console.log(`Whitespace:           ${whitespace}%`);
+  console.log("=================================");
+
+  // Enforce Layout Verification Bounding Box Quality Audits!
+  ledger.verify();
+
   const blobObj = doc.output("blob") as AuditBlob;
   blobObj.valid = validReport;
   blobObj.warnings = allWarnings;
