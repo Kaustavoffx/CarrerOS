@@ -346,6 +346,13 @@ function toRoadmapRow(roadmap: RoadmapRecord, userId: string): RoadmapRow {
   };
 }
 
+async function resolveAuthenticatedUserId(client: SupabaseClient, fallbackUserId: string) {
+  const { data } = await client.auth.getUser();
+  const authUserId = data?.user?.id ?? fallbackUserId;
+  console.log("AUTH USER ID", authUserId);
+  return authUserId;
+}
+
 async function getNextRoadmapVersion(client: SupabaseClient, userId: string) {
   const { data } = await client
     .from("roadmap_versions")
@@ -359,7 +366,8 @@ async function getNextRoadmapVersion(client: SupabaseClient, userId: string) {
 }
 
 async function persistRoadmaps(client: SupabaseClient, userId: string, roadmaps: RoadmapRecord[], version: number) {
-  await client.from("roadmaps").delete().eq("user_id", userId);
+  const authUserId = await resolveAuthenticatedUserId(client, userId);
+  await client.from("roadmaps").delete().eq("user_id", authUserId);
 
   const safeRoadmaps = normalizeRoadmapArray(roadmaps);
 
@@ -367,7 +375,8 @@ async function persistRoadmaps(client: SupabaseClient, userId: string, roadmaps:
     return;
   }
 
-  const rows: RoadmapRow[] = safeRoadmaps.map((roadmap) => toRoadmapRow({ ...roadmap, roadmap_version: version }, userId));
+  const rows: RoadmapRow[] = safeRoadmaps.map((roadmap) => toRoadmapRow({ ...roadmap, roadmap_version: version }, authUserId));
+  console.log("ROADMAP INSERT PAYLOAD", JSON.stringify(rows, null, 2));
 
   const { error } = await client.from("roadmaps").insert(rows);
   if (error) {
@@ -377,6 +386,7 @@ async function persistRoadmaps(client: SupabaseClient, userId: string, roadmaps:
 }
 
 async function persistRoadmapVersion(client: SupabaseClient, userId: string, roadmaps: RoadmapRecord[], careerGoal: string, version: number) {
+  const authUserId = await resolveAuthenticatedUserId(client, userId);
   const safeRoadmaps = normalizeRoadmapArray(roadmaps);
 
   if (!safeRoadmaps.length) {
@@ -386,7 +396,7 @@ async function persistRoadmapVersion(client: SupabaseClient, userId: string, roa
   const aiReasoning = primaryRoadmap.ai_reasoning || `CareerOS roadmap version ${version} generated from ${careerGoal}.`;
 
   const { error } = await client.from("roadmap_versions").insert({
-    user_id: userId,
+    user_id: authUserId,
     roadmap_version: version,
     career_goal: careerGoal,
     career_domain: primaryRoadmap.career_domain,
