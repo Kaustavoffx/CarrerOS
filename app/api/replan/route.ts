@@ -30,23 +30,6 @@ const RoadmapSchema = z.object({
   summary: z.string(),
   owner: z.string(),
   progress: z.number().min(0).max(100),
-  total_duration_weeks: z.number().int().nonnegative(),
-  weekly_hours: z.number().int().nonnegative(),
-  estimated_completion_date: z.string(),
-  resource_links: z.array(ResourceLinkSchema),
-  project_tasks: z.array(z.string()),
-  expected_outcomes: z.array(z.string()),
-  milestones: z.array(MilestoneSchema),
-  updated_at: z.string()
-});
-
-const RequestSchema = z.object({
-  profile: z.object({
-    id: z.string().optional(),
-    full_name: z.string().nullable().optional(),
-    goal: z.string().nullable().optional(),
-    experience_level: z.string().nullable().optional(),
-    skills: z.array(z.string()).optional(),
   career_domain: z.string(),
   career_demand_score: z.number().min(0).max(100),
   market_outlook: z.string(),
@@ -57,13 +40,28 @@ const RequestSchema = z.object({
   ai_reasoning: z.string(),
   weekly_schedule: z.array(z.string()),
   learning_outcomes: z.array(z.string()),
-    learning_style: z.string().nullable().optional(),
-    budget: z.string().nullable().optional(),
-    time_availability: z.string().nullable().optional(),
-    weaknesses: z.array(z.string()).optional(),
-    obstacles: z.array(z.string()).optional()
-  }).optional().nullable(),
-  currentRoadmaps: z.array(z.any()).optional().nullable(),
+  total_duration_weeks: z.number().int().nonnegative(),
+  weekly_hours: z.number().int().nonnegative(),
+  estimated_completion_date: z.string(),
+  resource_links: z.array(ResourceLinkSchema),
+  project_tasks: z.array(z.string()),
+  expected_outcomes: z.array(z.string()),
+  milestones: z.array(MilestoneSchema),
+  updated_at: z.string()
+});
+
+const ProfileSchema = z.object({
+  id: z.string().optional(),
+  full_name: z.string().nullable().optional(),
+  goal: z.string().nullable().optional(),
+  experience_level: z.string().nullable().optional(),
+  avatar_url: z.string().nullable().optional(),
+  onboarding_complete: z.boolean().optional()
+});
+
+const RequestSchema = z.object({
+  profile: ProfileSchema.optional().nullable(),
+  currentRoadmaps: z.array(RoadmapSchema).optional().nullable(),
   userApiKey: z.string().optional()
 });
 
@@ -141,14 +139,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const { profile } = parsedInput.data;
+    const { profile, currentRoadmaps } = parsedInput.data;
     const goal = profile?.goal || "Frontend Engineer";
     const level = (profile?.experience_level || "Junior") as "Student" | "Junior" | "Mid" | "Senior" | "Switcher";
-    const timeCommit = profile?.time_availability || "10 hours / week";
-    const skills = profile?.skills || [];
-    const budget = profile?.budget || "Free / Low-cost";
-    const weaknesses = profile?.weaknesses || [];
-    const obstacles = profile?.obstacles || [];
+    const timeCommit = currentRoadmaps?.[0]?.weekly_hours || "10 hours / week";
 
     const supabase = await getSupabaseServerClient();
     if (!supabase) {
@@ -191,10 +185,10 @@ export async function POST(req: Request) {
       goal,
       experience: level,
       weeklyHours: timeCommit,
-      budget,
-      skills,
-      weaknesses,
-      obstacles
+      budget: "Free / Low-cost",
+      skills: [],
+      weaknesses: [],
+      obstacles: []
     };
 
     const prompt = buildRoadmapPlanPrompt(roadmapInput);
