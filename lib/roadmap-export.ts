@@ -1,6 +1,6 @@
 import type { jsPDF } from "jspdf";
 import type { RoadmapRecord, RoadmapMilestoneRecord, RoadmapResourceLink } from "./supabase/types";
-import { validateRoadmapDomainConsistency } from "./roadmap-plan";
+import { validateRoadmapDomainConsistency, auditRoadmapQuality } from "./roadmap-plan";
 
 export type RoadmapExportBundle = {
   json: string;
@@ -18,6 +18,12 @@ export type RoadmapPdfReport = {
   careerGoal?: string | null;
   readinessScore?: number | null;
 };
+
+export interface AuditBlob extends Blob {
+  valid?: boolean;
+  warnings?: string[];
+  qualityScore?: number;
+}
 
 const CMGEOM_FONT_URL = new URL("../assets/fonts/CMGeom-Regular.ttf", import.meta.url).toString();
 
@@ -238,10 +244,29 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   const safeRoadmaps = getSafeArray<RoadmapRecord>(report.roadmaps);
   const careerGoal = report.careerGoal || report.title || "Professional Career Plan";
 
-  // Pre-export semantic validation checks
+  // Pre-export semantic validation checks (non-blocking)
+  let validReport = true;
+  const allWarnings: string[] = [];
+  
   safeRoadmaps.forEach((roadmap) => {
-    validateRoadmapDomainConsistency(roadmap, careerGoal);
+    const checkResult = validateRoadmapDomainConsistency(roadmap, careerGoal, { throwOnError: false });
+    if (!checkResult.valid) {
+      validReport = false;
+      allWarnings.push(...checkResult.warnings);
+    }
   });
+
+  let qualityScore = 100;
+  try {
+    const auditRes = auditRoadmapQuality(safeRoadmaps, careerGoal);
+    qualityScore = auditRes.qualityScore;
+  } catch {
+    // Suppress quality calculation errors for maximum export safety
+  }
+
+  if (allWarnings.length > 0) {
+    console.warn("Roadmap PDF export warning(s) detected:", allWarnings);
+  }
 
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "pt", format: "a4", compress: true });
@@ -266,6 +291,31 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     doc.setTextColor("#94a3b8");
     
     doc.text("CAREEROS PROFESSIONAL ROADMAP", margins.left, 24);
+    
+    // Draw Quality Review Recommended badge if invalid
+    if (!validReport) {
+      const labelText = "QUALITY REVIEW RECOMMENDED";
+      doc.setFont("CMGeom", "normal");
+      doc.setFontSize(6.5);
+      const textW = doc.getTextWidth(labelText);
+      const paddingX = 4;
+      const paddingY = 2;
+      const badgeW = textW + paddingX * 2;
+      const badgeH = 6.5 + paddingY * 2;
+      const badgeX = margins.left + 155; // aligned next to CAREEROS PROFESSIONAL ROADMAP text
+      
+      doc.setFillColor("#FFAE77"); // Mac & Cheese
+      doc.roundedRect(badgeX, 24 - 6.5 - paddingY + 1, badgeW, badgeH, 1.5, 1.5, "F");
+      
+      doc.setTextColor("#0f172a");
+      doc.text(labelText, badgeX + paddingX, 24 - 1);
+      
+      // Reset font for subtitle
+      doc.setFont("CMGeom", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor("#94a3b8");
+    }
+    
     doc.text("RECRUITER-READY ACTIONABLE STUDY PLAN", pageWidth - margins.right, 24, { align: "right" });
     
     doc.setDrawColor(226, 232, 240);
@@ -807,7 +857,10 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   console.log(`Pages:                ${totalPages}`);
   console.log(`Content Utilization:  ${contentUtilization}%`);
   console.log(`Whitespace:           ${whitespace}%`);
-  console.log("=================================");
+  const blobObj = doc.output("blob") as AuditBlob;
+  blobObj.valid = validReport;
+  blobObj.warnings = allWarnings;
+  blobObj.qualityScore = qualityScore;
 
-  return doc.output("blob");
+  return blobObj;
 }

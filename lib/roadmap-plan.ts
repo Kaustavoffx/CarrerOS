@@ -518,41 +518,77 @@ export function resolveDomainProfile(goal: string) {
   return pickDomain(goal);
 }
 
-export function validateRoadmapDomainConsistency(roadmap: RoadmapRecord, goalOrProfile: string | DomainProfile) {
+export function validateRoadmapDomainConsistency(
+  roadmap: RoadmapRecord,
+  goalOrProfile: string | DomainProfile,
+  options: { throwOnError?: boolean } = { throwOnError: true }
+): { valid: boolean; warnings: string[] } {
   const profile = typeof goalOrProfile === "string" ? pickDomain(goalOrProfile) : goalOrProfile;
-  const roadmapDomain = normalizeText(roadmap.career_domain);
+  const roadmapDomain = normalizeText(roadmap.career_domain || "");
   const expectedDomain = normalizeText(profile.label);
   const aliasAllowed = profile.aliases.some((alias) => normalizeText(alias) === roadmapDomain);
 
+  const warnings: string[] = [];
+
   if (roadmapDomain !== expectedDomain && !aliasAllowed) {
-    throw new Error("Roadmap domain mismatch");
+    const errMsg = "Roadmap domain mismatch";
+    if (options.throwOnError) {
+      throw new Error(errMsg);
+    } else {
+      warnings.push(errMsg);
+    }
   }
 
   const textBlob = roadmapTextBlob(roadmap).toLowerCase();
   
   if (textContainsAny(textBlob, ["programming fundamentals"])) {
     if (["operations and strategy", "marketing and growth", "design and ux", "research and academia"].includes(expectedDomain)) {
-      throw new Error(`Semantic Mismatch: 'Programming Fundamentals' cannot map to ${profile.label}`);
+      const errMsg = `Semantic Mismatch: 'Programming Fundamentals' cannot map to ${profile.label}`;
+      if (options.throwOnError) {
+        throw new Error(errMsg);
+      } else {
+        warnings.push(errMsg);
+      }
     }
   }
 
   if (textContainsAny(textBlob, ["git & github", "git and github"])) {
     if (["research and academia", "design and ux", "marketing and growth"].includes(expectedDomain)) {
-      throw new Error(`Semantic Mismatch: 'Git & GitHub' cannot map to ${profile.label}`);
+      const errMsg = `Semantic Mismatch: 'Git & GitHub' cannot map to ${profile.label}`;
+      if (options.throwOnError) {
+        throw new Error(errMsg);
+      } else {
+        warnings.push(errMsg);
+      }
     }
   }
 
   if (textContainsAny(textBlob, ["ui design"])) {
     if (textContainsAny(textBlob, ["backend development", "backend systems", "database", "sql"])) {
-      throw new Error(`Semantic Mismatch: 'UI Design' cannot map to Backend Engineering`);
+      const errMsg = `Semantic Mismatch: 'UI Design' cannot map to Backend Engineering`;
+      if (options.throwOnError) {
+        throw new Error(errMsg);
+      } else {
+        warnings.push(errMsg);
+      }
     }
   }
 
   if (textContainsAny(textBlob, ["sql analytics"])) {
     if (["design and ux"].includes(expectedDomain)) {
-      throw new Error(`Semantic Mismatch: 'SQL Analytics' cannot map to ${profile.label}`);
+      const errMsg = `Semantic Mismatch: 'SQL Analytics' cannot map to ${profile.label}`;
+      if (options.throwOnError) {
+        throw new Error(errMsg);
+      } else {
+        warnings.push(errMsg);
+      }
     }
   }
+
+  return {
+    valid: warnings.length === 0,
+    warnings
+  };
 }
 
 export function auditRoadmapQuality(roadmaps: unknown, goalOrProfile: string | DomainProfile) {

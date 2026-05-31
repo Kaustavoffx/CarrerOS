@@ -8,7 +8,7 @@ import { MagneticButton } from "./magnetic-button";
 import { FeatureGateButton, FeatureStatusBadge } from "./feature-status";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { normalizeRoadmapArray, normalizeRoadmapVersionArray, updateWorkspace } from "@/lib/app-data";
-import { buildRoadmapExportBundle, generateRoadmapPdfBlob } from "@/lib/roadmap-export";
+import { buildRoadmapExportBundle, generateRoadmapPdfBlob, type AuditBlob } from "@/lib/roadmap-export";
 import type { AiProviderStatusRecord, RoadmapRecord, RoadmapVersionRecord, UserProfileRecord, WorkspaceSnapshotRecord } from "@/lib/supabase/types";
 
 type RoadmapsConsoleProps = {
@@ -28,7 +28,7 @@ function downloadTextFile(filename: string, content: string, mimeType: string) {
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
-async function downloadPdfFile(filename: string, report: Parameters<typeof generateRoadmapPdfBlob>[0]) {
+async function downloadPdfFile(filename: string, report: Parameters<typeof generateRoadmapPdfBlob>[0]): Promise<{ valid: boolean; warnings: string[] }> {
   const blob = await generateRoadmapPdfBlob(report);
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
@@ -36,6 +36,12 @@ async function downloadPdfFile(filename: string, report: Parameters<typeof gener
   anchor.download = filename;
   anchor.click();
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
+
+  const auditBlob = blob as AuditBlob;
+  return {
+    valid: auditBlob.valid !== false,
+    warnings: auditBlob.warnings || []
+  };
 }
 
 export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapHistory, aiProviders }: RoadmapsConsoleProps) {
@@ -177,8 +183,17 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
     const bundle = buildRoadmapExportBundle(safeWorkspaceRoadmaps, `${profile?.goal ?? "CareerOS"} Roadmap`);
     bundle.pdf.report.careerGoal = profile?.goal;
     bundle.pdf.report.readinessScore = profile?.readiness_score;
-    await downloadPdfFile(bundle.pdf.filename, bundle.pdf.report);
-    showToast("PDF downloaded.");
+    try {
+      const result = await downloadPdfFile(bundle.pdf.filename, bundle.pdf.report);
+      if (!result.valid) {
+        showToast("Roadmap quality warning detected. Export generated successfully.");
+      } else {
+        showToast("PDF downloaded.");
+      }
+    } catch (error) {
+      console.error("PDF download failure:", error);
+      showToast("PDF export failed.");
+    }
   }
 
   return (
