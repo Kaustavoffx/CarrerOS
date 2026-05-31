@@ -1,5 +1,4 @@
-import { jsPDF } from "jspdf";
-import type { RoadmapMilestoneRecord, RoadmapRecord, RoadmapResourceLink } from "./supabase/types";
+import type { RoadmapRecord } from "./supabase/types";
 
 export type RoadmapExportBundle = {
   json: string;
@@ -10,10 +9,6 @@ export type RoadmapExportBundle = {
   };
 };
 
-function safeArray<T>(value: unknown): T[] {
-  return Array.isArray(value) ? (value as T[]) : [];
-}
-
 function escapeHtml(value: string) {
   return value
     .replaceAll("&", "&amp;")
@@ -23,24 +18,27 @@ function escapeHtml(value: string) {
 }
 
 function formatResourceLinks(roadmap: RoadmapRecord) {
-  return safeArray<RoadmapResourceLink>(roadmap.resource_links)
+  const resources = Array.isArray(roadmap.resource_links) ? roadmap.resource_links : [];
+  return resources
     .map((resource) => `- [${resource.label}](${resource.url}) - ${resource.provider}`)
     .join("\n");
 }
 
 function formatList(items: string[]) {
-  const safeItems = safeArray<string>(items);
+  const safeItems = Array.isArray(items) ? items : [];
   return safeItems.length ? safeItems.map((item) => `- ${item}`).join("\n") : "- None";
 }
 
 function formatMilestonesMarkdown(roadmap: RoadmapRecord) {
-  return safeArray<RoadmapMilestoneRecord>(roadmap.milestones)
+  const milestones = Array.isArray(roadmap.milestones) ? roadmap.milestones : [];
+  return milestones
     .map((milestone) => {
-      const resources = safeArray<RoadmapResourceLink>(milestone.resource_links).map((resource) => `  - [${resource.label}](${resource.url}) - ${resource.provider}`).join("\n");
-      const projects = safeArray<string>(milestone.projects).map((project) => `  - ${project}`).join("\n");
-      const tasks = safeArray<string>(milestone.project_tasks).map((task) => `  - ${task}`).join("\n");
-      const outcomes = safeArray<string>(milestone.expected_outcomes).map((outcome) => `  - ${outcome}`).join("\n");
-      const criteria = safeArray<string>(milestone.completion_criteria).map((item) => `  - ${item}`).join("\n");
+      const resources = Array.isArray(milestone.resource_links) ? milestone.resource_links.map((resource) => `  - [${resource.label}](${resource.url}) - ${resource.provider}`).join("\n") : "  - None";
+      const projects = Array.isArray(milestone.projects) ? milestone.projects.map((project) => `  - ${project}`).join("\n") : "  - None";
+      const tasks = Array.isArray(milestone.project_tasks) ? milestone.project_tasks.map((task) => `  - ${task}`).join("\n") : "  - None";
+      const outcomes = Array.isArray(milestone.expected_outcomes) ? milestone.expected_outcomes.map((outcome) => `  - ${outcome}`).join("\n") : "  - None";
+      const criteria = Array.isArray(milestone.completion_criteria) ? milestone.completion_criteria.map((item) => `  - ${item}`).join("\n") : "  - None";
+      const deliverables = Array.isArray(milestone.deliverables) ? milestone.deliverables.map((item) => `  - ${item}`).join("\n") : "  - None";
 
       return [
         `### ${milestone.title}`,
@@ -51,97 +49,15 @@ function formatMilestonesMarkdown(roadmap: RoadmapRecord) {
         `Resources:\n${resources}`,
         `Projects:\n${projects}`,
         `Project tasks:\n${tasks}`,
-        `Deliverables:\n${safeArray<string>(milestone.deliverables).map((item) => `  - ${item}`).join("\n")}`,
+        `Deliverables:\n${deliverables}`,
         `Expected outcomes:\n${outcomes}`
       ].join("\n\n");
     })
     .join("\n\n");
 }
 
-function formatRoadmapText(roadmap: RoadmapRecord) {
-  return [
-    `Title: ${roadmap.title}`,
-    `Status: ${roadmap.status}`,
-    `Summary: ${roadmap.summary}`,
-    `Domain: ${roadmap.career_domain}`,
-    `Demand score: ${roadmap.career_demand_score}/100`,
-    `Market outlook: ${roadmap.market_outlook}`,
-    `Salary range: ${roadmap.salary_range}`,
-    `Automation risk: ${roadmap.automation_risk}`,
-    `Version: ${roadmap.roadmap_version}`,
-    `AI reasoning: ${roadmap.ai_reasoning}`,
-    `Total duration: ${roadmap.total_duration_weeks} week(s)`,
-    `Weekly hours: ${roadmap.weekly_hours}`,
-    `Estimated completion: ${roadmap.estimated_completion_date}`,
-    `Weekly structure: ${safeArray<string>(roadmap.weekly_schedule).join(", ") || "None"}`,
-    `Learning outcomes: ${safeArray<string>(roadmap.learning_outcomes).join(", ") || "None"}`,
-    `Resources:`,
-    ...safeArray<RoadmapResourceLink>(roadmap.resource_links).map((resource) => `- ${resource.label} (${resource.provider}): ${resource.url}`),
-    `Milestones:`,
-    ...safeArray<RoadmapMilestoneRecord>(roadmap.milestones).flatMap((milestone) => [
-      `- ${milestone.title}`,
-      `  Why it matters: ${milestone.why_it_matters}`,
-      `  Duration: ${milestone.estimated_duration_weeks} week(s)`,
-      `  Difficulty: ${milestone.difficulty_level}`,
-      `  Completion criteria: ${safeArray<string>(milestone.completion_criteria).join("; ") || "None"}`,
-      `  Projects: ${safeArray<string>(milestone.projects).join("; ") || "None"}`,
-      `  Project tasks: ${safeArray<string>(milestone.project_tasks).join("; ") || "None"}`,
-      `  Deliverables: ${safeArray<string>(milestone.deliverables).join("; ") || "None"}`,
-      `  Expected outcomes: ${safeArray<string>(milestone.expected_outcomes).join("; ") || "None"}`
-    ])
-  ];
-}
-
-export function downloadRoadmapPdf(roadmaps: RoadmapRecord[], title = "CareerOS Roadmap") {
-  const safeRoadmaps = safeArray<RoadmapRecord>(roadmaps);
-  const doc = new jsPDF({ unit: "pt", format: "a4" });
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 40;
-  const contentWidth = pageWidth - margin * 2;
-  let cursorY = margin;
-
-  function ensureSpace(requiredHeight: number) {
-    if (cursorY + requiredHeight > pageHeight - margin) {
-      doc.addPage();
-      cursorY = margin;
-    }
-  }
-
-  function addTextBlock(text: string, fontSize = 11, spacingAfter = 10) {
-    doc.setFontSize(fontSize);
-    const lines = doc.splitTextToSize(text, contentWidth) as string[];
-    ensureSpace(lines.length * (fontSize + 2) + spacingAfter);
-    doc.text(lines, margin, cursorY);
-    cursorY += lines.length * (fontSize + 2) + spacingAfter;
-  }
-
-  doc.setFontSize(20);
-  doc.text(title, margin, cursorY);
-  cursorY += 26;
-  addTextBlock(`Exported at: ${new Date().toISOString()}`, 10, 18);
-
-  safeRoadmaps.forEach((roadmap, index) => {
-    if (index > 0) {
-      doc.addPage();
-      cursorY = margin;
-    }
-
-    doc.setFontSize(16);
-    doc.text(roadmap.title, margin, cursorY);
-    cursorY += 22;
-
-    formatRoadmapText(roadmap).forEach((line) => {
-      addTextBlock(line, line.startsWith("- ") ? 10 : 11, line === "Milestones:" || line === "Resources:" ? 12 : 8);
-    });
-  });
-
-  const filename = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "careeros-roadmap"}.pdf`;
-  doc.save(filename);
-}
-
 export function buildRoadmapExportBundle(roadmaps: RoadmapRecord[], title = "CareerOS Roadmap"): RoadmapExportBundle {
-  const safeRoadmaps = safeArray<RoadmapRecord>(roadmaps);
+  const safeRoadmaps = Array.isArray(roadmaps) ? roadmaps : [];
   const json = JSON.stringify(
     {
       title,
@@ -181,7 +97,7 @@ export function buildRoadmapExportBundle(roadmaps: RoadmapRecord[], title = "Car
       formatMilestonesMarkdown(roadmap),
       ``,
       `### Expected outcomes`,
-      ...safeArray<string>(roadmap.expected_outcomes).map((outcome) => `- ${outcome}`),
+      ...roadmap.expected_outcomes.map((outcome) => `- ${outcome}`),
       ``
     ])
   ].join("\n");
@@ -226,14 +142,14 @@ export function buildRoadmapExportBundle(roadmaps: RoadmapRecord[], title = "Car
             <p><strong>Total duration:</strong> ${roadmap.total_duration_weeks} week(s)</p>
             <p><strong>Weekly hours:</strong> ${roadmap.weekly_hours}</p>
             <p><strong>Estimated completion:</strong> ${escapeHtml(roadmap.estimated_completion_date)}</p>
-            <p><strong>Weekly structure:</strong> ${escapeHtml(safeArray<string>(roadmap.weekly_schedule).join(", "))}</p>
-            <p><strong>Learning outcomes:</strong> ${escapeHtml(safeArray<string>(roadmap.learning_outcomes).join(", "))}</p>
+            <p><strong>Weekly structure:</strong> ${escapeHtml((Array.isArray(roadmap.weekly_schedule) ? roadmap.weekly_schedule : []).join(", "))}</p>
+            <p><strong>Learning outcomes:</strong> ${escapeHtml((Array.isArray(roadmap.learning_outcomes) ? roadmap.learning_outcomes : []).join(", "))}</p>
             <h3>Resources</h3>
-            <ul>${safeArray<RoadmapResourceLink>(roadmap.resource_links)
+            <ul>${(Array.isArray(roadmap.resource_links) ? roadmap.resource_links : [])
               .map((resource) => `<li><a href="${escapeHtml(resource.url)}" target="_blank" rel="noreferrer">${escapeHtml(resource.label)}</a> - ${escapeHtml(resource.provider)}</li>`)
               .join("")}</ul>
             <h3>Milestones</h3>
-            ${safeArray<RoadmapMilestoneRecord>(roadmap.milestones)
+            ${(Array.isArray(roadmap.milestones) ? roadmap.milestones : [])
               .map(
                 (milestone) => `
                   <div class="card">
@@ -242,11 +158,11 @@ export function buildRoadmapExportBundle(roadmaps: RoadmapRecord[], title = "Car
                     <p><strong>Estimated duration:</strong> ${milestone.estimated_duration_weeks} week(s)</p>
                     <p><strong>Difficulty:</strong> ${escapeHtml(milestone.difficulty_level)}</p>
                     <p><strong>Completion criteria:</strong></p>
-                    <ul>${safeArray<string>(milestone.completion_criteria).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
-                    <p><strong>Projects:</strong> ${escapeHtml(safeArray<string>(milestone.projects).join(", "))}</p>
-                    <p><strong>Project tasks:</strong> ${escapeHtml(safeArray<string>(milestone.project_tasks).join(", "))}</p>
-                    <p><strong>Deliverables:</strong> ${escapeHtml(safeArray<string>(milestone.deliverables).join(", "))}</p>
-                    <p><strong>Expected outcomes:</strong> ${escapeHtml(safeArray<string>(milestone.expected_outcomes).join(", "))}</p>
+                    <ul>${(Array.isArray(milestone.completion_criteria) ? milestone.completion_criteria : []).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+                    <p><strong>Projects:</strong> ${escapeHtml((Array.isArray(milestone.projects) ? milestone.projects : []).join(", "))}</p>
+                    <p><strong>Project tasks:</strong> ${escapeHtml((Array.isArray(milestone.project_tasks) ? milestone.project_tasks : []).join(", "))}</p>
+                    <p><strong>Deliverables:</strong> ${escapeHtml((Array.isArray(milestone.deliverables) ? milestone.deliverables : []).join(", "))}</p>
+                    <p><strong>Expected outcomes:</strong> ${escapeHtml((Array.isArray(milestone.expected_outcomes) ? milestone.expected_outcomes : []).join(", "))}</p>
                   </div>
                 `
               )
@@ -262,7 +178,7 @@ export function buildRoadmapExportBundle(roadmaps: RoadmapRecord[], title = "Car
     json,
     markdown,
     pdf: {
-      filename: `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "careeros-roadmap"}.html`,
+      filename: `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "careeros-roadmap"}.pdf`,
       html: pdfHtml
     }
   };

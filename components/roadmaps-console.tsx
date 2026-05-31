@@ -7,7 +7,7 @@ import { MagneticButton } from "./magnetic-button";
 import { FeatureGateButton, FeatureStatusBadge } from "./feature-status";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { normalizeRoadmapArray, normalizeRoadmapVersionArray, updateWorkspace } from "@/lib/app-data";
-import { buildRoadmapExportBundle, downloadRoadmapPdf } from "@/lib/roadmap-export";
+import { buildRoadmapExportBundle } from "@/lib/roadmap-export";
 import type { RoadmapRecord, RoadmapVersionRecord, UserProfileRecord, WorkspaceSnapshotRecord } from "@/lib/supabase/types";
 
 type RoadmapsConsoleProps = {
@@ -24,6 +24,25 @@ function downloadTextFile(filename: string, content: string, mimeType: string) {
   anchor.download = filename;
   anchor.click();
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+async function downloadPdfFile(filename: string, html: string) {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ unit: "pt", format: "letter" });
+  const text = html
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const lines = doc.splitTextToSize(text, 540);
+  doc.text(lines, 36, 48);
+  doc.save(filename);
 }
 
 export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapHistory }: RoadmapsConsoleProps) {
@@ -85,7 +104,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
   async function restoreRoadmapVersion(version: RoadmapVersionRecord) {
     if (!workspace) return;
 
-    await persistRoadmaps(Array.isArray(version.roadmaps) ? normalizeRoadmapArray(version.roadmaps) : []);
+    await persistRoadmaps(normalizeRoadmapArray(version.roadmaps));
     showToast(`Restored version ${version.roadmap_version}.`);
   }
 
@@ -101,27 +120,27 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
     showToast("Refreshing roadmap with curated project milestones...");
 
     try {
-      const requestBody = {
+      const requestPayload = {
         profile,
         currentRoadmaps: safeWorkspaceRoadmaps
       };
-      console.log("REPLAN REQUEST SHAPE", {
-        profileKeys: Object.keys(profile ?? {}),
-        currentRoadmapCount: safeWorkspaceRoadmaps.length,
-        currentRoadmapKeys: safeWorkspaceRoadmaps[0] ? Object.keys(safeWorkspaceRoadmaps[0]) : []
+      console.log("ROADMAP REPLAN REQUEST SHAPE", {
+        profileKeys: profile ? Object.keys(profile) : [],
+        currentRoadmapsLength: safeWorkspaceRoadmaps.length,
+        requestKeys: Object.keys(requestPayload)
       });
       const response = await fetch("/api/replan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify(requestPayload)
       });
 
       const data = await response.json();
-      console.log("REPLAN RESPONSE SHAPE", {
+      console.log("ROADMAP REPLAN RESPONSE SHAPE", {
         ok: response.ok,
         status: response.status,
         keys: data ? Object.keys(data) : [],
-        roadmapCount: Array.isArray(data?.roadmaps) ? data.roadmaps.length : 0
+        roadmapsLength: Array.isArray(data?.roadmaps) ? data.roadmaps.length : 0
       });
 
       if (!response.ok) {
@@ -165,9 +184,10 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
     showToast("Markdown export downloaded.");
   }
 
-  function handlePdfPreview() {
+  async function handlePdfDownload() {
     if (!safeWorkspaceRoadmaps.length) return;
-    downloadRoadmapPdf(safeWorkspaceRoadmaps, `${profile?.goal ?? "CareerOS"} Roadmap`);
+    const bundle = buildRoadmapExportBundle(safeWorkspaceRoadmaps, `${profile?.goal ?? "CareerOS"} Roadmap`);
+    await downloadPdfFile(bundle.pdf.filename, bundle.pdf.html);
     showToast("PDF downloaded.");
   }
 
@@ -231,7 +251,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
             <MagneticButton asChild>
               <button
                 type="button"
-                onClick={handlePdfPreview}
+                onClick={() => void handlePdfDownload()}
                 className="inline-flex items-center gap-2 rounded-full border border-[#202028] bg-[#121218] px-4 py-2 text-xs font-semibold text-slate-200 hover:text-white"
               >
                 <Printer className="h-4 w-4" />
@@ -262,7 +282,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
               <p className="caption text-slate-500">Version history</p>
               <h3 className="heading-card text-white">Roadmap snapshots and restore points</h3>
             </div>
-            <p className="caption text-slate-500">Latest {Array.isArray(safeRoadmapHistory) ? Math.min(safeRoadmapHistory.length, 12) : 0} versions from Supabase</p>
+            <p className="caption text-slate-500">Latest {Math.min(safeRoadmapHistory.length, 12)} versions from Supabase</p>
           </div>
 
           {safeRoadmapHistory.length ? (
@@ -284,7 +304,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                   <p className="small text-slate-400 line-clamp-3">{version.ai_reasoning}</p>
                   <div className="flex items-center justify-between caption text-slate-500">
                     <span>{new Date(version.generated_at).toLocaleDateString()}</span>
-                    <span>{Array.isArray(versionRoadmaps) ? versionRoadmaps.length : 0} roadmap(s)</span>
+                    <span>{versionRoadmaps.length} roadmap(s)</span>
                   </div>
                   <MagneticButton asChild>
                     <button
@@ -299,7 +319,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
               );})}
             </div>
           ) : (
-            <p className="small text-slate-400">No version history yet. Refreshing a roadmap will create the first snapshot in Supabase.</p>
+            <p className="small text-slate-400">No version history yet. Refreshing a roadmap will create the first snapshot.</p>
           )}
         </div>
 

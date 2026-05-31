@@ -130,10 +130,11 @@ async function generateWithOpenAI(prompt: ReturnType<typeof buildRoadmapPlanProm
 export async function POST(req: Request) {
   try {
     const rawBody = await req.json();
-    console.log("REPLAN REQUEST SHAPE", {
+    console.log("ROADMAP REPLAN REQUEST SHAPE", {
       keys: Object.keys(rawBody ?? {}),
-      profileKeys: Object.keys(rawBody?.profile ?? {}),
-      currentRoadmapCount: Array.isArray(rawBody?.currentRoadmaps) ? rawBody.currentRoadmaps.length : 0
+      hasProfile: Boolean(rawBody?.profile),
+      hasCurrentRoadmaps: Array.isArray(rawBody?.currentRoadmaps),
+      currentRoadmapsLength: Array.isArray(rawBody?.currentRoadmaps) ? rawBody.currentRoadmaps.length : 0
     });
     const parsedInput = RequestSchema.safeParse(rawBody);
 
@@ -202,9 +203,9 @@ export async function POST(req: Request) {
     if (aiPayload) {
       const validated = ResponseSchema.safeParse(aiPayload);
       if (validated.success) {
-        console.log("REPLAN RESPONSE SHAPE", {
-          keys: Object.keys(validated.data),
-          roadmapCount: validated.data.roadmaps.length
+        console.log("ROADMAP REPLAN RESPONSE SHAPE", {
+          keys: Object.keys(validated.data ?? {}),
+          roadmapsLength: validated.data.roadmaps.length
         });
         return NextResponse.json(validated.data);
       }
@@ -216,9 +217,9 @@ export async function POST(req: Request) {
     }
 
     const fallback = buildRoadmapPlanDetails(roadmapInput);
-    console.log("REPLAN RESPONSE SHAPE", {
-      keys: Object.keys(fallback),
-      roadmapCount: fallback.roadmaps.length
+    console.log("ROADMAP REPLAN RESPONSE SHAPE", {
+      keys: Object.keys(fallback ?? {}),
+      roadmapsLength: fallback.roadmaps.length
     });
     return NextResponse.json({ ...fallback, roadmaps: fallback.roadmaps });
   } catch (error) {
