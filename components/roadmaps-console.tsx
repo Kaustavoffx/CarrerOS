@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { ArrowRight, CalendarDays, Cpu, Download, Printer, RefreshCw, ShieldAlert, Clock3 } from "lucide-react";
 import { FREE_GENERATIONS } from "@/lib/config";
 import { MagneticButton } from "./magnetic-button";
@@ -8,12 +9,13 @@ import { FeatureGateButton, FeatureStatusBadge } from "./feature-status";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { normalizeRoadmapArray, normalizeRoadmapVersionArray, updateWorkspace } from "@/lib/app-data";
 import { buildRoadmapExportBundle } from "@/lib/roadmap-export";
-import type { RoadmapRecord, RoadmapVersionRecord, UserProfileRecord, WorkspaceSnapshotRecord } from "@/lib/supabase/types";
+import type { AiProviderStatusRecord, RoadmapRecord, RoadmapVersionRecord, UserProfileRecord, WorkspaceSnapshotRecord } from "@/lib/supabase/types";
 
 type RoadmapsConsoleProps = {
   profile: UserProfileRecord | null;
   workspace: WorkspaceSnapshotRecord | null;
   roadmapHistory?: RoadmapVersionRecord[] | null;
+  aiProviders?: AiProviderStatusRecord[] | null;
 };
 
 function downloadTextFile(filename: string, content: string, mimeType: string) {
@@ -45,7 +47,7 @@ async function downloadPdfFile(filename: string, html: string) {
   doc.save(filename);
 }
 
-export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapHistory }: RoadmapsConsoleProps) {
+export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapHistory, aiProviders }: RoadmapsConsoleProps) {
   const [workspace, setWorkspace] = useState<WorkspaceSnapshotRecord | null>(initialWorkspace);
   const [isReplanning, setIsReplanning] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -55,6 +57,8 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
   const supabase = getSupabaseBrowserClient();
   const safeRoadmapHistory = normalizeRoadmapVersionArray(roadmapHistory);
   const safeWorkspaceRoadmaps = normalizeRoadmapArray(workspace?.roadmaps);
+  const hasConnectedProvider = Array.isArray(aiProviders) && aiProviders.some((provider) => provider.connected);
+  const freeGenerationsRemaining = Math.max(0, FREE_GENERATIONS - freeGenerationsUsed);
 
   useEffect(() => {
     setWorkspace(initialWorkspace);
@@ -150,7 +154,11 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
         setLimitExhausted(next >= FREE_GENERATIONS);
         return next;
       });
-      showToast("Roadmap regenerated and synced.");
+      if (data?.provider_prompt) {
+        showToast(data.provider_prompt_message || "Connect your own AI provider to continue.");
+      } else {
+        showToast("Roadmap regenerated and synced.");
+      }
     } catch (error) {
       console.error("ROADMAP REPLAN PERSISTENCE FAILED", error);
       showToast("Roadmap refresh failed. Check console.");
@@ -206,7 +214,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-3 caption text-slate-500">
               <span className="flex items-center gap-2 rounded-xl border border-[#141417] bg-[#0c0c0e] px-2 py-1">
-                <Cpu className="h-3.5 w-3.5 text-cyan-400" /> Free Sprints: {freeGenerationsUsed}/{FREE_GENERATIONS}
+                <Cpu className="h-3.5 w-3.5 text-cyan-400" /> Free generations remaining: {freeGenerationsRemaining}/{FREE_GENERATIONS}
               </span>
               {limitExhausted ? (
                 <span className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-2 py-1 text-red-300">
@@ -263,6 +271,19 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
           </div>
         </div>
       </section>
+
+      {limitExhausted && !hasConnectedProvider ? (
+        <section className="rounded-[24px] border border-amber-400/20 bg-amber-400/10 p-5 text-amber-50 shadow-[0_24px_90px_rgba(0,0,0,0.35)]">
+          <p className="caption text-amber-200">BYOK required</p>
+          <h3 className="mt-2 heading-card text-white">Your free generations are exhausted.</h3>
+          <p className="mt-2 max-w-2xl small text-amber-50/90">Connect your own AI provider to continue generating fresh roadmaps without interruption.</p>
+          <div className="mt-4">
+            <Link href="/settings#ai-providers" className="tactile-btn tactile-btn-primary inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-black">
+              Configure AI Provider
+            </Link>
+          </div>
+        </section>
+      ) : null}
 
       <section className="grid gap-4 lg:grid-cols-2">
         <div className="col-span-full rounded-[24px] border border-[#141417] bg-[#070708] p-5 space-y-4">

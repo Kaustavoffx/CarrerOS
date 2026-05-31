@@ -4,13 +4,15 @@ import { hasSupabaseConfig } from "@/lib/supabase/config";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { createStarterWorkspace } from "@/lib/workspace";
 import { loadAppData } from "@/lib/app-data";
+import { loadAiProviderStatuses } from "@/lib/ai-provider-store";
 import { RoadmapsConsole } from "@/components/roadmaps-console";
-import type { RoadmapVersionRecord } from "@/lib/supabase/types";
+import type { AiProviderStatusRecord, RoadmapVersionRecord } from "@/lib/supabase/types";
 
 export default async function RoadmapsPage() {
   let profile = null;
   let workspace = null;
   let roadmapHistory: RoadmapVersionRecord[] = [];
+  let aiProviders: AiProviderStatusRecord[] = [];
 
   if (hasSupabaseConfig()) {
     const supabase = await getSupabaseServerClient();
@@ -31,6 +33,7 @@ export default async function RoadmapsPage() {
     profile = data.profile;
     workspace = data.workspace;
     roadmapHistory = Array.isArray(data.roadmapHistory) ? data.roadmapHistory : [];
+    aiProviders = await loadAiProviderStatuses(user.id);
 
     if (!profile?.onboarding_complete) {
       redirect("/onboarding");
@@ -43,7 +46,7 @@ export default async function RoadmapsPage() {
 
   return (
     <WorkspaceShell profile={profile} workspace={workspace}>
-      <RoadmapsConsole profile={profile} workspace={workspace} roadmapHistory={roadmapHistory} />
+      <RoadmapsConsole profile={profile} workspace={workspace} roadmapHistory={roadmapHistory} aiProviders={aiProviders} />
     </WorkspaceShell>
   );
 }

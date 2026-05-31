@@ -1,6 +1,16 @@
 export type ExperienceLevel = "Student" | "Junior" | "Mid" | "Senior" | "Switcher";
 export type RoadmapStatus = "Planned" | "Active" | "Done";
 export type RoadmapDifficulty = "Beginner" | "Intermediate" | "Advanced";
+export type AiProviderName = "openai" | "gemini";
+
+export type AiProviderStatusRecord = {
+  provider: AiProviderName;
+  connected: boolean;
+  masked_key: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  active: boolean;
+};
 
 export type RoadmapResourceLink = {
   label: string;

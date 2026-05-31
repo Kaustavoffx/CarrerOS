@@ -204,7 +204,20 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4.1-mini
+AI_KEY_ENCRYPTION_SECRET=
+SUPABASE_SERVICE_ROLE_KEY=
 ```
+
+### BYOK AI Providers
+
+CareerOS can continue roadmap generation after the free quota is exhausted when a user connects their own provider key in Settings -> AI Providers.
+
+Supported providers:
+
+* OpenAI API Key
+* Gemini API Key
+
+The app encrypts provider keys on the server before storing them in Supabase and never sends stored keys back to the browser.
 
 ### Run Development Server
 

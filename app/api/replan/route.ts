@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { FREE_GENERATIONS } from "@/lib/config";
+import { resolveUserAiProviderForGeneration } from "@/lib/ai-provider-store";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { auditRoadmapQuality, buildRoadmapPlanDetails, buildRoadmapPlanPrompt, resolveDomainProfile, validateRoadmapDomainConsistency } from "@/lib/roadmap-plan";
 
 const ResourceLinkSchema = z.object({
@@ -62,8 +63,7 @@ const ProfileSchema = z.object({
 
 const RequestSchema = z.object({
   profile: ProfileSchema.optional().nullable(),
-  currentRoadmaps: z.array(RoadmapSchema).optional().nullable(),
-  userApiKey: z.string().optional()
+  currentRoadmaps: z.array(RoadmapSchema).optional().nullable()
 });
 
 const ResponseSchema = z.object({
@@ -76,8 +76,7 @@ const ResponseSchema = z.object({
   roadmaps: z.array(RoadmapSchema)
 });
 
-async function generateWithOpenAI(prompt: ReturnType<typeof buildRoadmapPlanPrompt>) {
-  const apiKey = process.env.OPENAI_API_KEY;
+async function generateWithOpenAI(prompt: ReturnType<typeof buildRoadmapPlanPrompt>, apiKey: string) {
   if (!apiKey) {
     return null;
   }
@@ -128,6 +127,87 @@ async function generateWithOpenAI(prompt: ReturnType<typeof buildRoadmapPlanProm
   }
 }
 
+async function generateWithGemini(prompt: ReturnType<typeof buildRoadmapPlanPrompt>, apiKey: string) {
+  if (!apiKey) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        systemInstruction: {
+          parts: [{ text: prompt.system }]
+        },
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: JSON.stringify(prompt.user) }]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.4,
+          responseMimeType: "application/json"
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const responseText = await response.text().catch(() => "<unavailable>");
+      console.error("GEMINI ROADMAP GENERATION FAILED", {
+        status: response.status,
+        statusText: response.statusText,
+        responseText
+      });
+      return null;
+    }
+
+    const payload = await response.json();
+    const content = payload?.candidates?.[0]?.content?.parts?.map((part: { text?: string }) => part.text ?? "").join("");
+
+    if (typeof content !== "string" || !content.trim().length) {
+      console.error("GEMINI ROADMAP GENERATION FAILED", { reason: "missing_content", payload });
+      return null;
+    }
+
+    return JSON.parse(content) as unknown;
+  } catch (error) {
+    console.error("GEMINI ROADMAP GENERATION FAILED", error);
+    return null;
+  }
+}
+
+async function resolveGenerationSource(userId: string, freeGenerationsUsed: number) {
+  if (freeGenerationsUsed < FREE_GENERATIONS) {
+    return {
+      source: "platform-openai" as const,
+      provider: "openai" as const,
+      apiKey: process.env.OPENAI_API_KEY ?? null,
+      providerPrompt: false
+    };
+  }
+
+  const { provider, apiKey } = await resolveUserAiProviderForGeneration(userId);
+  if (provider && apiKey) {
+    return {
+      source: provider === "openai" ? ("user-openai" as const) : ("user-gemini" as const),
+      provider,
+      apiKey,
+      providerPrompt: false
+    };
+  }
+
+  return {
+    source: "local" as const,
+    provider: null,
+    apiKey: null,
+    providerPrompt: true
+  };
+}
+
 export async function POST(req: Request) {
   try {
     const rawBody = await req.json();
@@ -167,22 +247,18 @@ export async function POST(req: Request) {
       .maybeSingle();
 
     const freeGenerationsUsed = usageData?.free_generations_used ?? 0;
+    const generationSource = await resolveGenerationSource(user.id, freeGenerationsUsed);
 
-    if (freeGenerationsUsed >= FREE_GENERATIONS) {
-      return NextResponse.json(
-        { error: "Free generations exhausted.", code: "LIMIT_EXHAUSTED" },
-        { status: 403 }
+    if (freeGenerationsUsed < FREE_GENERATIONS) {
+      await supabase.from("user_usage").upsert(
+        {
+          user_id: user.id,
+          free_generations_used: freeGenerationsUsed + 1,
+          updated_at: new Date().toISOString()
+        },
+        { onConflict: "user_id" }
       );
     }
-
-    await supabase.from("user_usage").upsert(
-      {
-        user_id: user.id,
-        free_generations_used: freeGenerationsUsed + 1,
-        updated_at: new Date().toISOString()
-      },
-      { onConflict: "user_id" }
-    );
 
     const roadmapInput = {
       goal,
@@ -196,7 +272,11 @@ export async function POST(req: Request) {
     };
 
     const prompt = buildRoadmapPlanPrompt(roadmapInput);
-    const aiPayload = await generateWithOpenAI(prompt);
+    const aiPayload = generationSource.source === "platform-openai" || generationSource.source === "user-openai"
+      ? await generateWithOpenAI(prompt, generationSource.apiKey ?? "")
+      : generationSource.source === "user-gemini"
+        ? await generateWithGemini(prompt, generationSource.apiKey ?? "")
+        : null;
 
     if (aiPayload) {
       const validated = ResponseSchema.safeParse(aiPayload);
@@ -206,7 +286,12 @@ export async function POST(req: Request) {
           const audit = auditRoadmapQuality(validated.data.roadmaps, domainProfile);
 
           if (audit.qualityScore >= 85) {
-            return NextResponse.json(validated.data);
+            return NextResponse.json({
+              ...validated.data,
+              generation_source: generationSource.source,
+              provider_prompt: generationSource.providerPrompt,
+              provider_prompt_message: generationSource.providerPrompt ? "Your free generations are exhausted. Connect your own AI provider to continue." : null
+            });
           }
 
           console.error("INVALID AI ROADMAP QUALITY", { qualityScore: audit.qualityScore, reasons: audit.reasons, payload: aiPayload });
@@ -229,7 +314,13 @@ export async function POST(req: Request) {
     if (fallbackAudit.qualityScore < 85) {
       throw new Error(`Fallback roadmap quality below threshold: ${fallbackAudit.qualityScore}`);
     }
-    return NextResponse.json({ ...fallback, roadmaps: fallback.roadmaps });
+    return NextResponse.json({
+      ...fallback,
+      roadmaps: fallback.roadmaps,
+      generation_source: generationSource.source,
+      provider_prompt: generationSource.providerPrompt,
+      provider_prompt_message: generationSource.providerPrompt ? "Your free generations are exhausted. Connect your own AI provider to continue." : null
+    });
   } catch (error) {
     console.error("ROADMAP REPLAN FAILED", error);
     return NextResponse.json({ error: "Roadmap generation failed." }, { status: 500 });
