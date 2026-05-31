@@ -89,7 +89,7 @@ const RESOURCE_CATALOG = {
 const DOMAIN_LIBRARY: DomainProfile[] = [
   {
     label: "Software Engineering",
-    aliases: ["software", "frontend", "backend", "full stack", "fullstack", "developer", "engineering", "react", "node", "python", "web"],
+    aliases: ["software", "frontend", "backend", "full stack", "fullstack", "developer", "engineering", "react", "node", "python", "web", "sde", "sde-i", "sde-ii", "sde-iii", "swe", "computer science", "software engineer", "software development engineer"],
     marketOutlook: "Strong demand across startups, product teams, and enterprise modernization efforts.",
     salaryRange: "$80k-$180k+ depending on region and specialization",
     automationRisk: "Moderate. Routine coding is automating, but system design and debugging remain durable.",
