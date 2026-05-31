@@ -7,37 +7,14 @@ import { MagneticButton } from "./magnetic-button";
 import { FeatureGateButton, FeatureStatusBadge } from "./feature-status";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { normalizeRoadmapArray, normalizeRoadmapVersionArray, updateWorkspace } from "@/lib/app-data";
-import { buildRoadmapExportBundle } from "@/lib/roadmap-export";
+import { buildRoadmapExportBundle, downloadRoadmapPdf } from "@/lib/roadmap-export";
 import type { RoadmapRecord, RoadmapVersionRecord, UserProfileRecord, WorkspaceSnapshotRecord } from "@/lib/supabase/types";
-
-type RoadmapResourceLink = {
-  label: string;
-  url: string;
-  provider: string;
-};
-
-type RoadmapMilestoneView = {
-  title: string;
-  why_it_matters: string;
-  estimated_duration_weeks: number;
-  difficulty_level: string;
-  completion_criteria: string[];
-  resource_links: RoadmapResourceLink[];
-  projects: string[];
-  project_tasks: string[];
-  deliverables: string[];
-  expected_outcomes: string[];
-};
 
 type RoadmapsConsoleProps = {
   profile: UserProfileRecord | null;
   workspace: WorkspaceSnapshotRecord | null;
   roadmapHistory?: RoadmapVersionRecord[] | null;
 };
-
-function toArray<T>(value: unknown): T[] {
-  return Array.isArray(value) ? (value as T[]) : [];
-}
 
 function downloadTextFile(filename: string, content: string, mimeType: string) {
   const blob = new Blob([content], { type: mimeType });
@@ -108,7 +85,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
   async function restoreRoadmapVersion(version: RoadmapVersionRecord) {
     if (!workspace) return;
 
-    await persistRoadmaps(normalizeRoadmapArray(version.roadmaps));
+    await persistRoadmaps(Array.isArray(version.roadmaps) ? normalizeRoadmapArray(version.roadmaps) : []);
     showToast(`Restored version ${version.roadmap_version}.`);
   }
 
@@ -124,16 +101,28 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
     showToast("Refreshing roadmap with curated project milestones...");
 
     try {
+      const requestBody = {
+        profile,
+        currentRoadmaps: safeWorkspaceRoadmaps
+      };
+      console.log("REPLAN REQUEST SHAPE", {
+        profileKeys: Object.keys(profile ?? {}),
+        currentRoadmapCount: safeWorkspaceRoadmaps.length,
+        currentRoadmapKeys: safeWorkspaceRoadmaps[0] ? Object.keys(safeWorkspaceRoadmaps[0]) : []
+      });
       const response = await fetch("/api/replan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          profile,
-          currentRoadmaps: safeWorkspaceRoadmaps
-        })
+        body: JSON.stringify(requestBody)
       });
 
       const data = await response.json();
+      console.log("REPLAN RESPONSE SHAPE", {
+        ok: response.ok,
+        status: response.status,
+        keys: data ? Object.keys(data) : [],
+        roadmapCount: Array.isArray(data?.roadmaps) ? data.roadmaps.length : 0
+      });
 
       if (!response.ok) {
         console.error("ROADMAP REPLAN FAILED", data || response.statusText);
@@ -178,21 +167,8 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
 
   function handlePdfPreview() {
     if (!safeWorkspaceRoadmaps.length) return;
-    const bundle = buildRoadmapExportBundle(safeWorkspaceRoadmaps, `${profile?.goal ?? "CareerOS"} Roadmap`);
-    const preview = window.open("", "_blank", "noopener,noreferrer");
-
-    if (!preview) {
-      downloadTextFile(bundle.pdf.filename, bundle.pdf.html, "text/html;charset=utf-8");
-      showToast("PDF-ready HTML downloaded.");
-      return;
-    }
-
-    preview.document.open();
-    preview.document.write(bundle.pdf.html);
-    preview.document.close();
-    preview.focus();
-    setTimeout(() => preview.print(), 300);
-    showToast("PDF preview opened.");
+    downloadRoadmapPdf(safeWorkspaceRoadmaps, `${profile?.goal ?? "CareerOS"} Roadmap`);
+    showToast("PDF downloaded.");
   }
 
   return (
@@ -253,16 +229,14 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
               </button>
             </MagneticButton>
             <MagneticButton asChild>
-              <FeatureGateButton
+              <button
                 type="button"
                 onClick={handlePdfPreview}
-                status="coming-soon"
-                featureName="Advanced PDF Export"
                 className="inline-flex items-center gap-2 rounded-full border border-[#202028] bg-[#121218] px-4 py-2 text-xs font-semibold text-slate-200 hover:text-white"
               >
                 <Printer className="h-4 w-4" />
-                Print PDF
-              </FeatureGateButton>
+                PDF
+              </button>
             </MagneticButton>
             <MagneticButton asChild>
               <FeatureGateButton
@@ -288,13 +262,13 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
               <p className="caption text-slate-500">Version history</p>
               <h3 className="heading-card text-white">Roadmap snapshots and restore points</h3>
             </div>
-            <p className="caption text-slate-500">Latest {Math.min(safeRoadmapHistory.length, 12)} versions from Supabase</p>
+            <p className="caption text-slate-500">Latest {Array.isArray(safeRoadmapHistory) ? Math.min(safeRoadmapHistory.length, 12) : 0} versions from Supabase</p>
           </div>
 
           {safeRoadmapHistory.length ? (
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {safeRoadmapHistory.map((version) => {
-                const versionRoadmaps = normalizeRoadmapArray(version.roadmaps);
+                const versionRoadmaps = Array.isArray(version.roadmaps) ? normalizeRoadmapArray(version.roadmaps) : [];
 
                 return (
                 <div key={version.id} className="rounded-2xl border border-[#141417] bg-[#050506] p-4 space-y-3">
@@ -310,7 +284,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                   <p className="small text-slate-400 line-clamp-3">{version.ai_reasoning}</p>
                   <div className="flex items-center justify-between caption text-slate-500">
                     <span>{new Date(version.generated_at).toLocaleDateString()}</span>
-                    <span>{versionRoadmaps.length} roadmap(s)</span>
+                    <span>{Array.isArray(versionRoadmaps) ? versionRoadmaps.length : 0} roadmap(s)</span>
                   </div>
                   <MagneticButton asChild>
                     <button
@@ -325,17 +299,17 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
               );})}
             </div>
           ) : (
-            <p className="small text-slate-400">No version history yet. Refreshing a roadmap will create the first snapshot.</p>
+            <p className="small text-slate-400">No version history yet. Refreshing a roadmap will create the first snapshot in Supabase.</p>
           )}
         </div>
 
         {safeWorkspaceRoadmaps.length ? (
           safeWorkspaceRoadmaps.map((roadmap) => {
-            const weeklySchedule = toArray<string>(roadmap.weekly_schedule);
-            const learningOutcomes = toArray<string>(roadmap.learning_outcomes);
-            const resourceLinks = toArray<RoadmapResourceLink>(roadmap.resource_links);
-            const expectedOutcomes = toArray<string>(roadmap.expected_outcomes);
-            const milestones = toArray<RoadmapMilestoneView>(roadmap.milestones);
+            const weeklySchedule = Array.isArray(roadmap.weekly_schedule) ? roadmap.weekly_schedule : [];
+            const learningOutcomes = Array.isArray(roadmap.learning_outcomes) ? roadmap.learning_outcomes : [];
+            const resourceLinks = Array.isArray(roadmap.resource_links) ? roadmap.resource_links : [];
+            const expectedOutcomes = Array.isArray(roadmap.expected_outcomes) ? roadmap.expected_outcomes : [];
+            const milestones = Array.isArray(roadmap.milestones) ? roadmap.milestones : [];
 
             return (
               <article key={roadmap.id} className="liquid-card rounded-[24px] p-6 relative overflow-hidden group space-y-5">
@@ -466,11 +440,11 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                   </div>
                   <div className="space-y-3">
                     {milestones.map((milestone) => {
-                      const completionCriteria = toArray<string>(milestone.completion_criteria);
-                      const projects = toArray<string>(milestone.projects);
-                      const projectTasks = toArray<string>(milestone.project_tasks);
-                      const deliverables = toArray<string>(milestone.deliverables);
-                      const milestoneResources = toArray<RoadmapResourceLink>(milestone.resource_links);
+                      const completionCriteria = Array.isArray(milestone.completion_criteria) ? milestone.completion_criteria : [];
+                      const projects = Array.isArray(milestone.projects) ? milestone.projects : [];
+                      const projectTasks = Array.isArray(milestone.project_tasks) ? milestone.project_tasks : [];
+                      const deliverables = Array.isArray(milestone.deliverables) ? milestone.deliverables : [];
+                      const milestoneResources = Array.isArray(milestone.resource_links) ? milestone.resource_links : [];
 
                       return (
                         <div key={milestone.title} className="rounded-2xl border border-[#141417] bg-[#050506] p-4">

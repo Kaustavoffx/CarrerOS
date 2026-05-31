@@ -46,7 +46,7 @@ type FeatureGateButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   children?: ReactNode;
 };
 
-export function FeatureGateButton({ status, featureName, disabled = true, title, className = "", children, ...props }: FeatureGateButtonProps) {
+export function FeatureGateButton({ status, featureName, disabled = false, title, className = "", children, ...props }: FeatureGateButtonProps) {
   return (
     <button
       {...props}
