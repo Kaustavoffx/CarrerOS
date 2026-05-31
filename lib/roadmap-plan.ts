@@ -83,7 +83,12 @@ const RESOURCE_CATALOG = {
   unesco: { label: "UNESCO", url: "https://www.unesco.org/", provider: "UNESCO" },
   harvard: { label: "Harvard Business School Online", url: "https://online.hbs.edu/", provider: "Harvard Business School" },
   investopedia: { label: "Investopedia", url: "https://www.investopedia.com/", provider: "Investopedia" },
-  ted: { label: "TED", url: "https://www.ted.com/", provider: "TED" }
+  ted: { label: "TED", url: "https://www.ted.com/", provider: "TED" },
+  figma: { label: "Figma Help Docs", url: "https://help.figma.com/", provider: "Figma" },
+  nng: { label: "Nielsen Norman Group Articles", url: "https://www.nngroup.com/articles/", provider: "Nielsen Norman Group" },
+  material: { label: "Material Design Guidelines", url: "https://m3.material.io/", provider: "Material Design" },
+  kaggle: { label: "Kaggle Learn", url: "https://www.kaggle.com/learn", provider: "Kaggle" },
+  datacamp: { label: "DataCamp Courses", url: "https://www.datacamp.com/", provider: "DataCamp" }
 } as const;
 
 const DOMAIN_LIBRARY: DomainProfile[] = [
@@ -126,7 +131,9 @@ const DOMAIN_LIBRARY: DomainProfile[] = [
       { ...RESOURCE_CATALOG.postgres, topic: "SQL" },
       { ...RESOURCE_CATALOG.microsoftLearn, topic: "Power BI" },
       { ...RESOURCE_CATALOG.coursera, topic: "analytics" },
-      { ...RESOURCE_CATALOG.roadmap, topic: "analytics" }
+      { ...RESOURCE_CATALOG.roadmap, topic: "analytics" },
+      { ...RESOURCE_CATALOG.kaggle, topic: "SQL" },
+      { ...RESOURCE_CATALOG.datacamp, topic: "analytics" }
     ]
   },
   {
@@ -176,7 +183,10 @@ const DOMAIN_LIBRARY: DomainProfile[] = [
     resources: [
       { ...RESOURCE_CATALOG.mdn, topic: "accessibility" },
       { ...RESOURCE_CATALOG.roadmap, topic: "ux" },
-      { ...RESOURCE_CATALOG.githubSkills, topic: "portfolio" }
+      { ...RESOURCE_CATALOG.githubSkills, topic: "portfolio" },
+      { ...RESOURCE_CATALOG.figma, topic: "ux" },
+      { ...RESOURCE_CATALOG.nng, topic: "ux" },
+      { ...RESOURCE_CATALOG.material, topic: "ux" }
     ]
   },
   {
@@ -410,7 +420,7 @@ function getDomainKeywords(profile: DomainProfile) {
   );
 }
 
-function getDisallowedKeywords() {
+function getDisallowedKeywords(profile: DomainProfile) {
   const blockedTerms = [
     "operations",
     "ops",
@@ -430,7 +440,19 @@ function getDisallowedKeywords() {
     "talent"
   ];
 
-  return blockedTerms.map(normalizeText);
+  const lowerLabel = profile.label.toLowerCase();
+
+  return blockedTerms
+    .map(normalizeText)
+    .filter((term) => {
+      if (lowerLabel.includes("design") && term.includes("design")) {
+        return false;
+      }
+      if (lowerLabel.includes("operations") && term.includes("operations")) {
+        return false;
+      }
+      return true;
+    });
 }
 
 function getAllowedProviders(profile: DomainProfile) {
@@ -496,7 +518,7 @@ export function resolveDomainProfile(goal: string) {
   return pickDomain(goal);
 }
 
-export function validateRoadmapDomainConsistency(roadmap: Pick<RoadmapRecord, "career_domain">, goalOrProfile: string | DomainProfile) {
+export function validateRoadmapDomainConsistency(roadmap: RoadmapRecord, goalOrProfile: string | DomainProfile) {
   const profile = typeof goalOrProfile === "string" ? pickDomain(goalOrProfile) : goalOrProfile;
   const roadmapDomain = normalizeText(roadmap.career_domain);
   const expectedDomain = normalizeText(profile.label);
@@ -505,13 +527,39 @@ export function validateRoadmapDomainConsistency(roadmap: Pick<RoadmapRecord, "c
   if (roadmapDomain !== expectedDomain && !aliasAllowed) {
     throw new Error("Roadmap domain mismatch");
   }
+
+  const textBlob = roadmapTextBlob(roadmap).toLowerCase();
+  
+  if (textContainsAny(textBlob, ["programming fundamentals"])) {
+    if (["operations and strategy", "marketing and growth", "design and ux", "research and academia"].includes(expectedDomain)) {
+      throw new Error(`Semantic Mismatch: 'Programming Fundamentals' cannot map to ${profile.label}`);
+    }
+  }
+
+  if (textContainsAny(textBlob, ["git & github", "git and github"])) {
+    if (["research and academia", "design and ux", "marketing and growth"].includes(expectedDomain)) {
+      throw new Error(`Semantic Mismatch: 'Git & GitHub' cannot map to ${profile.label}`);
+    }
+  }
+
+  if (textContainsAny(textBlob, ["ui design"])) {
+    if (textContainsAny(textBlob, ["backend development", "backend systems", "database", "sql"])) {
+      throw new Error(`Semantic Mismatch: 'UI Design' cannot map to Backend Engineering`);
+    }
+  }
+
+  if (textContainsAny(textBlob, ["sql analytics"])) {
+    if (["design and ux"].includes(expectedDomain)) {
+      throw new Error(`Semantic Mismatch: 'SQL Analytics' cannot map to ${profile.label}`);
+    }
+  }
 }
 
 export function auditRoadmapQuality(roadmaps: unknown, goalOrProfile: string | DomainProfile) {
   const profile = typeof goalOrProfile === "string" ? pickDomain(goalOrProfile) : goalOrProfile;
   const safeRoadmaps = toArray<RoadmapRecord>(roadmaps);
   const domainKeywords = getDomainKeywords(profile);
-  const disallowedKeywords = getDisallowedKeywords();
+  const disallowedKeywords = getDisallowedKeywords(profile);
   const allowedProviders = getAllowedProviders(profile);
 
   if (!safeRoadmaps.length) {
@@ -950,6 +998,431 @@ function buildSoftwareEngineeringRoadmap(params: {
   };
 }
 
+function buildDataAnalyticsRoadmap(params: {
+  goal: string;
+  profile: DomainProfile;
+  experience: ExperienceLevel;
+  weeklyHours: number;
+  readinessScore?: number;
+  referenceDate: Date;
+  version: number;
+}) : RoadmapRecord {
+  const readinessScore = typeof params.readinessScore === "number"
+    ? Math.max(0, Math.min(100, params.readinessScore))
+    : 50;
+
+  const phaseConfigs = [
+    {
+      title: "Excel Foundations",
+      why: "Master spreadsheets for business analytics and metric calculations.",
+      duration: Math.max(2, Math.round(params.weeklyHours * 0.12)),
+      difficulty: chooseDifficulty(params.experience, 1),
+      resources: resourceLinksFor(params.profile, "analytics"),
+      projects: ["Business Intelligence Report"],
+      tasks: ["Practice pivot tables, lookup formulas, and nested conditions", "Clean raw CSV sales data and format it into tables"],
+      deliverables: ["excel workbook"],
+      outcomes: ["apply formulas and lookups", "synthesize business metrics"]
+    },
+    {
+      title: "SQL Analytics",
+      why: "Learn SQL for relational database queries and cohort metrics.",
+      duration: Math.max(2, Math.round(params.weeklyHours * 0.14)),
+      difficulty: chooseDifficulty(params.experience, 2),
+      resources: resourceLinksFor(params.profile, "SQL"),
+      projects: ["Customer Analytics", "Sales Dashboard"],
+      tasks: ["Write SQL queries using joins, groupings, and filters", "Build query set for cohort customer churn analysis"],
+      deliverables: ["sql script query set"],
+      outcomes: ["query database metrics", "design relational lookups"]
+    },
+    {
+      title: "Statistics Fundamentals",
+      why: "Learn metrics distribution, standard deviation, and metrics synthesis.",
+      duration: Math.max(2, Math.round(params.weeklyHours * 0.12)),
+      difficulty: chooseDifficulty(params.experience, 1),
+      resources: resourceLinksFor(params.profile, "analytics"),
+      projects: ["Descriptive Stats Workbook"],
+      tasks: ["Learn normal distribution, averages, and outliers", "Verify metric correlation coefficient for sales"],
+      deliverables: ["stats sheet"],
+      outcomes: ["apply statistical tools", "verify metric correlations"]
+    },
+    {
+      title: "Power BI Dashboards",
+      why: "Create interactive visual reports to communicate metrics.",
+      duration: Math.max(2, Math.round(params.weeklyHours * 0.18)),
+      difficulty: chooseDifficulty(params.experience, 2),
+      resources: resourceLinksFor(params.profile, "Power BI"),
+      projects: ["Sales Dashboard"],
+      tasks: ["Import SQL dataset into Power BI", "Design responsive visual reports for metrics tracking"],
+      deliverables: ["power bi dashboard file"],
+      outcomes: ["build interactive dashboards", "design visual metrics flows"]
+    },
+    {
+      title: "Python for Analytics",
+      why: "Learn Python syntax, pandas, and data manipulation.",
+      duration: Math.max(2, Math.round(params.weeklyHours * 0.14)),
+      difficulty: chooseDifficulty(params.experience, 2),
+      resources: resourceLinksFor(params.profile, "analytics"),
+      projects: ["Customer Analytics Script"],
+      tasks: ["Clean datasets using Pandas dataframes", "Build pipeline to automate CSV extraction and summary statistics"],
+      deliverables: ["jupyter notebook"],
+      outcomes: ["write basic python tools", "process pandas dataframes"]
+    },
+    {
+      title: "Dashboard Building",
+      why: "Learn advanced visualizations and business report publishing.",
+      duration: Math.max(2, Math.round(params.weeklyHours * 0.15)),
+      difficulty: chooseDifficulty(params.experience, 2),
+      resources: resourceLinksFor(params.profile, "Power BI"),
+      projects: ["Business Intelligence Report"],
+      tasks: ["Design executive KPIs and interactive summary drilldowns", "Formulate data dictionary for corporate metrics"],
+      deliverables: ["BI dashboard package"],
+      outcomes: ["deploy actionable dashboards", "synthesize business trends"]
+    },
+    {
+      title: "Interview Preparation",
+      why: "Translate project deliverables into a job-market narrative.",
+      duration: Math.max(2, Math.round(params.weeklyHours * 0.15)),
+      difficulty: chooseDifficulty(params.experience, 3),
+      resources: resourceLinksFor(params.profile, "analytics"),
+      projects: ["Mock Interview Case Packet"],
+      tasks: ["Review mock interview cases and analytical questions", "Package project artifacts into recruiter-ready case studies"],
+      deliverables: ["interview narrative packet", "behavioral stories"],
+      outcomes: ["explain technical tradeoffs", "present metrics analysis confidently"]
+    }
+  ];
+
+  const milestones = phaseConfigs.map((phase) => makeMilestone({
+    title: phase.title,
+    whyItMatters: phase.why,
+    estimatedDurationWeeks: phase.duration,
+    difficultyLevel: phase.difficulty,
+    completionCriteria: [
+      `Complete the ${phase.title.toLowerCase()} checklist`,
+      `Demonstrate a concrete artifact for ${phase.title.toLowerCase()}`,
+      `Explain the learning outcome in your own words`
+    ],
+    resourceLinks: phase.resources,
+    projects: phase.projects,
+    projectTasks: phase.tasks,
+    deliverables: phase.deliverables,
+    expectedOutcomes: phase.outcomes
+  }));
+
+  const totalDuration = milestones.reduce((sum, milestone) => sum + milestone.estimated_duration_weeks, 0);
+  const allResources = Array.from(new Map(milestones.flatMap((milestone) => milestone.resource_links).map((resource) => [resource.url, resource])).values());
+  const projectTasks = Array.from(new Set(milestones.flatMap((milestone) => milestone.project_tasks)));
+  const expectedOutcomes = Array.from(new Set(milestones.flatMap((milestone) => milestone.expected_outcomes)));
+  const learningOutcomes = phaseConfigs.map((phase) => phase.outcomes[0]);
+
+  return {
+    id: generateId(),
+    title: "Data and Analytics: Data Analyst roadmap",
+    status: statusForProgress(Math.min(55, Math.max(25, Math.round(readinessScore * 0.55)))),
+    summary: `A role-specific plan for ${params.goal} with data foundations, SQL, Excel, and dashboard building.`,
+    owner: "You",
+    progress: Math.min(55, Math.max(25, Math.round(readinessScore * 0.55))),
+    career_domain: "Data and Analytics",
+    career_demand_score: params.profile.demandScore,
+    market_outlook: params.profile.marketOutlook,
+    salary_range: params.profile.salaryRange,
+    automation_risk: params.profile.automationRisk,
+    roadmap_version: params.version,
+    generated_at: params.referenceDate.toISOString(),
+    ai_reasoning: `The selected career goal of ${params.goal} maps to Data and Analytics. This roadmap focuses strictly on business intelligence, statistics, SQL, Excel, and Power BI dashboards.`,
+    weekly_schedule: [
+      `${Math.max(2, Math.round(params.weeklyHours * 0.4))}h SQL and analytics practice`,
+      `${Math.max(1, Math.round(params.weeklyHours * 0.3))}h dashboard work`,
+      `${Math.max(1, Math.round(params.weeklyHours * 0.2))}h review and case prep`
+    ],
+    learning_outcomes: learningOutcomes,
+    total_duration_weeks: totalDuration,
+    duration_weeks: totalDuration,
+    weekly_hours: params.weeklyHours,
+    estimated_completion_date: toIsoDate(addWeeks(params.referenceDate, Math.max(1, totalDuration))),
+    resource_links: allResources,
+    project_tasks: projectTasks,
+    expected_outcomes: expectedOutcomes,
+    milestones,
+    updated_at: params.referenceDate.toISOString()
+  };
+}
+
+function buildDesignUxRoadmap(params: {
+  goal: string;
+  profile: DomainProfile;
+  experience: ExperienceLevel;
+  weeklyHours: number;
+  readinessScore?: number;
+  referenceDate: Date;
+  version: number;
+}) : RoadmapRecord {
+  const readinessScore = typeof params.readinessScore === "number"
+    ? Math.max(0, Math.min(100, params.readinessScore))
+    : 50;
+
+  const phaseConfigs = [
+    {
+      title: "Design Principles",
+      why: "Understand contrast, alignment, typography, and visual systems.",
+      duration: Math.max(2, Math.round(params.weeklyHours * 0.12)),
+      difficulty: chooseDifficulty(params.experience, 1),
+      resources: resourceLinksFor(params.profile, "ux"),
+      projects: ["Visual Hierarchy Exercise"],
+      tasks: ["Practice visual hierarchy, color theory, and type choices", "Analyze 3 popular app interfaces for layout systems"],
+      deliverables: ["mobile app redesign case study"],
+      outcomes: ["apply visual design principles", "compose design sheets"]
+    },
+    {
+      title: "User Research",
+      why: "Gather user insights to solve actual usability problems.",
+      duration: Math.max(2, Math.round(params.weeklyHours * 0.14)),
+      difficulty: chooseDifficulty(params.experience, 1),
+      resources: resourceLinksFor(params.profile, "ux"),
+      projects: ["UX Case Study"],
+      tasks: ["Create 3 user personas", "Run 2 usability mock tests on a product prototype"],
+      deliverables: ["user persona pack", "usability test log"],
+      outcomes: ["conduct interviews", "document user journeys"]
+    },
+    {
+      title: "Wireframing",
+      why: "Translate user research into structured low-fidelity blueprints.",
+      duration: Math.max(2, Math.round(params.weeklyHours * 0.12)),
+      difficulty: chooseDifficulty(params.experience, 1),
+      resources: resourceLinksFor(params.profile, "ux"),
+      projects: ["Mobile App Redesign"],
+      tasks: ["Sketch low-fidelity interface wires for 5 core screens", "Create information architecture hierarchy flows"],
+      deliverables: ["low-fidelity wireframes"],
+      outcomes: ["design clean screen blueprints", "organize application hierarchy"]
+    },
+    {
+      title: "Figma",
+      why: "Master high-fidelity interface design and advanced typography grids.",
+      duration: Math.max(2, Math.round(params.weeklyHours * 0.18)),
+      difficulty: chooseDifficulty(params.experience, 2),
+      resources: resourceLinksFor(params.profile, "ux"),
+      projects: ["Mobile App Redesign"],
+      tasks: ["Practice autolayout, components, and responsive constraints", "Design pixel-perfect interfaces for 5 application screens"],
+      deliverables: ["high-fidelity Figma designs"],
+      outcomes: ["compose high-fidelity interfaces", "design semantic components"]
+    },
+    {
+      title: "Prototyping",
+      why: "Add interactive flow connections and animated transitions in Figma.",
+      duration: Math.max(2, Math.round(params.weeklyHours * 0.14)),
+      difficulty: chooseDifficulty(params.experience, 2),
+      resources: resourceLinksFor(params.profile, "ux"),
+      projects: ["High-Fi Interactive Prototype"],
+      tasks: ["Build screen-to-screen interactive hotspots and custom animations", "Run visual walk-throughs to verify user flow transitions"],
+      deliverables: ["interactive proto link"],
+      outcomes: ["build interactive figma prototypes", "animate micro-interactions"]
+    },
+    {
+      title: "Design Systems",
+      why: "Learn components, accessibility, and visual guidelines.",
+      duration: Math.max(2, Math.round(params.weeklyHours * 0.15)),
+      difficulty: chooseDifficulty(params.experience, 3),
+      resources: resourceLinksFor(params.profile, "accessibility"),
+      projects: ["Design System"],
+      tasks: ["Design 10 foundational UI components following Material guidelines", "Audit component visual standards for WCAG accessibility"],
+      deliverables: ["reusable UI library"],
+      outcomes: ["build accessible design systems", "create component libraries"]
+    },
+    {
+      title: "Portfolio Development",
+      why: "Convert case studies into an interview ready portfolio.",
+      duration: Math.max(2, Math.round(params.weeklyHours * 0.15)),
+      difficulty: chooseDifficulty(params.experience, 3),
+      resources: resourceLinksFor(params.profile, "ux"),
+      projects: ["UX Case Study"],
+      tasks: ["Write 2 comprehensive case studies highlighting research and design decisions", "Format and launch personal portfolio showcase"],
+      deliverables: ["portfolio website", "interview story deck"],
+      outcomes: ["present UX case studies", "describe design decisions clearly"]
+    }
+  ];
+
+  const milestones = phaseConfigs.map((phase) => makeMilestone({
+    title: phase.title,
+    whyItMatters: phase.why,
+    estimatedDurationWeeks: phase.duration,
+    difficultyLevel: phase.difficulty,
+    completionCriteria: [
+      `Complete the ${phase.title.toLowerCase()} checklist`,
+      `Demonstrate a concrete artifact for ${phase.title.toLowerCase()}`,
+      `Explain the learning outcome in your own words`
+    ],
+    resourceLinks: phase.resources,
+    projects: phase.projects,
+    projectTasks: phase.tasks,
+    deliverables: phase.deliverables,
+    expectedOutcomes: phase.outcomes
+  }));
+
+  const totalDuration = milestones.reduce((sum, milestone) => sum + milestone.estimated_duration_weeks, 0);
+  const allResources = Array.from(new Map(milestones.flatMap((milestone) => milestone.resource_links).map((resource) => [resource.url, resource])).values());
+  const projectTasks = Array.from(new Set(milestones.flatMap((milestone) => milestone.project_tasks)));
+  const expectedOutcomes = Array.from(new Set(milestones.flatMap((milestone) => milestone.expected_outcomes)));
+  const learningOutcomes = phaseConfigs.map((phase) => phase.outcomes[0]);
+
+  return {
+    id: generateId(),
+    title: "Design and UX: UI/UX Designer roadmap",
+    status: statusForProgress(Math.min(55, Math.max(25, Math.round(readinessScore * 0.55)))),
+    summary: `A role-specific plan for ${params.goal} with visual design, Figma, prototyping, and UX case studies.`,
+    owner: "You",
+    progress: Math.min(55, Math.max(25, Math.round(readinessScore * 0.55))),
+    career_domain: "Design and UX",
+    career_demand_score: params.profile.demandScore,
+    market_outlook: params.profile.marketOutlook,
+    salary_range: params.profile.salaryRange,
+    automation_risk: params.profile.automationRisk,
+    roadmap_version: params.version,
+    generated_at: params.referenceDate.toISOString(),
+    ai_reasoning: `The selected career goal of ${params.goal} maps to Design and UX. This roadmap focuses on typography, layout systems, Figma prototyping, usability testing, and design systems.`,
+    weekly_schedule: [
+      `${Math.max(2, Math.round(params.weeklyHours * 0.4))}h Figma craft and layouts`,
+      `${Math.max(1, Math.round(params.weeklyHours * 0.3))}h prototype systems`,
+      `${Math.max(1, Math.round(params.weeklyHours * 0.2))}h case study writing`
+    ],
+    learning_outcomes: learningOutcomes,
+    total_duration_weeks: totalDuration,
+    duration_weeks: totalDuration,
+    weekly_hours: params.weeklyHours,
+    estimated_completion_date: toIsoDate(addWeeks(params.referenceDate, Math.max(1, totalDuration))),
+    resource_links: allResources,
+    project_tasks: projectTasks,
+    expected_outcomes: expectedOutcomes,
+    milestones,
+    updated_at: params.referenceDate.toISOString()
+  };
+}
+
+function buildCybersecurityRoadmap(params: {
+  goal: string;
+  profile: DomainProfile;
+  experience: ExperienceLevel;
+  weeklyHours: number;
+  readinessScore?: number;
+  referenceDate: Date;
+  version: number;
+}) : RoadmapRecord {
+  const readinessScore = typeof params.readinessScore === "number"
+    ? Math.max(0, Math.min(100, params.readinessScore))
+    : 50;
+
+  const phaseConfigs = [
+    {
+      title: "Threat Modeling",
+      why: "Learn to identify vulnerabilities and assess infrastructure risk.",
+      duration: Math.max(2, Math.round(params.weeklyHours * 0.20)),
+      difficulty: chooseDifficulty(params.experience, 1),
+      resources: resourceLinksFor(params.profile, "frameworks"),
+      projects: ["Threat Model Diagram"],
+      tasks: ["Sketch full architecture flow and list entry-points", "Document potential attack surface based on standard models"],
+      deliverables: ["threat model report"],
+      outcomes: ["identify security bottlenecks", "apply threat models"]
+    },
+    {
+      title: "Identity & Access Management",
+      why: "Enforce strict authentication and authorization systems.",
+      duration: Math.max(2, Math.round(params.weeklyHours * 0.20)),
+      difficulty: chooseDifficulty(params.experience, 1),
+      resources: resourceLinksFor(params.profile, "identity"),
+      projects: ["IAM Policy Schema"],
+      tasks: ["Build role-based access schema for database models", "Write IAM policies following least-privilege guidelines"],
+      deliverables: ["IAM controls matrix"],
+      outcomes: ["configure secure access systems", "enforce least-privilege rules"]
+    },
+    {
+      title: "Logging & Monitoring",
+      why: "Configure event logs and audit systems to detect threats.",
+      duration: Math.max(2, Math.round(params.weeklyHours * 0.20)),
+      difficulty: chooseDifficulty(params.experience, 2),
+      resources: resourceLinksFor(params.profile, "security"),
+      projects: ["SIEM Alert Log Set"],
+      tasks: ["Write alerting rules for SIEM event logs", "Audit database connections and transaction histories"],
+      deliverables: ["siem alert rule set"],
+      outcomes: ["design system logging rules", "detect threat behaviors"]
+    },
+    {
+      title: "Hardening Systems",
+      why: "Secure OS configurations, networking, and server ports.",
+      duration: Math.max(2, Math.round(params.weeklyHours * 0.20)),
+      difficulty: chooseDifficulty(params.experience, 2),
+      resources: resourceLinksFor(params.profile, "cloud security"),
+      projects: ["Secure Server Config Checklist"],
+      tasks: ["Harden Linux server configuration settings", "Disable inactive services, open ports, and root logons"],
+      deliverables: ["system hardening checklist"],
+      outcomes: ["harden infrastructure security", "verify configurations"]
+    },
+    {
+      title: "Incident Response",
+      why: "Establish robust runbooks to isolate and mitigate security breaches.",
+      duration: Math.max(2, Math.round(params.weeklyHours * 0.20)),
+      difficulty: chooseDifficulty(params.experience, 3),
+      resources: resourceLinksFor(params.profile, "security"),
+      projects: ["Incident Playbook"],
+      tasks: ["Write containment runbook for ransomware scenarios", "Document post-incident reporting templates and review checklists"],
+      deliverables: ["incident response playbook"],
+      outcomes: ["create threat response plans", "mitigate active breaches"]
+    }
+  ];
+
+  const milestones = phaseConfigs.map((phase) => makeMilestone({
+    title: phase.title,
+    whyItMatters: phase.why,
+    estimatedDurationWeeks: phase.duration,
+    difficultyLevel: phase.difficulty,
+    completionCriteria: [
+      `Complete the ${phase.title.toLowerCase()} checklist`,
+      `Demonstrate a concrete artifact for ${phase.title.toLowerCase()}`,
+      `Explain the learning outcome in your own words`
+    ],
+    resourceLinks: phase.resources,
+    projects: phase.projects,
+    projectTasks: phase.tasks,
+    deliverables: phase.deliverables,
+    expectedOutcomes: phase.outcomes
+  }));
+
+  const totalDuration = milestones.reduce((sum, milestone) => sum + milestone.estimated_duration_weeks, 0);
+  const allResources = Array.from(new Map(milestones.flatMap((milestone) => milestone.resource_links).map((resource) => [resource.url, resource])).values());
+  const projectTasks = Array.from(new Set(milestones.flatMap((milestone) => milestone.project_tasks)));
+  const expectedOutcomes = Array.from(new Set(milestones.flatMap((milestone) => milestone.expected_outcomes)));
+  const learningOutcomes = phaseConfigs.map((phase) => phase.outcomes[0]);
+
+  return {
+    id: generateId(),
+    title: "Cybersecurity: Security Analyst roadmap",
+    status: statusForProgress(Math.min(55, Math.max(25, Math.round(readinessScore * 0.55)))),
+    summary: `A role-specific plan for ${params.goal} with threat modeling, secure networking, SIEM logging, and infrastructure hardening.`,
+    owner: "You",
+    progress: Math.min(55, Math.max(25, Math.round(readinessScore * 0.55))),
+    career_domain: "Cybersecurity",
+    career_demand_score: params.profile.demandScore,
+    market_outlook: params.profile.marketOutlook,
+    salary_range: params.profile.salaryRange,
+    automation_risk: params.profile.automationRisk,
+    roadmap_version: params.version,
+    generated_at: params.referenceDate.toISOString(),
+    ai_reasoning: `The selected career goal of ${params.goal} maps to Cybersecurity. This roadmap focuses on threat defense, logging metrics, network audit, and NIST configurations.`,
+    weekly_schedule: [
+      `${Math.max(2, Math.round(params.weeklyHours * 0.4))}h secure network exercises`,
+      `${Math.max(1, Math.round(params.weeklyHours * 0.3))}h SIEM logs configuration`,
+      `${Math.max(1, Math.round(params.weeklyHours * 0.2))}h incident walkthroughs`
+    ],
+    learning_outcomes: learningOutcomes,
+    total_duration_weeks: totalDuration,
+    duration_weeks: totalDuration,
+    weekly_hours: params.weeklyHours,
+    estimated_completion_date: toIsoDate(addWeeks(params.referenceDate, Math.max(1, totalDuration))),
+    resource_links: allResources,
+    project_tasks: projectTasks,
+    expected_outcomes: expectedOutcomes,
+    milestones,
+    updated_at: params.referenceDate.toISOString()
+  };
+}
+
 export function buildRoadmapPlan(input: RoadmapPlanInput): RoadmapRecord[] {
   return buildRoadmapPlanDetails(input).roadmaps;
 }
@@ -982,6 +1455,72 @@ export function buildRoadmapPlanDetails(input: RoadmapPlanInput): RoadmapPlanPay
       salary_range: profile.salaryRange,
       automation_risk: profile.automationRisk,
       ai_reasoning: `The selected career goal of ${input.goal} maps to Software Engineering, so the roadmap stays locked to software engineering milestones, projects, and interview prep.`,
+    };
+  }
+
+  if (profile.label === "Data and Analytics") {
+    const roadmap = buildDataAnalyticsRoadmap({
+      goal: input.goal,
+      profile,
+      experience: input.experience,
+      weeklyHours,
+      readinessScore: input.readinessScore,
+      referenceDate,
+      version: 1
+    });
+
+    return {
+      roadmaps: [roadmap],
+      career_domain: profile.label,
+      career_demand_score: profile.demandScore,
+      market_outlook: profile.marketOutlook,
+      salary_range: profile.salaryRange,
+      automation_risk: profile.automationRisk,
+      ai_reasoning: `The selected career goal of ${input.goal} maps to Data and Analytics, locked strictly to business intelligence, SQL analytics, statistics, Power BI, and Python.`,
+    };
+  }
+
+  if (profile.label === "Design and UX") {
+    const roadmap = buildDesignUxRoadmap({
+      goal: input.goal,
+      profile,
+      experience: input.experience,
+      weeklyHours,
+      readinessScore: input.readinessScore,
+      referenceDate,
+      version: 1
+    });
+
+    return {
+      roadmaps: [roadmap],
+      career_domain: profile.label,
+      career_demand_score: profile.demandScore,
+      market_outlook: profile.marketOutlook,
+      salary_range: profile.salaryRange,
+      automation_risk: profile.automationRisk,
+      ai_reasoning: `The selected career goal of ${input.goal} maps to Design and UX, locked to user research, wireframing, Figma layouts, prototyping, and component UI design systems.`,
+    };
+  }
+
+  if (profile.label === "Cybersecurity") {
+    const roadmap = buildCybersecurityRoadmap({
+      goal: input.goal,
+      profile,
+      experience: input.experience,
+      weeklyHours,
+      readinessScore: input.readinessScore,
+      referenceDate,
+      version: 1
+    });
+
+    return {
+      roadmaps: [roadmap],
+      career_domain: profile.label,
+      career_demand_score: profile.demandScore,
+      market_outlook: profile.marketOutlook,
+      salary_range: profile.salaryRange,
+      automation_risk: profile.automationRisk,
+      ai_reasoning: `The selected career goal of ${input.goal} maps to Cybersecurity, locked to threat modeling, IAM permissions, SIEM logging, secure configurations, and incident response playbooks.`,
     };
   }
 

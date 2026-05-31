@@ -114,5 +114,53 @@ test("Software Engineering roadmap uses the required SDE-I phases only", () => {
 });
 
 test("domain consistency validator rejects cross-domain roadmap rows", () => {
-  assert.throws(() => validateRoadmapDomainConsistency({ career_domain: "Operations and Strategy" }, "Software Development Engineer I"), /Roadmap domain mismatch/);
+  assert.throws(() => validateRoadmapDomainConsistency({ career_domain: "Operations and Strategy" } as any, "Software Development Engineer I"), /Roadmap domain mismatch/);
+});
+
+test("role-aware roadmap generator produces completely different contents per career domain", () => {
+  const sdePlan = buildRoadmapPlanDetails({ goal: "SDE-I", experience: "Junior", weeklyHours: 12 });
+  const uxPlan = buildRoadmapPlanDetails({ goal: "UI/UX Designer", experience: "Junior", weeklyHours: 12 });
+  const dataPlan = buildRoadmapPlanDetails({ goal: "Data Analyst", experience: "Junior", weeklyHours: 12 });
+  const cyberPlan = buildRoadmapPlanDetails({ goal: "Cybersecurity Analyst", experience: "Junior", weeklyHours: 12 });
+
+  const sdeRoadmap = sdePlan.roadmaps[0];
+  const uxRoadmap = uxPlan.roadmaps[0];
+  const dataRoadmap = dataPlan.roadmaps[0];
+  const cyberRoadmap = cyberPlan.roadmaps[0];
+
+  // Verify different career domains
+  assert.equal(sdeRoadmap.career_domain, "Software Engineering");
+  assert.equal(uxRoadmap.career_domain, "Design and UX");
+  assert.equal(dataRoadmap.career_domain, "Data and Analytics");
+  assert.equal(cyberRoadmap.career_domain, "Cybersecurity");
+
+  // Verify different sprint titles/milestones
+  const sdeMilestones = sdeRoadmap.milestones.map((m) => m.title);
+  const uxMilestones = uxRoadmap.milestones.map((m) => m.title);
+  const dataMilestones = dataRoadmap.milestones.map((m) => m.title);
+  const cyberMilestones = cyberRoadmap.milestones.map((m) => m.title);
+
+  assert.ok(sdeMilestones.includes("Programming Fundamentals"));
+  assert.ok(uxMilestones.includes("Design Principles"));
+  assert.ok(dataMilestones.includes("Excel Foundations"));
+  assert.ok(cyberMilestones.includes("Threat Modeling"));
+
+  // Verify completely disjoint milestone set titles
+  assert.notDeepEqual(sdeMilestones, uxMilestones);
+  assert.notDeepEqual(uxMilestones, dataMilestones);
+  assert.notDeepEqual(dataMilestones, cyberMilestones);
+
+  // Verify different resources/providers
+  const sdeProviders = new Set(sdeRoadmap.resource_links.map((r) => r.provider));
+  const uxProviders = new Set(uxRoadmap.resource_links.map((r) => r.provider));
+  const dataProviders = new Set(dataRoadmap.resource_links.map((r) => r.provider));
+
+  assert.ok(sdeProviders.has("CS50") || sdeProviders.has("LeetCode") || sdeProviders.has("Roadmap.sh"));
+  assert.ok(uxProviders.has("Figma") || uxProviders.has("Nielsen Norman Group") || uxProviders.has("Material Design"));
+  assert.ok(dataProviders.has("Kaggle") || dataProviders.has("DataCamp") || dataProviders.has("Microsoft"));
+
+  // Verify semantic validator throws on mismatched sections
+  assert.throws(() => validateRoadmapDomainConsistency({ career_domain: "Operations and Strategy", title: "Programming Fundamentals", weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any, "Operations and Strategy"), /Semantic Mismatch/);
+  assert.throws(() => validateRoadmapDomainConsistency({ career_domain: "Research and Academia", title: "Git & GitHub", weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any, "Research and Academia"), /Semantic Mismatch/);
+  assert.throws(() => validateRoadmapDomainConsistency({ career_domain: "Design and UX", title: "SQL Analytics", weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any, "Design and UX"), /Semantic Mismatch/);
 });
