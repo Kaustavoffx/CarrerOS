@@ -493,30 +493,35 @@ function textContainsAnyNegative(text: string, keywords: string[]) {
 }
 
 function roadmapTextBlob(roadmap: RoadmapRecord) {
-  const milestones = Array.isArray(roadmap.milestones) ? roadmap.milestones : [];
-  const resourceLinks = Array.isArray(roadmap.resource_links) ? roadmap.resource_links : [];
+  const milestones = toArray<RoadmapMilestoneRecord>(roadmap.milestones);
+  const resourceLinks = toArray<RoadmapResourceLink>(roadmap.resource_links);
+  const weekly_schedule = toArray<string>(roadmap.weekly_schedule);
+  const learning_outcomes = toArray<string>(roadmap.learning_outcomes);
+  const project_tasks = toArray<string>(roadmap.project_tasks);
+  const expected_outcomes = toArray<string>(roadmap.expected_outcomes);
+
   return [
-    roadmap.career_domain,
-    roadmap.title,
-    roadmap.summary,
-    roadmap.ai_reasoning,
-    roadmap.market_outlook,
-    roadmap.salary_range,
-    roadmap.automation_risk,
-    roadmap.weekly_schedule.join(" "),
-    roadmap.learning_outcomes.join(" "),
-    roadmap.project_tasks.join(" "),
-    roadmap.expected_outcomes.join(" "),
-    resourceLinks.map((resource) => `${resource.label} ${resource.provider}`).join(" "),
+    roadmap.career_domain || "",
+    roadmap.title || "",
+    roadmap.summary || "",
+    roadmap.ai_reasoning || "",
+    roadmap.market_outlook || "",
+    roadmap.salary_range || "",
+    roadmap.automation_risk || "",
+    weekly_schedule.join(" "),
+    learning_outcomes.join(" "),
+    project_tasks.join(" "),
+    expected_outcomes.join(" "),
+    resourceLinks.map((resource) => `${resource.label || ""} ${resource.provider || ""}`).join(" "),
     milestones.flatMap((milestone) => [
-      milestone.title,
-      milestone.why_it_matters,
-      milestone.completion_criteria.join(" "),
-      milestone.projects.join(" "),
-      milestone.project_tasks.join(" "),
-      milestone.deliverables.join(" "),
-      milestone.expected_outcomes.join(" "),
-      milestone.resource_links.map((resource) => `${resource.label} ${resource.provider}`).join(" ")
+      milestone.title || "",
+      milestone.why_it_matters || "",
+      toArray<string>(milestone.completion_criteria).join(" "),
+      toArray<string>(milestone.projects).join(" "),
+      toArray<string>(milestone.project_tasks).join(" "),
+      toArray<string>(milestone.deliverables).join(" "),
+      toArray<string>(milestone.expected_outcomes).join(" "),
+      toArray<RoadmapResourceLink>(milestone.resource_links).map((resource) => `${resource.label || ""} ${resource.provider || ""}`).join(" ")
     ]).join(" ")
   ].join(" ");
 }
@@ -858,13 +863,47 @@ export function validateRoadmapDomainConsistency(
   goalOrProfile: string | DomainProfile,
   options: { throwOnError?: boolean } = { throwOnError: true }
 ): { valid: boolean; warnings: string[] } {
+  const warnings: string[] = [];
+
+  // Separate metadata validation from semantic validation.
+  if (!roadmap.title || !roadmap.title.trim()) {
+    const errMsg = "Missing roadmap title";
+    if (options.throwOnError) {
+      throw new MissingRoadmapTitleError(errMsg);
+    } else {
+      warnings.push(errMsg);
+      return { valid: false, warnings };
+    }
+  }
+
+  if (!roadmap.career_domain || !roadmap.career_domain.trim()) {
+    const errMsg = "Missing roadmap metadata: career_domain is empty";
+    if (options.throwOnError) {
+      throw new MissingRoadmapMetadataError(errMsg);
+    } else {
+      warnings.push(errMsg);
+      return { valid: false, warnings };
+    }
+  }
+
+  if (
+    !roadmap.summary || !roadmap.summary.trim() || 
+    !roadmap.milestones || !Array.isArray(roadmap.milestones) || roadmap.milestones.length === 0
+  ) {
+    const errMsg = "Incomplete roadmap record";
+    if (options.throwOnError) {
+      throw new IncompleteRoadmapRecordError(errMsg);
+    } else {
+      warnings.push(errMsg);
+      return { valid: false, warnings };
+    }
+  }
+
   const profile = typeof goalOrProfile === "string" ? pickDomain(goalOrProfile) : goalOrProfile;
   const goalStr = typeof goalOrProfile === "string" ? goalOrProfile : profile.label;
   const roadmapDomain = normalizeText(roadmap.career_domain || "");
   const expectedDomain = normalizeText(profile.label);
   const aliasAllowed = profile.aliases.some((alias) => normalizeText(alias) === roadmapDomain);
-
-  const warnings: string[] = [];
 
   const domainKey = getDomainKnowledgeMapKey(goalStr, profile.label);
   const isDomainOk = 
@@ -907,14 +946,31 @@ export function validateRoadmapDomainConsistency(
 
   const textBlob = roadmapTextBlob(roadmap).toLowerCase();
 
-  // Strict domain consistency checks for Software Engineering
-  if (profile.label === "Software Engineering") {
-    const sdeDisallowed = ["operations", "research", "academia", "ux design", "ux", "ui design", "product design", "experience design"];
-    if (textContainsAnyNegative(textBlob, sdeDisallowed)) {
+  // Multi-domain strict consistency checks using generalized keyword dictionaries
+  const disallowedKeywords = DOMAIN_DISALLOWED_KEYWORDS[profile.label];
+  if (disallowedKeywords) {
+    const matched = disallowedKeywords.filter((keyword) => {
+      const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(`(^|\\W)${escaped}(\\W|$)`, "i");
+      if (regex.test(textBlob)) {
+        if (keyword === "management") {
+          const cleanText = textBlob
+            .replace(/project management/g, "")
+            .replace(/management tool/g, "")
+            .replace(/state management/g, "")
+            .replace(/package management/g, "");
+          return regex.test(cleanText);
+        }
+        return true;
+      }
+      return false;
+    });
+
+    if (matched.length > 0) {
       const errorDetails = {
         roadmapTitle: roadmap.title,
         careerDomain: profile.label,
-        mismatchReason: `Critical domain mismatch: Software Engineering roadmaps must not contain Operations, Research, Academia, or UX Design topics.`,
+        mismatchReason: `Critical domain mismatch: ${profile.label} roadmaps must not contain disallowed keyword '${matched[0]}'.`,
         severity: "critical"
       };
       const errMsg = `Roadmap domain mismatch: ${JSON.stringify(errorDetails)}`;
@@ -1000,6 +1056,27 @@ export function validateRoadmapDomainConsistency(
   };
 }
 
+export class MissingRoadmapTitleError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "MissingRoadmapTitleError";
+  }
+}
+
+export class MissingRoadmapMetadataError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "MissingRoadmapMetadataError";
+  }
+}
+
+export class IncompleteRoadmapRecordError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "IncompleteRoadmapRecordError";
+  }
+}
+
 export class DomainMismatchError extends Error {
   constructor(message: string) {
     super(message);
@@ -1008,6 +1085,20 @@ export class DomainMismatchError extends Error {
 }
 
 export function validateRoadmapDomain(roadmap: RoadmapRecord, goal: string): void {
+  // Separate metadata validation from semantic validation.
+  if (!roadmap.title || !roadmap.title.trim()) {
+    throw new MissingRoadmapTitleError("Missing roadmap title");
+  }
+  if (!roadmap.career_domain || !roadmap.career_domain.trim()) {
+    throw new MissingRoadmapMetadataError("Missing roadmap metadata: career_domain is empty");
+  }
+  if (
+    !roadmap.summary || !roadmap.summary.trim() || 
+    !roadmap.milestones || !Array.isArray(roadmap.milestones) || roadmap.milestones.length === 0
+  ) {
+    throw new IncompleteRoadmapRecordError("Incomplete roadmap record");
+  }
+
   const profile = pickDomain(goal);
   
   // 1. Strict Domain Locking: Every sprint must inherit roadmap.career_domain

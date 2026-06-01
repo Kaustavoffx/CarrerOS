@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { auditRoadmapQuality, buildRoadmapPlanDetails, resolveDomainProfile, validateRoadmapDomainConsistency } from "../lib/roadmap-plan";
+import { auditRoadmapQuality, buildRoadmapPlanDetails, resolveDomainProfile, validateRoadmapDomainConsistency, validateRoadmapDomain, MissingRoadmapTitleError, MissingRoadmapMetadataError, IncompleteRoadmapRecordError } from "../lib/roadmap-plan";
 import { generateRoadmapPdfBlob } from "../lib/roadmap-export";
 
 const domainCases = [
@@ -115,7 +115,7 @@ test("Software Engineering roadmap uses the required SDE-I phases only", () => {
 });
 
 test("domain consistency validator rejects cross-domain roadmap rows", () => {
-  assert.throws(() => validateRoadmapDomainConsistency({ career_domain: "Operations and Strategy" } as any, "Software Development Engineer I"), /Roadmap domain mismatch/);
+  assert.throws(() => validateRoadmapDomainConsistency({ title: "Programming Fundamentals", career_domain: "Operations and Strategy", summary: "Summary text", milestones: [{}] } as any, "Software Development Engineer I"), /Roadmap domain mismatch/);
 });
 
 test("role-aware roadmap generator produces completely different contents per career domain", () => {
@@ -161,9 +161,9 @@ test("role-aware roadmap generator produces completely different contents per ca
   assert.ok(dataProviders.has("Kaggle") || dataProviders.has("DataCamp") || dataProviders.has("Microsoft"));
 
   // Verify semantic validator throws on mismatched sections
-  assert.throws(() => validateRoadmapDomainConsistency({ career_domain: "Operations and Strategy", title: "Programming Fundamentals", weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any, "Operations and Strategy"), /Semantic Mismatch/);
-  assert.throws(() => validateRoadmapDomainConsistency({ career_domain: "Research and Academia", title: "Git & GitHub", weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any, "Research and Academia"), /Semantic Mismatch/);
-  assert.throws(() => validateRoadmapDomainConsistency({ career_domain: "Design and UX", title: "SQL Analytics", weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any, "Design and UX"), /Semantic Mismatch/);
+  assert.throws(() => validateRoadmapDomainConsistency({ career_domain: "Operations and Strategy", title: "Programming Fundamentals", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any, "Operations and Strategy"), /Semantic Mismatch/);
+  assert.throws(() => validateRoadmapDomainConsistency({ career_domain: "Research and Academia", title: "Git & GitHub", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any, "Research and Academia"), /Semantic Mismatch/);
+  assert.throws(() => validateRoadmapDomainConsistency({ career_domain: "Design and UX", title: "SQL Analytics", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any, "Design and UX"), /Semantic Mismatch/);
 });
 
 test("PDF Redesign Layout Engine Verification across core roles", async () => {
@@ -213,7 +213,7 @@ test("semantic domain validator correctly validates role-specific subtopics", ()
   ];
   for (const title of sdePasses) {
     const result = validateRoadmapDomainConsistency(
-      { title, career_domain: "Software Engineering", milestones: [], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any,
+      { title, career_domain: "Software Engineering", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any,
       sdeGoal,
       { throwOnError: false }
     );
@@ -227,7 +227,7 @@ test("semantic domain validator correctly validates role-specific subtopics", ()
   ];
   for (const title of sdeFails) {
     const result = validateRoadmapDomainConsistency(
-      { title, career_domain: "Software Engineering", milestones: [], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any,
+      { title, career_domain: "Software Engineering", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any,
       sdeGoal,
       { throwOnError: false }
     );
@@ -243,7 +243,7 @@ test("semantic domain validator correctly validates role-specific subtopics", ()
   ];
   for (const title of dsPasses) {
     const result = validateRoadmapDomainConsistency(
-      { title, career_domain: "Data and Analytics", milestones: [], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any,
+      { title, career_domain: "Data and Analytics", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any,
       dsGoal,
       { throwOnError: false }
     );
@@ -257,7 +257,7 @@ test("semantic domain validator correctly validates role-specific subtopics", ()
   ];
   for (const title of dsFails) {
     const result = validateRoadmapDomainConsistency(
-      { title, career_domain: "Data and Analytics", milestones: [], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any,
+      { title, career_domain: "Data and Analytics", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any,
       dsGoal,
       { throwOnError: false }
     );
@@ -344,4 +344,158 @@ test("SDE-I roadmap is strictly free of contamination and contains only valid re
   allResources.forEach((res) => {
     assert.ok(allowedProviders.has(res.provider || ""), `SDE-I roadmap contains disallowed resource provider: '${res.provider}'`);
   });
+});
+
+test("roadmap validation correctly classifies empty or null titles as metadata errors rather than domain mismatches", () => {
+  const emptyTitleRoadmap = {
+    title: "",
+    career_domain: "Software Engineering",
+    summary: "Familiarity with loops, functions, and arrays.",
+    milestones: [{ title: "Programming Fundamentals", estimated_duration_weeks: 4, difficulty_level: "Beginner", completion_criteria: [], resource_links: [], projects: [], project_tasks: [], deliverables: [], expected_outcomes: [] }],
+    weekly_schedule: [],
+    learning_outcomes: [],
+    project_tasks: [],
+    expected_outcomes: []
+  };
+
+  const nullTitleRoadmap = {
+    title: null as any,
+    career_domain: "Software Engineering",
+    summary: "Familiarity with loops, functions, and arrays.",
+    milestones: [{ title: "Programming Fundamentals", estimated_duration_weeks: 4, difficulty_level: "Beginner", completion_criteria: [], resource_links: [], projects: [], project_tasks: [], deliverables: [], expected_outcomes: [] }],
+    weekly_schedule: [],
+    learning_outcomes: [],
+    project_tasks: [],
+    expected_outcomes: []
+  };
+
+  // 1. Assert that empty title throws MissingRoadmapTitleError and NOT DomainMismatchError
+  assert.throws(
+    () => validateRoadmapDomain(emptyTitleRoadmap as any, "SDE-I"),
+    (err: any) => {
+      assert.equal(err.name, "MissingRoadmapTitleError");
+      return true;
+    }
+  );
+
+  // 2. Assert that null title throws MissingRoadmapTitleError and NOT DomainMismatchError
+  assert.throws(
+    () => validateRoadmapDomain(nullTitleRoadmap as any, "SDE-I"),
+    (err: any) => {
+      assert.equal(err.name, "MissingRoadmapTitleError");
+      return true;
+    }
+  );
+
+  // 3. Assert validateRoadmapDomainConsistency returns warning with "Missing roadmap title"
+  const emptyRes = validateRoadmapDomainConsistency(emptyTitleRoadmap as any, "SDE-I", { throwOnError: false });
+  assert.ok(!emptyRes.valid);
+  assert.ok(emptyRes.warnings[0].includes("Missing roadmap title"), "Should report missing roadmap title");
+  assert.ok(!emptyRes.warnings[0].includes("domain mismatch"), "Should NOT report domain mismatch");
+
+  const nullRes = validateRoadmapDomainConsistency(nullTitleRoadmap as any, "SDE-I", { throwOnError: false });
+  assert.ok(!nullRes.valid);
+  assert.ok(nullRes.warnings[0].includes("Missing roadmap title"), "Should report missing roadmap title");
+  assert.ok(!nullRes.warnings[0].includes("domain mismatch"), "Should NOT report domain mismatch");
+});
+
+test("Software Engineering roadmap containing System Design must pass validation", () => {
+  const sdeSystemDesignRoadmap = {
+    title: "Software Engineering System Design Plan",
+    career_domain: "Software Engineering",
+    summary: "Learn scalable client-server architectures, queues, caching, and database design.",
+    milestones: [
+      {
+        title: "System Design Basics",
+        why_it_matters: "Reason about scaling and reliability.",
+        estimated_duration_weeks: 2,
+        difficulty_level: "Advanced",
+        completion_criteria: ["Design highly-available cluster"],
+        resource_links: [{ label: "AWS Skill Builder", url: "https://skillbuilder.aws/", provider: "AWS" }],
+        projects: ["Highly Available SaaS"],
+        project_tasks: ["Draw a system design architecture schema"],
+        deliverables: ["architecture notes"],
+        expected_outcomes: ["explain queues and database horizontal scaling"]
+      }
+    ],
+    weekly_schedule: ["4h system design mock reviews"],
+    learning_outcomes: ["design scalable system architectures"],
+    project_tasks: ["build container clusters using docker and kubernetes"],
+    expected_outcomes: ["reason about database sharding and queues"]
+  };
+
+  const result = validateRoadmapDomainConsistency(sdeSystemDesignRoadmap as any, "SDE-I", { throwOnError: false });
+  assert.ok(result.valid, `Software Engineering with System Design should pass, but failed: ${result.warnings.join(", ")}`);
+});
+
+test("UX roadmap with pure design/layout content passes under Design and UX domain", () => {
+  const uxDesignRoadmap = {
+    title: "UI/UX Layout and Figma Design Plan",
+    career_domain: "Design and UX",
+    summary: "Figma vector components, typography grids, accessibility, and visual guidelines.",
+    milestones: [
+      {
+        title: "Design Principles",
+        why_it_matters: "Master contrast, balance, typography, and figma crafts.",
+        estimated_duration_weeks: 3,
+        difficulty_level: "Beginner",
+        completion_criteria: ["Design component visual standards following material layout guidelines"],
+        resource_links: [{ label: "Figma Help Docs", url: "https://help.figma.com/", provider: "Figma" }],
+        projects: ["Mobile App Redesign Layout"],
+        project_tasks: ["Design responsive frames with autolayout components"],
+        deliverables: ["Figma design files"],
+        expected_outcomes: ["compose high-fidelity prototypes with component libraries"]
+      }
+    ],
+    weekly_schedule: ["8h Figma vector crafting"],
+    learning_outcomes: ["design pixel-perfect layouts using components"],
+    project_tasks: ["construct visual hierarchy schemas and typography sheets"],
+    expected_outcomes: ["deploy responsive visual interface grids"]
+  };
+
+  const result = validateRoadmapDomainConsistency(uxDesignRoadmap as any, "UI/UX Designer", { throwOnError: false });
+  assert.ok(result.valid, `UX Design roadmap should pass under Design and UX domain, but failed: ${result.warnings.join(", ")}`);
+});
+
+test("mixed-domain roadmap containing Software Engineering domain and forbidden keywords from another domain fails validation", () => {
+  const contaminatedRoadmap = {
+    title: "Software Engineering Web Development Plan",
+    career_domain: "Software Engineering",
+    summary: "Learn JavaScript, backend databases, and user interviews for UX design research.",
+    milestones: [
+      {
+        title: "Programming Fundamentals & Figma Layouts",
+        why_it_matters: "Build coding foundations alongside wireframing design systems.",
+        estimated_duration_weeks: 4,
+        difficulty_level: "Beginner",
+        completion_criteria: ["Run user research interviews and verify code logic"],
+        resource_links: [
+          { label: "freeCodeCamp", url: "https://www.freecodecamp.org/", provider: "freeCodeCamp" },
+          { label: "Figma Help Docs", url: "https://help.figma.com/", provider: "Figma" }
+        ],
+        projects: ["Calculator app with UX research prototypes"],
+        project_tasks: ["Write clean logic loops and sketch low-fidelity wireframes"],
+        deliverables: ["calculator website", "figma layouts design"],
+        expected_outcomes: ["write code logic and compose user interviews guidelines"]
+      }
+    ],
+    weekly_schedule: ["4h coding and 4h wireframing components"],
+    learning_outcomes: ["build backend APIs and execute design system testing"],
+    project_tasks: ["write queries and interview 3 users for design feedback"],
+    expected_outcomes: ["deploy application code and design usability testing reports"]
+  };
+
+  // Assert that it throws DomainMismatchError on validateRoadmapDomain
+  assert.throws(
+    () => validateRoadmapDomain(contaminatedRoadmap as any, "SDE-I"),
+    (err: any) => {
+      assert.equal(err.name, "DomainMismatchError");
+      return true;
+    }
+  );
+
+  // Assert validateRoadmapDomainConsistency reports domain mismatch warning
+  const result = validateRoadmapDomainConsistency(contaminatedRoadmap as any, "SDE-I", { throwOnError: false });
+  assert.ok(!result.valid);
+  assert.ok(result.warnings.some(w => w.includes("disallowed keyword") || w.includes("domain mismatch")), "Warning should specify disallowed keywords or domain mismatch");
 });

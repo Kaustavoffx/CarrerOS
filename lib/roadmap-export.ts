@@ -1,5 +1,5 @@
 import type { RoadmapRecord, RoadmapMilestoneRecord, RoadmapResourceLink } from "./supabase/types";
-import { validateRoadmapDomainConsistency, auditRoadmapQuality, validateRoadmapDomain } from "./roadmap-plan";
+import { validateRoadmapDomainConsistency, auditRoadmapQuality, validateRoadmapDomain, MissingRoadmapTitleError, MissingRoadmapMetadataError, IncompleteRoadmapRecordError } from "./roadmap-plan";
 
 export type RoadmapExportBundle = {
   json: string;
@@ -212,11 +212,33 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
       const checkResult = validateRoadmapDomainConsistency(roadmap, careerGoal, { throwOnError: false });
       if (!checkResult.valid) {
         validReport = false;
-        allWarnings.push(...checkResult.warnings);
+        const mappedWarnings = checkResult.warnings.map(w => {
+          if (
+            w.includes("title") || 
+            w.includes("metadata") || 
+            w.includes("incomplete") || 
+            w.includes("Missing") ||
+            w.includes("Incomplete")
+          ) {
+            return "Missing roadmap metadata";
+          }
+          return w;
+        });
+        allWarnings.push(...mappedWarnings);
       }
       validateRoadmapDomain(roadmap, careerGoal);
     } catch (error) {
-      const errMsg = error instanceof Error ? error.message : String(error);
+      let errMsg = error instanceof Error ? error.message : String(error);
+      if (
+        error instanceof MissingRoadmapTitleError ||
+        error instanceof MissingRoadmapMetadataError ||
+        error instanceof IncompleteRoadmapRecordError ||
+        errMsg.includes("title") ||
+        errMsg.includes("metadata") ||
+        errMsg.includes("incomplete")
+      ) {
+        errMsg = "Missing roadmap metadata";
+      }
       validReport = false;
       allWarnings.push(errMsg);
     }
