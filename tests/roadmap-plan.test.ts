@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { auditRoadmapQuality, buildRoadmapPlanDetails, resolveDomainProfile, validateRoadmapDomainConsistency, validateRoadmapDomain, MissingRoadmapTitleError, MissingRoadmapMetadataError, IncompleteRoadmapRecordError } from "../lib/roadmap-plan";
+import { auditRoadmapQuality, buildRoadmapPlanDetails, resolveDomainProfile, validateRoadmapDomainConsistency, validateRoadmapDomain, MissingRoadmapTitleError, MissingRoadmapMetadataError, IncompleteRoadmapRecordError, DomainMismatchError } from "../lib/roadmap-plan";
 import { generateRoadmapPdfBlob } from "../lib/roadmap-export";
 
 const domainCases = [
@@ -494,8 +494,120 @@ test("mixed-domain roadmap containing Software Engineering domain and forbidden 
     }
   );
 
-  // Assert validateRoadmapDomainConsistency reports domain mismatch warning
   const result = validateRoadmapDomainConsistency(contaminatedRoadmap as any, "SDE-I", { throwOnError: false });
   assert.ok(!result.valid);
   assert.ok(result.warnings.some(w => w.includes("disallowed keyword") || w.includes("domain mismatch")), "Warning should specify disallowed keywords or domain mismatch");
+});
+
+test("pure Software Engineering roadmap passes validation", () => {
+  const roadmap = buildRoadmapPlanDetails({
+    goal: "SDE-I",
+    experience: "Junior",
+    weeklyHours: 10
+  }).roadmaps[0];
+  validateRoadmapDomain(roadmap, "SDE-I");
+  const result = validateRoadmapDomainConsistency(roadmap, "SDE-I");
+  assert.ok(result.valid);
+});
+
+test("pure UI/UX roadmap passes validation", () => {
+  const roadmap = buildRoadmapPlanDetails({
+    goal: "UI/UX Designer",
+    experience: "Junior",
+    weeklyHours: 10
+  }).roadmaps[0];
+  validateRoadmapDomain(roadmap, "UI/UX Designer");
+  const result = validateRoadmapDomainConsistency(roadmap, "UI/UX Designer");
+  assert.ok(result.valid);
+});
+
+test("pure Data Science roadmap passes validation", () => {
+  const roadmap = buildRoadmapPlanDetails({
+    goal: "Data Science",
+    experience: "Junior",
+    weeklyHours: 10
+  }).roadmaps[0];
+  validateRoadmapDomain(roadmap, "Data Science");
+  const result = validateRoadmapDomainConsistency(roadmap, "Data Science");
+  assert.ok(result.valid);
+});
+
+test("pure Cybersecurity roadmap passes validation", () => {
+  const roadmap = buildRoadmapPlanDetails({
+    goal: "Cybersecurity Analyst",
+    experience: "Junior",
+    weeklyHours: 10
+  }).roadmaps[0];
+  validateRoadmapDomain(roadmap, "Cybersecurity Analyst");
+  const result = validateRoadmapDomainConsistency(roadmap, "Cybersecurity Analyst");
+  assert.ok(result.valid);
+});
+
+test("mixed contaminated roadmap fails validation", () => {
+  const contaminated = {
+    title: "UX Design with DSA Algorithms",
+    career_domain: "Design and UX",
+    summary: "Learn UI layouts and sorting algorithms",
+    milestones: [
+      {
+        title: "Layout and DSA",
+        why_it_matters: "Learn layout designs and DSA algorithms like quicksort",
+        estimated_duration_weeks: 4,
+        difficulty_level: "Beginner",
+        completion_criteria: ["Write code for sorting and wireframe components"],
+        resource_links: [{ label: "Figma Help", url: "https://help.figma.com/", provider: "Figma" }],
+        projects: ["Quicksort Design Component"],
+        project_tasks: ["code quicksort and make Figma wireframe"],
+        deliverables: ["figma files and javascript script"],
+        expected_outcomes: ["use quicksort and create UI grids"]
+      }
+    ],
+    weekly_schedule: ["4h quicksort, 4h Figma"],
+    learning_outcomes: ["apply layouts and quicksort"],
+    project_tasks: ["construct layout and sort data"],
+    expected_outcomes: ["quicksort implementation and pixel perfect layouts"]
+  };
+  assert.throws(() => validateRoadmapDomain(contaminated as any, "UI/UX Designer"), DomainMismatchError);
+});
+
+test("empty title roadmap fails metadata validation", () => {
+  const emptyTitle = {
+    title: "",
+    career_domain: "Software Engineering",
+    summary: "A pure coding plan",
+    milestones: [{ title: "Programming", estimated_duration_weeks: 1, difficulty_level: "Beginner", completion_criteria: [], resource_links: [{ label: "fcc", url: "https://www.freecodecamp.org/", provider: "freeCodeCamp" }], projects: [], project_tasks: [], deliverables: [], expected_outcomes: [] }],
+    weekly_schedule: [],
+    learning_outcomes: ["coding"],
+    project_tasks: [],
+    expected_outcomes: ["code output"]
+  };
+  assert.throws(() => validateRoadmapDomain(emptyTitle as any, "SDE-I"), MissingRoadmapTitleError);
+});
+
+test("missing metadata roadmap fails metadata validation", () => {
+  const missingDomain = {
+    title: "Web Development Plan",
+    career_domain: "",
+    summary: "A pure coding plan",
+    milestones: [{ title: "Programming", estimated_duration_weeks: 1, difficulty_level: "Beginner", completion_criteria: [], resource_links: [{ label: "fcc", url: "https://www.freecodecamp.org/", provider: "freeCodeCamp" }], projects: [], project_tasks: [], deliverables: [], expected_outcomes: [] }],
+    weekly_schedule: [],
+    learning_outcomes: ["coding"],
+    project_tasks: [],
+    expected_outcomes: ["code output"]
+  };
+  assert.throws(() => validateRoadmapDomain(missingDomain as any, "SDE-I"), MissingRoadmapMetadataError);
+});
+
+test("incomplete roadmap record fails quality gate validation", () => {
+  const incomplete = {
+    title: "Web Development Plan",
+    career_domain: "Software Engineering",
+    summary: "",
+    milestones: [],
+    weekly_schedule: [],
+    learning_outcomes: [],
+    project_tasks: [],
+    expected_outcomes: []
+  };
+  assert.throws(() => validateRoadmapDomain(incomplete as any, "SDE-I"), IncompleteRoadmapRecordError);
 });

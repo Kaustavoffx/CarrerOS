@@ -3,7 +3,7 @@ import { z } from "zod";
 import { FREE_GENERATIONS } from "@/lib/config";
 import { resolveUserAiProviderForGeneration } from "@/lib/ai-provider-store";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { auditRoadmapQuality, buildRoadmapPlanDetails, buildRoadmapPlanPrompt, resolveDomainProfile, validateRoadmapDomainConsistency } from "@/lib/roadmap-plan";
+import { auditRoadmapQuality, buildRoadmapPlanDetails, buildRoadmapPlanPrompt, resolveDomainProfile, validateRoadmapDomainConsistency, validateRoadmapDomain } from "@/lib/roadmap-plan";
 
 const ResourceLinkSchema = z.object({
   label: z.string(),
@@ -281,56 +281,74 @@ export async function POST(req: Request) {
       obstacles: []
     };
 
-    const prompt = buildRoadmapPlanPrompt(roadmapInput);
-    const aiPayload = generationSource.source === "platform-openai" || generationSource.source === "user-openai"
-      ? await generateWithOpenAI(prompt, generationSource.apiKey ?? "")
-      : generationSource.source === "user-gemini"
-        ? await generateWithGemini(prompt, generationSource.apiKey ?? "")
-        : null;
+    if (generationSource.source === "local") {
+      const fallback = buildRoadmapPlanDetails(roadmapInput);
+      fallback.roadmaps.forEach((roadmap) => {
+        validateRoadmapDomain(roadmap, goal);
+        validateRoadmapDomainConsistency(roadmap, domainProfile);
+      });
+      const fallbackAudit = auditRoadmapQuality(fallback.roadmaps, domainProfile);
+      if (fallbackAudit.qualityScore < 85) {
+        throw new Error(`Fallback roadmap quality below threshold: ${fallbackAudit.qualityScore}`);
+      }
+      return NextResponse.json({
+        ...fallback,
+        roadmaps: fallback.roadmaps,
+        generation_source: generationSource.source,
+        provider_prompt: generationSource.providerPrompt,
+        provider_prompt_message: generationSource.providerPrompt ? "Your free generations are exhausted. Connect your own AI provider to continue." : null
+      });
+    }
 
-    if (aiPayload) {
-      const validated = ResponseSchema.safeParse(aiPayload);
-      if (validated.success) {
-        try {
-          validated.data.roadmaps.forEach((roadmap) => validateRoadmapDomainConsistency(roadmap, domainProfile));
-          const audit = auditRoadmapQuality(validated.data.roadmaps, domainProfile);
+    let lastError: Error | null = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const prompt = buildRoadmapPlanPrompt(roadmapInput);
+        const aiPayload = generationSource.source === "platform-openai" || generationSource.source === "user-openai"
+          ? await generateWithOpenAI(prompt, generationSource.apiKey ?? "")
+          : generationSource.source === "user-gemini"
+            ? await generateWithGemini(prompt, generationSource.apiKey ?? "")
+            : null;
 
-          if (audit.qualityScore >= 85) {
-            return NextResponse.json({
-              ...validated.data,
-              generation_source: generationSource.source,
-              provider_prompt: generationSource.providerPrompt,
-              provider_prompt_message: generationSource.providerPrompt ? "Your free generations are exhausted. Connect your own AI provider to continue." : null
-            });
-          }
-
-          console.error("INVALID AI ROADMAP QUALITY", { qualityScore: audit.qualityScore, reasons: audit.reasons, payload: aiPayload });
-        } catch (error) {
-          console.error("INVALID AI ROADMAP DOMAIN", { error, payload: aiPayload });
+        if (!aiPayload) {
+          throw new Error("AI provider returned empty response");
         }
-      }
 
-      if (!validated.success) {
-        console.error("INVALID AI ROADMAP PAYLOAD", {
-          issues: validated.error.issues,
-          payload: aiPayload
+        const validated = ResponseSchema.safeParse(aiPayload);
+        if (!validated.success) {
+          throw new Error(`Zod validation failed: ${JSON.stringify(validated.error.issues)}`);
+        }
+
+        // Validate each generated roadmap using BOTH validation systems and quality gates
+        validated.data.roadmaps.forEach((roadmap) => {
+          validateRoadmapDomain(roadmap, goal);
+          validateRoadmapDomainConsistency(roadmap, domainProfile);
         });
+
+        const audit = auditRoadmapQuality(validated.data.roadmaps, domainProfile);
+        if (audit.qualityScore < 85) {
+          throw new Error(`AI roadmap quality below threshold: ${audit.qualityScore}. Reasons: ${audit.reasons.join(", ")}`);
+        }
+
+        return NextResponse.json({
+          ...validated.data,
+          generation_source: generationSource.source,
+          provider_prompt: generationSource.providerPrompt,
+          provider_prompt_message: generationSource.providerPrompt ? "Your free generations are exhausted. Connect your own AI provider to continue." : null
+        });
+
+      } catch (error: unknown) {
+        const errMsg = error instanceof Error ? error.message : String(error);
+        console.error(`AI roadmap generation attempt ${attempt} failed:`, errMsg);
+        lastError = error instanceof Error ? error : new Error(errMsg);
       }
     }
 
-    const fallback = buildRoadmapPlanDetails(roadmapInput);
-    fallback.roadmaps.forEach((roadmap) => validateRoadmapDomainConsistency(roadmap, domainProfile));
-    const fallbackAudit = auditRoadmapQuality(fallback.roadmaps, domainProfile);
-    if (fallbackAudit.qualityScore < 85) {
-      throw new Error(`Fallback roadmap quality below threshold: ${fallbackAudit.qualityScore}`);
-    }
-    return NextResponse.json({
-      ...fallback,
-      roadmaps: fallback.roadmaps,
-      generation_source: generationSource.source,
-      provider_prompt: generationSource.providerPrompt,
-      provider_prompt_message: generationSource.providerPrompt ? "Your free generations are exhausted. Connect your own AI provider to continue." : null
-    });
+    // If we reach here, AI generation failed all 3 retries
+    return NextResponse.json(
+      { error: "Roadmap generation failed.", details: lastError?.message || "Invalid roadmap generated across 3 attempts" },
+      { status: 500 }
+    );
   } catch (error) {
     console.error("ROADMAP REPLAN FAILED", error);
     return NextResponse.json({ error: "Roadmap generation failed." }, { status: 500 });

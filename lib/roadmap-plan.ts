@@ -354,6 +354,101 @@ const DOMAIN_LIBRARY: DomainProfile[] = [
   }
 ];
 
+export class RoadmapQualityGateError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RoadmapQualityGateError";
+  }
+}
+
+export const DOMAIN_DISALLOWED_KEYWORDS: Record<string, string[]> = {
+  "Software Engineering": [
+    "operations", "ops", "academia", "product design", "experience design", "ux design", "ux", 
+    "ui design", "figma", "user research", "wireframing", "design systems", "marketing", 
+    "operations strategy", "research papers", "academic journals"
+  ],
+  "Design and UX": [
+    "dsa", "algorithms", "system design", "competitive programming", "leet code", "leetcode",
+    "cryptography", "pen testing", "penetration testing", "cybersecurity", "security policies",
+    "cma", "accounting", "clinical diagnosis"
+  ],
+  "Data and Analytics": [
+    "figma", "wireframe", "wireframing", "ux design", "ux", "ui design", "pen testing", 
+    "penetration testing", "cma", "accounting", "nursing", "pedagogy"
+  ],
+  "Cybersecurity": [
+    "figma", "wireframe", "wireframing", "ux design", "ux", "ui design", "marketing", 
+    "campaign funnel", "operations strategy", "cma", "accounting", "nursing"
+  ]
+};
+
+export type ContaminationIssue = {
+  roadmapId: string;
+  userId: string;
+  reason: string;
+};
+
+export function scanRoadmapContamination(
+  roadmaps: RoadmapRecord[],
+  goal: string
+): ContaminationIssue[] {
+  const profile = pickDomain(goal);
+  const disallowedKeywords = DOMAIN_DISALLOWED_KEYWORDS[profile.label];
+  if (!disallowedKeywords) return [];
+
+  const issues: ContaminationIssue[] = [];
+
+  roadmaps.forEach((roadmap) => {
+    const milestones = toArray<RoadmapMilestoneRecord>(roadmap.milestones);
+    const textToCheck = [
+      roadmap.title || "",
+      roadmap.summary || "",
+      ...toArray<string>(roadmap.learning_outcomes),
+      ...toArray<string>(roadmap.project_tasks),
+      ...toArray<string>(roadmap.expected_outcomes),
+      ...milestones.flatMap((m) => [
+        m.title || "",
+        m.why_it_matters || "",
+        ...toArray<string>(m.completion_criteria),
+        ...toArray<string>(m.projects),
+        ...toArray<string>(m.project_tasks),
+        ...toArray<string>(m.deliverables),
+        ...toArray<string>(m.expected_outcomes)
+      ])
+    ].join(" ").toLowerCase();
+
+    disallowedKeywords.forEach((keyword) => {
+      const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(`(^|\\W)${escaped}(\\W|$)`, "i");
+      if (regex.test(textToCheck)) {
+        if (keyword === "management") {
+          const cleanText = textToCheck
+            .replace(/project management/g, "")
+            .replace(/management tool/g, "")
+            .replace(/state management/g, "")
+            .replace(/package management/g, "");
+          if (!regex.test(cleanText)) {
+            return;
+          }
+        }
+        if (keyword === "system design") {
+          const cleanText = textToCheck.replace(/design systems?/g, "");
+          if (!regex.test(cleanText)) {
+            return;
+          }
+        }
+        issues.push({
+          roadmapId: roadmap.id || "unknown",
+          userId: roadmap.owner || "unknown",
+          reason: `Roadmap contains disallowed keyword for ${profile.label}: '${keyword}'`
+        });
+      }
+    });
+  });
+
+  return issues;
+}
+
 function parseWeeklyHours(rawValue?: number | string) {
   if (typeof rawValue === "number" && Number.isFinite(rawValue)) {
     return Math.max(4, Math.min(40, Math.round(rawValue)));
@@ -961,6 +1056,10 @@ export function validateRoadmapDomainConsistency(
             .replace(/package management/g, "");
           return regex.test(cleanText);
         }
+        if (keyword === "system design") {
+          const cleanText = textBlob.replace(/design systems?/g, "");
+          return regex.test(cleanText);
+        }
         return true;
       }
       return false;
@@ -1085,7 +1184,7 @@ export class DomainMismatchError extends Error {
 }
 
 export function validateRoadmapDomain(roadmap: RoadmapRecord, goal: string): void {
-  // Separate metadata validation from semantic validation.
+  // 1. Separate metadata validation from semantic validation.
   if (!roadmap.title || !roadmap.title.trim()) {
     throw new MissingRoadmapTitleError("Missing roadmap title");
   }
@@ -1101,7 +1200,7 @@ export function validateRoadmapDomain(roadmap: RoadmapRecord, goal: string): voi
 
   const profile = pickDomain(goal);
   
-  // 1. Strict Domain Locking: Every sprint must inherit roadmap.career_domain
+  // 2. Strict Domain Locking: Every sprint must inherit roadmap.career_domain
   if (roadmap.career_domain !== profile.label) {
     throw new DomainMismatchError(
       `Critical domain mismatch: Roadmap domain '${roadmap.career_domain}' does not match career goal domain '${profile.label}'`
@@ -1109,54 +1208,49 @@ export function validateRoadmapDomain(roadmap: RoadmapRecord, goal: string): voi
   }
 
   const milestones = toArray<RoadmapMilestoneRecord>(roadmap.milestones);
+  const resourceLinks = toArray<RoadmapResourceLink>(roadmap.resource_links);
+  const learningOutcomes = toArray<string>(roadmap.learning_outcomes);
+  const expectedOutcomes = toArray<string>(roadmap.expected_outcomes);
 
-  if (profile.label === "Software Engineering") {
-    // SDE-I Canonical Allowed and Disallowed constraints
-    const sdeDisallowedKeywords = [
-      "operations",
-      "ops",
-      "academia",
-      "product design",
-      "experience design",
-      "ux design",
-      "ux",
-      "ui design",
-      "figma",
-      "user research",
-      "wireframing",
-      "design systems",
-      "marketing",
-      "management",
-      "management principles",
-      "operations strategy",
-      "research papers",
-      "academic journals"
-    ];
+  // 3. Roadmap Quality Gate checks
+  if (learningOutcomes.length === 0 && expectedOutcomes.length === 0) {
+    throw new RoadmapQualityGateError("Roadmap is missing outcomes");
+  }
 
-    // Scan title, summary, outcomes, tasks
-    const textToCheck = [
-      roadmap.title || "",
-      roadmap.summary || "",
-      ...toArray<string>(roadmap.learning_outcomes),
-      ...toArray<string>(roadmap.project_tasks),
-      ...toArray<string>(roadmap.expected_outcomes),
-      ...milestones.flatMap((m) => [
-        m.title || "",
-        m.why_it_matters || "",
-        ...toArray<string>(m.completion_criteria),
-        ...toArray<string>(m.projects),
-        ...toArray<string>(m.project_tasks),
-        ...toArray<string>(m.deliverables),
-        ...toArray<string>(m.expected_outcomes)
-      ])
-    ].join(" ").toLowerCase();
+  const allResources = [
+    ...resourceLinks,
+    ...milestones.flatMap((m) => toArray<RoadmapResourceLink>(m.resource_links))
+  ];
+  if (allResources.length === 0) {
+    throw new RoadmapQualityGateError("Roadmap is missing resource links");
+  }
 
-    sdeDisallowedKeywords.forEach((keyword) => {
+  // Scan title, summary, outcomes, tasks
+  const textToCheck = [
+    roadmap.title || "",
+    roadmap.summary || "",
+    ...learningOutcomes,
+    ...toArray<string>(roadmap.project_tasks),
+    ...expectedOutcomes,
+    ...milestones.flatMap((m) => [
+      m.title || "",
+      m.why_it_matters || "",
+      ...toArray<string>(m.completion_criteria),
+      ...toArray<string>(m.projects),
+      ...toArray<string>(m.project_tasks),
+      ...toArray<string>(m.deliverables),
+      ...toArray<string>(m.expected_outcomes)
+    ])
+  ].join(" ").toLowerCase();
+
+  // Multi-domain semantic validation using keyword dictionaries
+  const disallowedKeywords = DOMAIN_DISALLOWED_KEYWORDS[profile.label];
+  if (disallowedKeywords) {
+    disallowedKeywords.forEach((keyword) => {
       const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const regex = new RegExp(`(^|\\W)${escaped}(\\W|$)`, "i");
       if (regex.test(textToCheck)) {
         if (keyword === "management") {
-          // Allow typical SDE-I terms: "project management", "management tool", "state management", "package management"
           const cleanText = textToCheck
             .replace(/project management/g, "")
             .replace(/management tool/g, "")
@@ -1166,22 +1260,25 @@ export function validateRoadmapDomain(roadmap: RoadmapRecord, goal: string): voi
             return;
           }
         }
-        throw new DomainMismatchError(`Software Engineering roadmap contains disallowed keyword: '${keyword}'`);
+        if (keyword === "system design") {
+          const cleanText = textToCheck.replace(/design systems?/g, "");
+          if (!regex.test(cleanText)) {
+            return;
+          }
+        }
+        throw new DomainMismatchError(`${profile.label} roadmap contains disallowed keyword: '${keyword}'`);
       }
     });
+  }
 
-    // Resource Validation
+  // SDE Allowed and Disallowed resource providers check
+  if (profile.label === "Software Engineering") {
     const allowedProviders = new Set([
       "MDN", "Roadmap.sh", "freeCodeCamp", "Microsoft Learn", "Node.js", "React", 
       "TypeScript", "GitHub", "LeetCode", "GeeksForGeeks", "NeetCode", "CS50", "Official Documentation", "PostgreSQL", "Microsoft"
     ]);
 
     const blockedResourceProviders = ["NCBI", "Research Papers", "Academic Journals", "UX Resources", "Figma Resources"];
-
-    const allResources = [
-      ...toArray<RoadmapResourceLink>(roadmap.resource_links),
-      ...milestones.flatMap((m) => toArray<RoadmapResourceLink>(m.resource_links))
-    ];
 
     allResources.forEach((res) => {
       const providerLower = (res.provider || "").toLowerCase();
