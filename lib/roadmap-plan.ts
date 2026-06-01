@@ -442,9 +442,16 @@ function getDisallowedKeywords(profile: DomainProfile) {
 
   const lowerLabel = profile.label.toLowerCase();
 
+  if (lowerLabel.includes("software")) {
+    blockedTerms.push("research", "ux design", "ux", "ui design");
+  }
+
   return blockedTerms
     .map(normalizeText)
     .filter((term) => {
+      if (lowerLabel.includes("software")) {
+        return true;
+      }
       if (lowerLabel.includes("design") && term.includes("design")) {
         return false;
       }
@@ -899,6 +906,25 @@ export function validateRoadmapDomainConsistency(
   }
 
   const textBlob = roadmapTextBlob(roadmap).toLowerCase();
+
+  // Strict domain consistency checks for Software Engineering
+  if (profile.label === "Software Engineering") {
+    const sdeDisallowed = ["operations", "research", "academia", "ux design", "ux", "ui design", "product design", "experience design"];
+    if (textContainsAnyNegative(textBlob, sdeDisallowed)) {
+      const errorDetails = {
+        roadmapTitle: roadmap.title,
+        careerDomain: profile.label,
+        mismatchReason: `Critical domain mismatch: Software Engineering roadmaps must not contain Operations, Research, Academia, or UX Design topics.`,
+        severity: "critical"
+      };
+      const errMsg = `Roadmap domain mismatch: ${JSON.stringify(errorDetails)}`;
+      if (options.throwOnError) {
+        throw new Error(errMsg);
+      } else {
+        warnings.push(errMsg);
+      }
+    }
+  }
   
   if (textContainsAny(textBlob, ["programming fundamentals"])) {
     if (["operations and strategy", "marketing and growth", "design and ux", "research and academia"].includes(expectedDomain)) {
