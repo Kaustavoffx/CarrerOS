@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createStarterWorkspace } from "./workspace";
-import { auditRoadmapQuality, buildRoadmapPlan, resolveDomainProfile, validateRoadmapDomainConsistency, validateGeneratedRoadmap } from "./roadmap-plan";
+import { auditRoadmapQuality, buildRoadmapPlan, resolveDomainProfile, validateRoadmapDomainConsistency, validateGeneratedRoadmap, validateRoadmapDomain } from "./roadmap-plan";
 import { generateId } from "./id";
 import type { AppData, ChatThread, ExperienceLevel, NoteRecord, ProgressRecord, RoadmapAuditReport, RoadmapAuditSourceReport, RoadmapDifficulty, RoadmapMilestoneRecord, RoadmapRecord, RoadmapResourceLink, RoadmapStatus, RoadmapVersionRecord, UserProfileRecord, WorkspaceSnapshotRecord } from "./supabase/types";
 
@@ -381,6 +381,7 @@ async function persistRoadmaps(client: SupabaseClient, userId: string, roadmaps:
   const domainProfile = resolveDomainProfile(careerGoal);
 
   safeRoadmaps.forEach((roadmap) => {
+    validateRoadmapDomain(roadmap, careerGoal);
     validateRoadmapDomainConsistency(roadmap, domainProfile);
     const genCheck = validateGeneratedRoadmap(roadmap, careerGoal);
     if (!genCheck.valid) {
@@ -416,6 +417,7 @@ async function persistRoadmapVersion(client: SupabaseClient, userId: string, roa
   }
   const domainProfile = resolveDomainProfile(careerGoal);
   safeRoadmaps.forEach((roadmap) => {
+    validateRoadmapDomain(roadmap, careerGoal);
     validateRoadmapDomainConsistency(roadmap, domainProfile);
     const genCheck = validateGeneratedRoadmap(roadmap, careerGoal);
     if (!genCheck.valid) {

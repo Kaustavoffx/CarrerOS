@@ -1000,6 +1000,115 @@ export function validateRoadmapDomainConsistency(
   };
 }
 
+export class DomainMismatchError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DomainMismatchError";
+  }
+}
+
+export function validateRoadmapDomain(roadmap: RoadmapRecord, goal: string): void {
+  const profile = pickDomain(goal);
+  
+  // 1. Strict Domain Locking: Every sprint must inherit roadmap.career_domain
+  if (roadmap.career_domain !== profile.label) {
+    throw new DomainMismatchError(
+      `Critical domain mismatch: Roadmap domain '${roadmap.career_domain}' does not match career goal domain '${profile.label}'`
+    );
+  }
+
+  const milestones = toArray<RoadmapMilestoneRecord>(roadmap.milestones);
+
+  if (profile.label === "Software Engineering") {
+    // SDE-I Canonical Allowed and Disallowed constraints
+    const sdeDisallowedKeywords = [
+      "operations",
+      "ops",
+      "academia",
+      "product design",
+      "experience design",
+      "ux design",
+      "ux",
+      "ui design",
+      "figma",
+      "user research",
+      "wireframing",
+      "design systems",
+      "marketing",
+      "management",
+      "management principles",
+      "operations strategy",
+      "research papers",
+      "academic journals"
+    ];
+
+    // Scan title, summary, outcomes, tasks
+    const textToCheck = [
+      roadmap.title || "",
+      roadmap.summary || "",
+      ...toArray<string>(roadmap.learning_outcomes),
+      ...toArray<string>(roadmap.project_tasks),
+      ...toArray<string>(roadmap.expected_outcomes),
+      ...milestones.flatMap((m) => [
+        m.title || "",
+        m.why_it_matters || "",
+        ...toArray<string>(m.completion_criteria),
+        ...toArray<string>(m.projects),
+        ...toArray<string>(m.project_tasks),
+        ...toArray<string>(m.deliverables),
+        ...toArray<string>(m.expected_outcomes)
+      ])
+    ].join(" ").toLowerCase();
+
+    sdeDisallowedKeywords.forEach((keyword) => {
+      const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(`(^|\\W)${escaped}(\\W|$)`, "i");
+      if (regex.test(textToCheck)) {
+        if (keyword === "management") {
+          // Allow typical SDE-I terms: "project management", "management tool", "state management", "package management"
+          const cleanText = textToCheck
+            .replace(/project management/g, "")
+            .replace(/management tool/g, "")
+            .replace(/state management/g, "")
+            .replace(/package management/g, "");
+          if (!regex.test(cleanText)) {
+            return;
+          }
+        }
+        throw new DomainMismatchError(`Software Engineering roadmap contains disallowed keyword: '${keyword}'`);
+      }
+    });
+
+    // Resource Validation
+    const allowedProviders = new Set([
+      "MDN", "Roadmap.sh", "freeCodeCamp", "Microsoft Learn", "Node.js", "React", 
+      "TypeScript", "GitHub", "LeetCode", "GeeksForGeeks", "NeetCode", "CS50", "Official Documentation", "PostgreSQL", "Microsoft"
+    ]);
+
+    const blockedResourceProviders = ["NCBI", "Research Papers", "Academic Journals", "UX Resources", "Figma Resources"];
+
+    const allResources = [
+      ...toArray<RoadmapResourceLink>(roadmap.resource_links),
+      ...milestones.flatMap((m) => toArray<RoadmapResourceLink>(m.resource_links))
+    ];
+
+    allResources.forEach((res) => {
+      const providerLower = (res.provider || "").toLowerCase();
+      const labelLower = (res.label || "").toLowerCase();
+      
+      blockedResourceProviders.forEach((blocked) => {
+        if (providerLower.includes(blocked.toLowerCase()) || labelLower.includes(blocked.toLowerCase())) {
+          throw new DomainMismatchError(`Software Engineering roadmap contains blocked resource provider/label: '${res.provider}'`);
+        }
+      });
+
+      if (!allowedProviders.has(res.provider || "")) {
+        throw new DomainMismatchError(`Software Engineering roadmap contains disallowed resource provider: '${res.provider}'`);
+      }
+    });
+  }
+}
+
 export function validateGeneratedRoadmap(
   roadmap: RoadmapRecord,
   goal: string,
@@ -2125,7 +2234,7 @@ export function buildRoadmapPlanPrompt(input: RoadmapPlanInput) {
     : [];
 
   return {
-    system: "You are CareerOS, a career roadmap engine. Return only valid JSON.",
+    system: "You are CareerOS, a professional career roadmap engine. Return only valid JSON. You MUST strictly respect all 'domain_constraints' specified in the user payload, including 'allowed_resources', 'allowed_phases', and 'disallowed_topics'. For example, if 'locked_career_domain' is 'Software Engineering', you must never include topics like Operations, Marketing, Business, Design, UI/UX (e.g., Figma, user research, wireframing, design systems), or Research/Academia (e.g., academic journals, research papers), and you must strictly adhere to the allowed phases and allowed resources list.",
     user: {
       goal: input.goal,
       experience: input.experience,

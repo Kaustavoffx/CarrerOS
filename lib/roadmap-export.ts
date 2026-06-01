@@ -1,5 +1,5 @@
 import type { RoadmapRecord, RoadmapMilestoneRecord, RoadmapResourceLink } from "./supabase/types";
-import { validateRoadmapDomainConsistency, auditRoadmapQuality } from "./roadmap-plan";
+import { validateRoadmapDomainConsistency, auditRoadmapQuality, validateRoadmapDomain } from "./roadmap-plan";
 
 export type RoadmapExportBundle = {
   json: string;
@@ -208,10 +208,17 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   const allWarnings: string[] = [];
   
   safeRoadmaps.forEach((roadmap) => {
-    const checkResult = validateRoadmapDomainConsistency(roadmap, careerGoal, { throwOnError: false });
-    if (!checkResult.valid) {
+    try {
+      const checkResult = validateRoadmapDomainConsistency(roadmap, careerGoal, { throwOnError: false });
+      if (!checkResult.valid) {
+        validReport = false;
+        allWarnings.push(...checkResult.warnings);
+      }
+      validateRoadmapDomain(roadmap, careerGoal);
+    } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error);
       validReport = false;
-      allWarnings.push(...checkResult.warnings);
+      allWarnings.push(errMsg);
     }
   });
 
@@ -595,6 +602,21 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   const badgeBox = !validReport ? { y1: 32 - 6.5 - paddingY + 1, y2: 32 - 6.5 - paddingY + 1 + 6.5 + paddingY * 2 } : { y1: 0, y2: 0 };
 
   let titleTop = headerBottomY + 24;
+
+  if (!validReport) {
+    const alertY = margins.top;
+    const alertH = 20;
+    doc.setFillColor("#b91c1c");
+    doc.roundedRect(margins.left, alertY, contentWidth, alertH, 3, 3, "F");
+
+    doc.setFont("CMGeom", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor("#ffffff");
+    doc.text("⚠️ WARNING: DOMAIN MISMATCH OR CONTAMINATION DETECTED IN THIS ROADMAP", centerX, alertY + 12, { align: "center" });
+
+    ledger.pushBox(1, margins.left, alertY, margins.left + contentWidth, alertY + alertH, "RedAlertWarningBar");
+    titleTop = alertY + alertH + 12;
+  }
 
   const reservedHeaderBottom = Math.max(headerBox.y2, badgeBox.y2, reservedZoneTop);
   if (titleTop < reservedHeaderBottom) {

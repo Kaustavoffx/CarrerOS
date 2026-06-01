@@ -221,7 +221,17 @@ export async function POST(req: Request) {
     }
 
     const { profile, currentRoadmaps } = parsedInput.data;
-    const goal = profile?.goal || "Frontend Engineer";
+    let goal = profile?.goal || "Frontend Engineer";
+
+    // Strict Domain Locking: Once a roadmap is generated, career_goal and career_domain must become immutable context.
+    if (currentRoadmaps && currentRoadmaps.length > 0) {
+      const lockedDomain = currentRoadmaps[0].career_domain;
+      const testProfile = resolveDomainProfile(goal);
+      if (testProfile.label !== lockedDomain) {
+        goal = lockedDomain;
+      }
+    }
+
     const level = (profile?.experience_level || "Junior") as "Student" | "Junior" | "Mid" | "Senior" | "Switcher";
     const timeCommit = currentRoadmaps?.[0]?.weekly_hours || "10 hours / week";
     const readinessScore = profile?.readiness_score ?? 0;

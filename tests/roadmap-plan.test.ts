@@ -265,3 +265,83 @@ test("semantic domain validator correctly validates role-specific subtopics", ()
     assert.ok(result.warnings[0].includes("Roadmap domain mismatch"), "Warning should specify domain mismatch");
   }
 });
+
+test("SDE-I roadmap is strictly free of contamination and contains only valid resources", () => {
+  const plan = buildRoadmapPlanDetails({
+    goal: "SDE-I",
+    experience: "Junior",
+    weeklyHours: 12
+  });
+
+  const roadmap = plan.roadmaps[0];
+  
+  // 1. Assert career domain matches exactly
+  assert.equal(roadmap.career_domain, "Software Engineering");
+
+  // 2. Assert zero forbidden keywords (UX, design, wireframe, figma, user research, operations, management, academia, research, etc.)
+  const forbiddenKeywords = [
+    "operations",
+    "ops",
+    "academia",
+    "product design",
+    "experience design",
+    "ux design",
+    "ux",
+    "ui design",
+    "figma",
+    "user research",
+    "wireframing",
+    "design systems",
+    "marketing",
+    "operations strategy",
+    "research papers",
+    "academic journals"
+  ];
+
+  const milestones = roadmap.milestones;
+  const textToCheck = [
+    roadmap.title || "",
+    roadmap.summary || "",
+    ...roadmap.learning_outcomes,
+    ...roadmap.project_tasks,
+    ...roadmap.expected_outcomes,
+    ...milestones.flatMap((m) => [
+      m.title || "",
+      m.why_it_matters || "",
+      ...m.completion_criteria,
+      ...m.projects,
+      ...m.project_tasks,
+      ...m.deliverables,
+      ...m.expected_outcomes
+    ])
+  ].join(" ").toLowerCase();
+
+  forbiddenKeywords.forEach((keyword) => {
+    const cleanText = keyword === "management"
+      ? textToCheck
+          .replace(/project management/g, "")
+          .replace(/management tool/g, "")
+          .replace(/state management/g, "")
+          .replace(/package management/g, "")
+      : textToCheck;
+      
+    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(^|\\W)${escaped}(\\W|$)`, "i");
+    assert.ok(!regex.test(cleanText), `SDE-I roadmap contains disallowed keyword: '${keyword}'`);
+  });
+
+  // 3. Assert allowed resource providers
+  const allowedProviders = new Set([
+    "MDN", "Roadmap.sh", "freeCodeCamp", "Microsoft Learn", "Node.js", "React", 
+    "TypeScript", "GitHub", "LeetCode", "GeeksForGeeks", "CS50", "Official Documentation", "PostgreSQL", "Microsoft"
+  ]);
+
+  const allResources = [
+    ...roadmap.resource_links,
+    ...milestones.flatMap((m) => m.resource_links)
+  ];
+
+  allResources.forEach((res) => {
+    assert.ok(allowedProviders.has(res.provider || ""), `SDE-I roadmap contains disallowed resource provider: '${res.provider}'`);
+  });
+});
