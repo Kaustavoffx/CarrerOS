@@ -10,14 +10,11 @@ const domainCases = [
     allowedProviders: ["CS50", "freeCodeCamp", "Roadmap.sh", "MDN", "React", "TypeScript", "GitHub", "LeetCode", "GeeksForGeeks", "Official Documentation", "Node.js", "PostgreSQL", "Microsoft"],
     requiredPhaseTitles: [
       "Programming Fundamentals",
-      "Data Structures & Algorithms",
-      "Git & GitHub",
-      "HTML/CSS/JavaScript",
-      "React & APIs",
-      "Backend Development",
-      "Databases & SQL",
-      "Projects & Portfolio",
-      "System Design Basics",
+      "DSA",
+      "Git/GitHub",
+      "Web Development",
+      "Projects",
+      "System Design",
       "Interview Preparation"
     ]
   },
@@ -96,14 +93,11 @@ test("Software Engineering roadmap uses the required SDE-I phases only", () => {
 
   assert.deepEqual(milestoneTitles, [
     "Programming Fundamentals",
-    "Data Structures & Algorithms",
-    "Git & GitHub",
-    "HTML/CSS/JavaScript",
-    "React & APIs",
-    "Backend Development",
-    "Databases & SQL",
-    "Projects & Portfolio",
-    "System Design Basics",
+    "DSA",
+    "Git/GitHub",
+    "Web Development",
+    "Projects",
+    "System Design",
     "Interview Preparation"
   ]);
 

@@ -474,18 +474,6 @@ function toIsoDate(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
-function hashSeed(...parts: string[]) {
-  const input = parts.join("|");
-  let hash = 2166136261;
-
-  for (let index = 0; index < input.length; index += 1) {
-    hash ^= input.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-
-  return (hash >>> 0).toString(16).padStart(8, "0");
-}
-
 function pickDomain(goal: string) {
   const normalized = goal.toLowerCase();
   const rankedMatches = DOMAIN_LIBRARY.map((profile, index) => {
@@ -994,8 +982,18 @@ export function validateRoadmapDomainConsistency(
     }
   }
 
-  const profile = typeof goalOrProfile === "string" ? pickDomain(goalOrProfile) : goalOrProfile;
+  let profile = typeof goalOrProfile === "string" ? pickDomain(goalOrProfile) : goalOrProfile;
   const goalStr = typeof goalOrProfile === "string" ? goalOrProfile : profile.label;
+
+  const isSoftwareEngineering = 
+    goalStr.toLowerCase() === "software engineering" || 
+    profile.label === "Software Engineering" ||
+    ["software", "frontend", "backend", "full stack", "fullstack", "developer", "engineering", "sde", "swe", "coding"].some(term => goalStr.toLowerCase().includes(term));
+
+  if (isSoftwareEngineering) {
+    profile = DOMAIN_LIBRARY[0];
+  }
+
   const roadmapDomain = normalizeText(roadmap.career_domain || "");
   const expectedDomain = normalizeText(profile.label);
   const aliasAllowed = profile.aliases.some((alias) => normalizeText(alias) === roadmapDomain);
@@ -1208,7 +1206,15 @@ export function validateRoadmapDomain(roadmap: RoadmapRecord, goal: string): voi
     throw new IncompleteRoadmapRecordError("Incomplete roadmap record");
   }
 
-  const profile = pickDomain(goal);
+  let profile = pickDomain(goal);
+  const isSoftwareEngineering = 
+    goal.toLowerCase() === "software engineering" || 
+    profile.label === "Software Engineering" ||
+    ["software", "frontend", "backend", "full stack", "fullstack", "developer", "engineering", "sde", "swe", "coding"].some(term => goal.toLowerCase().includes(term));
+
+  if (isSoftwareEngineering) {
+    profile = DOMAIN_LIBRARY[0];
+  }
   
   // 2. Strict Domain Locking: Every sprint must inherit roadmap.career_domain
   if (roadmap.career_domain !== profile.label) {
@@ -1312,7 +1318,15 @@ export function validateGeneratedRoadmap(
   goal: string,
   options: { throwOnError?: boolean } = { throwOnError: false }
 ): { valid: boolean; warnings: string[] } {
-  const profile = pickDomain(goal);
+  let profile = pickDomain(goal);
+  const isSoftwareEngineering = 
+    goal.toLowerCase() === "software engineering" || 
+    profile.label === "Software Engineering" ||
+    ["software", "frontend", "backend", "full stack", "fullstack", "developer", "engineering", "sde", "swe", "coding"].some(term => goal.toLowerCase().includes(term));
+
+  if (isSoftwareEngineering) {
+    profile = DOMAIN_LIBRARY[0];
+  }
   const domainKey = getDomainKnowledgeMapKey(goal, profile.label);
   const warnings: string[] = [];
 
@@ -1429,16 +1443,6 @@ export function auditRoadmapQuality(roadmaps: unknown, goalOrProfile: string | D
   };
 }
 
-function pickFromSeed<T>(items: T[], seed: string, offset = 0) {
-  const safeItems = toArray<T>(items);
-  if (!safeItems.length) {
-    throw new Error("Cannot pick from an empty list.");
-  }
-
-  const index = Number.parseInt(seed.slice(offset, offset + 8), 16) % safeItems.length;
-  return safeItems[index];
-}
-
 function resourceLinksFor(profile: DomainProfile, topic: string) {
   const resources = toArray<ResourceDef>(profile.resources);
   const filtered = resources.filter((resource) => resource.topic.toLowerCase().includes(topic.toLowerCase()) || topic.toLowerCase().includes(resource.topic.toLowerCase()));
@@ -1499,138 +1503,111 @@ function makeMilestone(params: {
   };
 }
 
-function buildRoadmapCard(params: {
+function buildCleanDefaultRoadmap(params: {
   goal: string;
   profile: DomainProfile;
   experience: ExperienceLevel;
   weeklyHours: number;
+  readinessScore?: number;
   referenceDate: Date;
   version: number;
-  variant: string;
-  title: string;
-  summary: string;
-  progress: number;
-  phaseLabel: string;
-  phase1Topic: string;
-  phase2Topic: string;
-  phase3Topic: string;
-  projectFocus: string;
-}): RoadmapRecord {
-  const seed = hashSeed(params.goal, params.profile.label, params.variant);
-  const phase1Weeks = Math.max(2, Math.round(params.weeklyHours / 3));
-  const phase2Weeks = Math.max(3, Math.round(params.weeklyHours / 2));
-  const phase3Weeks = Math.max(2, Math.round(params.weeklyHours / 4));
+}) : RoadmapRecord {
+  const readinessScore = typeof params.readinessScore === "number"
+    ? Math.max(0, Math.min(100, params.readinessScore))
+    : 50;
 
-  const phase1 = makeMilestone({
-    title: `${params.phaseLabel}: Map the gap`,
-    whyItMatters: `This turns ${params.goal} into a concrete skill map for ${params.profile.label.toLowerCase()}.`,
-    estimatedDurationWeeks: phase1Weeks,
-    difficultyLevel: chooseDifficulty(params.experience, 1),
-    completionCriteria: [
-      `List the core skills for ${params.profile.label.toLowerCase()}`,
-      "Write a gap analysis against the target role",
-      "Set a weekly learning cadence"
-    ],
-    resourceLinks: resourceLinksFor(params.profile, params.phase1Topic),
-    projects: [`${params.profile.label} skill map`],
-    projectTasks: [
-      `Review 5 current role descriptions for ${params.profile.label.toLowerCase()}`,
-      `Rank your current strengths against the target role`,
-      "Create a 4-week execution plan"
-    ],
-    deliverables: ["skill map", "execution plan"],
-    expectedOutcomes: ["clarity on the target role", "a realistic weekly practice loop"]
-  });
+  const foundationTopics = toArray<string>(params.profile.foundationTopics);
+  const projectIdeas = toArray<string>(params.profile.projectIdeas);
+  const proofArtifacts = toArray<string>(params.profile.proofArtifacts);
 
-  const projectName = pickFromSeed(params.profile.projectIdeas, seed);
-  const phase2 = makeMilestone({
-    title: `${params.phaseLabel}: Build proof of work`,
-    whyItMatters: `A real artifact proves you can apply ${params.profile.label.toLowerCase()} skills under constraints.`,
-    estimatedDurationWeeks: phase2Weeks,
-    difficultyLevel: chooseDifficulty(params.experience, 2),
-    completionCriteria: [
-      "A scoped project is shipped",
-      "The artifact is documented and shareable",
-      "You can explain decisions, tradeoffs, and results"
-    ],
-    resourceLinks: resourceLinksFor(params.profile, params.phase2Topic),
-    projects: [projectName],
-    projectTasks: [
-      `Define a one-page scope for ${projectName}`,
-      "Ship the smallest useful version first",
-      "Collect one piece of feedback and iterate once"
-    ],
-    deliverables: ["live project", "case study"],
-    expectedOutcomes: ["portfolio proof", "a concrete story for interviews"]
-  });
-
-  const phase3 = makeMilestone({
-    title: `${params.phaseLabel}: Package and launch`,
-    whyItMatters: "Career progress depends on proof, positioning, and visible momentum.",
-    estimatedDurationWeeks: phase3Weeks,
-    difficultyLevel: chooseDifficulty(params.experience, 3),
-    completionCriteria: [
-      "Resume, portfolio, or profile is updated",
-      "At least 10 targeted opportunities or leads are tracked",
-      "You can present the project in under 3 minutes"
-    ],
-    resourceLinks: resourceLinksFor(params.profile, params.phase3Topic),
-    projects: [params.projectFocus],
-    projectTasks: [
-      "Write a strong role-specific summary",
-      "Prepare interview answers and a project demo",
-      "Track outreach, interviews, or applications"
-    ],
-    deliverables: ["portfolio refresh", "application tracker", "interview story bank"],
-    expectedOutcomes: ["more confident outreach", "clearer role positioning"]
-  });
-
-  const milestones = [phase1, phase2, phase3];
-  const safeMilestones = toArray<RoadmapMilestoneRecord>(milestones);
-  const totalDuration = safeMilestones.reduce((sum, milestone) => sum + milestone.estimated_duration_weeks, 0);
-  const weeklySchedule = [
-    `${Math.max(2, Math.round(params.weeklyHours * 0.35))}h focused practice`,
-    `${Math.max(1, Math.round(params.weeklyHours * 0.25))}h project work`,
-    `${Math.max(1, Math.round(params.weeklyHours * 0.15))}h review and notes`
+  const phaseConfigs = [
+    {
+      title: "Foundations & Scope",
+      why: `Establish technical baseline skills and verify core ${params.profile.label.toLowerCase()} concepts.`,
+      duration: Math.max(3, Math.round(params.weeklyHours * 0.30)),
+      difficulty: chooseDifficulty(params.experience, 1),
+      resources: resourceLinksFor(params.profile, foundationTopics[0] || "fundamentals"),
+      projects: [`${params.profile.label} skill map`],
+      tasks: [`Review core resources for ${params.profile.label.toLowerCase()}`, "Document structural concepts and set up workspace"],
+      deliverables: ["skill map", "workspace configuration"],
+      outcomes: [`understand foundational topics in ${params.profile.label.toLowerCase()}`]
+    },
+    {
+      title: "Portfolio Development",
+      why: `Construct hands-on projects to prove capability in ${params.profile.label.toLowerCase()}.`,
+      duration: Math.max(4, Math.round(params.weeklyHours * 0.40)),
+      difficulty: chooseDifficulty(params.experience, 2),
+      resources: resourceLinksFor(params.profile, projectIdeas[0] || "project"),
+      projects: [projectIdeas[0] || "Portfolio Project"],
+      tasks: [`Build and deploy a substantial project showcasing ${params.profile.label.toLowerCase()} skills`],
+      deliverables: ["deployed project", "project source code"],
+      outcomes: ["apply skills to build real-world applications"]
+    },
+    {
+      title: "Launch & Readiness",
+      why: "Prepare portfolio assets and review technical casing stories for recruitment.",
+      duration: Math.max(3, Math.round(params.weeklyHours * 0.30)),
+      difficulty: chooseDifficulty(params.experience, 3),
+      resources: resourceLinksFor(params.profile, proofArtifacts[0] || "portfolio"),
+      projects: [proofArtifacts[0] || "Case Study"],
+      tasks: ["Write detailed project case studies", "Format resume and prepare for technical interviews"],
+      deliverables: ["portfolio case study", "recruitment prep packet"],
+      outcomes: ["communicate technical decisions clearly"]
+    }
   ];
 
-  const combinedResources = Array.from(new Map(safeMilestones.flatMap((milestone) => milestone.resource_links).map((resource) => [resource.url, resource])).values());
-  const projectTasks = Array.from(new Set(safeMilestones.flatMap((milestone) => milestone.project_tasks)));
-  const expectedOutcomes = Array.from(new Set(safeMilestones.flatMap((milestone) => milestone.expected_outcomes)));
-  const learningOutcomes = Array.from(new Set([
-    `Operate confidently in ${params.profile.label.toLowerCase()}`,
-    `Bridge your current background into ${params.goal}`,
-    ...params.profile.foundationTopics.slice(0, 2)
-  ]));
-  const completionDate = addWeeks(params.referenceDate, Math.max(1, totalDuration));
+  const milestones = phaseConfigs.map((phase) => makeMilestone({
+    title: phase.title,
+    whyItMatters: phase.why,
+    estimatedDurationWeeks: phase.duration,
+    difficultyLevel: phase.difficulty,
+    completionCriteria: [
+      `Complete the ${phase.title.toLowerCase()} checklist`,
+      `Demonstrate a concrete artifact for ${phase.title.toLowerCase()}`,
+      `Explain the learning outcome in your own words`
+    ],
+    resourceLinks: phase.resources,
+    projects: phase.projects,
+    projectTasks: phase.tasks,
+    deliverables: phase.deliverables,
+    expectedOutcomes: phase.outcomes
+  }));
+
+  const totalDuration = milestones.reduce((sum, milestone) => sum + milestone.estimated_duration_weeks, 0);
+  const allResources = Array.from(new Map(milestones.flatMap((milestone) => milestone.resource_links).map((resource) => [resource.url, resource])).values());
+  const projectTasks = Array.from(new Set(milestones.flatMap((milestone) => milestone.project_tasks)));
+  const expectedOutcomes = Array.from(new Set(milestones.flatMap((milestone) => milestone.expected_outcomes)));
+  const learningOutcomes = phaseConfigs.map((phase) => phase.outcomes[0]);
 
   return {
     id: generateId(),
-    title: params.title,
-    status: statusForProgress(params.progress),
-    summary: params.summary,
-    description: params.summary,
+    title: `${params.profile.label}: Professional Roadmap`,
+    status: statusForProgress(Math.min(55, Math.max(25, Math.round(readinessScore * 0.55)))),
+    summary: `A structured plan for ${params.goal} with ${params.profile.label.toLowerCase()} milestones, projects, and readiness prep.`,
     owner: "You",
-    progress: params.progress,
+    progress: Math.min(55, Math.max(25, Math.round(readinessScore * 0.55))),
     career_domain: params.profile.label,
     career_demand_score: params.profile.demandScore,
-    demand_score: params.profile.demandScore,
     market_outlook: params.profile.marketOutlook,
     salary_range: params.profile.salaryRange,
     automation_risk: params.profile.automationRisk,
     roadmap_version: params.version,
     generated_at: params.referenceDate.toISOString(),
-    ai_reasoning: `${params.goal} was mapped into ${params.profile.label.toLowerCase()} through your experience level, weekly capacity, and current skill gaps.`,
-    weekly_schedule: weeklySchedule,
+    ai_reasoning: `The selected career goal of ${params.goal} maps to ${params.profile.label}, so this roadmap focuses strictly on ${params.profile.label.toLowerCase()} milestones, projects, and readiness.`,
+    weekly_schedule: [
+      `${Math.max(2, Math.round(params.weeklyHours * 0.4))}h focused practice`,
+      `${Math.max(1, Math.round(params.weeklyHours * 0.3))}h project work`,
+      `${Math.max(1, Math.round(params.weeklyHours * 0.2))}h review and case prep`
+    ],
     learning_outcomes: learningOutcomes,
     total_duration_weeks: totalDuration,
     duration_weeks: totalDuration,
     weekly_hours: params.weeklyHours,
-    estimated_completion_date: toIsoDate(completionDate),
-    resource_links: combinedResources,
+    estimated_completion_date: toIsoDate(addWeeks(params.referenceDate, Math.max(1, totalDuration))),
+    resource_links: allResources,
     project_tasks: projectTasks,
     expected_outcomes: expectedOutcomes,
-    milestones: milestones as RoadmapMilestoneRecord[],
+    milestones,
     updated_at: params.referenceDate.toISOString()
   };
 }
@@ -1657,7 +1634,7 @@ function buildSoftwareEngineeringRoadmap(params: {
     {
       title: "Programming Fundamentals",
       why: "Build the core logic skills required to solve coding problems with confidence.",
-      duration: Math.max(2, Math.round(params.weeklyHours * 0.12)),
+      duration: Math.max(2, Math.round(params.weeklyHours * 0.15)),
       difficulty: chooseDifficulty(params.experience, 1),
       resources: resourceLinksFor(params.profile, "programming"),
       projects: ["Calculator", "Todo App"],
@@ -1666,9 +1643,9 @@ function buildSoftwareEngineeringRoadmap(params: {
       outcomes: ["write basic programs independently", "understand core programming patterns"]
     },
     {
-      title: "Data Structures & Algorithms",
+      title: "DSA",
       why: "Strengthen problem-solving and interview readiness through structured practice.",
-      duration: Math.max(2, Math.round(params.weeklyHours * 0.12)),
+      duration: Math.max(2, Math.round(params.weeklyHours * 0.15)),
       difficulty: chooseDifficulty(params.experience, 2),
       resources: resourceLinksFor(params.profile, "algorithms"),
       projects: ["LeetCode practice set", "Algorithm notebook"],
@@ -1677,9 +1654,9 @@ function buildSoftwareEngineeringRoadmap(params: {
       outcomes: ["solve common interview problems", "explain tradeoffs clearly"]
     },
     {
-      title: "Git & GitHub",
+      title: "Git/GitHub",
       why: "Version control is required to collaborate and ship reliably as a software engineer.",
-      duration: Math.max(1, Math.round(params.weeklyHours * 0.08)),
+      duration: Math.max(1, Math.round(params.weeklyHours * 0.10)),
       difficulty: chooseDifficulty(params.experience, 1),
       resources: resourceLinksFor(params.profile, "git"),
       projects: ["Portfolio repository", "Git workflow cheat sheet"],
@@ -1688,53 +1665,20 @@ function buildSoftwareEngineeringRoadmap(params: {
       outcomes: ["use Git confidently", "collaborate through pull requests"]
     },
     {
-      title: "HTML/CSS/JavaScript",
-      why: "Frontend fundamentals are the base for building usable web interfaces.",
-      duration: Math.max(2, Math.round(params.weeklyHours * 0.12)),
-      difficulty: chooseDifficulty(params.experience, 1),
-      resources: resourceLinksFor(params.profile, "javascript"),
-      projects: ["Portfolio Website"],
-      tasks: ["Build responsive pages with semantic HTML", "Style layouts with modern CSS", "Add interactive JavaScript behavior"],
-      deliverables: ["portfolio website", "responsive layout"],
-      outcomes: ["build accessible static pages", "ship responsive UI"]
-    },
-    {
-      title: "React & APIs",
-      why: "Modern software engineering roles expect you to compose UI with data fetching.",
-      duration: Math.max(2, Math.round(params.weeklyHours * 0.14)),
+      title: "Web Development",
+      why: "Frontend and backend fundamentals are the base for building complete, usable web interfaces and APIs.",
+      duration: Math.max(3, Math.round(params.weeklyHours * 0.25)),
       difficulty: chooseDifficulty(params.experience, 2),
-      resources: resourceLinksFor(params.profile, "react"),
-      projects: ["Weather App"],
-      tasks: ["Build components and reusable hooks", "Fetch and display API data", "Handle loading, error, and empty states"],
-      deliverables: ["weather app", "API integration notes"],
-      outcomes: ["build React interfaces", "consume APIs safely"]
+      resources: resourceLinksFor(params.profile, "web development"),
+      projects: ["Portfolio Website", "Weather App", "Blog Platform", "Expense Tracker"],
+      tasks: ["Build responsive pages with semantic HTML and modern CSS", "Add interactive React components and handle API data fetching", "Design backend API routes and connect to a PostgreSQL database"],
+      deliverables: ["portfolio website", "full stack web application", "database schema"],
+      outcomes: ["build accessible static pages", "consume APIs safely", "design server APIs and query databases"]
     },
     {
-      title: "Backend Development",
-      why: "A strong engineer can build the server layer that supports product features.",
-      duration: Math.max(2, Math.round(params.weeklyHours * 0.14)),
-      difficulty: chooseDifficulty(params.experience, 2),
-      resources: resourceLinksFor(params.profile, "backend"),
-      projects: ["Blog Platform"],
-      tasks: ["Create routes and controllers", "Add authentication and validation", "Design reusable server logic"],
-      deliverables: ["backend API", "blog platform"],
-      outcomes: ["design a server API", "structure backend code"]
-    },
-    {
-      title: "Databases & SQL",
-      why: "Persisted data is the backbone of real products and professional engineering work.",
-      duration: Math.max(2, Math.round(params.weeklyHours * 0.12)),
-      difficulty: chooseDifficulty(params.experience, 2),
-      resources: resourceLinksFor(params.profile, "sql"),
-      projects: ["Expense Tracker"],
-      tasks: ["Model relational data", "Write queries and joins", "Connect an app to a database"],
-      deliverables: ["database schema", "SQL query set"],
-      outcomes: ["store and query data", "design relational schemas"]
-    },
-    {
-      title: "Projects & Portfolio",
+      title: "Projects",
       why: "Portfolio projects prove your ability to ship complete software.",
-      duration: Math.max(2, Math.round(params.weeklyHours * 0.14)),
+      duration: Math.max(2, Math.round(params.weeklyHours * 0.15)),
       difficulty: chooseDifficulty(params.experience, 3),
       resources: resourceLinksFor(params.profile, "portfolio"),
       projects: ["Chat Application", "Project Management Tool"],
@@ -1743,9 +1687,9 @@ function buildSoftwareEngineeringRoadmap(params: {
       outcomes: ["present a strong portfolio", "explain engineering decisions"]
     },
     {
-      title: "System Design Basics",
+      title: "System Design",
       why: "System thinking helps you reason about scale, reliability, and maintainability.",
-      duration: Math.max(1, Math.round(params.weeklyHours * 0.09)),
+      duration: Math.max(1, Math.round(params.weeklyHours * 0.10)),
       difficulty: chooseDifficulty(params.experience, 3),
       resources: resourceLinksFor(params.profile, "system design"),
       projects: ["Full Stack SaaS"],
@@ -1756,7 +1700,7 @@ function buildSoftwareEngineeringRoadmap(params: {
     {
       title: "Interview Preparation",
       why: "The final step is converting skills into an interview-ready narrative.",
-      duration: Math.max(1, Math.round(params.weeklyHours * 0.05)),
+      duration: Math.max(1, Math.round(params.weeklyHours * 0.10)),
       difficulty: chooseDifficulty(params.experience, 3),
       resources: resourceLinksFor(params.profile, "interview"),
       projects: ["Mock interview packet"],
@@ -2254,14 +2198,23 @@ export function buildRoadmapPlan(input: RoadmapPlanInput): RoadmapRecord[] {
 export function buildRoadmapPlanDetails(input: RoadmapPlanInput): RoadmapPlanPayload {
   const weeklyHours = parseWeeklyHours(input.weeklyHours);
   const referenceDate = input.referenceDate ?? new Date();
-  const profile = pickDomain(input.goal);
-  const seed = hashSeed(input.goal, input.experience, String(weeklyHours), input.skills?.join(",") ?? "");
-  const foundationTopics = toArray<string>(profile.foundationTopics);
-  const projectIdeas = toArray<string>(profile.projectIdeas);
-  const proofArtifacts = toArray<string>(profile.proofArtifacts);
+  
+  let profile = pickDomain(input.goal);
+
+  // Hard domain locking: if goal or resolved profile label maps to Software Engineering, force it.
+  const isSoftwareEngineering = 
+    input.goal.toLowerCase() === "software engineering" || 
+    profile.label === "Software Engineering" ||
+    ["software", "frontend", "backend", "full stack", "fullstack", "developer", "engineering", "sde", "swe", "coding"].some(term => input.goal.toLowerCase().includes(term));
+
+  if (isSoftwareEngineering) {
+    profile = DOMAIN_LIBRARY[0]; // Force Software Engineering profile
+  }
+
+  let roadmap: RoadmapRecord;
 
   if (profile.label === "Software Engineering") {
-    const roadmap = buildSoftwareEngineeringRoadmap({
+    roadmap = buildSoftwareEngineeringRoadmap({
       goal: input.goal,
       profile,
       experience: input.experience,
@@ -2270,20 +2223,8 @@ export function buildRoadmapPlanDetails(input: RoadmapPlanInput): RoadmapPlanPay
       referenceDate,
       version: 1
     });
-
-    return {
-      roadmaps: [roadmap],
-      career_domain: profile.label,
-      career_demand_score: profile.demandScore,
-      market_outlook: profile.marketOutlook,
-      salary_range: profile.salaryRange,
-      automation_risk: profile.automationRisk,
-      ai_reasoning: `The selected career goal of ${input.goal} maps to Software Engineering, so the roadmap stays locked to software engineering milestones, projects, and interview prep.`,
-    };
-  }
-
-  if (profile.label === "Data and Analytics") {
-    const roadmap = buildDataAnalyticsRoadmap({
+  } else if (profile.label === "Data and Analytics") {
+    roadmap = buildDataAnalyticsRoadmap({
       goal: input.goal,
       profile,
       experience: input.experience,
@@ -2292,20 +2233,8 @@ export function buildRoadmapPlanDetails(input: RoadmapPlanInput): RoadmapPlanPay
       referenceDate,
       version: 1
     });
-
-    return {
-      roadmaps: [roadmap],
-      career_domain: profile.label,
-      career_demand_score: profile.demandScore,
-      market_outlook: profile.marketOutlook,
-      salary_range: profile.salaryRange,
-      automation_risk: profile.automationRisk,
-      ai_reasoning: `The selected career goal of ${input.goal} maps to Data and Analytics, locked strictly to business intelligence, SQL analytics, statistics, Power BI, and Python.`,
-    };
-  }
-
-  if (profile.label === "Design and UX") {
-    const roadmap = buildDesignUxRoadmap({
+  } else if (profile.label === "Design and UX") {
+    roadmap = buildDesignUxRoadmap({
       goal: input.goal,
       profile,
       experience: input.experience,
@@ -2314,20 +2243,8 @@ export function buildRoadmapPlanDetails(input: RoadmapPlanInput): RoadmapPlanPay
       referenceDate,
       version: 1
     });
-
-    return {
-      roadmaps: [roadmap],
-      career_domain: profile.label,
-      career_demand_score: profile.demandScore,
-      market_outlook: profile.marketOutlook,
-      salary_range: profile.salaryRange,
-      automation_risk: profile.automationRisk,
-      ai_reasoning: `The selected career goal of ${input.goal} maps to Design and UX, locked to user research, wireframing, Figma layouts, prototyping, and component UI design systems.`,
-    };
-  }
-
-  if (profile.label === "Cybersecurity") {
-    const roadmap = buildCybersecurityRoadmap({
+  } else if (profile.label === "Cybersecurity") {
+    roadmap = buildCybersecurityRoadmap({
       goal: input.goal,
       profile,
       experience: input.experience,
@@ -2336,80 +2253,33 @@ export function buildRoadmapPlanDetails(input: RoadmapPlanInput): RoadmapPlanPay
       referenceDate,
       version: 1
     });
-
-    return {
-      roadmaps: [roadmap],
-      career_domain: profile.label,
-      career_demand_score: profile.demandScore,
-      market_outlook: profile.marketOutlook,
-      salary_range: profile.salaryRange,
-      automation_risk: profile.automationRisk,
-      ai_reasoning: `The selected career goal of ${input.goal} maps to Cybersecurity, locked to threat modeling, IAM permissions, SIEM logging, secure configurations, and incident response playbooks.`,
-    };
+  } else {
+    roadmap = buildCleanDefaultRoadmap({
+      goal: input.goal,
+      profile,
+      experience: input.experience,
+      weeklyHours,
+      readinessScore: input.readinessScore,
+      referenceDate,
+      version: 1
+    });
   }
 
-  const roadmaps = [
-    buildRoadmapCard({
-      goal: input.goal,
-      profile,
-      experience: input.experience,
-      weeklyHours,
-      referenceDate,
-      version: 1,
-      variant: "primary",
-      title: `${profile.label}: foundation plan`,
-      summary: `Build role clarity and the baseline skills needed to move into ${input.goal}.`,
-      progress: Math.min(65, input.experience === "Senior" ? 55 : input.experience === "Mid" || input.experience === "Switcher" ? 38 : 22),
-      phaseLabel: "Foundation",
-      phase1Topic: foundationTopics[0],
-      phase2Topic: projectIdeas[0],
-      phase3Topic: proofArtifacts[0],
-      projectFocus: proofArtifacts[0]
-    }),
-    buildRoadmapCard({
-      goal: input.goal,
-      profile,
-      experience: input.experience,
-      weeklyHours,
-      referenceDate,
-      version: 1,
-      variant: seed.slice(0, 10),
-      title: `${profile.label}: portfolio plan`,
-      summary: `Turn the target role into visible proof through one substantial project and clear case studies.`,
-      progress: Math.min(70, input.experience === "Senior" ? 50 : 30),
-      phaseLabel: "Portfolio",
-      phase1Topic: foundationTopics[1] ?? foundationTopics[0],
-      phase2Topic: projectIdeas[1] ?? projectIdeas[0],
-      phase3Topic: proofArtifacts[1] ?? proofArtifacts[0],
-      projectFocus: projectIdeas[0]
-    }),
-    buildRoadmapCard({
-      goal: input.goal,
-      profile,
-      experience: input.experience,
-      weeklyHours,
-      referenceDate,
-      version: 1,
-      variant: seed.slice(10, 20),
-      title: `${profile.label}: launch plan`,
-      summary: `Package the story, prove readiness, and move into applications, outreach, or client acquisition.`,
-      progress: Math.min(80, input.experience === "Senior" ? 70 : 35),
-      phaseLabel: "Launch",
-      phase1Topic: foundationTopics[2] ?? foundationTopics[0],
-      phase2Topic: projectIdeas[2] ?? projectIdeas[0],
-      phase3Topic: proofArtifacts[2] ?? proofArtifacts[0],
-      projectFocus: proofArtifacts[0]
-    })
-  ];
+  // Diagnostics logging
+  console.log({
+    requestedDomain: profile.label,
+    generatedDomain: roadmap.career_domain,
+    roadmapTitle: roadmap.title
+  });
 
   return {
-    roadmaps,
+    roadmaps: [roadmap],
     career_domain: profile.label,
     career_demand_score: profile.demandScore,
     market_outlook: profile.marketOutlook,
     salary_range: profile.salaryRange,
     automation_risk: profile.automationRisk,
-    ai_reasoning: `The plan was personalized for ${input.goal} by matching the goal to ${profile.label.toLowerCase()}, experience level, available time, and real project proof.`,
+    ai_reasoning: `The selected career goal of ${input.goal} maps to ${profile.label}, locked strictly to its milestones, projects, and interview preparation.`,
   };
 }
 
@@ -2419,14 +2289,11 @@ export function buildRoadmapPlanPrompt(input: RoadmapPlanInput) {
   const domainBlueprint = profile.label === "Software Engineering"
     ? [
         "Programming Fundamentals",
-        "Data Structures & Algorithms",
-        "Git & GitHub",
-        "HTML/CSS/JavaScript",
-        "React & APIs",
-        "Backend Development",
-        "Databases & SQL",
-        "Projects & Portfolio",
-        "System Design Basics",
+        "DSA",
+        "Git/GitHub",
+        "Web Development",
+        "Projects",
+        "System Design",
         "Interview Preparation"
       ]
     : [];
