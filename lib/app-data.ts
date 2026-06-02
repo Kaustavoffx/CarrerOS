@@ -166,6 +166,18 @@ export function validateRoadmap(roadmap: unknown): RoadmapValidationResult {
 }
 
 function buildLegacyRoadmapGoal(roadmap: Record<string, unknown>) {
+  const isSde = 
+    String(roadmap.career_domain || "").toLowerCase() === "software engineering" ||
+    ["software", "frontend", "backend", "full stack", "fullstack", "developer", "engineering", "sde", "swe", "coding"].some(term => 
+      String(roadmap.goal || "").toLowerCase().includes(term) ||
+      String(roadmap.title || "").toLowerCase().includes(term) ||
+      String(roadmap.summary || "").toLowerCase().includes(term)
+    );
+
+  if (isSde) {
+    return "Software Engineering";
+  }
+
   const goalSeed = [roadmap.goal, roadmap.title, roadmap.summary, roadmap.career_domain].find((item) => typeof item === "string" && item.trim().length);
   return typeof goalSeed === "string" ? goalSeed : "Career roadmap";
 }

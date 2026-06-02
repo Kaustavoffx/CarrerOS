@@ -228,7 +228,16 @@ export async function POST(req: Request) {
     if (currentRoadmaps && currentRoadmaps.length > 0) {
       const lockedDomain = currentRoadmaps[0].career_domain;
       const testProfile = resolveDomainProfile(goal);
-      if (testProfile.label !== lockedDomain) {
+      
+      const isSde = 
+        goal.toLowerCase() === "software engineering" || 
+        testProfile.label === "Software Engineering" ||
+        ["software", "frontend", "backend", "full stack", "fullstack", "developer", "engineering", "sde", "swe", "coding"].some(term => goal.toLowerCase().includes(term));
+
+      if (isSde && ["Operations and Strategy", "Research and Academia", "Design and UX"].includes(lockedDomain)) {
+        // Break the contaminated lock and force Software Engineering!
+        goal = "Software Engineering";
+      } else if (testProfile.label !== lockedDomain) {
         goal = lockedDomain;
       }
     }
