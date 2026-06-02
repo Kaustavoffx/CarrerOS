@@ -160,10 +160,18 @@ test("role-aware roadmap generator produces completely different contents per ca
   assert.ok(uxProviders.has("Figma") || uxProviders.has("Nielsen Norman Group") || uxProviders.has("Material Design"));
   assert.ok(dataProviders.has("Kaggle") || dataProviders.has("DataCamp") || dataProviders.has("Microsoft"));
 
-  // Verify semantic validator throws on mismatched sections
-  assert.throws(() => validateRoadmapDomainConsistency({ career_domain: "Operations and Strategy", title: "Programming Fundamentals", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any, "Operations and Strategy"), /Semantic Mismatch/);
-  assert.throws(() => validateRoadmapDomainConsistency({ career_domain: "Research and Academia", title: "Git & GitHub", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any, "Research and Academia"), /Semantic Mismatch/);
-  assert.throws(() => validateRoadmapDomainConsistency({ career_domain: "Design and UX", title: "SQL Analytics", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any, "Design and UX"), /Semantic Mismatch/);
+  // Verify semantic validator warns on mismatched sections
+  const res1 = validateRoadmapDomainConsistency({ career_domain: "Operations and Strategy", title: "Programming Fundamentals", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any, "Operations and Strategy");
+  assert.ok(!res1.valid);
+  assert.ok(res1.warnings.some(w => w.includes("Semantic Mismatch")));
+
+  const res2 = validateRoadmapDomainConsistency({ career_domain: "Research and Academia", title: "Git & GitHub", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any, "Research and Academia");
+  assert.ok(!res2.valid);
+  assert.ok(res2.warnings.some(w => w.includes("Semantic Mismatch")));
+
+  const res3 = validateRoadmapDomainConsistency({ career_domain: "Design and UX", title: "SQL Analytics", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any, "Design and UX");
+  assert.ok(!res3.valid);
+  assert.ok(res3.warnings.some(w => w.includes("Semantic Mismatch")));
 });
 
 test("PDF Redesign Layout Engine Verification across core roles", async () => {

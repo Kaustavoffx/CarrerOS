@@ -1032,11 +1032,13 @@ export function validateRoadmapDomainConsistency(
       severity: "warning"
     };
     const errMsg = `Roadmap domain mismatch: ${JSON.stringify(errorDetails)}`;
-    if (options.throwOnError) {
-      throw new Error(errMsg);
-    } else {
-      warnings.push(errMsg);
-    }
+    console.log({
+      roadmapTitle: roadmap.title,
+      careerDomain: profile.label,
+      validationSeverity: "warning"
+    });
+    console.warn(errMsg);
+    warnings.push(errMsg);
   }
 
   const textBlob = roadmapTextBlob(roadmap).toLowerCase();
@@ -1090,11 +1092,13 @@ export function validateRoadmapDomainConsistency(
         severity: "warning"
       };
       const errMsg = `Roadmap domain mismatch: ${JSON.stringify(errorDetails)}`;
-      if (options.throwOnError) {
-        throw new Error(errMsg);
-      } else {
-        warnings.push(errMsg);
-      }
+      console.log({
+        roadmapTitle: roadmap.title,
+        careerDomain: profile.label,
+        validationSeverity: "warning"
+      });
+      console.warn(errMsg);
+      warnings.push(errMsg);
     }
   }
 
@@ -1107,11 +1111,13 @@ export function validateRoadmapDomainConsistency(
         severity: "warning"
       };
       const errMsg = `Roadmap domain mismatch: ${JSON.stringify(errorDetails)}`;
-      if (options.throwOnError) {
-        throw new Error(errMsg);
-      } else {
-        warnings.push(errMsg);
-      }
+      console.log({
+        roadmapTitle: roadmap.title,
+        careerDomain: profile.label,
+        validationSeverity: "warning"
+      });
+      console.warn(errMsg);
+      warnings.push(errMsg);
     }
   }
 
@@ -1124,11 +1130,13 @@ export function validateRoadmapDomainConsistency(
         severity: "warning"
       };
       const errMsg = `Roadmap domain mismatch: ${JSON.stringify(errorDetails)}`;
-      if (options.throwOnError) {
-        throw new Error(errMsg);
-      } else {
-        warnings.push(errMsg);
-      }
+      console.log({
+        roadmapTitle: roadmap.title,
+        careerDomain: profile.label,
+        validationSeverity: "warning"
+      });
+      console.warn(errMsg);
+      warnings.push(errMsg);
     }
   }
 
@@ -1141,11 +1149,13 @@ export function validateRoadmapDomainConsistency(
         severity: "warning"
       };
       const errMsg = `Roadmap domain mismatch: ${JSON.stringify(errorDetails)}`;
-      if (options.throwOnError) {
-        throw new Error(errMsg);
-      } else {
-        warnings.push(errMsg);
-      }
+      console.log({
+        roadmapTitle: roadmap.title,
+        careerDomain: profile.label,
+        validationSeverity: "warning"
+      });
+      console.warn(errMsg);
+      warnings.push(errMsg);
     }
   }
 
