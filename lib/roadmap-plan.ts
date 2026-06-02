@@ -1192,6 +1192,7 @@ export class DomainMismatchError extends Error {
 }
 
 export function validateRoadmapDomain(roadmap: RoadmapRecord, goal: string): void {
+  console.log("LOG 6: Domain validator input:", { roadmapTitle: roadmap.title, careerDomain: roadmap.career_domain, goal });
   // 1. Separate metadata validation from semantic validation.
   if (!roadmap.title || !roadmap.title.trim()) {
     throw new MissingRoadmapTitleError("Missing roadmap title");

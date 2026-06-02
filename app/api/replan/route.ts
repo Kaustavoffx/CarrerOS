@@ -314,6 +314,7 @@ export async function POST(req: Request) {
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         const prompt = buildRoadmapPlanPrompt(roadmapInput);
+        console.log("LOG 2: Domain sent to AI:", prompt.user.locked_career_domain);
         const aiPayload = generationSource.source === "platform-openai" || generationSource.source === "user-openai"
           ? await generateWithOpenAI(prompt, generationSource.apiKey ?? "")
           : generationSource.source === "user-gemini"
@@ -324,7 +325,7 @@ export async function POST(req: Request) {
           throw new Error("AI provider returned empty response");
         }
 
-        console.log("AI Payload before Zod validation:", JSON.stringify(aiPayload, null, 2));
+        console.log("LOG 3: Raw AI response:", JSON.stringify(aiPayload));
 
         const validated = ResponseSchema.safeParse(aiPayload);
         if (!validated.success) {
@@ -336,6 +337,11 @@ export async function POST(req: Request) {
           generated_at: roadmap.generated_at ?? new Date().toISOString(),
           updated_at: roadmap.updated_at ?? new Date().toISOString()
         })) as unknown as RoadmapRecord[];
+
+        normalizedRoadmaps.forEach((roadmap) => {
+          console.log("LOG 4: Parsed roadmap title:", roadmap.title);
+          console.log("LOG 5: Parsed roadmap domain:", roadmap.career_domain);
+        });
 
         // Validate each generated roadmap using BOTH validation systems and quality gates
         normalizedRoadmaps.forEach((roadmap) => {
