@@ -577,8 +577,6 @@ function textContainsAnyNegative(text: string, keywords: string[]) {
 
 function roadmapTextBlob(roadmap: RoadmapRecord) {
   const milestones = toArray<RoadmapMilestoneRecord>(roadmap.milestones);
-  const resourceLinks = toArray<RoadmapResourceLink>(roadmap.resource_links);
-  const weekly_schedule = toArray<string>(roadmap.weekly_schedule);
   const learning_outcomes = toArray<string>(roadmap.learning_outcomes);
   const project_tasks = toArray<string>(roadmap.project_tasks);
   const expected_outcomes = toArray<string>(roadmap.expected_outcomes);
@@ -587,15 +585,9 @@ function roadmapTextBlob(roadmap: RoadmapRecord) {
     roadmap.career_domain || "",
     roadmap.title || "",
     roadmap.summary || "",
-    roadmap.ai_reasoning || "",
-    roadmap.market_outlook || "",
-    roadmap.salary_range || "",
-    roadmap.automation_risk || "",
-    weekly_schedule.join(" "),
     learning_outcomes.join(" "),
     project_tasks.join(" "),
     expected_outcomes.join(" "),
-    resourceLinks.map((resource) => `${resource.label || ""} ${resource.provider || ""}`).join(" "),
     milestones.flatMap((milestone) => [
       milestone.title || "",
       milestone.why_it_matters || "",
@@ -603,8 +595,7 @@ function roadmapTextBlob(roadmap: RoadmapRecord) {
       toArray<string>(milestone.projects).join(" "),
       toArray<string>(milestone.project_tasks).join(" "),
       toArray<string>(milestone.deliverables).join(" "),
-      toArray<string>(milestone.expected_outcomes).join(" "),
-      toArray<RoadmapResourceLink>(milestone.resource_links).map((resource) => `${resource.label || ""} ${resource.provider || ""}`).join(" ")
+      toArray<string>(milestone.expected_outcomes).join(" ")
     ]).join(" ")
   ].join(" ");
 }
@@ -1060,6 +1051,10 @@ export function validateRoadmapDomainConsistency(
           const cleanText = textBlob.replace(/design systems?/g, "");
           return regex.test(cleanText);
         }
+        if (keyword === "operations") {
+          const cleanText = textBlob.replace(/operations dashboard/g, "");
+          return regex.test(cleanText);
+        }
         return true;
       }
       return false;
@@ -1283,6 +1278,91 @@ export function validateRoadmapDomain(roadmap: RoadmapRecord, goal: string): voi
             return;
           }
         }
+        if (keyword === "operations") {
+          const cleanText = textToCheck.replace(/operations dashboard/g, "");
+          if (!regex.test(cleanText)) {
+            return;
+          }
+        }
+
+        // Find the exact field triggering the disallowed keyword
+        let fieldName = "unknown";
+        let matchedText = "";
+
+        if (roadmap.title && regex.test(roadmap.title)) {
+          fieldName = "title";
+          matchedText = roadmap.title;
+        } else if (roadmap.summary && regex.test(roadmap.summary)) {
+          fieldName = "summary";
+          matchedText = roadmap.summary;
+        } else if (roadmap.learning_outcomes && Array.isArray(roadmap.learning_outcomes) && roadmap.learning_outcomes.some(o => regex.test(o))) {
+          fieldName = "learning_outcomes";
+          matchedText = JSON.stringify(roadmap.learning_outcomes);
+        } else if (roadmap.project_tasks && Array.isArray(roadmap.project_tasks) && roadmap.project_tasks.some(o => regex.test(o))) {
+          fieldName = "project_tasks";
+          matchedText = JSON.stringify(roadmap.project_tasks);
+        } else if (roadmap.expected_outcomes && Array.isArray(roadmap.expected_outcomes) && roadmap.expected_outcomes.some(o => regex.test(o))) {
+          fieldName = "expected_outcomes";
+          matchedText = JSON.stringify(roadmap.expected_outcomes);
+        } else if (roadmap.milestones && Array.isArray(roadmap.milestones)) {
+          for (let i = 0; i < roadmap.milestones.length; i++) {
+            const m = roadmap.milestones[i];
+            if (m.title && regex.test(m.title)) {
+              fieldName = `milestones[${i}].title`;
+              matchedText = m.title;
+              break;
+            } else if (m.why_it_matters && regex.test(m.why_it_matters)) {
+              fieldName = `milestones[${i}].why_it_matters`;
+              matchedText = m.why_it_matters;
+              break;
+            } else if (m.completion_criteria && Array.isArray(m.completion_criteria) && m.completion_criteria.some((c: string) => regex.test(c))) {
+              fieldName = `milestones[${i}].completion_criteria`;
+              matchedText = JSON.stringify(m.completion_criteria);
+              break;
+            } else if (m.projects && Array.isArray(m.projects) && m.projects.some((p: string) => regex.test(p))) {
+              fieldName = `milestones[${i}].projects`;
+              matchedText = JSON.stringify(m.projects);
+              break;
+            } else if (m.project_tasks && Array.isArray(m.project_tasks) && m.project_tasks.some((t: string) => regex.test(t))) {
+              fieldName = `milestones[${i}].project_tasks`;
+              matchedText = JSON.stringify(m.project_tasks);
+              break;
+            } else if (m.deliverables && Array.isArray(m.deliverables) && m.deliverables.some((d: string) => regex.test(d))) {
+              fieldName = `milestones[${i}].deliverables`;
+              matchedText = JSON.stringify(m.deliverables);
+              break;
+            } else if (m.expected_outcomes && Array.isArray(m.expected_outcomes) && m.expected_outcomes.some((e: string) => regex.test(e))) {
+              fieldName = `milestones[${i}].expected_outcomes`;
+              matchedText = JSON.stringify(m.expected_outcomes);
+              break;
+            }
+          }
+        }
+
+        if (fieldName === "unknown") {
+          for (const [key, val] of Object.entries(roadmap)) {
+            const strVal = typeof val === "string" ? val : JSON.stringify(val) || "";
+            if (regex.test(strVal)) {
+              fieldName = key;
+              matchedText = strVal;
+              break;
+            }
+          }
+        }
+
+        const validationTarget = roadmap;
+        console.log("VALIDATION INPUT");
+        console.log(JSON.stringify(validationTarget, null, 2));
+
+        console.log("MATCHED KEYWORD");
+        console.log(keyword);
+
+        console.log("MATCHED FIELD");
+        console.log(fieldName);
+
+        console.log("MATCHED TEXT");
+        console.log(matchedText);
+
         throw new DomainMismatchError(`${profile.label} roadmap contains disallowed keyword: '${keyword}'`);
       }
     });
