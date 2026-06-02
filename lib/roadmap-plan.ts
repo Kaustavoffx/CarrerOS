@@ -1069,6 +1069,13 @@ export function validateRoadmapDomainConsistency(
       };
       const errMsg = `Roadmap domain mismatch: ${JSON.stringify(errorDetails)}`;
       if (options.throwOnError) {
+        console.error("DISALLOWED KEYWORD HIT");
+        console.error({
+          keyword: matched[0],
+          field: "textBlob",
+          matchedText: textBlob,
+          validatorName: "validateRoadmapDomainConsistency"
+        });
         throw new Error(errMsg);
       } else {
         warnings.push(errMsg);
@@ -1362,6 +1369,14 @@ export function validateRoadmapDomain(roadmap: RoadmapRecord, goal: string): voi
 
         console.log("MATCHED TEXT");
         console.log(matchedText);
+
+        console.error("DISALLOWED KEYWORD HIT");
+        console.error({
+          keyword,
+          field: fieldName,
+          matchedText,
+          validatorName: "validateRoadmapDomain"
+        });
 
         throw new DomainMismatchError(`${profile.label} roadmap contains disallowed keyword: '${keyword}'`);
       }
