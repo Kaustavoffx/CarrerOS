@@ -210,6 +210,7 @@ async function resolveGenerationSource(userId: string, freeGenerationsUsed: numb
 }
 
 export async function POST(req: Request) {
+  console.log("REPLAN ROUTE VERSION 2026-06-02");
   try {
     const rawBody = await req.json();
     const parsedInput = RequestSchema.safeParse(rawBody);
@@ -340,6 +341,10 @@ export async function POST(req: Request) {
         let validatedData = validated.data;
 
         // --- SELF-HEALING DOMAIN RECONCILIATION FOR BYOK CONTAMINATION ---
+        console.log("RECONCILIATION FILTER ENTERED");
+        const beforeDomain = validated.data.roadmaps[0]?.career_domain;
+        console.log("BEFORE RECONCILIATION", beforeDomain);
+
         const isSdeGoal = 
           goal.toLowerCase() === "software engineering" || 
           domainProfile.label === "Software Engineering" ||
@@ -367,6 +372,9 @@ export async function POST(req: Request) {
             roadmaps: cleanFallback.roadmaps as unknown as z.infer<typeof RoadmapSchema>[]
           };
         }
+
+        const afterDomain = validatedData.roadmaps[0]?.career_domain;
+        console.log("AFTER RECONCILIATION", afterDomain);
         // -----------------------------------------------------------------
 
         const normalizedRoadmaps: RoadmapRecord[] = validatedData.roadmaps.map((roadmap) => ({
