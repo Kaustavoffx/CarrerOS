@@ -4,6 +4,7 @@ import { FREE_GENERATIONS } from "@/lib/config";
 import { resolveUserAiProviderForGeneration } from "@/lib/ai-provider-store";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { auditRoadmapQuality, buildRoadmapPlanDetails, buildRoadmapPlanPrompt, resolveDomainProfile, validateRoadmapDomainConsistency, validateRoadmapDomain } from "@/lib/roadmap-plan";
+import type { RoadmapRecord } from "@/lib/supabase/types";
 
 const ResourceLinkSchema = z.object({
   label: z.string(),
@@ -37,7 +38,7 @@ const RoadmapSchema = z.object({
   salary_range: z.string(),
   automation_risk: z.string(),
   roadmap_version: z.number().int().min(1),
-  generated_at: z.string(),
+  generated_at: z.string().nullable().optional(),
   ai_reasoning: z.string(),
   weekly_schedule: z.array(z.string()),
   learning_outcomes: z.array(z.string()),
@@ -48,7 +49,7 @@ const RoadmapSchema = z.object({
   project_tasks: z.array(z.string()),
   expected_outcomes: z.array(z.string()),
   milestones: z.array(MilestoneSchema),
-  updated_at: z.string()
+  updated_at: z.string().nullable().optional()
 });
 
 const ProfileSchema = z.object({
@@ -314,24 +315,33 @@ export async function POST(req: Request) {
           throw new Error("AI provider returned empty response");
         }
 
+        console.log("AI Payload before Zod validation:", JSON.stringify(aiPayload, null, 2));
+
         const validated = ResponseSchema.safeParse(aiPayload);
         if (!validated.success) {
           throw new Error(`Zod validation failed: ${JSON.stringify(validated.error.issues)}`);
         }
 
+        const normalizedRoadmaps: RoadmapRecord[] = validated.data.roadmaps.map((roadmap) => ({
+          ...roadmap,
+          generated_at: roadmap.generated_at ?? new Date().toISOString(),
+          updated_at: roadmap.updated_at ?? new Date().toISOString()
+        })) as unknown as RoadmapRecord[];
+
         // Validate each generated roadmap using BOTH validation systems and quality gates
-        validated.data.roadmaps.forEach((roadmap) => {
+        normalizedRoadmaps.forEach((roadmap) => {
           validateRoadmapDomain(roadmap, goal);
           validateRoadmapDomainConsistency(roadmap, domainProfile);
         });
 
-        const audit = auditRoadmapQuality(validated.data.roadmaps, domainProfile);
+        const audit = auditRoadmapQuality(normalizedRoadmaps, domainProfile);
         if (audit.qualityScore < 85) {
           throw new Error(`AI roadmap quality below threshold: ${audit.qualityScore}. Reasons: ${audit.reasons.join(", ")}`);
         }
 
         return NextResponse.json({
           ...validated.data,
+          roadmaps: normalizedRoadmaps,
           generation_source: generationSource.source,
           provider_prompt: generationSource.providerPrompt,
           provider_prompt_message: generationSource.providerPrompt ? "Your free generations are exhausted. Connect your own AI provider to continue." : null
