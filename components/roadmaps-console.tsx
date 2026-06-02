@@ -55,7 +55,24 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
   const safeRoadmapHistory = normalizeRoadmapVersionArray(roadmapHistory);
   const safeWorkspaceRoadmaps = normalizeRoadmapArray(workspace?.roadmaps);
   const hasConnectedProvider = Array.isArray(aiProviders) && aiProviders.some((provider) => provider.connected);
+  const connectedProviderRecord = Array.isArray(aiProviders) ? aiProviders.find((p) => p.connected) : null;
+  const connectedProviderName = connectedProviderRecord ? (connectedProviderRecord.provider === "openai" ? "OpenAI" : "Gemini") : "OpenAI";
   const freeGenerationsRemaining = Math.max(0, FREE_GENERATIONS - freeGenerationsUsed);
+
+  const isRefreshing = isReplanning;
+  const isGenerating = isReplanning;
+  const refreshDisabled =
+    isRefreshing ||
+    isGenerating ||
+    (!hasConnectedProvider &&
+     limitExhausted);
+
+  console.log({
+    hasConnectedProvider,
+    limitExhausted,
+    freeGenerationsUsed,
+    refreshDisabled
+  });
 
   useEffect(() => {
     setWorkspace(initialWorkspace);
@@ -112,7 +129,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
   async function handleReplan() {
     if (isReplanning || !workspace) return;
 
-    if (limitExhausted) {
+    if (limitExhausted && !hasConnectedProvider) {
       showToast("Free roadmap refreshes are exhausted for this account.");
       return;
     }
@@ -220,16 +237,41 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
               <FeatureStatusBadge status="coming-soon" featureName="Automation Risk" />
               <FeatureStatusBadge status="coming-soon" featureName="Weekly Planner" />
             </div>
-            <div className="mt-4 flex flex-wrap items-center gap-3 caption text-slate-500">
-              <span className="flex items-center gap-2 rounded-xl border border-[#141417] bg-[#0c0c0e] px-2 py-1">
-                <Cpu className="h-3.5 w-3.5 text-cyan-400" /> Free generations remaining: {freeGenerationsRemaining}/{FREE_GENERATIONS}
-              </span>
-              {limitExhausted ? (
-                <span className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-2 py-1 text-red-300">
-                  <ShieldAlert className="h-3.5 w-3.5" /> Refresh limit reached
+            {hasConnectedProvider ? (
+              <div className="mt-4 flex flex-wrap items-center gap-3 caption">
+                <span className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-emerald-300 font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400"></span>
+                  </span>
+                  {connectedProviderName.toUpperCase()} CONNECTED
                 </span>
-              ) : null}
-            </div>
+                <span 
+                  className="flex items-center gap-2 rounded-xl border border-cyan-500/20 bg-cyan-500/5 px-3 py-1.5 text-cyan-200 cursor-help transition-all duration-200 hover:bg-cyan-500/10"
+                  title={`Generations are billed to your own ${connectedProviderName} account.`}
+                >
+                  <Cpu className="h-3.5 w-3.5 text-cyan-400" />
+                  Personal API Active
+                </span>
+                <span className="flex items-center gap-2 rounded-xl border border-[#202028] bg-[#0c0c0e] px-3 py-1.5 text-slate-300">
+                  Using Your {connectedProviderName} API Key
+                </span>
+                <span className="text-slate-400 italic text-xs ml-1">
+                  Roadmap generations powered by your own API
+                </span>
+              </div>
+            ) : (
+              <div className="mt-4 flex flex-wrap items-center gap-3 caption text-slate-500">
+                <span className="flex items-center gap-2 rounded-xl border border-[#141417] bg-[#0c0c0e] px-2 py-1">
+                  <Cpu className="h-3.5 w-3.5 text-cyan-400" /> Free generations remaining: {freeGenerationsRemaining}/{FREE_GENERATIONS}
+                </span>
+                {limitExhausted ? (
+                  <span className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-2 py-1 text-red-300">
+                    <ShieldAlert className="h-3.5 w-3.5" /> Refresh Limit Reached
+                  </span>
+                ) : null}
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -267,7 +309,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
               <FeatureGateButton
                 type="button"
                 onClick={handleReplan}
-                disabled={isReplanning || limitExhausted}
+                disabled={refreshDisabled}
                 status="beta"
                 featureName="AI Roadmap Generation"
                 className="tactile-btn tactile-btn-primary inline-flex items-center gap-2 rounded-full px-6 py-2 text-xs font-bold text-black shadow-[0_0_15px_rgba(34,211,238,0.2)] disabled:opacity-40"
