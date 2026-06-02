@@ -246,6 +246,9 @@ export async function POST(req: Request) {
     const timeCommit = currentRoadmaps?.[0]?.weekly_hours || "10 hours / week";
     const readinessScore = profile?.readiness_score ?? 0;
     const domainProfile = resolveDomainProfile(goal);
+    console.log("STEP 1 GOAL:", goal);
+    console.log("STEP 2 PROFILE:", domainProfile);
+    console.log("STEP 3 DOMAIN:", domainProfile.label);
 
     const supabase = await getSupabaseServerClient();
     if (!supabase) {
@@ -314,6 +317,7 @@ export async function POST(req: Request) {
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         const prompt = buildRoadmapPlanPrompt(roadmapInput);
+        console.log("STEP 4 PROMPT:", prompt);
         console.log("LOG 2: Domain sent to AI:", prompt.user.locked_career_domain);
         const aiPayload = generationSource.source === "platform-openai" || generationSource.source === "user-openai"
           ? await generateWithOpenAI(prompt, generationSource.apiKey ?? "")
@@ -325,6 +329,7 @@ export async function POST(req: Request) {
           throw new Error("AI provider returned empty response");
         }
 
+        console.log("STEP 5 AI RESPONSE:", aiPayload);
         console.log("LOG 3: Raw AI response:", JSON.stringify(aiPayload));
 
         const validated = ResponseSchema.safeParse(aiPayload);
@@ -332,7 +337,39 @@ export async function POST(req: Request) {
           throw new Error(`Zod validation failed: ${JSON.stringify(validated.error.issues)}`);
         }
 
-        const normalizedRoadmaps: RoadmapRecord[] = validated.data.roadmaps.map((roadmap) => ({
+        let validatedData = validated.data;
+
+        // --- SELF-HEALING DOMAIN RECONCILIATION FOR BYOK CONTAMINATION ---
+        const isSdeGoal = 
+          goal.toLowerCase() === "software engineering" || 
+          domainProfile.label === "Software Engineering" ||
+          ["software", "frontend", "backend", "full stack", "fullstack", "developer", "engineering", "sde", "swe", "coding"].some(term => goal.toLowerCase().includes(term));
+
+        const hasOperationsContamination = 
+          validatedData.career_domain === "Operations and Strategy" ||
+          validatedData.roadmaps.some(r => 
+            String(r.career_domain).toLowerCase().includes("operations") || 
+            String(r.title).toLowerCase().includes("operations") ||
+            String(r.title).toLowerCase().includes("scrum") ||
+            String(r.title).toLowerCase().includes("business process")
+          );
+
+        if (isSdeGoal && hasOperationsContamination) {
+          console.warn("SELF-HEALING TRIGGERED: OpenAI returned contaminated Operations roadmap under SDE I goal. Intercepting and replacing with clean Software Engineering fallback.");
+          const cleanFallback = buildRoadmapPlanDetails(roadmapInput);
+          validatedData = {
+            career_domain: cleanFallback.career_domain,
+            career_demand_score: cleanFallback.career_demand_score,
+            market_outlook: cleanFallback.market_outlook,
+            salary_range: cleanFallback.salary_range,
+            automation_risk: cleanFallback.automation_risk,
+            ai_reasoning: cleanFallback.ai_reasoning,
+            roadmaps: cleanFallback.roadmaps as unknown as z.infer<typeof RoadmapSchema>[]
+          };
+        }
+        // -----------------------------------------------------------------
+
+        const normalizedRoadmaps: RoadmapRecord[] = validatedData.roadmaps.map((roadmap) => ({
           ...roadmap,
           generated_at: roadmap.generated_at ?? new Date().toISOString(),
           updated_at: roadmap.updated_at ?? new Date().toISOString()
@@ -355,7 +392,7 @@ export async function POST(req: Request) {
         }
 
         return NextResponse.json({
-          ...validated.data,
+          ...validatedData,
           roadmaps: normalizedRoadmaps,
           generation_source: generationSource.source,
           provider_prompt: generationSource.providerPrompt,
