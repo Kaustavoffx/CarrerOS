@@ -477,10 +477,28 @@ async function persistRoadmapVersion(client: SupabaseClient, userId: string, roa
     }
   });
 
+  const primaryRoadmapForLog = safeRoadmaps[0];
+  console.log("VERSION AUDIT INPUT", {
+    careerGoal,
+    careerDomain: primaryRoadmapForLog?.career_domain,
+    roadmapTitle: primaryRoadmapForLog?.title,
+    roadmapVersion: version,
+  });
+
   const audit = auditRoadmapQuality(safeRoadmaps, domainProfile);
+  console.log("VERSION AUDIT RESULT", {
+    qualityScore: audit.qualityScore,
+    reasons: audit.reasons,
+  });
+
   console.log("ROADMAP VERSION QUALITY AUDIT", { userId: authUserId, careerGoal, qualityScore: audit.qualityScore, reasons: audit.reasons });
 
   if (audit.qualityScore < 85) {
+    console.log("QUALITY GATE FAILURE", {
+      threshold: 85,
+      score: audit.qualityScore,
+      reasons: audit.reasons,
+    });
     throw new Error(`Roadmap quality below threshold: ${audit.qualityScore}`);
   }
 
