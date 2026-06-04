@@ -370,19 +370,19 @@ function toRoadmapRow(roadmap: RoadmapRecord, userId: string): RoadmapRow {
     status: roadmap.status,
     summary: roadmap.summary,
     owner: roadmap.owner,
-    progress: roadmap.progress,
+    progress: Math.round(roadmap.progress),
     career_domain: roadmap.career_domain,
-    career_demand_score: roadmap.career_demand_score,
+    career_demand_score: Math.round(roadmap.career_demand_score),
     market_outlook: roadmap.market_outlook,
     salary_range: roadmap.salary_range,
     automation_risk: roadmap.automation_risk,
-    roadmap_version: roadmap.roadmap_version,
+    roadmap_version: Math.round(roadmap.roadmap_version),
     generated_at: roadmap.generated_at,
     ai_reasoning: roadmap.ai_reasoning,
     weekly_schedule: toArray<string>(roadmap.weekly_schedule),
     learning_outcomes: toArray<string>(roadmap.learning_outcomes),
-    total_duration_weeks: roadmap.total_duration_weeks,
-    weekly_hours: roadmap.weekly_hours,
+    total_duration_weeks: Math.round(roadmap.total_duration_weeks),
+    weekly_hours: Math.round(roadmap.weekly_hours),
     estimated_completion_date: roadmap.estimated_completion_date,
     resource_links: toArray(roadmap.resource_links).map(normalizeResourceLink),
     project_tasks: toArray<string>(roadmap.project_tasks),
@@ -449,6 +449,8 @@ async function persistRoadmaps(client: SupabaseClient, userId: string, roadmaps:
 
   rows.forEach((row) => {
     console.log("ROADMAP UUID GENERATED", row.id);
+    console.log("CAREER DEMAND SCORE TYPE", typeof row.career_demand_score);
+    console.log("CAREER DEMAND SCORE VALUE", row.career_demand_score);
   });
 
   const { error } = await client.from("roadmaps").insert(rows);
@@ -487,13 +489,13 @@ async function persistRoadmapVersion(client: SupabaseClient, userId: string, roa
 
   const { error } = await client.from("roadmap_versions").insert({
     user_id: authUserId,
-    roadmap_version: version,
+    roadmap_version: Math.round(version),
     career_goal: careerGoal,
     career_domain: primaryRoadmap.career_domain,
     generated_at: new Date().toISOString(),
     ai_reasoning: aiReasoning,
     roadmaps: safeRoadmaps,
-    progress: primaryRoadmap.progress,
+    progress: Math.round(primaryRoadmap.progress),
     updated_at: new Date().toISOString()
   });
 
