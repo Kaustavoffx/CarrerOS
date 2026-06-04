@@ -18,6 +18,10 @@ type RoadmapsConsoleProps = {
   aiProviders?: AiProviderStatusRecord[] | null;
 };
 
+function formatDate(date: string) {
+  return new Date(date).toISOString().split("T")[0];
+}
+
 function downloadTextFile(filename: string, content: string, mimeType: string) {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
@@ -364,7 +368,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                   </div>
                   <p className="small text-slate-400 line-clamp-3">{version.ai_reasoning}</p>
                   <div className="flex items-center justify-between caption text-slate-500">
-                    <span>{new Date(version.generated_at).toLocaleDateString()}</span>
+                    <span>{formatDate(version.generated_at)}</span>
                     <span>{versionRoadmaps.length} roadmap(s)</span>
                   </div>
                   <MagneticButton asChild>
@@ -598,7 +602,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                   <div className="flex items-center gap-2">
                     <Cpu className="h-3.5 w-3.5 text-cyan-400" /> Curated roadmap
                   </div>
-                  <div>Updated: {new Date(roadmap.updated_at).toLocaleDateString()}</div>
+                  <div>Updated: {formatDate(roadmap.updated_at)}</div>
                 </div>
               </article>
             );

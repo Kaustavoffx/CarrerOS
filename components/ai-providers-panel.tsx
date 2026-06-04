@@ -7,6 +7,10 @@ import type { AiProviderStatusRecord } from "@/lib/supabase/types";
 import { getSupabaseBrowserClient } from "@/lib/supabase";
 import { MagneticButton } from "./magnetic-button";
 
+function formatDateTime(dateString: string) {
+  return new Date(dateString).toISOString().replace("T", " ").slice(0, 19);
+}
+
 type ProviderFormState = Record<string, string>;
 
 type AiProvidersPanelProps = {
@@ -125,7 +129,7 @@ export function AiProvidersPanel({ providers }: AiProvidersPanelProps) {
                   <p className="caption text-slate-500">Last updated</p>
                   <p className="mt-1 flex items-center gap-2 font-semibold text-white">
                     <Clock3 className="h-4 w-4 text-cyan-300" />
-                    {provider.updated_at ? new Date(provider.updated_at).toLocaleString() : "Not connected"}
+                    {provider.updated_at ? formatDateTime(provider.updated_at) : "Not connected"}
                   </p>
                 </div>
                 {provider.active ? (

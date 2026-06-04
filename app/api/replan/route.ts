@@ -242,6 +242,12 @@ async function generateWithGemini(prompt: ReturnType<typeof buildRoadmapPlanProm
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function redactSecret(secret?: string | null) {
+  if (!secret) return null;
+  return `${secret.slice(0, 4)}...${secret.slice(-4)}`;
+}
+
 async function resolveGenerationSource(userId: string, freeGenerationsUsed: number) {
   if (freeGenerationsUsed < FREE_GENERATIONS) {
     return {
@@ -334,8 +340,13 @@ export async function POST(req: Request) {
     const freeGenerationsUsed = usageData?.free_generations_used ?? 0;
     const generationSource = await resolveGenerationSource(user.id, freeGenerationsUsed);
     const providerConfig = generationSource;
-    console.log("RESOLVED PROVIDER");
-    console.log(providerConfig);
+    console.log("RESOLVED PROVIDER", {
+      source: providerConfig.source,
+      provider: providerConfig.provider,
+      hasApiKey: !!providerConfig.apiKey,
+      keyLength: providerConfig.apiKey?.length ?? 0,
+      providerPrompt: providerConfig.providerPrompt
+    });
 
     if (freeGenerationsUsed < FREE_GENERATIONS) {
       await supabase.from("user_usage").upsert(
