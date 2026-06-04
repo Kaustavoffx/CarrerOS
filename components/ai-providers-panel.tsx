@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckCircle2, Clock3, Shield, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { AiProviderStatusRecord } from "@/lib/supabase/types";
+import { getSupabaseBrowserClient } from "@/lib/supabase";
 import { MagneticButton } from "./magnetic-button";
 
 type ProviderFormState = Record<string, string>;
@@ -40,6 +41,24 @@ export function AiProvidersPanel({ providers }: AiProvidersPanelProps) {
     setStatusMessage(null);
 
     try {
+      const supabase = getSupabaseBrowserClient();
+      let session = null;
+      let user = null;
+
+      if (supabase) {
+        const { data } = await supabase.auth.getSession();
+        session = data.session;
+        user = data.session?.user ?? null;
+      }
+
+      console.log("SESSION", session);
+      console.log("USER", user);
+
+      if (!session) {
+        router.push("/login");
+        return;
+      }
+
       const response = await fetch("/api/ai-providers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
