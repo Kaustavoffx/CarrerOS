@@ -80,10 +80,12 @@ const ResponseSchema = z.object({
 async function generateWithOpenAI(prompt: ReturnType<typeof buildRoadmapPlanPrompt>, apiKey: string) {
   const provider = "openai";
   const model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
-  console.log("ACTIVE PROVIDER", provider);
-  console.log("MODEL", model);
-  console.log("HAS API KEY", !!apiKey);
-  console.log("KEY LENGTH", apiKey?.length);
+  console.log({
+    source: "generation",
+    provider,
+    hasApiKey: !!apiKey,
+    keyLength: apiKey?.length
+  });
 
   if (!apiKey) {
     return null;
@@ -124,7 +126,6 @@ async function generateWithOpenAI(prompt: ReturnType<typeof buildRoadmapPlanProm
     }
 
     const response = await res.json();
-    console.log("RAW RESPONSE");
 
     const choices = response?.choices;
     if (!choices || choices.length === 0) {
@@ -258,7 +259,6 @@ async function resolveGenerationSource(userId: string, freeGenerationsUsed: numb
 }
 
 export async function POST(req: Request) {
-  console.log("REPLAN ROUTE VERSION 2026-06-02");
   try {
     const rawBody = await req.json();
     const parsedInput = RequestSchema.safeParse(rawBody);
@@ -295,9 +295,6 @@ export async function POST(req: Request) {
     const timeCommit = currentRoadmaps?.[0]?.weekly_hours || "10 hours / week";
     const readinessScore = profile?.readiness_score ?? 0;
     const domainProfile = resolveDomainProfile(goal);
-    console.log("STEP 1 GOAL:", goal);
-    console.log("STEP 2 PROFILE:", domainProfile);
-    console.log("STEP 3 DOMAIN:", domainProfile.label);
 
     const supabase = await getSupabaseServerClient();
     if (!supabase) {
@@ -374,8 +371,6 @@ export async function POST(req: Request) {
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         const prompt = buildRoadmapPlanPrompt(roadmapInput);
-        console.log("STEP 4 PROMPT:", prompt);
-        console.log("LOG 2: Domain sent to AI:", prompt.user.locked_career_domain);
         const aiPayload = generationSource.source === "platform-openai" || generationSource.source === "user-openai"
           ? await generateWithOpenAI(prompt, generationSource.apiKey ?? "")
           : generationSource.source === "user-gemini"
@@ -385,9 +380,6 @@ export async function POST(req: Request) {
         if (!aiPayload) {
           throw new Error("AI provider returned empty response");
         }
-
-        console.log("STEP 5 AI RESPONSE:", aiPayload);
-        console.log("LOG 3: Raw AI response:", JSON.stringify(aiPayload));
 
         const validated = ResponseSchema.safeParse(aiPayload);
         if (!validated.success) {
@@ -434,11 +426,6 @@ export async function POST(req: Request) {
           generated_at: roadmap.generated_at ?? new Date().toISOString(),
           updated_at: roadmap.updated_at ?? new Date().toISOString()
         })) as unknown as RoadmapRecord[];
-
-        normalizedRoadmaps.forEach((roadmap) => {
-          console.log("LOG 4: Parsed roadmap title:", roadmap.title);
-          console.log("LOG 5: Parsed roadmap domain:", roadmap.career_domain);
-        });
 
         // Validate each generated roadmap using BOTH validation systems and quality gates
         normalizedRoadmaps.forEach((roadmap) => {

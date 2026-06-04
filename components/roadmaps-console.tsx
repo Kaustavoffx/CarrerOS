@@ -146,7 +146,6 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
         profile,
         currentRoadmaps: safeWorkspaceRoadmaps
       };
-      console.log("LOG 1: Goal sent to API:", requestPayload.profile?.goal);
       const response = await fetch("/api/replan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

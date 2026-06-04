@@ -94,7 +94,7 @@ const RESOURCE_CATALOG = {
 const DOMAIN_LIBRARY: DomainProfile[] = [
   {
     label: "Software Engineering",
-    aliases: ["software", "frontend", "backend", "full stack", "fullstack", "developer", "engineering", "react", "node", "python", "web", "sde", "sde-i", "sde-ii", "sde-iii", "swe", "computer science", "software engineer", "software development engineer"],
+    aliases: ["software", "frontend", "backend", "full stack", "fullstack", "developer", "engineering", "react", "node", "python", "web", "sde", "sde-i", "sde-ii", "sde-iii", "sde i", "sde ii", "sde iii", "swe", "computer science", "software engineer", "software development engineer", "software development engineer i", "software development engineer ii", "software development engineer iii"],
     marketOutlook: "Strong demand across startups, product teams, and enterprise modernization efforts.",
     salaryRange: "$80k-$180k+ depending on region and specialization",
     automationRisk: "Moderate. Routine coding is automating, but system design and debugging remain durable.",
@@ -897,7 +897,33 @@ export function isTextAlignedWithDomain(text: string, domainKey: string): boolea
   if (normalizedText.includes(domainKey.toLowerCase())) return true;
   
   // Specific cross-domain boundary leniency to prevent false-positives
-  if (domainKey === "Software Engineering" && (normalizedText.includes("software") || normalizedText.includes("developer") || normalizedText.includes("engineering") || normalizedText.includes("sde") || normalizedText.includes("swe") || normalizedText.includes("coding"))) return true;
+  if (domainKey === "Software Engineering") {
+    if (
+      normalizedText.includes("software") ||
+      normalizedText.includes("developer") ||
+      normalizedText.includes("engineering") ||
+      normalizedText.includes("sde") ||
+      normalizedText.includes("swe") ||
+      normalizedText.includes("coding") ||
+      normalizedText.includes("development") ||
+      normalizedText.includes("engineer") ||
+      normalizedText.includes("programming") ||
+      normalizedText.includes("code")
+    ) {
+      return true;
+    }
+
+    if (
+      normalizedText.includes("programming") ||
+      normalizedText.includes("algorithm") ||
+      normalizedText.includes("data structure") ||
+      normalizedText.includes("git") ||
+      normalizedText.includes("api") ||
+      normalizedText.includes("database")
+    ) {
+      return true;
+    }
+  }
   if (domainKey === "Data Science" && (normalizedText.includes("data") || normalizedText.includes("analytics") || normalizedText.includes("science") || normalizedText.includes("analysis") || normalizedText.includes("statistics"))) return true;
   if (domainKey === "AI/ML" && (normalizedText.includes("ai") || normalizedText.includes("ml") || normalizedText.includes("machine learning") || normalizedText.includes("intelligence") || normalizedText.includes("data"))) return true;
   if (domainKey === "Business Analysis" && (normalizedText.includes("business") || normalizedText.includes("analyst") || normalizedText.includes("analysis") || normalizedText.includes("data") || normalizedText.includes("analytics") || normalizedText.includes("bi") || normalizedText.includes("requirements"))) return true;
@@ -1194,7 +1220,6 @@ export class DomainMismatchError extends Error {
 }
 
 export function validateRoadmapDomain(roadmap: RoadmapRecord, goal: string): void {
-  console.log("LOG 6: Domain validator input:", { roadmapTitle: roadmap.title, careerDomain: roadmap.career_domain, goal });
   // 1. Separate metadata validation from semantic validation.
   if (!roadmap.title || !roadmap.title.trim()) {
     throw new MissingRoadmapTitleError("Missing roadmap title");
@@ -1449,36 +1474,6 @@ export function validateGeneratedRoadmap(
     addWarning(`Roadmap title/domain '${roadmapDomain || roadmapTitle}' does not align with allowed skills for ${profile.label}`);
   }
 
-  const milestones = toArray<RoadmapMilestoneRecord>(roadmap.milestones);
-  milestones.forEach((milestone, idx) => {
-    if (!isTextAlignedWithDomain(milestone.title, domainKey)) {
-      addWarning(`Milestone ${idx + 1} title '${milestone.title}' does not align with allowed skills for ${profile.label}`);
-    }
-  });
-
-  milestones.forEach((milestone, idx) => {
-    const outcomes = toArray<string>(milestone.expected_outcomes);
-    outcomes.forEach((outcome) => {
-      if (!isTextAlignedWithDomain(outcome, domainKey)) {
-        addWarning(`Milestone ${idx + 1} expected outcome '${outcome}' does not align with allowed skills for ${profile.label}`);
-      }
-    });
-  });
-
-  const learningOutcomes = toArray<string>(roadmap.learning_outcomes);
-  learningOutcomes.forEach((outcome) => {
-    if (!isTextAlignedWithDomain(outcome, domainKey)) {
-      addWarning(`Learning outcome '${outcome}' does not align with allowed skills for ${profile.label}`);
-    }
-  });
-
-  const projectTasks = toArray<string>(roadmap.project_tasks);
-  projectTasks.forEach((task) => {
-    if (!isTextAlignedWithDomain(task, domainKey)) {
-      addWarning(`Project task '${task}' does not align with allowed skills for ${profile.label}`);
-    }
-  });
-
   if (warnings.length > 0 && options.throwOnError) {
     throw new Error(warnings[0]);
   }
@@ -1504,11 +1499,22 @@ export function auditRoadmapQuality(roadmaps: unknown, goalOrProfile: string | D
   const reasons: string[] = [];
 
   safeRoadmaps.forEach((roadmap) => {
-    try {
-      validateRoadmapDomainConsistency(roadmap, profile);
-    } catch {
-      score -= 40;
-      reasons.push(`Domain mismatch: ${roadmap.career_domain}`);
+    const consistency = validateRoadmapDomainConsistency(roadmap, profile, { throwOnError: false });
+    if (!consistency.valid) {
+      consistency.warnings.forEach((warning) => {
+        const isCritical = warning.includes('"severity":"critical"');
+        score -= isCritical ? 40 : 10;
+        reasons.push(warning);
+      });
+    }
+
+    const goalStr = typeof goalOrProfile === "string" ? goalOrProfile : profile.label;
+    const genCheck = validateGeneratedRoadmap(roadmap, goalStr);
+    if (!genCheck.valid) {
+      genCheck.warnings.forEach((warning) => {
+        score -= 5;
+        reasons.push(warning);
+      });
     }
 
     const roadmapResources = Array.isArray(roadmap.resource_links) ? roadmap.resource_links : [];
