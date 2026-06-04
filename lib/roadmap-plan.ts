@@ -155,7 +155,7 @@ const DOMAIN_LIBRARY: DomainProfile[] = [
   },
   {
     label: "Product Management",
-    aliases: ["product", "pm", "product manager", "roadmap", "feature", "discovery"],
+    aliases: ["product", "pm", "product manager", "feature", "discovery"],
     marketOutlook: "Stable demand in SaaS, consumer apps, and enterprise product orgs.",
     salaryRange: "$90k-$190k+ depending on scope and org size",
     automationRisk: "Low. Strategy, prioritization, and stakeholder alignment are hard to automate.",

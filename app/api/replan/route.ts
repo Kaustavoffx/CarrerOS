@@ -86,7 +86,6 @@ async function generateWithOpenAI(prompt: ReturnType<typeof buildRoadmapPlanProm
   console.log("KEY LENGTH", apiKey?.length);
 
   if (!apiKey) {
-    console.error("RETURN NULL: MISSING API KEY");
     return null;
   }
 
@@ -119,19 +118,13 @@ async function generateWithOpenAI(prompt: ReturnType<typeof buildRoadmapPlanProm
         responseText
       });
       if (res.status === 401 || res.status === 403) {
-        console.error("RETURN NULL: INVALID API KEY");
       } else {
-        console.error("RETURN NULL: OPENAI HTTP ERROR");
       }
       return null;
     }
 
     const response = await res.json();
     console.log("RAW RESPONSE");
-    console.dir(response, { depth: null });
-
-    console.log("CONTENT");
-    console.log(response?.choices?.[0]?.message?.content);
 
     const choices = response?.choices;
     if (!choices || choices.length === 0) {
@@ -160,15 +153,9 @@ async function generateWithOpenAI(prompt: ReturnType<typeof buildRoadmapPlanProm
 }
 
 async function generateWithGemini(prompt: ReturnType<typeof buildRoadmapPlanPrompt>, apiKey: string) {
-  const provider = "gemini";
-  const model = "gemini-2.0-flash";
-  console.log("ACTIVE PROVIDER", provider);
-  console.log("MODEL", model);
-  console.log("HAS API KEY", !!apiKey);
-  console.log("KEY LENGTH", apiKey?.length);
+
 
   if (!apiKey) {
-    console.error("RETURN NULL: MISSING API KEY");
     return null;
   }
 
@@ -203,16 +190,12 @@ async function generateWithGemini(prompt: ReturnType<typeof buildRoadmapPlanProm
         responseText
       });
       if (res.status === 400 || res.status === 403) {
-        console.error("RETURN NULL: INVALID API KEY");
       } else {
-        console.error("RETURN NULL: GEMINI HTTP ERROR");
       }
       return null;
     }
 
     const response = await res.json();
-    console.log("RAW RESPONSE");
-    console.dir(response, { depth: null });
 
     const candidates = response?.candidates;
     if (!candidates || candidates.length === 0) {
@@ -221,8 +204,6 @@ async function generateWithGemini(prompt: ReturnType<typeof buildRoadmapPlanProm
     }
 
     const content = candidates[0]?.content?.parts?.map((part: { text?: string }) => part.text ?? "").join("");
-    console.log("CONTENT");
-    console.log(content);
 
     if (typeof content !== "string" || !content.trim().length) {
       console.error("RETURN NULL: MISSING CONTENT");
@@ -415,10 +396,7 @@ export async function POST(req: Request) {
 
         let validatedData = validated.data;
 
-        // --- SELF-HEALING DOMAIN RECONCILIATION FOR BYOK CONTAMINATION ---
-        console.log("RECONCILIATION FILTER ENTERED");
-        const beforeDomain = validated.data.roadmaps[0]?.career_domain;
-        console.log("BEFORE RECONCILIATION", beforeDomain);
+
 
         const isSdeGoal = 
           goal.toLowerCase() === "software engineering" || 
@@ -448,8 +426,7 @@ export async function POST(req: Request) {
           };
         }
 
-        const afterDomain = validatedData.roadmaps[0]?.career_domain;
-        console.log("AFTER RECONCILIATION", afterDomain);
+
         // -----------------------------------------------------------------
 
         const normalizedRoadmaps: RoadmapRecord[] = validatedData.roadmaps.map((roadmap) => ({

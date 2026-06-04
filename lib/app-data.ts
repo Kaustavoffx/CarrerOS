@@ -447,11 +447,7 @@ async function persistRoadmaps(client: SupabaseClient, userId: string, roadmaps:
   const rows: RoadmapRow[] = safeRoadmaps.map((roadmap) => toRoadmapRow({ ...roadmap, roadmap_version: version }, authUserId));
   console.log("ROADMAP INSERT PAYLOAD", JSON.stringify(rows, null, 2));
 
-  rows.forEach((row) => {
-    console.log("ROADMAP UUID GENERATED", row.id);
-    console.log("CAREER DEMAND SCORE TYPE", typeof row.career_demand_score);
-    console.log("CAREER DEMAND SCORE VALUE", row.career_demand_score);
-  });
+
 
   const { error } = await client.from("roadmaps").insert(rows);
   if (error) {
@@ -476,29 +472,10 @@ async function persistRoadmapVersion(client: SupabaseClient, userId: string, roa
       console.warn("Generated Roadmap Version Semantic Warnings:", genCheck.warnings);
     }
   });
-
-  const primaryRoadmapForLog = safeRoadmaps[0];
-  console.log("VERSION AUDIT INPUT", {
-    careerGoal,
-    careerDomain: primaryRoadmapForLog?.career_domain,
-    roadmapTitle: primaryRoadmapForLog?.title,
-    roadmapVersion: version,
-  });
-
   const audit = auditRoadmapQuality(safeRoadmaps, domainProfile);
-  console.log("VERSION AUDIT RESULT", {
-    qualityScore: audit.qualityScore,
-    reasons: audit.reasons,
-  });
-
   console.log("ROADMAP VERSION QUALITY AUDIT", { userId: authUserId, careerGoal, qualityScore: audit.qualityScore, reasons: audit.reasons });
 
   if (audit.qualityScore < 85) {
-    console.log("QUALITY GATE FAILURE", {
-      threshold: 85,
-      score: audit.qualityScore,
-      reasons: audit.reasons,
-    });
     throw new Error(`Roadmap quality below threshold: ${audit.qualityScore}`);
   }
 
@@ -666,8 +643,7 @@ export async function updateWorkspace(client: SupabaseClient, userId: string, pa
   await persistRoadmaps(client, userId, nextValue.roadmaps, version);
 
   const resolvedGoal = await resolveCareerGoal(client, userId, nextValue.roadmaps[0]?.career_domain ?? "Career roadmap");
-  console.log("CAREER GOAL RESOLVED", resolvedGoal);
-  console.log("ROADMAP TITLE", nextValue.roadmaps[0]?.title);
+
 
   await persistRoadmapVersion(client, userId, nextValue.roadmaps, resolvedGoal, version);
 }

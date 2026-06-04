@@ -562,6 +562,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
   function ensureSpace(height: number) {
     if (y + height > pageHeight - margins.bottom) {
+      totalContentHeight += (y - margins.top);
       doc.addPage();
       drawSubtlePageBackground();
       y = margins.top;
@@ -569,8 +570,8 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   }
 
   function drawSectionTitle(titleText: string) {
-    ensureSpace(80);
-    y += 24;
+    ensureSpace(40);
+    y += 10;
 
     const currentY = y;
     doc.setFontSize(fontSizes.section);
@@ -578,7 +579,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     doc.text(titleText, margins.left, currentY);
     ledger.pushBox(doc.getNumberOfPages(), margins.left, currentY - fontSizes.section, margins.left + doc.getTextWidth(titleText), currentY, `Section: ${titleText}`);
     
-    y += 10;
+    y += 6;
 
     doc.saveGraphicsState();
     const titleBorderOpacity = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.15 });
@@ -589,24 +590,24 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     doc.restoreGraphicsState();
     ledger.pushBox(doc.getNumberOfPages(), margins.left, y - 0.2, pageWidth - margins.right, y + 0.2, `Section Line: ${titleText}`);
     
-    y += 14;
+    y += 8;
   }
 
   function drawSectionHelpCard(sectionTitle: string, purpose: string, why: string, action: string) {
-    ensureSpace(32);
-    const helpH = 26;
+    ensureSpace(20);
+    const helpH = 16;
     drawRoundedCard(margins.left, y, contentWidth, helpH, 3, 3, "F");
     
     const text = `ⓘ  ${sectionTitle}  ·  What: ${purpose}  ·  Why: ${why}  ·  Next: ${action}`;
     const cleanText = text.length > 120 ? text.substring(0, 117) + "..." : text;
     
-    drawText(cleanText, margins.left + 8, y + 15, { fontSize: 7.5, fontColor: "#e0f7fa" });
-    y += helpH + 8;
+    drawText(cleanText, margins.left + 8, y + 11, { fontSize: 7, fontColor: "#e0f7fa" });
+    y += helpH + 4;
   }
 
   function drawSectionDivider() {
-    ensureSpace(20);
-    y += 8;
+    ensureSpace(10);
+    y += 4;
     doc.saveGraphicsState();
     const dividerOpacity = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.1 });
     doc.setGState(dividerOpacity);
@@ -614,7 +615,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     doc.setLineWidth(0.4);
     doc.line(margins.left, y, pageWidth - margins.right, y);
     doc.restoreGraphicsState();
-    y += 12;
+    y += 6;
   }
 
   // Draw initial page background
@@ -666,12 +667,10 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
   // Title & Subtitle in White and Gray
   drawText("CAREER ROADMAP REPORT", centerX, calculatedTitleY, { align: "center", fontSize: fontSizes.title, fontColor: "#ffffff" });
-  totalContentHeight += titleHeight;
 
   drawText(`GENERATED ON ${new Date(report.exportedAt).toLocaleDateString()}  ·  VERIFIED BY CAREEROS`, centerX, calculatedSubtitleY, { align: "center", fontSize: fontSizes.meta, fontColor: "#64748b" });
-  totalContentHeight += subtitleHeight;
 
-  y = calculatedSubtitleY + 24;
+  y = calculatedSubtitleY + 12;
 
   const readinessScore = report.readinessScore || 0;
   const totalDuration = safeRoadmaps.reduce((sum, rm) => sum + (rm.total_duration_weeks || 0), 0);
@@ -680,43 +679,41 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     : 0;
 
   // McKinsey Executive Card (Redesigned for Premium Spacing & Typography)
-  const cardHeight = 72;
+  const cardHeight = 60;
   drawRoundedCard(margins.left, y, contentWidth, cardHeight, 4, 4, "F");
 
-  drawText("CAREER GOAL", margins.left + 16, y + 18, { fontSize: fontSizes.meta, fontColor: "#64748b" });
+  drawText("CAREER GOAL", margins.left + 16, y + 14, { fontSize: fontSizes.meta, fontColor: "#64748b" });
   const truncatedGoal = careerGoal.length > 36 ? careerGoal.substring(0, 33) + "..." : careerGoal;
-  drawText(truncatedGoal, margins.left + 16, y + 32, { fontSize: fontSizes.body, fontColor: "#ffffff" });
-  drawText(`Domain: ${safeRoadmaps[0]?.career_domain || "Tech/Business"}`, margins.left + 16, y + 48, { fontSize: fontSizes.meta, fontColor: "#94a3b8" });
+  drawText(truncatedGoal, margins.left + 16, y + 26, { fontSize: fontSizes.body, fontColor: "#ffffff" });
+  drawText(`Domain: ${safeRoadmaps[0]?.career_domain || "Tech/Business"}`, margins.left + 16, y + 40, { fontSize: fontSizes.meta, fontColor: "#94a3b8" });
 
   doc.saveGraphicsState();
   const executiveDividerOpacity = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.15 });
   doc.setGState(executiveDividerOpacity);
   doc.setDrawColor("#0cc6d8");
   doc.setLineWidth(0.4);
-  doc.line(margins.left + 240, y + 12, margins.left + 240, y + cardHeight - 12);
+  doc.line(margins.left + 240, y + 10, margins.left + 240, y + cardHeight - 10);
   doc.restoreGraphicsState();
 
-  drawText("READINESS SCORE", margins.left + 256, y + 18, { fontSize: fontSizes.meta, fontColor: "#64748b" });
+  drawText("READINESS SCORE", margins.left + 256, y + 14, { fontSize: fontSizes.meta, fontColor: "#64748b" });
   const readinessColor = readinessScore >= 80 ? "#0cc6d8" : readinessScore >= 50 ? "#0bb0c0" : "#066e78";
-  drawBadge(`${readinessScore}% READY`, margins.left + 256, y + 36, readinessColor, "#e0f7fa", 8);
+  drawBadge(`${readinessScore}% READY`, margins.left + 256, y + 26, readinessColor, "#e0f7fa", 8);
 
   doc.saveGraphicsState();
   doc.setGState(executiveDividerOpacity);
-  doc.line(margins.left + 368, y + 12, margins.left + 368, y + cardHeight - 12);
+  doc.line(margins.left + 368, y + 10, margins.left + 368, y + cardHeight - 10);
   doc.restoreGraphicsState();
 
-  drawText("TIMELINE & CAPACITY", margins.left + 384, y + 18, { fontSize: fontSizes.meta, fontColor: "#64748b" });
-  drawText(`${totalDuration} Weeks total`, margins.left + 384, y + 32, { fontSize: fontSizes.body, fontColor: "#ffffff" });
-  drawText(`${avgWeeklyHours} Hours / week`, margins.left + 384, y + 48, { fontSize: fontSizes.meta, fontColor: "#94a3b8" });
+  drawText("TIMELINE & CAPACITY", margins.left + 384, y + 14, { fontSize: fontSizes.meta, fontColor: "#64748b" });
+  drawText(`${totalDuration} Weeks total`, margins.left + 384, y + 26, { fontSize: fontSizes.body, fontColor: "#ffffff" });
+  drawText(`${avgWeeklyHours} Hours / week`, margins.left + 384, y + 40, { fontSize: fontSizes.meta, fontColor: "#94a3b8" });
 
-  totalContentHeight += cardHeight;
   y += cardHeight;
   drawSectionDivider();
 
   // Career Snapshot Dashboard Panel
   drawSectionTitle("CAREER SNAPSHOT");
   drawSectionHelpCard("Career Snapshot", "Key market signals for your goal.", "Highlights demand, salary, and risk.", "Target top high-paying domains.");
-  totalContentHeight += 24;
 
   const firstRoadmap = safeRoadmaps[0];
   if (firstRoadmap) {
@@ -738,19 +735,18 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     });
 
     maxContentH = Math.max(...contentHeights);
-    const snapH = 12 + maxContentH + 12;
+    const snapH = 8 + maxContentH + 8;
 
     values.forEach((val, idx) => {
       const cardX = margins.left + idx * (colW + 8);
       drawRoundedCard(cardX, y, colW, snapH, 4, 4, "F");
 
       const offset = (snapH - contentHeights[idx]) / 2;
-      drawText(labels[idx], cardX + 8, y + offset + 9, { fontSize: fontSizes.meta, fontColor: "#64748b" });
+      drawText(labels[idx], cardX + 8, y + offset + 6, { fontSize: fontSizes.meta, fontColor: "#64748b" });
       
-      drawWrappedText(val, cardX + 8, y + offset + 9 + 8 + 11, colW - 16, fontSizes.body, { fontColor: "#ffffff" });
+      drawWrappedText(val, cardX + 8, y + offset + 6 + 6 + 9, colW - 16, fontSizes.body, { fontColor: "#ffffff" });
     });
 
-    totalContentHeight += snapH;
     y += snapH;
     drawSectionDivider();
   }
@@ -769,14 +765,14 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
   summaryTitles.forEach((sTitle, idx) => {
     const cardX = margins.left + idx * (summaryColW + 8);
-    const cardH = 72;
+    const cardH = 54;
     drawRoundedCard(cardX, y, summaryColW, cardH, 4, 4, "F");
 
-    drawText(sTitle, cardX + 8, y + 16, { fontSize: fontSizes.meta, fontColor: "#0cc6d8" });
-    drawWrappedText(summaryTexts[idx], cardX + 8, y + 28, summaryColW - 16, fontSizes.body - 1, { fontColor: "#94a3b8" });
+    drawText(sTitle, cardX + 8, y + 12, { fontSize: fontSizes.meta, fontColor: "#0cc6d8" });
+    drawWrappedText(summaryTexts[idx], cardX + 8, y + 22, summaryColW - 16, fontSizes.body - 1, { fontColor: "#94a3b8" });
   });
 
-  y += 72 + 12;
+  y += 54 + 6;
 
   // Build Sprints Data array
   let sprintsData: {
@@ -841,25 +837,25 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   // PAGES 2 TO 4: DEDICATED SPRINT PAGES
   // ==========================================
   sprintsData.forEach((sprint, sIndex) => {
+    totalContentHeight += (y - margins.top);
     doc.addPage();
     drawSubtlePageBackground();
     y = margins.top;
 
     drawSectionTitle(sprint.title.toUpperCase());
     drawSectionHelpCard("Sprint Plan", "Sprint schedule & core milestones.", "Deconstructs large domains into structured projects.", "Focus on completion criteria.");
-    totalContentHeight += 24;
 
     // Sprint Stats Card (Redesigned for Professional Spacing)
-    const statsCardH = 44;
+    const statsCardH = 30;
     drawRoundedCard(margins.left, y, contentWidth, statsCardH, 4, 4, "F");
 
-    drawText("DURATION", margins.left + 16, y + 15, { fontSize: fontSizes.meta, fontColor: "#64748b" });
-    drawText(`${sprint.weeks} Weeks`, margins.left + 16, y + 30, { fontSize: fontSizes.body, fontColor: "#ffffff" });
+    drawText("DURATION", margins.left + 16, y + 11, { fontSize: fontSizes.meta, fontColor: "#64748b" });
+    drawText(`${sprint.weeks} Weeks`, margins.left + 16, y + 22, { fontSize: fontSizes.body, fontColor: "#ffffff" });
 
-    drawText("COMMITMENT", margins.left + 116, y + 15, { fontSize: fontSizes.meta, fontColor: "#64748b" });
-    drawText(`${sprint.hours} hrs/wk`, margins.left + 116, y + 30, { fontSize: fontSizes.body, fontColor: "#ffffff" });
+    drawText("COMMITMENT", margins.left + 116, y + 11, { fontSize: fontSizes.meta, fontColor: "#64748b" });
+    drawText(`${sprint.hours} hrs/wk`, margins.left + 116, y + 22, { fontSize: fontSizes.body, fontColor: "#ffffff" });
 
-    drawText("STATUS", margins.left + 224, y + 15, { fontSize: fontSizes.meta, fontColor: "#64748b" });
+    drawText("STATUS", margins.left + 224, y + 11, { fontSize: fontSizes.meta, fontColor: "#64748b" });
     const statusColors: Record<string, string> = {
       Active: "#0cc6d8",   // Deep Cyan
       Done: "#10b981",     // Soft Emerald
@@ -867,64 +863,52 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
       Warning: "#f59e0b"   // Amber
     };
     const sColor = statusColors[sprint.status] || "#0cc6d8";
-    drawBadge(sprint.status.toUpperCase(), margins.left + 224, y + 28, sColor, "#e0f7fa", 7.5);
+    drawBadge(sprint.status.toUpperCase(), margins.left + 224, y + 20, sColor, "#e0f7fa", 7.5);
 
-    drawText("COMPLETION PROGRESS", margins.left + 332, y + 15, { fontSize: fontSizes.meta, fontColor: "#64748b" });
-    drawProgressBar(margins.left + 332, y + 22, 100, 5, sprint.progress, "#0cc6d8", "#081b24");
-    drawText(`${sprint.progress}%`, margins.left + 442, y + 28, { fontSize: fontSizes.body, fontColor: "#ffffff" });
+    drawText("COMPLETION PROGRESS", margins.left + 332, y + 11, { fontSize: fontSizes.meta, fontColor: "#64748b" });
+    drawProgressBar(margins.left + 332, y + 14, 100, 5, sprint.progress, "#0cc6d8", "#081b24");
+    drawText(`${sprint.progress}%`, margins.left + 442, y + 20, { fontSize: fontSizes.body, fontColor: "#ffffff" });
 
-    totalContentHeight += statsCardH;
-    y += statsCardH + 12;
+    y += statsCardH + 6;
 
     // Skills & Projects Block (Side-by-side Cards Redesigned)
     const halfColW = (contentWidth - 12) / 2;
-    const overviewH = 76;
-    ensureSpace(overviewH + 16);
+    const overviewH = 50;
+    ensureSpace(overviewH + 8);
     drawRoundedCard(margins.left, y, halfColW, overviewH, 4, 4, "F");
-    drawText("CORE TECHNICAL SKILLS", margins.left + 8, y + 16, { fontSize: fontSizes.meta, fontColor: "#0cc6d8" });
-    drawWrappedText("What: Code design, components, and APIs\nWhy: Core developer requirements\nNext: Rehearse weekly syntax drills", margins.left + 8, y + 28, halfColW - 16, fontSizes.body - 1, { fontColor: "#94a3b8" });
+    drawText("CORE TECHNICAL SKILLS", margins.left + 8, y + 12, { fontSize: fontSizes.meta, fontColor: "#0cc6d8" });
+    drawWrappedText("Skills: Design, components, and APIs\nPractice: Rehearse weekly syntax drills", margins.left + 8, y + 21, halfColW - 16, fontSizes.body - 1, { fontColor: "#94a3b8" });
 
     drawRoundedCard(margins.left + halfColW + 12, y, halfColW, overviewH, 4, 4, "F");
-    drawText("CAPSTONE PROJECTS", margins.left + halfColW + 20, y + 16, { fontSize: fontSizes.meta, fontColor: "#0cc6d8" });
-    const capstoneText = `What: ${sprint.milestones.flatMap(m => getSafeArray<string>(m.projects)).filter(Boolean).slice(0, 2).join(", ") || "Domain capstone modules"}\nWhy: Build functional proof of work\nNext: Deploy live project versions`;
-    drawWrappedText(capstoneText, margins.left + halfColW + 20, y + 26, halfColW - 16, fontSizes.body - 1, { fontColor: "#94a3b8" });
-    y += overviewH + 12;
+    drawText("CAPSTONE PROJECTS", margins.left + halfColW + 20, y + 12, { fontSize: fontSizes.meta, fontColor: "#0cc6d8" });
+    const capstoneText = `Capstone: ${sprint.milestones.flatMap(m => getSafeArray<string>(m.projects)).filter(Boolean).slice(0, 1).join(", ") || "Capstone module"}\nTask: Deploy live project versions`;
+    drawWrappedText(capstoneText, margins.left + halfColW + 20, y + 21, halfColW - 16, fontSizes.body - 1, { fontColor: "#94a3b8" });
+    y += overviewH + 6;
 
     // Sprints Milestones Cards
     drawSectionTitle("CORE SPRINT MILESTONES & PROJECTS");
     drawSectionHelpCard("Milestones & Projects", "Step-by-step milestone progression.", "Each milestone resolves a core capability.", "Ensure completion criteria are met.");
-    totalContentHeight += 24;
 
     sprint.milestones.forEach((milestone, mIdx) => {
-      const mileCardH = 104;
-      ensureSpace(mileCardH + 16);
+      const mileCardH = 62;
+      ensureSpace(mileCardH + 6);
       drawRoundedCard(margins.left, y, contentWidth, mileCardH, 4, 4, "F");
 
       const mColor = colorsPalette[(sIndex * 3 + mIdx) % colorsPalette.length];
-      const mBadgeW = drawBadge(`M${String(mIdx + 1).padStart(2, "0")}`, margins.left + 12, y + 18, mColor, "#e0f7fa", 7.5);
+      const mBadgeW = drawBadge(`M${String(mIdx + 1).padStart(2, "0")}`, margins.left + 12, y + 14, mColor, "#e0f7fa", 7.5);
 
-      drawText(milestone.title, margins.left + 12 + mBadgeW + 6, y + 16, { fontSize: fontSizes.cardTitle, fontColor: "#ffffff" });
+      drawText(milestone.title, margins.left + 12 + mBadgeW + 6, y + 13, { fontSize: fontSizes.cardTitle, fontColor: "#ffffff" });
       const inlineMeta = `(${milestone.estimated_duration_weeks} wk · ${milestone.difficulty_level})`;
-      drawText(inlineMeta, margins.left + contentWidth - 12, y + 16, { align: "right", fontSize: fontSizes.meta, fontColor: "#64748b" });
+      drawText(inlineMeta, margins.left + contentWidth - 12, y + 13, { align: "right", fontSize: fontSizes.meta, fontColor: "#64748b" });
 
-      const whyMatters = milestone.why_it_matters || "Validates core domain operational capability.";
-      const shortWhy = whyMatters.length > 80 ? whyMatters.substring(0, 77) + "..." : whyMatters;
+      const whyMatters = milestone.why_it_matters || "Validates core domain capability.";
+      const shortWhy = whyMatters.length > 90 ? whyMatters.substring(0, 87) + "..." : whyMatters;
+      const deliverables = getSafeArray<string>(milestone.deliverables).slice(0, 1).join(", ");
       
-      const descText = `Why this matters:\n${shortWhy}\n\nDeliverables:\n• ${getSafeArray<string>(milestone.deliverables).slice(0, 2).join("\n• ")}`;
-      drawWrappedText(descText, margins.left + 12, y + 32, contentWidth - 24, fontSizes.body - 1, { fontColor: "#94a3b8" });
+      const descText = `Focus: ${shortWhy}\nDeliverable: ${deliverables || "Completed milestones"}`;
+      drawWrappedText(descText, margins.left + 12, y + 26, contentWidth - 24, fontSizes.body - 1, { fontColor: "#94a3b8" });
 
-      // Interactive PDF UX Alert box inside milestone card (spacious & recruiter-ready)
-      doc.saveGraphicsState();
-      const alertOpacity = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.1 });
-      doc.setGState(alertOpacity);
-      doc.setFillColor("#0cc6d8");
-      doc.roundedRect(margins.left + 12, y + 74, contentWidth - 24, 20, 2, 2, "F");
-      doc.restoreGraphicsState();
-
-      drawText(`ⓘ Portfolio impact: Proves execution. Why: Recruiter ready. Next: Deploy project.`, margins.left + 18, y + 88, { fontSize: 7.5, fontColor: "#0cc6d8" });
-
-      totalContentHeight += mileCardH;
-      y += mileCardH + 8;
+      y += mileCardH + 4;
     });
 
     drawSectionDivider();
@@ -932,26 +916,24 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     // Sprint bibliography / resources
     drawSectionTitle("RECOMMENDED LEARNING & ACADEMIC DIRECTORY");
     drawSectionHelpCard("Resources", "Curated directory of learning links.", "Replaces unstructured search with verified platforms.", "Complete the linked tutorials.");
-    totalContentHeight += 24;
 
     const resourceLinks = sprint.milestones.flatMap(m => getSafeArray<RoadmapResourceLink>(m.resource_links));
     const uniqueResources = Array.from(new Map(resourceLinks.map(r => [r.url, r])).values()).slice(0, 2);
 
     if (uniqueResources.length) {
       const resColW = (contentWidth - 12) / 2;
-      const resH = 46;
-      ensureSpace(resH + 16);
+      const resH = 36;
+      ensureSpace(resH + 6);
 
       uniqueResources.forEach((res, rIdx) => {
         const cardX = margins.left + rIdx * (resColW + 12);
         drawRoundedCard(cardX, y, resColW, resH, 4, 4, "F");
 
-        drawText(res.label, cardX + 8, y + 14, { fontSize: fontSizes.body, fontColor: "#ffffff" });
-        drawText(res.provider, cardX + 8, y + 26, { fontSize: fontSizes.meta, fontColor: "#64748b" });
-        drawText(res.url.length > 36 ? res.url.substring(0, 33) + "..." : res.url, cardX + 8, y + 38, { fontSize: fontSizes.meta, fontColor: "#0cc6d8" });
+        drawText(res.label, cardX + 8, y + 11, { fontSize: fontSizes.body, fontColor: "#ffffff" });
+        drawText(res.provider, cardX + 8, y + 20, { fontSize: fontSizes.meta, fontColor: "#64748b" });
+        drawText(res.url.length > 36 ? res.url.substring(0, 33) + "..." : res.url, cardX + 8, y + 29, { fontSize: fontSizes.meta, fontColor: "#0cc6d8" });
       });
-      y += resH + 12;
-      totalContentHeight += resH + 12;
+      y += resH + 4;
     }
 
     drawSectionDivider();
@@ -959,67 +941,63 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     // Sprint Outcomes
     drawSectionTitle("EXPECTED SPRINT OUTCOMES");
     drawSectionHelpCard("Outcomes", "Expected technical deliverables and skills.", "Formulates proof of work for recruiters.", "Upload capstone products to GitHub.");
-    totalContentHeight += 24;
 
     const sprintOutcomes = Array.from(new Set(sprint.milestones.flatMap(m => getSafeArray<string>(m.expected_outcomes)))).slice(0, 2);
     sprintOutcomes.forEach((outcome) => {
-      ensureSpace(18);
-      drawText(`□  ${outcome}`, margins.left, y + 11, { fontSize: fontSizes.body, fontColor: "#94a3b8" });
-      y += 18;
-      totalContentHeight += 18;
+      ensureSpace(12);
+      drawText(`□  ${outcome}`, margins.left, y + 8, { fontSize: fontSizes.body, fontColor: "#94a3b8" });
+      y += 12;
     });
   });
 
   // ==========================================
   // PAGE 5: FINAL PAGE CAREER READINESS CHECKLIST
   // ==========================================
+  totalContentHeight += (y - margins.top);
   doc.addPage();
   drawSubtlePageBackground();
   y = margins.top;
 
   drawSectionTitle("CAREER READINESS PORTFOLIO CHECKLIST");
   drawSectionHelpCard("Readiness Checklist", "Recruiter-ready milestones & portfolio review.", "Ensures structural competency alignment.", "Verify all checkboxes before applications.");
-  totalContentHeight += 24;
 
   const gridW = (contentWidth - 12) / 2;
-  const gridH = 92;
-  ensureSpace(gridH * 2 + 24);
+  const gridH = 68;
+  ensureSpace(gridH * 2 + 10);
   
   // Card 1: PORTFOLIO PROJECTS
   drawRoundedCard(margins.left, y, gridW, gridH, 4, 4, "F");
-  drawText("PORTFOLIO PROJECTS", margins.left + 8, y + 16, { fontSize: fontSizes.meta, fontColor: "#0cc6d8" });
+  drawText("PORTFOLIO PROJECTS", margins.left + 8, y + 12, { fontSize: fontSizes.meta, fontColor: "#0cc6d8" });
   const projList = uniqueProjects.slice(0, 2).join(", ") || "Capstone application modules";
-  drawWrappedText(`What: Deployed developer tools\nWhy: Proves real capability\nNext: Package deliverables on site\n• Target: ${projList.length > 28 ? projList.substring(0, 25) + "..." : projList}`, margins.left + 8, y + 26, gridW - 16, fontSizes.body - 1, { fontColor: "#94a3b8" });
+  drawWrappedText(`What: Deployed developer tools\nWhy: Proves real capability\nTarget: ${projList.length > 28 ? projList.substring(0, 25) + "..." : projList}`, margins.left + 8, y + 22, gridW - 16, fontSizes.body - 1, { fontColor: "#94a3b8" });
 
   // Card 2: RESUME READINESS
   drawRoundedCard(margins.left + gridW + 12, y, gridW, gridH, 4, 4, "F");
-  drawText("RESUME READINESS", margins.left + gridW + 20, y + 16, { fontSize: fontSizes.meta, fontColor: "#0cc6d8" });
-  drawWrappedText("What: Keyword-optimized SDE resume\nWhy: Maximizes ATS screening pass rates\nNext: Match bullet points to role specs\n• Target: Keyword match to SDE-I", margins.left + gridW + 20, y + 26, gridW - 16, fontSizes.body - 1, { fontColor: "#94a3b8" });
+  drawText("RESUME READINESS", margins.left + gridW + 20, y + 12, { fontSize: fontSizes.meta, fontColor: "#0cc6d8" });
+  drawWrappedText("What: Keyword-optimized SDE resume\nWhy: Maximizes ATS pass rate\nTarget: ATS-ready SDE-I", margins.left + gridW + 20, y + 22, gridW - 16, fontSizes.body - 1, { fontColor: "#94a3b8" });
 
-  y += gridH + 12;
+  y += gridH + 6;
 
   // Card 3: GITHUB READINESS
   drawRoundedCard(margins.left, y, gridW, gridH, 4, 4, "F");
-  drawText("GITHUB READINESS", margins.left + 8, y + 16, { fontSize: fontSizes.meta, fontColor: "#0cc6d8" });
-  drawWrappedText("What: Semantic commits & detailed READMEs\nWhy: Proves collaborative development habits\nNext: Reorganize profile showcase\n• Target: Semantic history & profiles", margins.left + 8, y + 26, gridW - 16, fontSizes.body - 1, { fontColor: "#94a3b8" });
+  drawText("GITHUB READINESS", margins.left + 8, y + 12, { fontSize: fontSizes.meta, fontColor: "#0cc6d8" });
+  drawWrappedText("What: Semantic commits & READMEs\nWhy: Proves collaborative habits\nTarget: Clean GitHub profile", margins.left + 8, y + 22, gridW - 16, fontSizes.body - 1, { fontColor: "#94a3b8" });
 
   // Card 4: INTERVIEW READINESS
   drawRoundedCard(margins.left + gridW + 12, y, gridW, gridH, 4, 4, "F");
-  drawText("INTERVIEW READINESS", margins.left + gridW + 20, y + 16, { fontSize: fontSizes.meta, fontColor: "#0cc6d8" });
-  drawWrappedText("What: System design and behavioral stories\nWhy: Proves scalability & tradeoff mastery\nNext: Rehearse mock technical loops\n• Target: Story bank & mock loops", margins.left + gridW + 20, y + 26, gridW - 16, fontSizes.body - 1, { fontColor: "#94a3b8" });
+  drawText("INTERVIEW READINESS", margins.left + gridW + 20, y + 12, { fontSize: fontSizes.meta, fontColor: "#0cc6d8" });
+  drawWrappedText("What: System design & STAR stories\nWhy: Proves tradeoff mastery\nTarget: Scalability story bank", margins.left + gridW + 20, y + 22, gridW - 16, fontSizes.body - 1, { fontColor: "#94a3b8" });
 
-  y += gridH + 8;
+  y += gridH + 4;
   drawSectionDivider();
 
   drawSectionTitle("RECRUITMENT READINESS & UNIFIED CHECKLIST");
   drawSectionHelpCard("Career Checklist", "Unified milestone progression tracker.", "Validates complete career-goal readiness.", "Execute all checks before applying.");
-  totalContentHeight += 24;
 
   readinessPoints.forEach((point) => {
-    ensureSpace(18);
-    drawText(`□  ${point}`, margins.left, y + 11, { fontSize: fontSizes.body, fontColor: "#94a3b8" });
-    y += 18;
-    totalContentHeight += 18;
+    ensureSpace(12);
+    drawText(`□  ${point}`, margins.left, y + 8, { fontSize: fontSizes.body, fontColor: "#94a3b8" });
+    y += 12;
   });
 
   // Draw Page Frames on all pages
@@ -1030,6 +1008,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   }
 
   // PDF Density Report calculation
+  totalContentHeight += (y - margins.top);
   const printableAreaPerPage = pageHeight - margins.top - margins.bottom;
   const totalPrintableArea = totalPages * printableAreaPerPage;
   const contentUtilization = Math.min(100, Math.round((totalContentHeight / totalPrintableArea) * 100));
