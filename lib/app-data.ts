@@ -664,5 +664,10 @@ export async function updateWorkspace(client: SupabaseClient, userId: string, pa
 
   const version = await getNextRoadmapVersion(client, userId);
   await persistRoadmaps(client, userId, nextValue.roadmaps, version);
-  await persistRoadmapVersion(client, userId, nextValue.roadmaps, nextValue.roadmaps[0]?.title ?? "Career roadmap", version);
+
+  const resolvedGoal = await resolveCareerGoal(client, userId, nextValue.roadmaps[0]?.career_domain ?? "Career roadmap");
+  console.log("CAREER GOAL RESOLVED", resolvedGoal);
+  console.log("ROADMAP TITLE", nextValue.roadmaps[0]?.title);
+
+  await persistRoadmapVersion(client, userId, nextValue.roadmaps, resolvedGoal, version);
 }
