@@ -78,19 +78,27 @@ const ResponseSchema = z.object({
 });
 
 async function generateWithOpenAI(prompt: ReturnType<typeof buildRoadmapPlanPrompt>, apiKey: string) {
+  const provider = "openai";
+  const model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
+  console.log("ACTIVE PROVIDER", provider);
+  console.log("MODEL", model);
+  console.log("HAS API KEY", !!apiKey);
+  console.log("KEY LENGTH", apiKey?.length);
+
   if (!apiKey) {
+    console.error("RETURN NULL: MISSING API KEY");
     return null;
   }
 
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
+        model: model,
         temperature: 0.4,
         response_format: { type: "json_object" },
         messages: [
@@ -103,38 +111,69 @@ async function generateWithOpenAI(prompt: ReturnType<typeof buildRoadmapPlanProm
       })
     });
 
-    if (!response.ok) {
-      const responseText = await response.text().catch(() => "<unavailable>");
+    if (!res.ok) {
+      const responseText = await res.text().catch(() => "<unavailable>");
       console.error("OPENAI ROADMAP GENERATION FAILED", {
-        status: response.status,
-        statusText: response.statusText,
+        status: res.status,
+        statusText: res.statusText,
         responseText
       });
+      if (res.status === 401 || res.status === 403) {
+        console.error("RETURN NULL: INVALID API KEY");
+      } else {
+        console.error("RETURN NULL: OPENAI HTTP ERROR");
+      }
       return null;
     }
 
-    const payload = await response.json();
-    const content = payload?.choices?.[0]?.message?.content;
+    const response = await res.json();
+    console.log("RAW RESPONSE");
+    console.dir(response, { depth: null });
+
+    console.log("CONTENT");
+    console.log(response?.choices?.[0]?.message?.content);
+
+    const choices = response?.choices;
+    if (!choices || choices.length === 0) {
+      console.error("RETURN NULL: EMPTY CHOICES ARRAY");
+      return null;
+    }
+
+    const content = choices[0]?.message?.content;
 
     if (typeof content !== "string") {
-      console.error("OPENAI ROADMAP GENERATION FAILED", { reason: "missing_message_content", payload });
+      console.error("RETURN NULL: MISSING CONTENT");
       return null;
     }
 
-    return JSON.parse(content) as unknown;
+    try {
+      return JSON.parse(content) as unknown;
+    } catch (parseError) {
+      console.error("RETURN NULL: JSON PARSE FAILED", parseError);
+      return null;
+    }
   } catch (error) {
     console.error("OPENAI ROADMAP GENERATION FAILED", error);
+    console.error("RETURN NULL: NETWORK FAILURE");
     return null;
   }
 }
 
 async function generateWithGemini(prompt: ReturnType<typeof buildRoadmapPlanPrompt>, apiKey: string) {
+  const provider = "gemini";
+  const model = "gemini-2.0-flash";
+  console.log("ACTIVE PROVIDER", provider);
+  console.log("MODEL", model);
+  console.log("HAS API KEY", !!apiKey);
+  console.log("KEY LENGTH", apiKey?.length);
+
   if (!apiKey) {
+    console.error("RETURN NULL: MISSING API KEY");
     return null;
   }
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -156,27 +195,49 @@ async function generateWithGemini(prompt: ReturnType<typeof buildRoadmapPlanProm
       })
     });
 
-    if (!response.ok) {
-      const responseText = await response.text().catch(() => "<unavailable>");
+    if (!res.ok) {
+      const responseText = await res.text().catch(() => "<unavailable>");
       console.error("GEMINI ROADMAP GENERATION FAILED", {
-        status: response.status,
-        statusText: response.statusText,
+        status: res.status,
+        statusText: res.statusText,
         responseText
       });
+      if (res.status === 400 || res.status === 403) {
+        console.error("RETURN NULL: INVALID API KEY");
+      } else {
+        console.error("RETURN NULL: GEMINI HTTP ERROR");
+      }
       return null;
     }
 
-    const payload = await response.json();
-    const content = payload?.candidates?.[0]?.content?.parts?.map((part: { text?: string }) => part.text ?? "").join("");
+    const response = await res.json();
+    console.log("RAW RESPONSE");
+    console.dir(response, { depth: null });
+
+    const candidates = response?.candidates;
+    if (!candidates || candidates.length === 0) {
+      console.error("RETURN NULL: EMPTY CHOICES ARRAY");
+      return null;
+    }
+
+    const content = candidates[0]?.content?.parts?.map((part: { text?: string }) => part.text ?? "").join("");
+    console.log("CONTENT");
+    console.log(content);
 
     if (typeof content !== "string" || !content.trim().length) {
-      console.error("GEMINI ROADMAP GENERATION FAILED", { reason: "missing_content", payload });
+      console.error("RETURN NULL: MISSING CONTENT");
       return null;
     }
 
-    return JSON.parse(content) as unknown;
+    try {
+      return JSON.parse(content) as unknown;
+    } catch (parseError) {
+      console.error("RETURN NULL: JSON PARSE FAILED", parseError);
+      return null;
+    }
   } catch (error) {
     console.error("GEMINI ROADMAP GENERATION FAILED", error);
+    console.error("RETURN NULL: NETWORK FAILURE");
     return null;
   }
 }
@@ -272,6 +333,9 @@ export async function POST(req: Request) {
 
     const freeGenerationsUsed = usageData?.free_generations_used ?? 0;
     const generationSource = await resolveGenerationSource(user.id, freeGenerationsUsed);
+    const providerConfig = generationSource;
+    console.log("RESOLVED PROVIDER");
+    console.log(providerConfig);
 
     if (freeGenerationsUsed < FREE_GENERATIONS) {
       await supabase.from("user_usage").upsert(
