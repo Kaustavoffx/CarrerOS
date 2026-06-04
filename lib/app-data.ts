@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { randomUUID } from "crypto";
 import { createStarterWorkspace } from "./workspace";
 import { auditRoadmapQuality, buildRoadmapPlan, resolveDomainProfile, validateRoadmapDomainConsistency, validateGeneratedRoadmap, validateRoadmapDomain } from "./roadmap-plan";
 import { generateId } from "./id";
@@ -58,6 +59,26 @@ function toNumberValue(value: unknown, fallback: number) {
 function toPositiveNumber(value: unknown, fallback: number) {
   const numberValue = toNumberValue(value, fallback);
   return numberValue >= 0 ? numberValue : fallback;
+}
+
+function postProcessRoadmap(roadmap: RoadmapRecord): RoadmapRecord {
+  const isUuid = typeof roadmap.id === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(roadmap.id);
+  const nextId = isUuid ? roadmap.id : randomUUID();
+
+  const generatedAt = typeof roadmap.generated_at === "string" && roadmap.generated_at !== "2024-06-01T00:00:00Z" && roadmap.generated_at !== "2024-06-15T00:00:00Z"
+    ? roadmap.generated_at
+    : new Date().toISOString();
+
+  const updatedAt = typeof roadmap.updated_at === "string" && roadmap.updated_at !== "2024-06-01T00:00:00Z" && roadmap.updated_at !== "2024-06-15T00:00:00Z"
+    ? roadmap.updated_at
+    : new Date().toISOString();
+
+  return {
+    ...roadmap,
+    id: nextId,
+    generated_at: generatedAt,
+    updated_at: updatedAt
+  };
 }
 
 export function auditRoadmapCollection(roadmaps: unknown): RoadmapAuditSourceReport {
@@ -234,7 +255,7 @@ export function migrateLegacyRoadmap(roadmap: unknown): RoadmapRecord {
     });
   }
 
-  return migrated;
+  return postProcessRoadmap(migrated);
 }
 
 function normalizeResourceLink(value: unknown): RoadmapResourceLink {
@@ -278,7 +299,7 @@ function normalizeRoadmap(value: unknown): RoadmapRecord {
     return migrateLegacyRoadmap(roadmap);
   }
 
-  return {
+  return postProcessRoadmap({
     id: toStringValue(roadmap.id, generateId()),
     title: toStringValue(roadmap.title, "Untitled roadmap"),
     status: typeof roadmap.status === "string" && ["Planned", "Active", "Done"].includes(roadmap.status) ? roadmap.status : "Planned",
@@ -306,7 +327,7 @@ function normalizeRoadmap(value: unknown): RoadmapRecord {
     expected_outcomes: normalizeStringArray(roadmap.expected_outcomes, ["Not available"]),
     milestones: normalizeMilestones(roadmap.milestones),
     updated_at: toStringValue(roadmap.updated_at, new Date().toISOString())
-  };
+  });
 }
 
 export function normalizeRoadmapArray(roadmaps: unknown) {
@@ -412,6 +433,10 @@ async function persistRoadmaps(client: SupabaseClient, userId: string, roadmaps:
 
   const rows: RoadmapRow[] = safeRoadmaps.map((roadmap) => toRoadmapRow({ ...roadmap, roadmap_version: version }, authUserId));
   console.log("ROADMAP INSERT PAYLOAD", JSON.stringify(rows, null, 2));
+
+  rows.forEach((row) => {
+    console.log("ROADMAP UUID GENERATED", row.id);
+  });
 
   const { error } = await client.from("roadmaps").insert(rows);
   if (error) {
