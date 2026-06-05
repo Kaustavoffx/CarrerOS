@@ -145,7 +145,7 @@ function GalaxyNode({
             {node.label}
           </span>
           {isHovered && (
-            <span className="mt-1 text-[9px] text-cyan-300 font-semibold tracking-wide block animate-fade-in">
+            <span className="mt-1 text-[9px] text-cyan-300 font-semibold tracking-wide block">
               {node.desc}
             </span>
           )}

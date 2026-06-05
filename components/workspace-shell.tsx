@@ -18,7 +18,7 @@ import {
   Plus
 } from "lucide-react";
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion"; // Kept for layoutId sidebar active indicator micro-animation
 
 type WorkspaceShellProps = {
   profile: UserProfileRecord | null;
@@ -52,7 +52,7 @@ function ScoreRing({ score }: { score: number }) {
         strokeLinecap="round"
         strokeDasharray={`${filled} ${circumference}`}
         strokeDashoffset={circumference * 0.25}
-        style={{ transition: "stroke-dasharray 1s cubic-bezier(0.16,1,0.3,1)" }}
+        style={{ transition: "stroke-dasharray 0.6s cubic-bezier(0.16,1,0.3,1)" }}
       />
       <text x="28" y="32" textAnchor="middle" fontSize="11" fontWeight="600" fill="#22d3ee">
         {score > 0 ? `${score}` : "—"}
@@ -90,10 +90,12 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
       {/* Subtle dot-grid background */}
       <div className="pointer-events-none fixed inset-0 opacity-[0.025] [background-image:radial-gradient(rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:28px_28px]" />
 
-      {/* ── DESKTOP SIDEBAR ── */}
-      <motion.aside
-        animate={{ width: collapsed ? "4.5rem" : "15rem" }}
-        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      {/* ── DESKTOP SIDEBAR — CSS transition, no motion.aside ── */}
+      <aside
+        style={{
+          width: collapsed ? "4.5rem" : "15rem",
+          transition: "width 220ms ease"
+        }}
         className="fixed left-0 top-0 z-30 hidden h-screen flex-col border-r border-[#141417] bg-[#07070a] xl:flex overflow-hidden"
       >
         {/* Logo row */}
@@ -101,43 +103,39 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#202028] bg-gradient-to-b from-[#141418] to-[#0a0a0c] text-cyan-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
             <Sparkles className="h-4 w-4" />
           </div>
-          <AnimatePresence>
-            {!collapsed && (
-              <motion.div
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -8 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden"
-              >
-                <p className="text-sm font-semibold tracking-wide text-white">CareerOS</p>
-                <p className="text-[10px] uppercase tracking-widest text-slate-500">Workspace</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <div
+            style={{
+              opacity: collapsed ? 0 : 1,
+              width: collapsed ? 0 : "auto",
+              overflow: "hidden",
+              transition: "opacity 150ms ease",
+              whiteSpace: "nowrap"
+            }}
+          >
+            <p className="text-sm font-semibold tracking-wide text-white">CareerOS</p>
+            <p className="text-[10px] uppercase tracking-widest text-slate-500">Workspace</p>
+          </div>
         </div>
 
         {/* Career score ring */}
-        <AnimatePresence>
-          {!collapsed && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25 }}
-              className="mx-4 mt-5 flex items-center gap-3 rounded-2xl border border-[#141417] bg-[#08080a] p-3"
-            >
-              <ScoreRing score={score} />
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-widest text-slate-500">Readiness</p>
-                <p className="mt-0.5 text-sm font-semibold text-white truncate">
-                  {score > 0 ? `${score} / 100` : "Coming Soon"}
-                </p>
-                <p className="text-[10px] text-slate-500 truncate">{profile?.goal ?? "Set your goal"}</p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <div
+          style={{
+            opacity: collapsed ? 0 : 1,
+            maxHeight: collapsed ? "0" : "120px",
+            overflow: "hidden",
+            transition: "opacity 150ms ease, max-height 220ms ease",
+          }}
+          className="mx-4 mt-5 flex items-center gap-3 rounded-2xl border border-[#141417] bg-[#08080a] p-3"
+        >
+          <ScoreRing score={score} />
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-widest text-slate-500">Readiness</p>
+            <p className="mt-0.5 text-sm font-semibold text-white truncate">
+              {score > 0 ? `${score} / 100` : "Coming Soon"}
+            </p>
+            <p className="text-[10px] text-slate-500 truncate">{profile?.goal ?? "Set your goal"}</p>
+          </div>
+        </div>
 
         {/* Nav */}
         <nav className={`mt-5 flex-1 space-y-1 px-2 ${collapsed ? "px-1.5" : ""}`}>
@@ -149,7 +147,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                 key={item.href}
                 href={item.href}
                 title={collapsed ? item.label : undefined}
-                className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200 ${
+                className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors duration-[120ms] ${
                   collapsed ? "justify-center" : ""
                 } ${
                   active
@@ -157,28 +155,28 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                     : "text-slate-500 hover:bg-[#0d0d10] hover:text-slate-300"
                 }`}
               >
-                {/* Active left-bar indicator */}
+                {/* Active left-bar indicator — keep layoutId for micro-animation */}
                 {active && (
                   <motion.span
                     layoutId="sidebar-active-bar"
                     className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-cyan-400"
-                    transition={{ type: "spring", stiffness: 400, damping: 35 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 40 }}
                   />
                 )}
-                <Icon className={`h-4 w-4 shrink-0 transition ${active ? "text-cyan-300" : "text-slate-500 group-hover:text-slate-300"}`} />
-                <AnimatePresence>
-                  {!collapsed && (
-                    <motion.span
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.15 }}
-                      className="font-medium truncate"
-                    >
-                      {item.label}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
+                <Icon className={`h-4 w-4 shrink-0 transition-colors duration-[120ms] ${active ? "text-cyan-300" : "text-slate-500 group-hover:text-slate-300"}`} />
+                <span
+                  style={{
+                    opacity: collapsed ? 0 : 1,
+                    width: collapsed ? 0 : "auto",
+                    overflow: "hidden",
+                    transition: "opacity 150ms ease",
+                    whiteSpace: "nowrap",
+                    display: "block"
+                  }}
+                  className="font-medium truncate"
+                >
+                  {item.label}
+                </span>
                 {active && !collapsed && (
                   <span className="ml-auto h-1.5 w-1.5 rounded-full bg-cyan-400 shrink-0" />
                 )}
@@ -202,7 +200,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                 type="button"
                 onClick={handleSignOut}
                 title="Sign out"
-                className="rounded-lg p-1.5 text-slate-500 hover:bg-[#141417] hover:text-rose-400 transition shrink-0"
+                className="rounded-lg p-1.5 text-slate-500 hover:bg-[#141417] hover:text-rose-400 transition-colors duration-[120ms] shrink-0"
               >
                 <LogOut className="h-3.5 w-3.5" />
               </button>
@@ -214,20 +212,22 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
         <button
           type="button"
           onClick={() => setCollapsed(c => !c)}
-          className="absolute -right-3 top-20 z-40 flex h-6 w-6 items-center justify-center rounded-full border border-[#202028] bg-[#08080a] text-slate-400 hover:text-cyan-300 transition shadow-md"
+          className="absolute -right-3 top-20 z-40 flex h-6 w-6 items-center justify-center rounded-full border border-[#202028] bg-[#08080a] text-slate-400 hover:text-cyan-300 transition-colors duration-[120ms] shadow-md"
         >
           {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
         </button>
-      </motion.aside>
+      </aside>
 
-      {/* ── MAIN CONTENT AREA ── */}
-      <motion.div
-        animate={{ paddingLeft: collapsed ? "4.5rem" : "15rem" }}
-        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      {/* ── MAIN CONTENT AREA — CSS padding-left transition ── */}
+      <div
+        style={{
+          paddingLeft: collapsed ? "4.5rem" : "15rem",
+          transition: "padding-left 220ms ease"
+        }}
         className="hidden xl:block"
       >
         <main className="mx-auto max-w-7xl px-8 py-8 pb-24">{children}</main>
-      </motion.div>
+      </div>
 
       {/* Non-xl fallback (tablet / mobile) */}
       <div className="xl:hidden">
@@ -262,7 +262,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
             <Link
               key={item.href}
               href={item.href}
-              className={`relative flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-medium transition ${
+              className={`relative flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-medium transition-colors duration-[120ms] ${
                 active ? "text-cyan-300" : "text-slate-500 hover:text-slate-300"
               }`}
             >
@@ -283,7 +283,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
       {/* ── MOBILE FLOATING QUICK ACTION ── */}
       <Link
         href="/roadmaps"
-        className="fixed bottom-20 right-5 z-50 xl:hidden flex h-12 w-12 items-center justify-center rounded-full border border-cyan-400/30 bg-cyan-400 text-black shadow-[0_8px_24px_rgba(34,211,238,0.35)] hover:scale-110 active:scale-95 transition-transform"
+        className="fixed bottom-20 right-5 z-50 xl:hidden flex h-12 w-12 items-center justify-center rounded-full border border-cyan-400/30 bg-cyan-400 text-black shadow-[0_8px_24px_rgba(34,211,238,0.35)] hover:opacity-90 active:scale-95 transition-[opacity,transform] duration-[120ms]"
       >
         <Plus className="h-5 w-5" />
       </Link>

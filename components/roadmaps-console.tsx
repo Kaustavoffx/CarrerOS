@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion"; // Kept only for Confetti celebration animation
 import {
   Download, Printer, RefreshCw, Clock3,
   Check, ExternalLink, Search,
@@ -536,19 +536,13 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
     <div className="space-y-6 max-w-7xl mx-auto">
       {showCelebration && <Confetti />}
 
-      {/* ── TOAST MESSENGER ───────────────────────────────────────────────── */}
-      <AnimatePresence>
-        {toastMessage && (
-          <motion.div
-            initial={{ opacity: 0, y: 12, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: 0.95 }}
-            className="fixed bottom-24 right-6 z-50 xl:bottom-6 rounded-xl border border-cyan-400/25 bg-[#0a0a0c] px-4 py-3 text-xs font-semibold text-cyan-200 shadow-[0_4px_16px_rgba(0,0,0,0.8),0_0_20px_rgba(34,211,238,0.15)]"
-          >
-            {toastMessage}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* ── TOAST MESSENGER — CSS only ─────────────────────────────────────── */}
+      <div
+        className={`toast-base fixed bottom-24 right-6 z-50 xl:bottom-6 rounded-xl border border-cyan-400/25 bg-[#0a0a0c] px-4 py-3 text-xs font-semibold text-cyan-200 shadow-[0_4px_16px_rgba(0,0,0,0.8)] ${toastMessage ? "toast-enter" : "toast-exit"}`}
+        aria-live="polite"
+      >
+        {toastMessage}
+      </div>
 
       {/* ══ SECTION 1: ROADMAP HERO (Minimal Info Card) ══════════════════════ */}
       <section className="card-data relative overflow-hidden rounded-[24px] p-6 sm:p-8">
@@ -1024,10 +1018,9 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                     const isCompleted = completedResources[res.url] ?? false;
 
                     return (
-                      <motion.div
+                      <div
                         key={`${res.url}-${idx}`}
-                        whileHover={{ y: -4, boxShadow: "0 8px 30px rgba(0,0,0,0.8)" }}
-                        className="group flex flex-col justify-between border border-[#141417] hover:border-cyan-400/20 bg-[#08080a] p-4 rounded-2xl transition duration-200"
+                        className="group flex flex-col justify-between border border-[#141417] hover:border-cyan-400/20 bg-[#08080a] p-4 rounded-2xl transition-colors duration-[120ms]"
                       >
                         <div>
                           <div className="flex items-start justify-between gap-3 mb-2">
@@ -1090,7 +1083,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                             <ExternalLink className="h-3 w-3" />
                           </a>
                         </div>
-                      </motion.div>
+                      </div>
                     );
                   })}
                 </div>
@@ -1157,7 +1150,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
             <div className="flex items-center gap-2">
               <Archive className="h-4 w-4 text-slate-400" />
               <p className="text-xs text-slate-400 font-semibold">
-                Export Options & Portability Snapshot
+                Export Options &amp; Portability Snapshot
               </p>
             </div>
             
@@ -1188,29 +1181,22 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
         </section>
       )}
 
-      {/* ══ VERSION HISTORY DRAWER ═════════════════════════════════════════ */}
-      <AnimatePresence>
-        {isVersionDrawerOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.5 }}
-              exit={{ opacity: 0 }}
-              onClick={() => {
-                setIsVersionDrawerOpen(false);
-                setCompareVersionId(null);
-              }}
-              className="fixed inset-0 z-40 bg-black bg-opacity-70 backdrop-blur-sm"
-            />
-            {/* Drawer */}
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 220 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#09090b] border-l border-[#202028] p-6 shadow-2xl flex flex-col justify-between"
-            >
+      {/* ══ VERSION HISTORY DRAWER — CSS transition 220ms ═════════════════════════ */}
+      {isVersionDrawerOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            onClick={() => {
+              setIsVersionDrawerOpen(false);
+              setCompareVersionId(null);
+            }}
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-[2px]"
+          />
+          {/* Drawer */}
+          <div
+            className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#09090b] border-l border-[#202028] p-6 shadow-2xl flex flex-col justify-between"
+            style={{ transform: "translateX(0)", transition: "transform 220ms ease" }}
+          >
               <div className="flex flex-col flex-1 min-h-0">
                 <div className="flex items-center justify-between border-b border-[#202028] pb-4 mb-4">
                   <div>
@@ -1285,15 +1271,16 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                             {version.ai_reasoning || "No system logs attached."}
                           </p>
 
-                          {/* Expansion Compare View */}
-                          <AnimatePresence>
-                            {isComparing && versionRoadmap && (
-                              <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: "auto", opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                className="overflow-hidden mt-3 pt-3 border-t border-[#1e1e24] text-[11px] text-slate-400 space-y-2.5"
-                              >
+                          {/* CSS max-height accordion — replaces Framer height animation */}
+                          <div
+                            style={{
+                              maxHeight: isComparing && versionRoadmap ? "200px" : "0",
+                              overflow: "hidden",
+                              transition: "max-height 220ms ease"
+                            }}
+                          >
+                            {versionRoadmap && (
+                              <div className="mt-3 pt-3 border-t border-[#1e1e24] text-[11px] text-slate-400 space-y-2.5">
                                 <span className="text-[9px] text-cyan-400 font-bold uppercase tracking-wider block">Comparison Matrix</span>
                                 <div className="grid grid-cols-2 gap-2 bg-[#09090b] border border-[#1c1c22] p-2.5 rounded-lg">
                                   <div>
@@ -1309,9 +1296,9 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                                     <span className="text-[9px] text-slate-400 block">{versionRoadmap.total_duration_weeks ?? 0} Weeks</span>
                                   </div>
                                 </div>
-                              </motion.div>
+                              </div>
                             )}
-                          </AnimatePresence>
+                          </div>
                         </div>
                       );
                     })}
@@ -1335,48 +1322,40 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                   Close History
                 </button>
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* ══ RESTORE CONFIRMATION MODAL ═══════════════════════════════════════ */}
-      <AnimatePresence>
-        {restoreConfirmId && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm animate-fadeIn">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: 12 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 12 }}
-              className="liquid-panel relative z-10 w-full max-w-sm rounded-[24px] p-6 text-center border border-amber-500/25 bg-[#09090b]"
-            >
-              <AlertTriangle className="mx-auto h-8 w-8 text-amber-400 mb-4 animate-bounce" />
-              <h3 className="text-base font-bold text-white">Restore selected version?</h3>
-              <p className="mt-2 text-xs text-slate-400 leading-relaxed">
-                Your current roadmap workspace will be overwritten with the snapshot. Your active checkpoints will update.
-              </p>
-              
-              <div className="mt-6 flex gap-3">
-                <button
-                  onClick={() => setRestoreConfirmId(null)}
-                  className="tactile-btn flex-1 rounded-xl py-2.5 text-xs font-semibold text-slate-400 border border-[#202028] hover:border-slate-500 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    const version = safeRoadmapHistory.find(v => v.id === restoreConfirmId);
-                    if (version) void restoreRoadmapVersion(version);
-                  }}
-                  className="tactile-btn tactile-btn-primary flex-1 rounded-xl py-2.5 text-xs font-semibold text-black"
-                >
-                  Confirm Restore
-                </button>
-              </div>
-            </motion.div>
           </div>
-        )}
-      </AnimatePresence>
+        </>
+      )}
+
+      {/* ══ RESTORE CONFIRMATION MODAL — plain CSS ══════════════════════════════ */}
+      {restoreConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
+          <div className="liquid-panel relative z-10 w-full max-w-sm rounded-[24px] p-6 text-center border border-amber-500/25 bg-[#09090b]">
+            <AlertTriangle className="mx-auto h-8 w-8 text-amber-400 mb-4" />
+            <h3 className="text-base font-bold text-white">Restore selected version?</h3>
+            <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+              Your current roadmap workspace will be overwritten with the snapshot. Your active checkpoints will update.
+            </p>
+            
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => setRestoreConfirmId(null)}
+                className="tactile-btn flex-1 rounded-xl py-2.5 text-xs font-semibold text-slate-400 border border-[#202028] hover:border-slate-500 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const version = safeRoadmapHistory.find(v => v.id === restoreConfirmId);
+                  if (version) void restoreRoadmapVersion(version);
+                }}
+                className="tactile-btn tactile-btn-primary flex-1 rounded-xl py-2.5 text-xs font-semibold text-black"
+              >
+                Confirm Restore
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

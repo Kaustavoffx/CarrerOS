@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion"; // Kept only for Confetti celebration animation
 import {
   ArrowRight, Sparkles, Trash2, Check, TrendingUp, X, PlusCircle,
   Search, Flame, Activity, BookOpen, MessageSquare, MapPin,
@@ -395,19 +395,13 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
     <div className="space-y-6 max-w-7xl mx-auto">
       {showCelebration && <Confetti />}
 
-      {/* ── TOAST MESSENGER ───────────────────────────────────────────────── */}
-      <AnimatePresence>
-        {toastMessage && (
-          <motion.div
-            initial={{ opacity: 0, y: 12, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: 0.95 }}
-            className="fixed bottom-24 right-6 z-50 xl:bottom-6 rounded-xl border border-cyan-400/25 bg-[#0a0a0c] px-4 py-3 text-xs font-medium text-cyan-200 shadow-[0_4px_16px_rgba(0,0,0,0.8),0_0_20px_rgba(34,211,238,0.15)]"
-          >
-            {toastMessage}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* ── TOAST MESSENGER — CSS only ─────────────────────────────────────── */}
+      <div
+        className={`toast-base fixed bottom-24 right-6 z-50 xl:bottom-6 rounded-xl border border-cyan-400/25 bg-[#0a0a0c] px-4 py-3 text-xs font-medium text-cyan-200 shadow-[0_4px_16px_rgba(0,0,0,0.8)] ${toastMessage ? "toast-enter" : "toast-exit"}`}
+        aria-live="polite"
+      >
+        {toastMessage}
+      </div>
 
       {/* ═══ MISSION HEADER (Neutral Info Bar) ═══════════════════════════════ */}
       <section className="card-data relative overflow-hidden rounded-[24px] p-6">
@@ -652,11 +646,8 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                           draggable
                           onDragStart={e => e.dataTransfer.setData("milestoneTitle", card.title)}
                         >
-                          <motion.div
-                            whileHover={{ y: -3, boxShadow: "0 10px 30px rgba(0,0,0,0.8)" }}
-                            className="cursor-grab active:cursor-grabbing rounded-xl border border-[#1a1a1f] bg-[#0a0a0d] p-4 select-none group"
-                          >
-                            <h4 className="text-xs sm:text-sm font-semibold text-white group-hover:text-cyan-300 transition line-clamp-2 leading-snug">{card.title}</h4>
+                          <div className="cursor-grab active:cursor-grabbing rounded-xl border border-[#1a1a1f] bg-[#0a0a0d] p-4 select-none group transition-colors duration-[120ms] hover:border-[#252530]">
+                            <h4 className="text-xs sm:text-sm font-semibold text-white group-hover:text-cyan-300 transition-colors duration-[120ms] line-clamp-2 leading-snug">{card.title}</h4>
                             
                             <div className="mt-3 flex items-center justify-between text-[10px] text-slate-500 font-semibold">
                               <div className="flex gap-1.5">
@@ -679,7 +670,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                                 <div className="h-full bg-cyan-400" style={{ width: `${card.progress}%` }} />
                               </div>
                             )}
-                          </motion.div>
+                          </div>
                         </div>
                       ))
                     )}
@@ -722,9 +713,9 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
 
       {/* ═══ SECTION 5 & 6: AI MENTOR SPOTLIGHT & BLOCKERS (Side-by-side) ═════ */}
       <section className="grid gap-5 lg:grid-cols-2">
-        {/* SECTION 5: AI MENTOR CARD (Spotlight Card 2) */}
-        <div className="card-spotlight rounded-[24px] p-6 flex flex-col justify-between relative overflow-hidden">
-          <div className="pointer-events-none absolute -bottom-16 -right-16 h-44 w-44 bg-cyan-400/5 rounded-full blur-2xl" />
+        {/* SECTION 5: AI MENTOR CARD (Purple gradient — AI semantic card) */}
+        <div className="card-purple rounded-[24px] p-6 flex flex-col justify-between relative overflow-hidden">
+          <div className="pointer-events-none absolute -bottom-16 -right-16 h-44 w-44 bg-indigo-400/5 rounded-full blur-2xl" />
           
           <div className="relative z-10 space-y-4">
             <div className="flex items-center gap-2.5">
@@ -864,26 +855,20 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
         </div>
       </section>
 
-      {/* ═══ NOTES SIDE DRAWER (Simplified, removed Job Matches) ══════════════ */}
-      <AnimatePresence>
-        {isDrawerOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.6 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsDrawerOpen(false)}
-              className="fixed inset-0 z-40 bg-black bg-opacity-70 backdrop-blur-sm"
-            />
-            {/* Drawer */}
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 26, stiffness: 220 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#09090b] border-l border-[#202028] p-6 shadow-2xl flex flex-col justify-between"
-            >
+      {/* ═══ NOTES SIDE DRAWER — CSS transition 220ms ══════════════════════════ */}
+      {isDrawerOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            onClick={() => setIsDrawerOpen(false)}
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px]"
+            style={{ animation: "none" }}
+          />
+          {/* Drawer */}
+          <div
+            className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#09090b] border-l border-[#202028] p-6 shadow-2xl flex flex-col justify-between"
+            style={{ transform: "translateX(0)", transition: "transform 220ms ease" }}
+          >
               <div className="flex flex-col flex-1 min-h-0">
                 <div className="flex items-center justify-between border-b border-[#202028] pb-4 mb-4">
                   <div>
@@ -959,21 +944,17 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                   Close Drawer
                 </button>
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+          </div>
+        </>
+      )}
 
       {/* ═══ MODAL: CREATE NOTE ══════════════════════════════════════════════ */}
-      <AnimatePresence>
-        {noteModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/85">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: 12 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 12 }}
-              className="liquid-panel w-full max-w-lg rounded-[24px] p-6 relative bg-[#09090b]"
-            >
+      {noteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/85">
+          <div
+            className="liquid-panel w-full max-w-lg rounded-[24px] p-6 relative bg-[#09090b]"
+            style={{ animation: "none" }}
+          >
               <button type="button" onClick={() => setNoteModalOpen(false)} className="absolute top-5 right-5 rounded-full p-2 text-slate-500 hover:text-white hover:bg-white/5 transition">
                 <X className="h-4 w-4" />
               </button>
@@ -1002,21 +983,17 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                   <button type="button" onClick={handleCreateNote} className="tactile-btn tactile-btn-primary rounded-xl px-5 py-2 text-xs font-semibold text-black">Pin Note</button>
                 </div>
               </div>
-            </motion.div>
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
 
       {/* ═══ MODAL: LOG PROGRESS ════════════════════════════════════════════ */}
-      <AnimatePresence>
-        {progressModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/85">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: 12 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 12 }}
-              className="liquid-panel w-full max-w-lg rounded-[24px] p-6 relative bg-[#09090b]"
-            >
+      {progressModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/85">
+          <div
+            className="liquid-panel w-full max-w-lg rounded-[24px] p-6 relative bg-[#09090b]"
+            style={{ animation: "none" }}
+          >
               <button type="button" onClick={() => setProgressModalOpen(false)} className="absolute top-5 right-5 rounded-full p-2 text-slate-500 hover:text-white hover:bg-white/5 transition">
                 <X className="h-4 w-4" />
               </button>
@@ -1042,10 +1019,9 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                   <button type="button" onClick={handleAddProgress} className="tactile-btn tactile-btn-primary rounded-xl px-5 py-2 text-xs font-semibold text-black">Log Progress</button>
                 </div>
               </div>
-            </motion.div>
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 }

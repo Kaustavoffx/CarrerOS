@@ -1,4 +1,4 @@
-/* stylelint-disable at-rule-no-unknown */
+/* stylelint-disable at-rule-unknown */
 /* TailwindCSS directives: processed by PostCSS/Tailwind */
 @tailwind base;
 @tailwind components;
@@ -13,6 +13,13 @@
   --leading-tight: 1.05;
   --leading-snug: 1.15;
   --leading-regular: 1.45;
+
+  /* Duration tokens — never exceed 300ms */
+  --dur-hover: 120ms;
+  --dur-btn: 150ms;
+  --dur-dropdown: 180ms;
+  --dur-drawer: 220ms;
+  --dur-modal: 250ms;
 }
 
 html {
@@ -196,66 +203,95 @@ body {
     box-shadow: 
       0 30px 90px rgba(0, 0, 0, 0.95), 
       inset 0 1px 0 rgba(255, 255, 255, 0.08),
-      inset 0 -1px 2px rgba(0, 0, 0, 0.9),
-      0 0 40px rgba(34, 211, 238, 0.01);
+      inset 0 -1px 2px rgba(0, 0, 0, 0.9);
     position: relative;
     overflow: hidden;
   }
 
-  /* Card Type 1: Spotlight Card */
+  /* ── CARD SYSTEM V2 ──────────────────────────────────────────────────────── */
+
+  /* Card Type 1: Spotlight Card — 5% usage. Cyan glow. Active Mission, Sprint. */
   .card-spotlight {
-    background: linear-gradient(135deg, rgba(0,220,255,.12), rgba(0,120,255,.04));
+    background: linear-gradient(135deg, rgba(0,220,255,.10), rgba(0,120,255,.03));
     border: 1px solid rgba(0,220,255,.25);
-    box-shadow: 0 0 40px rgba(0,220,255,.12);
+    box-shadow: 0 0 40px rgba(0,220,255,.10);
     position: relative;
     overflow: hidden;
   }
-  
-  /* Card Type 2: Action Card */
+
+  /* Card Type 2: Action Card — neutral with left cyan accent */
   .card-action {
     background: linear-gradient(155deg, #09090b, #050506);
     border: 1px solid #141417;
     border-left: 2px solid rgba(34, 211, 238, 0.5);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     overflow: hidden;
+    transition: border-color var(--dur-hover) ease, opacity var(--dur-hover) ease;
   }
   .card-action:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.8), 0 0 20px rgba(34, 211, 238, 0.05);
     border-color: rgba(34, 211, 238, 0.3);
     border-left-color: rgba(34, 211, 238, 0.8);
   }
 
-  /* Card Type 3: Insight Card */
+  /* Card Type 3: Insight Card — AI recommendations (legacy purple, kept for compat) */
   .card-insight {
-    background: linear-gradient(135deg, rgba(147, 51, 234, 0.08), rgba(79, 70, 229, 0.03));
-    border: 1px solid rgba(147, 51, 234, 0.2);
-    box-shadow: 0 4px 20px rgba(147, 51, 234, 0.05);
+    background: linear-gradient(135deg, rgba(130,120,255,.10), rgba(80,60,255,.03));
+    border: 1px solid rgba(130, 120, 255, 0.2);
     position: relative;
     overflow: hidden;
   }
 
-  /* Card Type 4: Data Card */
+  /* Card Type 4: Data Card — neutral dark. 80% of all cards. */
   .card-data {
     background: #09090b;
     border: 1px solid #1f1f23;
-    box-shadow: none;
     position: relative;
     overflow: hidden;
   }
 
   /* Card Type 5: Danger Card */
   .card-danger {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(220, 38, 38, 0.02));
-    border: 1px solid rgba(239, 68, 68, 0.2);
-    box-shadow: none;
+    background: linear-gradient(135deg, rgba(255,80,100,.08), rgba(120,0,20,.03));
+    border: 1px solid rgba(255, 80, 100, 0.2);
     position: relative;
     overflow: hidden;
   }
 
-  /* Skeleton Loading Styles */
+  /* ── SEMANTIC GRADIENT CARDS V2 — 15% usage ─────────────────────────────── */
+
+  /* Gold: Momentum, Weekly Progress, Consistency, Execution Score */
+  .card-gold {
+    background: linear-gradient(135deg, rgba(255,190,50,.10), rgba(255,140,0,.03));
+    border: 1px solid rgba(255, 190, 50, 0.2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Purple: AI Mentor, Recommendations, Skill Analysis, Career Prediction */
+  .card-purple {
+    background: linear-gradient(135deg, rgba(130,120,255,.12), rgba(80,60,255,.03));
+    border: 1px solid rgba(130, 120, 255, 0.22);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Green: Completed, Healthy Progress, Portfolio Connected */
+  .card-green {
+    background: linear-gradient(135deg, rgba(0,255,180,.10), rgba(0,120,80,.03));
+    border: 1px solid rgba(0, 220, 150, 0.2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Red: Skill Gaps, Missing Resume, Risk, Attention */
+  .card-red {
+    background: linear-gradient(135deg, rgba(255,80,100,.08), rgba(120,0,20,.03));
+    border: 1px solid rgba(255, 80, 100, 0.2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Skeleton Loading — GPU keyframe only */
   .animate-skeleton {
     background: linear-gradient(90deg, #121214 25%, #1c1c20 50%, #121214 75%);
     background-size: 200% 100%;
@@ -283,9 +319,10 @@ body {
       0 20px 60px rgba(0, 0, 0, 0.9), 
       inset 0 1px 0 rgba(255, 255, 255, 0.06),
       inset 0 -1px 1px rgba(0, 0, 0, 0.9);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     overflow: hidden;
+    /* GPU-safe: only opacity on hover */
+    transition: opacity var(--dur-hover) ease;
   }
   
   .liquid-card::before {
@@ -297,14 +334,7 @@ body {
     pointer-events: none;
   }
 
-  .liquid-card:hover {
-    box-shadow: 
-      0 35px 80px rgba(0, 0, 0, 0.95), 
-      inset 0 1px 0 rgba(255, 255, 255, 0.12),
-      inset 0 -1px 1px rgba(0, 0, 0, 0.9);
-  }
-
-  /* Physical Tactile Liquid Buttons */
+  /* Physical Tactile Liquid Buttons — transform + opacity only */
   .tactile-btn {
     background: linear-gradient(180deg, #16161c, #0a0a0c);
     border: 1px solid #202028;
@@ -312,17 +342,13 @@ body {
       0 4px 12px rgba(0, 0, 0, 0.8),
       inset 0 1px 0 rgba(255, 255, 255, 0.12),
       inset 0 -1px 1px rgba(0, 0, 0, 0.8);
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform var(--dur-btn) ease, opacity var(--dur-btn) ease;
     cursor: pointer;
   }
   
   .tactile-btn:hover {
-    transform: translateY(-1px) scale(1.02);
-    background: linear-gradient(180deg, #1b1b22, #0d0d10);
-    box-shadow: 
-      0 6px 18px rgba(0, 0, 0, 0.9),
-      inset 0 1px 0 rgba(255, 255, 255, 0.18),
-      inset 0 -1px 1px rgba(0, 0, 0, 0.8);
+    transform: translateY(-1px);
+    opacity: 0.92;
   }
 
   .tactile-btn:focus-visible {
@@ -331,11 +357,8 @@ body {
   }
 
   .tactile-btn:active {
-    transform: translateY(1px) scale(0.98);
-    box-shadow: 
-      0 2px 6px rgba(0, 0, 0, 0.9),
-      inset 0 1px 0 rgba(255, 255, 255, 0.06),
-      inset 0 1px 2px rgba(0, 0, 0, 0.9);
+    transform: translateY(1px);
+    opacity: 1;
   }
 
   .tactile-btn-primary {
@@ -345,18 +368,14 @@ body {
       0 4px 12px rgba(34, 211, 238, 0.2),
       inset 0 1px 0 rgba(255, 255, 255, 0.35),
       inset 0 -1px 1px rgba(0, 0, 0, 0.5);
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform var(--dur-btn) ease, opacity var(--dur-btn) ease;
     color: #000000;
     font-weight: 755;
   }
 
   .tactile-btn-primary:hover {
-    transform: translateY(-1px) scale(1.02);
-    background: linear-gradient(180deg, #67e8f9, #0e7490);
-    box-shadow: 
-      0 6px 18px rgba(34, 211, 238, 0.35),
-      inset 0 1px 0 rgba(255, 255, 255, 0.45),
-      inset 0 -1px 1px rgba(0, 0, 0, 0.5);
+    transform: translateY(-1px);
+    opacity: 0.9;
   }
 
   .tactile-btn-primary:focus-visible {
@@ -365,11 +384,8 @@ body {
   }
 
   .tactile-btn-primary:active {
-    transform: translateY(1px) scale(0.98);
-    box-shadow: 
-      0 2px 6px rgba(34, 211, 238, 0.15),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2),
-      inset 0 1px 2px rgba(0, 0, 0, 0.6);
+    transform: translateY(1px);
+    opacity: 1;
   }
 
   /* Carved Dark Liquid Input Fields */
@@ -379,19 +395,16 @@ body {
     box-shadow: 
       inset 0 2px 4px rgba(0, 0, 0, 0.95),
       inset 0 -1px 0 rgba(255, 255, 255, 0.03);
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: border-color var(--dur-hover) ease;
     color: #ffffff;
     outline: none;
   }
 
   .carved-input:focus {
     border-color: rgba(34, 211, 238, 0.6);
-    box-shadow: 
-      inset 0 2px 4px rgba(0, 0, 0, 0.95),
-      0 0 15px rgba(34, 211, 238, 0.25);
   }
 
-  /* Compact Loading Spinner Utility */
+  /* Compact Loading Spinner */
   .loading-spinner {
     width: 1em;
     height: 1em;
@@ -406,6 +419,20 @@ body {
   @keyframes rotation {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+  }
+
+  /* CSS-only toast — replaces Framer Motion toast animation */
+  .toast-enter {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .toast-exit {
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+  }
+  .toast-base {
+    transition: opacity var(--dur-btn) ease, transform var(--dur-btn) ease;
   }
 }
 
@@ -435,13 +462,4 @@ body {
 
 .animate-spin-slow {
   animation: spin-slow 20s linear infinite;
-}
-
-@keyframes fade-in {
-  0% { opacity: 0; transform: translateY(4px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.4s ease-out forwards;
 }

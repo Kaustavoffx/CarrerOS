@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+// Framer Motion removed — CSS-only animations for 120fps performance
 import {
   Sparkles, Brain, Briefcase, Award, CheckSquare, Square, RefreshCw, User, Target,
   Layers, ArrowRight, History, Plus, Trash2, Globe, FileText, TrendingUp, AlertCircle
@@ -237,18 +237,13 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Toast messenger notifications */}
-      <AnimatePresence>
-        {toastMessage && (
-          <motion.div
-            initial={{ opacity: 0, y: 12, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: 0.95 }}
-            className="fixed bottom-6 right-6 z-50 rounded-xl border border-cyan-400/25 bg-[#0a0a0c] px-4 py-3 text-xs font-semibold text-cyan-200 shadow-[0_4px_16px_rgba(0,0,0,0.8),0_0_20px_rgba(34,211,238,0.15)]"
-          >
-            {toastMessage}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Toast messenger — CSS only */}
+      <div
+        className={`toast-base fixed bottom-6 right-6 z-50 rounded-xl border border-cyan-400/25 bg-[#0a0a0c] px-4 py-3 text-xs font-semibold text-cyan-200 shadow-[0_4px_16px_rgba(0,0,0,0.8)] ${toastMessage ? "toast-enter" : "toast-exit"}`}
+        aria-live="polite"
+      >
+        {toastMessage}
+      </div>
 
       {/* Profile/Goal Header Banner (Neutral Page Header) */}
       <section className="card-data rounded-[24px] p-6 relative overflow-hidden">
@@ -297,13 +292,13 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
 
       {/* ═══ SPOTLIGHT CARD 1: CAREER HEALTH SUMMARY ═══════════════════════ */}
       <section>
-        <div className="card-spotlight rounded-[24px] p-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 h-32 w-48 bg-cyan-400/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="card-green rounded-[24px] p-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 h-32 w-48 bg-emerald-400/5 rounded-full blur-3xl pointer-events-none" />
           
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-4">
-              <Award className="h-4.5 w-4.5 text-cyan-400" />
-              <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Career Health Summary</p>
+              <Award className="h-4.5 w-4.5 text-emerald-400" />
+              <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Career Health Summary</p>
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -526,9 +521,9 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
         <div className="space-y-6">
 
           {/* AI Recommendations Action Queue */}
-          <section className="card-data rounded-[24px] p-5">
-            <div className="flex items-center gap-2 border-b border-white/5 pb-3 mb-4">
-              <Sparkles className="h-4.5 w-4.5 text-indigo-400 animate-pulse" />
+          <section className="card-purple rounded-[24px] p-5">
+            <div className="flex items-center gap-2 border-b border-indigo-400/10 pb-3 mb-4">
+              <Sparkles className="h-4.5 w-4.5 text-indigo-400" />
               <h2 className="text-sm font-bold text-white uppercase tracking-wider">AI Recommendations</h2>
             </div>
 

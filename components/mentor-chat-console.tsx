@@ -900,7 +900,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
                   <button
                     type="button"
                     onClick={() => triggerInlineEdit("resume")}
-                    className="inline-flex items-center gap-1 bg-[#091a14] hover:bg-[#0c241c] border border-emerald-500/25 px-3 py-1.5 rounded-xl text-[10px] font-bold text-emerald-300 animate-slide-up"
+                    className="inline-flex items-center gap-1 bg-[#091a14] hover:bg-[#0c241c] border border-emerald-500/25 px-3 py-1.5 rounded-xl text-[10px] font-bold text-emerald-300 transition-colors duration-[120ms]"
                   >
                     <Link2 className="h-3 w-3" />
                     Upload Resume Link
@@ -910,7 +910,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
                   <button
                     type="button"
                     onClick={() => triggerInlineEdit("github")}
-                    className="inline-flex items-center gap-1 bg-[#091a14] hover:bg-[#0c241c] border border-emerald-500/25 px-3 py-1.5 rounded-xl text-[10px] font-bold text-emerald-300 animate-slide-up"
+                    className="inline-flex items-center gap-1 bg-[#091a14] hover:bg-[#0c241c] border border-emerald-500/25 px-3 py-1.5 rounded-xl text-[10px] font-bold text-emerald-300 transition-colors duration-[120ms]"
                   >
                     <Link2 className="h-3 w-3" />
                     Attach GitHub Repo
@@ -920,7 +920,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
 
               {/* Inline connector inputs */}
               {inlineEditAccount && (
-                <div className="flex items-center gap-2 bg-[#08080a] border border-white/10 rounded-xl p-2.5 animate-slide-up shadow-2xl">
+                <div className="flex items-center gap-2 bg-[#08080a] border border-white/10 rounded-xl p-2.5 shadow-2xl">
                   <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider shrink-0 pl-1">
                     {inlineEditAccount === "resume" ? "Resume" : "GitHub"} URL:
                   </span>

@@ -242,7 +242,7 @@ export function ProfileDashboard({ userId, profile, workspace }: ProfileDashboar
       {toastMessage && (
         <div
           role="alert"
-          className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border animate-fade-in shadow-2xl ${
+          className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl ${
             toastMessage.type === "success"
               ? "bg-[#091a14] border-cyan-500/30 text-cyan-200"
               : "bg-[#250d12] border-rose-500/30 text-rose-300"
@@ -461,7 +461,7 @@ export function ProfileDashboard({ userId, profile, workspace }: ProfileDashboar
                     </div>
 
                     {isManaging && (
-                      <div className="flex gap-2 mt-3.5 pt-3.5 border-t border-white/5 animate-fade-in">
+                      <div className="flex gap-2 mt-3.5 pt-3.5 border-t border-white/5">
                         <input
                           type="text"
                           value={account.url}

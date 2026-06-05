@@ -205,7 +205,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
       {toastMessage && (
         <div
           role="alert"
-          className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border animate-fade-in shadow-2xl ${
+          className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl ${
             toastMessage.type === "success"
               ? "bg-[#091a14] border-cyan-500/30 text-cyan-200"
               : "bg-[#250d12] border-rose-500/30 text-rose-300"
@@ -294,7 +294,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
                   </div>
 
                   {isManaging && (
-                    <div className="pt-2 flex gap-2 animate-fade-in mb-3">
+                    <div className="pt-2 flex gap-2 mb-3">
                       <input
                         type="password"
                         value={providerKeys[p.provider]}
@@ -547,7 +547,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
         </button>
 
         {isDangerZoneExpanded && (
-          <div className="mt-4 pt-4 border-t border-rose-500/10 space-y-3.5 text-xs animate-fade-in">
+          <div className="mt-4 pt-4 border-t border-rose-500/10 space-y-3.5 text-xs">
             <div className="flex justify-between items-center bg-rose-500/[0.01] border border-rose-500/10 p-3.5 rounded-xl">
               <div>
                 <span className="font-bold text-white block">Reset Workspace Onboarding</span>
