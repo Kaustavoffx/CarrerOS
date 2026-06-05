@@ -3,10 +3,22 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { UserProfileRecord, WorkspaceSnapshotRecord } from "@/lib/supabase/types";
-import { MagneticButton } from "./magnetic-button";
 import { useAuth } from "./auth-provider";
-import { LogOut, Sparkles, UserCircle2 } from "lucide-react";
-import { FeatureStatusBadge } from "./feature-status";
+import {
+  LogOut,
+  Sparkles,
+  LayoutDashboard,
+  Map,
+  Users,
+  MessageSquare,
+  Settings,
+  UserCircle,
+  ChevronLeft,
+  ChevronRight,
+  Plus
+} from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 type WorkspaceShellProps = {
   profile: UserProfileRecord | null;
@@ -15,18 +27,57 @@ type WorkspaceShellProps = {
 };
 
 const navigation = [
-  { label: "Dashboard", href: "/dashboard" },
-  { label: "Roadmaps", href: "/roadmaps" },
-  { label: "Career Twin", href: "/career-twin" },
-  { label: "AI Mentor", href: "/mentor" },
-  { label: "Settings", href: "/settings" },
-  { label: "Profile", href: "/profile" }
+  { label: "Dashboard",    href: "/dashboard",    icon: LayoutDashboard },
+  { label: "Roadmaps",     href: "/roadmaps",     icon: Map },
+  { label: "Career Twin",  href: "/career-twin",  icon: Users },
+  { label: "AI Mentor",    href: "/mentor",       icon: MessageSquare },
+  { label: "Settings",     href: "/settings",     icon: Settings },
+  { label: "Profile",      href: "/profile",      icon: UserCircle },
 ];
 
-export function WorkspaceShell({ profile, workspace, children }: WorkspaceShellProps) {
+const mobileNav = navigation.slice(0, 5);
+
+function ScoreRing({ score }: { score: number }) {
+  const r = 22;
+  const circumference = 2 * Math.PI * r;
+  const filled = circumference * (score / 100);
+  return (
+    <svg width="56" height="56" viewBox="0 0 56 56" className="shrink-0">
+      <circle cx="28" cy="28" r={r} fill="none" stroke="#141418" strokeWidth="3" />
+      <circle
+        cx="28" cy="28" r={r}
+        fill="none"
+        stroke="#22d3ee"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeDasharray={`${filled} ${circumference}`}
+        strokeDashoffset={circumference * 0.25}
+        style={{ transition: "stroke-dasharray 1s cubic-bezier(0.16,1,0.3,1)" }}
+      />
+      <text x="28" y="32" textAnchor="middle" fontSize="11" fontWeight="600" fill="#22d3ee">
+        {score > 0 ? `${score}` : "—"}
+      </text>
+    </svg>
+  );
+}
+
+function AvatarCircle({ name }: { name: string | null }) {
+  const initials = name
+    ? name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()
+    : "?";
+  return (
+    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500/20 to-indigo-500/20 border border-cyan-500/25 text-xs font-bold text-cyan-300 shrink-0">
+      {initials}
+    </div>
+  );
+}
+
+export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { signOut } = useAuth();
+  const [collapsed, setCollapsed] = useState(false);
+  const score = profile?.readiness_score ?? 0;
 
   async function handleSignOut() {
     await signOut();
@@ -35,87 +86,207 @@ export function WorkspaceShell({ profile, workspace, children }: WorkspaceShellP
   }
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-b from-[#050505] via-[#080808] to-[#0a0a0a] text-white">
-      <div className="pointer-events-none fixed inset-0 opacity-[0.03] [background-image:radial-gradient(rgba(255,255,255,0.04)_1px,transparent_1px)] [background-size:28px_28px]" />
-      <aside className="fixed left-0 top-0 z-30 hidden h-screen w-[18rem] border-r border-[#141417] bg-[#08080a] px-6 py-6 xl:flex xl:flex-col">
-        <div className="flex items-center gap-3 px-1">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#202028] bg-gradient-to-b from-[#141418] to-[#0a0a0c] text-cyan-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_8px_20px_rgba(0,0,0,0.8)]">
-            <Sparkles className="h-5 w-5 animate-pulse" />
+    <div className="relative min-h-screen bg-[#050505] text-white overflow-x-hidden">
+      {/* Subtle dot-grid background */}
+      <div className="pointer-events-none fixed inset-0 opacity-[0.025] [background-image:radial-gradient(rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:28px_28px]" />
+
+      {/* ── DESKTOP SIDEBAR ── */}
+      <motion.aside
+        animate={{ width: collapsed ? "4.5rem" : "15rem" }}
+        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        className="fixed left-0 top-0 z-30 hidden h-screen flex-col border-r border-[#141417] bg-[#07070a] xl:flex overflow-hidden"
+      >
+        {/* Logo row */}
+        <div className={`flex items-center gap-3 px-4 py-5 border-b border-[#141417] ${collapsed ? "justify-center" : ""}`}>
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#202028] bg-gradient-to-b from-[#141418] to-[#0a0a0c] text-cyan-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
+            <Sparkles className="h-4 w-4" />
           </div>
-          <div>
-            <p className="text-card font-medium tracking-[0.08em] text-white">CareerOS</p>
-            <p className="caption text-slate-500">Private workspace</p>
-          </div>
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.div
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -8 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <p className="text-sm font-semibold tracking-wide text-white">CareerOS</p>
+                <p className="text-[10px] uppercase tracking-widest text-slate-500">Workspace</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        <nav className="mt-10 space-y-2">
+        {/* Career score ring */}
+        <AnimatePresence>
+          {!collapsed && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.25 }}
+              className="mx-4 mt-5 flex items-center gap-3 rounded-2xl border border-[#141417] bg-[#08080a] p-3"
+            >
+              <ScoreRing score={score} />
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-widest text-slate-500">Readiness</p>
+                <p className="mt-0.5 text-sm font-semibold text-white truncate">
+                  {score > 0 ? `${score} / 100` : "Coming Soon"}
+                </p>
+                <p className="text-[10px] text-slate-500 truncate">{profile?.goal ?? "Set your goal"}</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Nav */}
+        <nav className={`mt-5 flex-1 space-y-1 px-2 ${collapsed ? "px-1.5" : ""}`}>
           {navigation.map((item) => {
             const active = pathname === item.href;
+            const Icon = item.icon;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center justify-between rounded-2xl border px-4 py-2.5 text-sm transition duration-200 ${
+                title={collapsed ? item.label : undefined}
+                className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200 ${
+                  collapsed ? "justify-center" : ""
+                } ${
                   active
-                      ? "border-[#202028] bg-gradient-to-b from-[#16161c] to-[#0a0a0c] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12),inset_0_-1px_1px_rgba(0,0,0,0.8)]"
-                      : "border-transparent text-slate-400 hover:border-[#16161c] hover:bg-[#0c0c0e] hover:text-white"
+                    ? "bg-[#0d1117] text-white"
+                    : "text-slate-500 hover:bg-[#0d0d10] hover:text-slate-300"
                 }`}
               >
-                <span>{item.label}</span>
-                {active ? <span className="h-2 w-2 rounded-full bg-cyan-300" /> : null}
+                {/* Active left-bar indicator */}
+                {active && (
+                  <motion.span
+                    layoutId="sidebar-active-bar"
+                    className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-cyan-400"
+                    transition={{ type: "spring", stiffness: 400, damping: 35 }}
+                  />
+                )}
+                <Icon className={`h-4 w-4 shrink-0 transition ${active ? "text-cyan-300" : "text-slate-500 group-hover:text-slate-300"}`} />
+                <AnimatePresence>
+                  {!collapsed && (
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                      className="font-medium truncate"
+                    >
+                      {item.label}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+                {active && !collapsed && (
+                  <span className="ml-auto h-1.5 w-1.5 rounded-full bg-cyan-400 shrink-0" />
+                )}
               </Link>
             );
           })}
         </nav>
 
-        <div className="mt-auto space-y-4 rounded-[24px] border border-[#141417] bg-gradient-to-b from-[#08080a] to-[#050506] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),inset_0_-1px_1px_rgba(0,0,0,0.9)]">
-          <div>
-            <p className="caption text-slate-500">Signed in as</p>
-            <p className="mt-2 body font-medium text-white">{profile?.full_name ?? "Your profile"}</p>
-            <p className="mt-1 small text-slate-400">{profile?.goal ?? "Set your goal in onboarding"}</p>
-          </div>
-          <MagneticButton
-            type="button"
-            onClick={handleSignOut}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium tactile-btn text-slate-200"
-          >
-            <LogOut className="h-4 w-4" />
-            Sign out
-          </MagneticButton>
-        </div>
-      </aside>
-
-      <div className="xl:pl-[18rem]">
-        <header className="sticky top-0 z-20 border-b border-[#141417] bg-[#050505] px-6 py-4 sm:px-8 lg:px-10 xl:px-12">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-            <div>
-              <p className="caption text-cyan-400">Private workspace</p>
-              <h1 className="mt-2 heading-dashboard text-white">
-                {navigation.find((item) => item.href === pathname)?.label ?? "Dashboard"}
-              </h1>
-              <p className="mt-1 small text-slate-500 font-medium">
-                {workspace?.roadmaps.length ? `${workspace.roadmaps.length} saved roadmap${workspace.roadmaps.length === 1 ? "" : "s"}` : "Coming Soon"}
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="hidden rounded-full border border-[#141417] bg-gradient-to-b from-[#08080a] to-[#050506] px-4 py-2 small text-slate-400 md:block shadow-[inset_0_1px_0_rgba(255,255,255,0.06),inset_0_-1px_1px_rgba(0,0,0,0.9)]">
-                Readiness score: <span className="text-cyan-300 font-medium">{profile?.readiness_score ? profile.readiness_score : "Coming Soon"}</span>
+        {/* Profile footer */}
+        <div className={`m-3 mt-0 rounded-2xl border border-[#141417] bg-[#08080a] p-3 ${collapsed ? "flex justify-center" : ""}`}>
+          {collapsed ? (
+            <AvatarCircle name={profile?.full_name ?? null} />
+          ) : (
+            <div className="flex items-center gap-2.5">
+              <AvatarCircle name={profile?.full_name ?? null} />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-white truncate">{profile?.full_name ?? "Your profile"}</p>
+                <p className="text-[10px] text-slate-500 truncate">{profile?.experience_level ?? "Student"}</p>
               </div>
-              <FeatureStatusBadge status="coming-soon" featureName="Career Intelligence" />
-              <MagneticButton
+              <button
                 type="button"
-                onClick={() => router.push("/profile")}
-                className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium tactile-btn text-slate-200"
+                onClick={handleSignOut}
+                title="Sign out"
+                className="rounded-lg p-1.5 text-slate-500 hover:bg-[#141417] hover:text-rose-400 transition shrink-0"
               >
-                <UserCircle2 className="h-4 w-4" />
-                Profile
-              </MagneticButton>
+                <LogOut className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Collapse toggle */}
+        <button
+          type="button"
+          onClick={() => setCollapsed(c => !c)}
+          className="absolute -right-3 top-20 z-40 flex h-6 w-6 items-center justify-center rounded-full border border-[#202028] bg-[#08080a] text-slate-400 hover:text-cyan-300 transition shadow-md"
+        >
+          {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
+        </button>
+      </motion.aside>
+
+      {/* ── MAIN CONTENT AREA ── */}
+      <motion.div
+        animate={{ paddingLeft: collapsed ? "4.5rem" : "15rem" }}
+        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        className="hidden xl:block"
+      >
+        <main className="mx-auto max-w-7xl px-8 py-8 pb-24">{children}</main>
+      </motion.div>
+
+      {/* Non-xl fallback (tablet / mobile) */}
+      <div className="xl:hidden">
+        {/* Top header for tablet */}
+        <header className="sticky top-0 z-20 border-b border-[#141417] bg-[#050505]/95 backdrop-blur-sm px-5 py-3.5">
+          <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-[#202028] bg-gradient-to-b from-[#141418] to-[#0a0a0c] text-cyan-300">
+                <Sparkles className="h-3.5 w-3.5" />
+              </div>
+              <span className="text-sm font-semibold text-white">CareerOS</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {score > 0 && (
+                <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-300">
+                  {score} / 100
+                </span>
+              )}
+              <AvatarCircle name={profile?.full_name ?? null} />
             </div>
           </div>
         </header>
-
-        <main className="mx-auto max-w-7xl px-6 py-8 sm:px-8 lg:px-10 xl:px-12">{children}</main>
+        <main className="mx-auto max-w-5xl px-5 py-6 pb-28">{children}</main>
       </div>
+
+      {/* ── MOBILE STICKY BOTTOM NAV ── */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 flex xl:hidden border-t border-[#141417] bg-[#07070a]/95 backdrop-blur-md">
+        {mobileNav.map((item) => {
+          const active = pathname === item.href;
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`relative flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-medium transition ${
+                active ? "text-cyan-300" : "text-slate-500 hover:text-slate-300"
+              }`}
+            >
+              {active && (
+                <motion.span
+                  layoutId="mobile-active-pill"
+                  className="absolute top-0 left-1/2 -translate-x-1/2 h-0.5 w-8 rounded-full bg-cyan-400"
+                  transition={{ type: "spring", stiffness: 500, damping: 40 }}
+                />
+              )}
+              <Icon className="h-5 w-5" />
+              <span className="hidden sm:block">{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* ── MOBILE FLOATING QUICK ACTION ── */}
+      <Link
+        href="/roadmaps"
+        className="fixed bottom-20 right-5 z-50 xl:hidden flex h-12 w-12 items-center justify-center rounded-full border border-cyan-400/30 bg-cyan-400 text-black shadow-[0_8px_24px_rgba(34,211,238,0.35)] hover:scale-110 active:scale-95 transition-transform"
+      >
+        <Plus className="h-5 w-5" />
+      </Link>
     </div>
   );
 }
