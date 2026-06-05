@@ -566,15 +566,6 @@ function textContainsAny(text: string, keywords: string[]) {
   return keywords.some((keyword) => normalized.includes(keyword));
 }
 
-function textContainsAnyNegative(text: string, keywords: string[]) {
-  const normalized = normalizeText(text);
-  return keywords.some((keyword) => {
-    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const regex = new RegExp(`(^|\\W)${escaped}(\\W|$)`, "i");
-    return regex.test(normalized);
-  });
-}
-
 function roadmapTextBlob(roadmap: RoadmapRecord) {
   const milestones = toArray<RoadmapMilestoneRecord>(roadmap.milestones);
   const learning_outcomes = toArray<string>(roadmap.learning_outcomes);
@@ -1440,11 +1431,59 @@ export function validateGeneratedRoadmap(
   };
 }
 
+export function detectCrossDomainContamination(
+  roadmap: RoadmapRecord,
+  goalOrProfile: string | DomainProfile
+): {
+  matchedKeywords: string[];
+  matchedDomain: string;
+  penalty: number;
+} {
+  const profile = typeof goalOrProfile === "string" ? resolveDomainProfile(goalOrProfile) : goalOrProfile;
+  const disallowedKeywords = getDisallowedKeywords(profile);
+  const textBlob = roadmapTextBlob(roadmap);
+  
+  const matchedKeywords: string[] = [];
+  disallowedKeywords.forEach((keyword) => {
+    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(^|\\W)${escaped}(\\W|$)`, "i");
+    if (regex.test(textBlob)) {
+      matchedKeywords.push(keyword);
+    }
+  });
+
+  let matchedDomain = "";
+  DOMAIN_LIBRARY.forEach((dom) => {
+    if (dom.label !== profile.label) {
+      dom.aliases.forEach((alias) => {
+        const escaped = alias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const regex = new RegExp(`(^|\\W)${escaped}(\\W|$)`, "i");
+        if (regex.test(textBlob)) {
+          matchedDomain = dom.label;
+        }
+      });
+    }
+  });
+
+  const penalty = matchedKeywords.length > 0 ? 18 : 0;
+
+  console.log("CONTAMINATION AUDIT", {
+    matchedKeywordCount: matchedKeywords.length,
+    matchedDomain,
+    penalty
+  });
+
+  return {
+    matchedKeywords,
+    matchedDomain,
+    penalty
+  };
+}
+
 export function auditRoadmapQuality(roadmaps: unknown, goalOrProfile: string | DomainProfile) {
   const profile = typeof goalOrProfile === "string" ? pickDomain(goalOrProfile) : goalOrProfile;
   const safeRoadmaps = toArray<RoadmapRecord>(roadmaps);
   const domainKeywords = getDomainKeywords(profile);
-  const disallowedKeywords = getDisallowedKeywords(profile);
   const allowedProviders = getAllowedProviders(profile);
 
   if (!safeRoadmaps.length) {
@@ -1482,8 +1521,9 @@ export function auditRoadmapQuality(roadmaps: unknown, goalOrProfile: string | D
     });
 
     const textBlob = roadmapTextBlob(roadmap);
-    if (textContainsAnyNegative(textBlob, disallowedKeywords)) {
-      score -= 18;
+    const contamination = detectCrossDomainContamination(roadmap, profile);
+    if (contamination.penalty > 0) {
+      score -= contamination.penalty;
       reasons.push(`Cross-domain contamination in roadmap: ${roadmap.title}`);
     }
 

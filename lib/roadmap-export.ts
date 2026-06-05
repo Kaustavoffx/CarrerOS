@@ -169,7 +169,59 @@ export function wrapText(text: string, maxWidth: number, doc?: unknown): string[
 }
 
 export function formatAndWrapUrl(url: string, maxWidth: number, doc?: unknown, maxLines = 2): string[] {
-  let lines = wrapText(url, maxWidth, doc);
+  const safeDoc = doc as { getTextWidth?: (t: string) => number } | null | undefined;
+  const getWidth = (t: string): number => {
+    if (safeDoc && typeof safeDoc.getTextWidth === "function") {
+      return safeDoc.getTextWidth(t);
+    }
+    return t.length * 5.5;
+  };
+
+  const regex = /([a-zA-Z0-9]+|[^a-zA-Z0-9])/g;
+  const tokens = url.match(regex) || [url];
+  
+  let lines: string[] = [];
+  let currentLine = "";
+  
+  for (const token of tokens) {
+    const testLine = currentLine + token;
+    if (getWidth(testLine) <= maxWidth) {
+      currentLine = testLine;
+    } else {
+      if (currentLine) {
+        lines.push(currentLine);
+        currentLine = "";
+      }
+      if (getWidth(token) > maxWidth) {
+        let remaining = token;
+        while (remaining.length > 0) {
+          let low = 1;
+          let high = remaining.length;
+          let bestLen = 0;
+          while (low <= high) {
+            const mid = Math.floor((low + high) / 2);
+            const chunk = remaining.slice(0, mid);
+            if (getWidth(chunk) <= maxWidth) {
+              bestLen = mid;
+              low = mid + 1;
+            } else {
+              high = mid - 1;
+            }
+          }
+          if (bestLen === 0) bestLen = 1;
+          lines.push(remaining.slice(0, bestLen));
+          remaining = remaining.slice(bestLen);
+        }
+      } else {
+        currentLine = token;
+      }
+    }
+  }
+  
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
   if (lines.length > maxLines) {
     lines = lines.slice(0, maxLines);
     const lastLine = lines[maxLines - 1];
@@ -1055,7 +1107,49 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     ensureSpace(overviewH + 8);
     drawRoundedCard(margins.left, y, halfColW, overviewH, 4, 4, "F");
     drawText("CORE TECHNICAL SKILLS", margins.left + 8, y + 12, { fontSize: fontSizes.meta, fontColor: "#0cc6d8" });
-    drawWrappedText("Skills: Design, components, and APIs\nPractice: Rehearse weekly syntax drills", margins.left + 8, y + 21, halfColW - 16, fontSizes.body - 1, { fontColor: "#94a3b8" });
+    
+    // Generate sprint-specific content dynamically using milestone data
+    let skillsText = "Design, components, and APIs";
+    let practiceText = "Rehearse weekly syntax drills";
+    
+    const isSoftwareEngineering = safeRoadmaps[0]?.career_domain === "Software Engineering" || 
+      String(safeRoadmaps[0]?.career_domain || "").toLowerCase().includes("software") ||
+      String(safeRoadmaps[0]?.career_domain || "").toLowerCase().includes("sde");
+      
+    const allMilestonesText = sprint.milestones.map(m => ((m.title || "") + " " + (m.why_it_matters || "")).toLowerCase()).join(" ");
+    
+    if (isSoftwareEngineering) {
+      if (sIndex === 0 || allMilestonesText.includes("fundamentals") || allMilestonesText.includes("git")) {
+        skillsText = "Variables, Loops, Functions, Git";
+        practiceText = "Programming exercises";
+      } else if (sIndex === 1 || allMilestonesText.includes("react") || allMilestonesText.includes("database") || allMilestonesText.includes("backend") || allMilestonesText.includes("api")) {
+        skillsText = "React, APIs, TypeScript, Databases";
+        practiceText = "Full-stack projects";
+      } else if (sIndex === 2 || allMilestonesText.includes("system design") || allMilestonesText.includes("scale") || allMilestonesText.includes("caching")) {
+        skillsText = "System Design, Scalability, Caching";
+        practiceText = "Mock interviews";
+      }
+    } else {
+      // Fallback for other domains using milestone titles and projects
+      const titles = sprint.milestones.map(m => m.title).filter(Boolean);
+      if (titles.length > 0) {
+        skillsText = titles.join(", ");
+        if (skillsText.length > 50) {
+          skillsText = skillsText.substring(0, 47) + "...";
+        }
+      }
+      const allProjects = sprint.milestones.flatMap(m => getSafeArray<string>(m.projects)).filter(Boolean);
+      if (allProjects.length > 0) {
+        practiceText = `Projects: ${allProjects.slice(0, 2).join(", ")}`;
+        if (practiceText.length > 55) {
+          practiceText = practiceText.substring(0, 52) + "...";
+        }
+      } else {
+        practiceText = "Practice key exercises weekly";
+      }
+    }
+
+    drawWrappedText(`Skills: ${skillsText}\nPractice: ${practiceText}`, margins.left + 8, y + 21, halfColW - 16, fontSizes.body - 1, { fontColor: "#94a3b8" });
 
     drawRoundedCard(margins.left + halfColW + 12, y, halfColW, overviewH, 4, 4, "F");
     drawText("CAPSTONE PROJECTS", margins.left + halfColW + 20, y + 12, { fontSize: fontSizes.meta, fontColor: "#0cc6d8" });
@@ -1100,7 +1194,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     drawSectionDivider();
 
     // Sprint bibliography / resources
-    drawSectionTitle("RECOMMENDED LEARNING & ACADEMIC DIRECTORY");
+    drawSectionTitle("RECOMMENDED LEARNING RESOURCES");
     drawSectionHelpCard("Resources", "Curated directory of learning links.", "Replaces unstructured search with verified platforms.", "Complete the linked tutorials.");
 
     const resourceLinks = sprint.milestones.flatMap(m => getSafeArray<RoadmapResourceLink>(m.resource_links));
