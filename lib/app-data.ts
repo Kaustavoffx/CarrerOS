@@ -671,7 +671,7 @@ export async function seedWorkspace(client: SupabaseClient, userId: string, full
   }
 }
 
-export async function updateProfile(client: SupabaseClient, userId: string, patch: Partial<Pick<UserProfileRecord, "full_name" | "avatar_url" | "goal" | "readiness_score" | "experience_level" | "onboarding_complete">>) {
+export async function updateProfile(client: SupabaseClient, userId: string, patch: Partial<UserProfileRecord>) {
   const payload = {
     id: userId,
     updated_at: new Date().toISOString(),

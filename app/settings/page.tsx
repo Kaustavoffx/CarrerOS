@@ -11,6 +11,8 @@ export default async function SettingsPage() {
   let profile = null;
   let workspace = null;
   let aiProviders: AiProviderStatusRecord[] = [];
+  let userEmail: string | null = null;
+  let userId = "";
 
   if (hasSupabaseConfig()) {
     const supabase = await getSupabaseServerClient();
@@ -26,6 +28,9 @@ export default async function SettingsPage() {
     if (!user) {
       redirect("/login");
     }
+
+    userEmail = user.email ?? null;
+    userId = user.id;
 
     const data = await loadAppData(supabase, user.id);
     profile = data.profile;
@@ -45,6 +50,8 @@ export default async function SettingsPage() {
         profile={profile}
         workspace={workspace}
         initialProviders={aiProviders}
+        userEmail={userEmail}
+        userId={userId}
       />
     </WorkspaceShell>
   );
