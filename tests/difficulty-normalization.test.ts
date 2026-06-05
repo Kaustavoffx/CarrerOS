@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { normalizeDifficulty, normalizeRawPayloadDifficulty } from "../lib/app-data";
+import { normalizeDifficulty, normalizeRawPayloadDifficulty, normalizeRoadmap, auditRoadmapCollection } from "../lib/app-data";
 import { wrapText, formatAndWrapUrl } from "../lib/roadmap-export";
 
 test("normalizeDifficulty maps terms correctly and is case/whitespace-insensitive", () => {
@@ -163,4 +163,121 @@ test("formatAndWrapUrl wraps and truncates long URLs to a line limit", () => {
   const lines = formatAndWrapUrl(url, 120, null, 2);
   assert.equal(lines.length, 2);
   assert.ok(lines[1].endsWith("..."));
+});
+
+test("auditRoadmapCollection correctly audits unwrapped roadmaps from version containers", () => {
+  const mockRoadmap = {
+    id: "roadmap-1",
+    title: "Software Engineering Roadmap",
+    status: "Planned",
+    summary: "Learn programming fundamentals and system design",
+    owner: "You",
+    progress: 10,
+    career_domain: "Software Engineering",
+    career_demand_score: 95.4,
+    demand_score: 95.4,
+    market_outlook: "Strong",
+    salary_range: "$80k-$120k",
+    automation_risk: "Low",
+    roadmap_version: 1,
+    generated_at: new Date().toISOString(),
+    ai_reasoning: "Reasoning here",
+    weekly_schedule: ["4h practice"],
+    learning_outcomes: ["outcomes"],
+    total_duration_weeks: 12,
+    weekly_hours: 15,
+    estimated_completion_date: "2026-09-01",
+    resource_links: [{ label: "Resource", url: "https://example.com", provider: "Provider" }],
+    project_tasks: ["task"],
+    expected_outcomes: ["outcomes"],
+    milestones: [
+      {
+        title: "Milestone 1",
+        why_it_matters: "Why",
+        estimated_duration_weeks: 2,
+        difficulty_level: "Beginner",
+        completion_criteria: [],
+        resource_links: [],
+        projects: [],
+        project_tasks: [],
+        deliverables: [],
+        expected_outcomes: []
+      }
+    ],
+    updated_at: new Date().toISOString()
+  };
+
+  const versionContainer = {
+    id: "version-1",
+    user_id: "user-123",
+    roadmap_version: 1,
+    career_goal: "SDE I",
+    career_domain: "Software Engineering",
+    generated_at: new Date().toISOString(),
+    ai_reasoning: "Reasoning",
+    roadmaps: [mockRoadmap],
+    progress: 10,
+    updated_at: new Date().toISOString()
+  };
+
+  const unwrappedRoadmaps = [versionContainer].map((v) => v.roadmaps[0]);
+  const auditReport = auditRoadmapCollection(unwrappedRoadmaps);
+
+  assert.equal(auditReport.legacy, 0);
+  assert.equal(auditReport.invalid, 0);
+  assert.ok(auditReport.qualityScore >= 90);
+});
+
+test("normalizeRoadmap correctly rounds floating point demand scores", () => {
+  const rawRoadmapBase = {
+    title: "Software Engineering Roadmap",
+    status: "Planned",
+    summary: "Learn programming fundamentals and system design",
+    owner: "You",
+    progress: 10,
+    career_domain: "Software Engineering",
+    market_outlook: "Strong",
+    salary_range: "$80k-$120k",
+    automation_risk: "Low",
+    roadmap_version: 1,
+    generated_at: new Date().toISOString(),
+    ai_reasoning: "Reasoning here",
+    weekly_schedule: ["4h practice"],
+    learning_outcomes: ["outcomes"],
+    total_duration_weeks: 12,
+    weekly_hours: 15,
+    estimated_completion_date: "2026-09-01",
+    resource_links: [{ label: "Resource", url: "https://example.com", provider: "Provider" }],
+    project_tasks: ["task"],
+    expected_outcomes: ["outcomes"],
+    milestones: [
+      {
+        title: "Milestone 1",
+        why_it_matters: "Why",
+        estimated_duration_weeks: 2,
+        difficulty_level: "Beginner",
+        completion_criteria: [],
+        resource_links: [],
+        projects: [],
+        project_tasks: [],
+        deliverables: [],
+        expected_outcomes: []
+      }
+    ],
+    updated_at: new Date().toISOString()
+  };
+
+  const normalized1 = normalizeRoadmap({
+    ...rawRoadmapBase,
+    career_demand_score: 95.4
+  });
+  assert.equal(normalized1.career_demand_score, 95);
+  assert.equal(normalized1.demand_score, 95);
+
+  const normalized2 = normalizeRoadmap({
+    ...rawRoadmapBase,
+    demand_score: 95.6
+  });
+  assert.equal(normalized2.career_demand_score, 96);
+  assert.equal(normalized2.demand_score, 96);
 });

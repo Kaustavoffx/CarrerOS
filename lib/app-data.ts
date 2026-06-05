@@ -239,8 +239,8 @@ export function migrateLegacyRoadmap(roadmap: unknown): RoadmapRecord {
     owner: toStringValue(legacy.owner, generated.owner),
     progress: Math.min(100, Math.max(0, toPositiveNumber(legacy.progress, generated.progress))),
     career_domain: toStringValue(legacy.career_domain, generated.career_domain),
-    career_demand_score: toPositiveNumber(legacy.career_demand_score ?? legacy.demand_score, generated.career_demand_score),
-    demand_score: toPositiveNumber(legacy.career_demand_score ?? legacy.demand_score, generated.career_demand_score),
+    career_demand_score: Math.round(toPositiveNumber(legacy.career_demand_score ?? legacy.demand_score, generated.career_demand_score)),
+    demand_score: Math.round(toPositiveNumber(legacy.career_demand_score ?? legacy.demand_score, generated.career_demand_score)),
     market_outlook: toStringValue(legacy.market_outlook, generated.market_outlook),
     salary_range: toStringValue(legacy.salary_range, generated.salary_range),
     automation_risk: toStringValue(legacy.automation_risk, generated.automation_risk),
@@ -261,7 +261,7 @@ export function migrateLegacyRoadmap(roadmap: unknown): RoadmapRecord {
   };
 
   if (!validation.isValid) {
-    console.error("ROADMAP MIGRATION NEEDED", {
+    console.info("ROADMAP MIGRATION NEEDED", {
       missingFields: validation.missingFields,
       qualityScore: validation.qualityScore,
       roadmap: legacy
@@ -355,7 +355,7 @@ function normalizeMilestone(value: unknown): RoadmapMilestoneRecord {
   };
 }
 
-function normalizeRoadmap(value: unknown): RoadmapRecord {
+export function normalizeRoadmap(value: unknown): RoadmapRecord {
   const roadmap = (value ?? {}) as Partial<RoadmapRecord> & {
     description?: unknown;
     duration_weeks?: unknown;
@@ -376,8 +376,8 @@ function normalizeRoadmap(value: unknown): RoadmapRecord {
     owner: toStringValue(roadmap.owner, "You"),
     progress: Math.min(100, Math.max(0, toPositiveNumber(roadmap.progress, 0))),
     career_domain: toStringValue(roadmap.career_domain, "general"),
-    career_demand_score: toPositiveNumber(roadmap.career_demand_score ?? roadmap.demand_score, 0),
-    demand_score: toPositiveNumber(roadmap.career_demand_score ?? roadmap.demand_score, 0),
+    career_demand_score: Math.round(toPositiveNumber(roadmap.career_demand_score ?? roadmap.demand_score, 0)),
+    demand_score: Math.round(toPositiveNumber(roadmap.career_demand_score ?? roadmap.demand_score, 0)),
     market_outlook: toStringValue(roadmap.market_outlook, "Not available"),
     salary_range: toStringValue(roadmap.salary_range, "Not available"),
     automation_risk: toStringValue(roadmap.automation_risk, "Not available"),
@@ -570,7 +570,11 @@ export async function loadAppData(client: SupabaseClient, userId: string): Promi
     sources: {
       roadmapsTable: auditRoadmapCollection(roadmapRowsResult.data),
       workspaceState: auditRoadmapCollection(workspaceResult.data?.roadmaps),
-      roadmapVersions: auditRoadmapCollection(roadmapHistoryResult.data)
+      roadmapVersions: auditRoadmapCollection(
+        toArray<RoadmapVersionRecord>(roadmapHistoryResult.data)
+          .map((v) => toArray<RoadmapRecord>(v?.roadmaps)[0])
+          .filter(Boolean)
+      )
     },
     legacyRoadmapCount: 0,
     migratedRoadmapCount: 0,
