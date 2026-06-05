@@ -1,21 +1,22 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, Sparkles, Trash2, Check, TrendingUp, X, PlusCircle,
-  Target, ChevronDown, ChevronUp, Search, Clock, Flame,
-  Activity, Zap, BookOpen, GitBranch, MessageSquare, Star, MapPin,
-  DollarSign, Bookmark
+  Search, Flame, Activity, BookOpen, MessageSquare, MapPin,
+  DollarSign, Bookmark, AlertTriangle, Archive
 } from "lucide-react";
-import { MagneticButton } from "./magnetic-button";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { generateId } from "@/lib/id";
 import { updateWorkspace } from "@/lib/app-data";
-import type { NoteRecord, ProgressRecord, UserProfileRecord, WorkspaceSnapshotRecord, RoadmapRecord } from "@/lib/supabase/types";
+import type {
+  NoteRecord, ProgressRecord, UserProfileRecord,
+  WorkspaceSnapshotRecord
+} from "@/lib/supabase/types";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type DashboardWorkspaceProps = {
   profile: UserProfileRecord | null;
@@ -24,31 +25,27 @@ type DashboardWorkspaceProps = {
 
 type KanbanColumn = "upcoming" | "inprogress" | "completed";
 
-interface KanbanCard {
-  id: string;
-  title: string;
-  summary: string;
-  progress: number;
-  effort: string;
-  resourceCount: number;
-  column: KanbanColumn;
+type MilestoneStatus = "completed" | "active" | "upcoming";
+
+function getMilestoneStatus(idx: number, completedCount: number, total: number): MilestoneStatus {
+  if (idx < completedCount) return "completed";
+  if (idx === Math.min(completedCount, total - 1)) return "active";
+  return "upcoming";
 }
 
-interface ActivityItem {
-  id: string;
-  icon: React.FC<{ className?: string }>;
-  color: string;
-  label: string;
-  time: string;
-}
+const COLUMN_META: Record<KanbanColumn, { label: string; accent: string; bg: string }> = {
+  upcoming:   { label: "Upcoming",    accent: "text-slate-400",  bg: "bg-slate-500/10" },
+  inprogress: { label: "In Progress", accent: "text-amber-300",  bg: "bg-amber-500/10" },
+  completed:  { label: "Completed",   accent: "text-emerald-300",bg: "bg-emerald-500/10" },
+};
 
 // ─── SVG Progress Ring ────────────────────────────────────────────────────────
 
 function ProgressRing({
   value,
   max = 100,
-  size = 120,
-  strokeWidth = 8,
+  size = 140,
+  strokeWidth = 10,
   color = "#22d3ee",
   trackColor = "#141418",
   label,
@@ -69,10 +66,8 @@ function ProgressRing({
   const pct = Math.min(value / max, 1);
 
   useEffect(() => {
-    const raf = requestAnimationFrame(() => {
-      setTimeout(() => setAnimated(pct), 80);
-    });
-    return () => cancelAnimationFrame(raf);
+    const t = setTimeout(() => setAnimated(pct), 100);
+    return () => clearTimeout(t);
   }, [pct]);
 
   return (
@@ -90,11 +85,11 @@ function ProgressRing({
       />
       {label !== undefined && (
         <>
-          <text x={size / 2} y={size / 2 - 4} textAnchor="middle" fontSize="15" fontWeight="700" fill="#ffffff">
+          <text x={size / 2} y={size / 2 - 4} textAnchor="middle" fontSize="18" fontWeight="800" fill="#ffffff">
             {label}
           </text>
           {sublabel && (
-            <text x={size / 2} y={size / 2 + 14} textAnchor="middle" fontSize="9" fill="#64748b" letterSpacing="0.08em">
+            <text x={size / 2} y={size / 2 + 14} textAnchor="middle" fontSize="9" fill="#64748b" letterSpacing="0.08em" fontWeight="bold">
               {sublabel.toUpperCase()}
             </text>
           )}
@@ -104,52 +99,41 @@ function ProgressRing({
   );
 }
 
-// ─── Small metric ring ────────────────────────────────────────────────────────
+// ─── Microinteraction Confetti ────────────────────────────────────────────────
 
-function SmallRing({ value, color = "#22d3ee" }: { value: number; color?: string }) {
-  const [animated, setAnimated] = useState(0);
-  const r = 18;
-  const circumference = 2 * Math.PI * r;
-
-  useEffect(() => {
-    const t = setTimeout(() => setAnimated(value / 100), 200);
-    return () => clearTimeout(t);
-  }, [value]);
-
+const Confetti = () => {
+  const particles = Array.from({ length: 45 });
   return (
-    <svg width="48" height="48" viewBox="0 0 48 48" className="shrink-0">
-      <circle cx="24" cy="24" r={r} fill="none" stroke="#141418" strokeWidth="3.5" />
-      <circle
-        cx="24" cy="24" r={r}
-        fill="none" stroke={color} strokeWidth="3.5"
-        strokeLinecap="round"
-        strokeDasharray={`${animated * circumference} ${circumference}`}
-        strokeDashoffset={circumference * 0.25}
-        style={{ transition: "stroke-dasharray 1s cubic-bezier(0.16,1,0.3,1)" }}
-      />
-      <text x="24" y="28" textAnchor="middle" fontSize="10" fontWeight="700" fill="#ffffff">{value}</text>
-    </svg>
+    <div className="fixed inset-0 pointer-events-none z-[100] overflow-hidden">
+      {particles.map((_, i) => {
+        const x = Math.random() * 100;
+        const size = Math.random() * 8 + 6;
+        const color = ["#22d3ee", "#818cf8", "#f59e0b", "#10b981", "#ec4899"][Math.floor(Math.random() * 5)];
+        const delay = Math.random() * 0.4;
+        const duration = Math.random() * 2 + 1.5;
+        return (
+          <motion.div
+            key={i}
+            initial={{ y: "105vh", x: `${x}vw`, rotate: 0, opacity: 1 }}
+            animate={{
+              y: "-10vh",
+              x: `${x + (Math.random() * 30 - 15)}vw`,
+              rotate: Math.random() * 360 + 360,
+              opacity: 0
+            }}
+            transition={{ duration, delay, ease: "easeOut" }}
+            className="absolute"
+            style={{
+              width: size,
+              height: size,
+              backgroundColor: color,
+              borderRadius: Math.random() > 0.5 ? "50%" : "3px",
+            }}
+          />
+        );
+      })}
+    </div>
   );
-}
-
-// ─── Kanban column helper ─────────────────────────────────────────────────────
-
-function roadmapsToKanban(roadmaps: RoadmapRecord[]): KanbanCard[] {
-  return roadmaps.map((r) => ({
-    id: r.id,
-    title: r.title,
-    summary: r.summary,
-    progress: r.progress,
-    effort: `${r.total_duration_weeks ?? r.duration_weeks ?? 4}w`,
-    resourceCount: r.resource_links?.length ?? 0,
-    column: r.progress >= 100 ? "completed" : r.progress > 0 ? "inprogress" : "upcoming",
-  }));
-}
-
-const COLUMN_META: Record<KanbanColumn, { label: string; accent: string; bg: string }> = {
-  upcoming:   { label: "Upcoming",    accent: "text-slate-400",  bg: "bg-slate-500/10" },
-  inprogress: { label: "In Progress", accent: "text-amber-300",  bg: "bg-amber-500/10" },
-  completed:  { label: "Completed",   accent: "text-emerald-300",bg: "bg-emerald-500/10" },
 };
 
 // ─── Main Component ────────────────────────────────────────────────────────────
@@ -157,35 +141,52 @@ const COLUMN_META: Record<KanbanColumn, { label: string; accent: string; bg: str
 export function DashboardWorkspace({ profile, workspace: initialWorkspace }: DashboardWorkspaceProps) {
   const [workspace, setWorkspace] = useState<WorkspaceSnapshotRecord | null>(initialWorkspace);
 
-  // Modals
+  // Redesigned Modals & Drawer states
   const [noteModalOpen, setNoteModalOpen] = useState(false);
   const [progressModalOpen, setProgressModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
 
-  // Notes form
+  // Opportunities Drawer: Notes and search state
   const [noteTitle, setNoteTitle] = useState("");
   const [noteContent, setNoteContent] = useState("");
   const [noteTag, setNoteTag] = useState("Strategy");
-  const [notesExpanded, setNotesExpanded] = useState(false);
   const [noteSearch, setNoteSearch] = useState("");
+  const [savedJobs, setSavedJobs] = useState<string[]>([]);
 
-  // Progress form
+  // Logs form
   const [progressLabel, setProgressLabel] = useState("");
   const [progressValue, setProgressValue] = useState(60);
   const [progressNote, setProgressNote] = useState("");
 
-  // Kanban state
-  const [kanban, setKanban] = useState<KanbanCard[]>(() =>
-    roadmapsToKanban(initialWorkspace?.roadmaps ?? [])
-  );
-  const [savedJobs, setSavedJobs] = useState<string[]>([]);
+  // Load and sync checked tasks with LocalStorage (shared with Roadmaps page)
+  const [checkedTasks, setCheckedTasks] = useState<Record<string, boolean>>(() => {
+    if (typeof window !== "undefined" && profile?.id) {
+      try {
+        const saved = localStorage.getItem(`careeros::roadmap_checked_tasks::${profile.id}`);
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed loading checked tasks:", e);
+      }
+    }
+    return {};
+  });
+
+  useEffect(() => {
+    if (profile?.id) {
+      try {
+        localStorage.setItem(`careeros::roadmap_checked_tasks::${profile.id}`, JSON.stringify(checkedTasks));
+      } catch (e) {
+        console.error("Failed saving checked tasks:", e);
+      }
+    }
+  }, [checkedTasks, profile?.id]);
 
   const supabase = getSupabaseBrowserClient();
-  const hasDragged = useRef(false);
 
   useEffect(() => {
     setWorkspace(initialWorkspace);
-    setKanban(roadmapsToKanban(initialWorkspace?.roadmaps ?? []));
   }, [initialWorkspace]);
 
   function showToast(msg: string) {
@@ -209,6 +210,49 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
     }
   }
 
+  // ── Derived active roadmap properties ────────────────────────────────────
+  const roadmaps = workspace?.roadmaps ?? [];
+  const activeRoadmap = roadmaps[0] ?? null;
+  const allMilestones = Array.isArray(activeRoadmap?.milestones) ? activeRoadmap.milestones : [];
+  const completedCount = activeRoadmap ? Math.floor((activeRoadmap.progress / 100) * allMilestones.length) : 0;
+
+  // Active milestone (first uncompleted milestone)
+  const currentMilestoneIdx = allMilestones.length > 0 ? Math.min(completedCount, allMilestones.length - 1) : -1;
+  const currentMilestone = currentMilestoneIdx >= 0 ? allMilestones[currentMilestoneIdx] : null;
+
+  // Current Sprint Progress
+  const currentMilestoneTasks = currentMilestone?.project_tasks ?? [];
+  const currentMilestoneDeliverables = currentMilestone?.deliverables ?? [];
+  const totalSprintItems = currentMilestoneTasks.length + currentMilestoneDeliverables.length;
+  
+  const completedSprintItems = 
+    currentMilestoneTasks.filter((_, i) => checkedTasks[`${currentMilestone?.title}::t::${i}`]).length +
+    currentMilestoneDeliverables.filter((_, i) => checkedTasks[`${currentMilestone?.title}::d::${i}`]).length;
+    
+  const sprintProgress = totalSprintItems > 0 ? Math.round((completedSprintItems / totalSprintItems) * 100) : 0;
+
+  // Time Required Estimation
+  const timeRequiredMin = Math.max(30, (totalSprintItems - completedSprintItems) * 45);
+  const estHours = Math.floor(timeRequiredMin / 60);
+  const estMins = timeRequiredMin % 60;
+  const timeRequiredString = estHours > 0 ? `${estHours}h ${estMins}m` : `${estMins}m`;
+
+  // Projects completed counts
+  const completedProjectsCount = allMilestones.slice(0, completedCount).reduce((acc, m) => acc + (m.projects?.length ?? 0), 0);
+  const totalProjectsCount = allMilestones.reduce((acc, m) => acc + (m.projects?.length ?? 0), 0);
+
+  // Weekly consistency rate
+  const totalCheckedEver = Object.values(checkedTasks).filter(Boolean).length;
+  const weeklyConsistency = totalCheckedEver > 0 ? Math.min(100, 75 + (totalCheckedEver * 4) % 25) : 0;
+
+  // Applications Count logged in logs
+  const applicationsCount = workspace?.progress?.filter(p => 
+    p.label.toLowerCase().includes("apply") || 
+    p.label.toLowerCase().includes("application") || 
+    p.label.toLowerCase().includes("job")
+  ).length ?? 0;
+
+  // ── Database Note Operations ─────────────────────────────────────────────
   async function handleCreateNote() {
     if (!workspace) return;
     const newNote: NoteRecord = {
@@ -222,55 +266,124 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
     setNoteModalOpen(false);
     setNoteTitle("");
     setNoteContent("");
-    showToast("Note pinned.");
+    showToast("Strategy note pinned.");
   }
 
   async function handleDeleteNote(noteId: string) {
     if (!workspace) return;
     await persistWorkspaceChange({ notes: workspace.notes.filter(n => n.id !== noteId) });
-    showToast("Note archived.");
+    showToast("Strategy note archived.");
   }
 
   async function handleAddProgress() {
     if (!workspace) return;
     const newLog: ProgressRecord = {
       id: generateId(),
-      label: progressLabel.trim() || "General Momentum",
+      label: progressLabel.trim() || "Sprint Milestone Update",
       value: progressValue,
-      date: "Today",
+      date: new Date().toISOString().split("T")[0],
       note: progressNote.trim() || "Progress logged.",
     };
     await persistWorkspaceChange({ progress: [newLog, ...workspace.progress] });
     setProgressModalOpen(false);
     setProgressLabel("");
     setProgressNote("");
-    showToast("Momentum logged.");
+    showToast("Momentum logged successfully.");
   }
 
-  // ── Derived data ────────────────────────────────────────────────────────────
+  // ── Drag & Drop Kanban Milestone handlers ───────────────────────────────
+  async function handleMilestoneStatusUpdate(milestoneTitle: string, col: KanbanColumn) {
+    if (!activeRoadmap || !workspace) return;
+    const idx = allMilestones.findIndex(m => m.title === milestoneTitle);
+    if (idx === -1) return;
 
-  const readiness = profile?.readiness_score ?? 0;
-  const roadmaps = workspace?.roadmaps ?? [];
-  const activeRoadmap = roadmaps.find(r => r.progress > 0 && r.progress < 100) ?? roadmaps[0] ?? null;
-  const firstMilestone = activeRoadmap?.milestones?.[0] ?? null;
-  const avgProgress = roadmaps.length
-    ? Math.round(roadmaps.reduce((a, r) => a + r.progress, 0) / roadmaps.length)
-    : 0;
-  const totalMilestones = roadmaps.reduce((a, r) => a + (r.milestones?.length ?? 0), 0);
-  const weeklyHours = activeRoadmap?.weekly_hours ?? 15;
-  const completionDate = activeRoadmap?.estimated_completion_date ?? "Oct 2026";
-  const avgMomentum = workspace?.progress.length
-    ? Math.round(workspace.progress.reduce((a, p) => a + p.value, 0) / workspace.progress.length)
-    : 72;
+    let nextProgress = activeRoadmap.progress;
+    if (col === "completed") {
+      nextProgress = Math.min(100, Math.round(((idx + 1) / allMilestones.length) * 100));
+    } else if (col === "inprogress") {
+      nextProgress = Math.min(100, Math.round((idx / allMilestones.length) * 100));
+    } else if (col === "upcoming") {
+      nextProgress = Math.min(100, Math.round((Math.max(0, idx - 1) / allMilestones.length) * 100));
+    }
 
-  const healthMetrics = [
-    { label: "Readiness",    value: readiness > 0 ? readiness : 82, color: "#22d3ee",  trend: "up" },
-    { label: "Consistency",  value: 78,             color: "#818cf8", trend: "up" },
-    { label: "Momentum",     value: avgMomentum,    color: "#f59e0b", trend: avgMomentum > 70 ? "up" : "down" },
-    { label: "Portfolio",    value: 65,             color: "#10b981", trend: "up" },
-    { label: "Interview",    value: 70,             color: "#e879f9", trend: "down" },
-  ];
+    if (nextProgress !== activeRoadmap.progress) {
+      const updatedRoadmap = {
+        ...activeRoadmap,
+        progress: nextProgress
+      };
+      const updatedRoadmaps = [updatedRoadmap, ...roadmaps.slice(1)];
+      await persistWorkspaceChange({ roadmaps: updatedRoadmaps });
+      showToast(`Milestone status updated. Overall progress is now ${nextProgress}%.`);
+      if (col === "completed") {
+        setShowCelebration(true);
+        setTimeout(() => setShowCelebration(false), 4000);
+      }
+    }
+  }
 
+  // ── Today's Mission Checklist state handler ─────────────────────────────
+  function toggleTaskState(key: string) {
+    setCheckedTasks(prev => {
+      const checking = !prev[key];
+      const updated = { ...prev, [key]: checking };
+      if (checking && currentMilestone) {
+        const currentMilestoneTasks = currentMilestone.project_tasks ?? [];
+        const currentMilestoneDeliverables = currentMilestone.deliverables ?? [];
+        const totalSprintItems = currentMilestoneTasks.length + currentMilestoneDeliverables.length;
+        
+        const completedSprintItems = 
+          currentMilestoneTasks.filter((_, i) => updated[`${currentMilestone.title}::t::${i}`]).length +
+          currentMilestoneDeliverables.filter((_, i) => updated[`${currentMilestone.title}::d::${i}`]).length;
+          
+        const newProgress = totalSprintItems > 0 ? Math.round((completedSprintItems / totalSprintItems) * 100) : 0;
+        if (newProgress === 100) {
+          setShowCelebration(true);
+          setTimeout(() => setShowCelebration(false), 4000);
+        }
+      }
+      return updated;
+    });
+  }
+
+  // ── Real Activity timeline events parser ─────────────────────────────────
+  const getTimelineActivity = () => {
+    const list: { label: string; time: string; type: string }[] = [];
+    if (activeRoadmap) {
+      list.push({
+        label: `Active roadmap created: "${activeRoadmap.title}"`,
+        time: activeRoadmap.generated_at ? new Date(activeRoadmap.generated_at).toLocaleDateString() : "Recently",
+        type: "roadmap"
+      });
+    }
+    allMilestones.forEach((m, idx) => {
+      if (idx < completedCount) {
+        list.push({
+          label: `Completed Milestone: "${m.title}"`,
+          time: `Milestone ${idx + 1}`,
+          type: "milestone"
+        });
+      }
+    });
+    workspace?.progress?.slice(0, 3).forEach(p => {
+      list.push({
+        label: `Momentum logged: "${p.label}" (${p.value}%)`,
+        time: p.date,
+        type: "momentum"
+      });
+    });
+    if (profile?.updated_at) {
+      list.push({
+        label: "Career Profile settings updated",
+        time: new Date(profile.updated_at).toLocaleDateString(),
+        type: "profile"
+      });
+    }
+    return list.slice(0, 5);
+  };
+
+  const activityFeedList = getTimelineActivity();
+
+  // Matched Opportunities Mock data
   const jobListings = [
     {
       id: "j1", role: "Frontend Engineer", company: "Vercel", location: "Remote",
@@ -289,44 +402,16 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
     },
   ];
 
-  const activityItems: ActivityItem[] = [
-    { id: "a1", icon: Check,       color: "bg-emerald-500/15 text-emerald-400", label: "Completed Git milestone",             time: "2h ago" },
-    { id: "a2", icon: GitBranch,   color: "bg-cyan-500/15 text-cyan-400",       label: "Updated roadmap — Sprint 02",         time: "5h ago" },
-    { id: "a3", icon: Sparkles,    color: "bg-indigo-500/15 text-indigo-400",   label: "AI Mentor recommendation generated",  time: "Yesterday" },
-    { id: "a4", icon: BookOpen,    color: "bg-amber-500/15 text-amber-400",     label: "Added portfolio project",             time: "2 days ago" },
-    { id: "a5", icon: Star,        color: "bg-pink-500/15 text-pink-400",       label: "Readiness score updated to 88",       time: "3 days ago" },
-  ];
-
   const filteredNotes = (workspace?.notes ?? []).filter(n =>
     n.title.toLowerCase().includes(noteSearch.toLowerCase()) ||
     n.content.toLowerCase().includes(noteSearch.toLowerCase())
   );
 
-  // Kanban drag: move a card to a column on drop
-  function moveCard(cardId: string, col: KanbanColumn) {
-    setKanban(prev => prev.map(c => c.id === cardId ? { ...c, column: col } : c));
-  }
-
-  const containerVariants = {
-    hidden: {},
-    show: { transition: { staggerChildren: 0.07 } },
-  };
-  const cubicEase = [0.16, 1, 0.3, 1] as [number, number, number, number];
-  const fadeUp = {
-    hidden: { opacity: 0, y: 16 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: cubicEase } },
-  };
-
-  // ─── Render ────────────────────────────────────────────────────────────────
-
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="show"
-      className="space-y-6"
-    >
-      {/* Toast */}
+    <div className="space-y-6 max-w-7xl mx-auto">
+      {showCelebration && <Confetti />}
+
+      {/* ── TOAST MESSENGER ───────────────────────────────────────────────── */}
       <AnimatePresence>
         {toastMessage && (
           <motion.div
@@ -340,721 +425,623 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
         )}
       </AnimatePresence>
 
-      {/* ═══ SECTION 1 — COMMAND CENTER ═══════════════════════════════════════ */}
-      <motion.section variants={fadeUp} className="grid gap-5 xl:grid-cols-[1fr_auto]">
+      {/* ═══ SECTION 1: MISSION HEADER ════════════════════════════════════════ */}
+      <section className="liquid-panel relative overflow-hidden rounded-[28px] p-6 sm:p-8">
+        <div className="pointer-events-none absolute -top-20 -left-20 h-56 w-56 rounded-full bg-cyan-500/5 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-48 w-48 rounded-full bg-indigo-500/4 blur-2xl" />
 
-        {/* Career Goal Card */}
-        <div className="liquid-panel relative overflow-hidden rounded-[28px] p-7 sm:p-9">
-          {/* Glow accent */}
-          <div className="pointer-events-none absolute -top-20 -left-20 h-56 w-56 rounded-full bg-cyan-500/5 blur-3xl" />
-          <div className="pointer-events-none absolute bottom-0 right-0 h-48 w-48 rounded-full bg-indigo-500/4 blur-2xl" />
-
-          <div className="relative z-10 flex flex-col gap-7 lg:flex-row lg:items-center">
-            {/* Progress ring */}
-            <div className="flex flex-col items-center gap-4 shrink-0">
-              <div className="relative w-[152px] h-[152px]">
-                {/* Target ring (outer) */}
+        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-5">
+            {/* Single Large Progress Ring */}
+            {activeRoadmap && (
+              <div className="shrink-0 relative">
                 <ProgressRing
-                  value={readiness > 0 ? readiness : 90}
-                  size={152}
-                  strokeWidth={8}
+                  value={activeRoadmap.progress}
+                  size={110}
+                  strokeWidth={7}
                   color="#22d3ee"
+                  label={`${activeRoadmap.progress}%`}
+                  sublabel="Progress"
                 />
-                {/* Current progress ring (inner) */}
-                <div className="absolute inset-[16px] flex items-center justify-center">
-                  <ProgressRing
-                    value={avgProgress > 0 ? avgProgress : 54}
-                    size={120}
-                    strokeWidth={6}
-                    color="#818cf8"
-                  />
-                </div>
-                {/* Center Content Area */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      minWidth: "90px",
-                      minHeight: "90px",
-                      gap: "6px",
-                    }}
-                    className="select-none"
-                  >
-                    <span className="text-[24px] md:text-[30px] font-extrabold text-white leading-none">
-                      {avgProgress > 0 ? avgProgress : 54}%
-                    </span>
-                    <span
-                      style={{ whiteSpace: "nowrap" }}
-                      className="text-[8px] md:text-[10px] font-bold uppercase tracking-wider text-slate-400"
-                    >
-                      Current Progress
-                    </span>
-                  </div>
-                </div>
               </div>
-              {/* Target & Current metrics legend outside the chart */}
-              <div className="mt-2 flex flex-col items-center gap-3 w-full">
-                <div className="text-center">
-                  <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold whitespace-nowrap">Target Readiness</p>
-                  <p className="mt-0.5 text-base font-extrabold text-cyan-400">
-                    {readiness > 0 ? readiness : 90}%
-                  </p>
-                </div>
-                <div className="text-center">
-                  <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold whitespace-nowrap">Current Progress</p>
-                  <p className="mt-0.5 text-base font-extrabold text-indigo-400">
-                    {avgProgress > 0 ? avgProgress : 54}%
-                  </p>
-                </div>
-              </div>
-            </div>
+            )}
 
-            {/* Text content */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-400" />
                 </span>
-                <p className="caption text-cyan-400">Active Career Goal</p>
+                <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Mission Control Center</p>
+                {activeRoadmap && (
+                  <span className="rounded-full border border-[#202028] bg-[#0d0d10] px-2 py-0.5 text-[10px] text-slate-400">
+                    Roadmap v{activeRoadmap.roadmap_version}
+                  </span>
+                )}
               </div>
 
-              <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-white sm:text-4xl">
-                {profile?.goal ?? "Set your career goal"}
+              <h2 className="mt-3 text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
+                {profile?.goal || "SDE I Career Mission"}
               </h2>
 
-              <div className="mt-4 flex flex-wrap gap-4 text-sm">
-                <div>
-                  <p className="text-[10px] uppercase tracking-widest text-slate-500">Target Readiness</p>
-                  <p className="mt-1 font-semibold text-cyan-300">{readiness > 0 ? `${readiness}%` : "90%"}</p>
-                </div>
-                <div className="w-px bg-white/5" />
-                <div>
-                  <p className="text-[10px] uppercase tracking-widest text-slate-500">Current Progress</p>
-                  <p className="mt-1 font-semibold text-indigo-300">{avgProgress > 0 ? `${avgProgress}%` : "54%"}</p>
-                </div>
-                <div className="w-px bg-white/5" />
-                <div>
-                  <p className="text-[10px] uppercase tracking-widest text-slate-500">Est. Completion</p>
-                  <p className="mt-1 font-semibold text-white">{completionDate}</p>
-                </div>
-              </div>
-
-              <div className="mt-7 flex flex-wrap gap-3">
-                <MagneticButton asChild>
-                  <Link
-                    href="/roadmaps"
-                    className="tactile-btn tactile-btn-primary inline-flex items-center gap-2 rounded-full px-6 py-3 text-xs font-semibold text-black"
-                  >
-                    Continue Sprint
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
-                </MagneticButton>
-                <MagneticButton asChild>
-                  <Link
-                    href="/mentor"
-                    className="tactile-btn inline-flex items-center gap-2 rounded-full px-6 py-3 text-xs font-semibold text-slate-300 hover:text-white"
-                  >
-                    <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
-                    Open Mentor
-                  </Link>
-                </MagneticButton>
+              <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-500 font-medium">
+                <span>Readiness: <strong className="text-cyan-400">{profile?.readiness_score || 0}%</strong></span>
+                <span>&bull;</span>
+                <span>Sprint Track: <strong className="text-white">{currentMilestone?.title || "No Sprint Active"}</strong></span>
+                <span>&bull;</span>
+                <span>Availability: <strong className="text-white">{activeRoadmap?.weekly_hours || 15}h/week</strong></span>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Right metrics strip */}
-        <div className="grid grid-cols-2 gap-4 xl:grid-cols-1 xl:w-52">
-          {[
-            { label: "Roadmaps",      value: roadmaps.length > 0 ? String(roadmaps.length) : "0",    icon: GitBranch, sub: "Active paths" },
-            { label: "Milestones",    value: totalMilestones > 0 ? String(totalMilestones) : "—",   icon: Target,    sub: "Total tasks" },
-            { label: "Weekly Hours",  value: `${weeklyHours}h`,                                      icon: Clock,     sub: "Committed" },
-            { label: "Cloud Sync",    value: "Live",                                                  icon: Activity,  sub: "All saved" },
-          ].map((m) => {
-            const Icon = m.icon;
-            return (
-              <div key={m.label} className="liquid-card rounded-2xl p-4 hover:-translate-y-0.5">
-                <div className="flex items-center justify-between">
-                  <p className="caption text-slate-500">{m.label}</p>
-                  <Icon className="h-3.5 w-3.5 text-slate-600" />
-                </div>
-                <p className="mt-2.5 text-xl font-semibold text-white">{m.value}</p>
-                <p className="mt-1 text-[11px] text-slate-500">{m.sub}</p>
-              </div>
-            );
-          })}
-        </div>
-      </motion.section>
-
-      {/* ═══ SECTION 2 — TODAY'S MISSION ════════════════════════════════════= */}
-      <motion.section variants={fadeUp}>
-        <div className="liquid-panel relative overflow-hidden rounded-[24px] border-l-[3px] border-l-amber-400 p-6 sm:p-8">
-          <div className="pointer-events-none absolute top-0 right-0 h-40 w-64 rounded-full bg-amber-400/4 blur-3xl" />
-          <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <Flame className="h-4 w-4 text-amber-400" />
-                <p className="caption text-amber-400">Today&apos;s Mission</p>
-                <span className="ml-2 rounded-full border border-red-500/30 bg-red-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-red-400">
-                  High Priority
-                </span>
-              </div>
-              <h3 className="mt-3 text-xl font-semibold text-white sm:text-2xl leading-snug">
-                {firstMilestone?.title ?? "Complete React component architecture milestone"}
-              </h3>
-              <p className="mt-2 text-sm text-slate-400 max-w-2xl">
-                {firstMilestone?.why_it_matters ?? "Mastering component design patterns unlocks the full-stack sprint pathway and validates your core frontend competency."}
-              </p>
-              <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-slate-500">
-                <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> 45 minutes estimated</span>
-                <span className="flex items-center gap-1.5"><BookOpen className="h-3.5 w-3.5" />
-                  {firstMilestone?.resource_links?.length ?? 3} resources
-                </span>
-              </div>
-            </div>
-            <MagneticButton asChild>
-              <Link
-                href="/roadmaps"
-                className="tactile-btn tactile-btn-primary inline-flex shrink-0 items-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold text-black"
-              >
-                <Zap className="h-4 w-4" />
-                Start Work
-              </Link>
-            </MagneticButton>
-          </div>
-        </div>
-      </motion.section>
-
-      {/* ═══ SECTION 3 — KANBAN BOARD ════════════════════════════════════════ */}
-      <motion.section variants={fadeUp}>
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <p className="caption text-slate-500">Roadmap Execution</p>
-            <h3 className="mt-1 text-lg font-semibold text-white">Sprint Board</h3>
-          </div>
-          <Link href="/roadmaps" className="caption text-cyan-400 hover:text-cyan-300 transition flex items-center gap-1">
-            View all <ArrowRight className="h-3 w-3" />
-          </Link>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3">
-          {(["upcoming", "inprogress", "completed"] as KanbanColumn[]).map((col) => {
-            const meta = COLUMN_META[col];
-            const cards = kanban.filter(c => c.column === col);
-            return (
-              <div
-                key={col}
-                onDragOver={(e) => { e.preventDefault(); }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const id = e.dataTransfer.getData("cardId");
-                  if (id) { moveCard(id, col); hasDragged.current = false; }
-                }}
-                className="min-h-[200px] rounded-[20px] border border-[#141417] bg-[#07070a] p-4"
-              >
-                {/* Column header */}
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className={`h-2 w-2 rounded-full ${col === "upcoming" ? "bg-slate-400" : col === "inprogress" ? "bg-amber-400" : "bg-emerald-400"}`} />
-                    <span className={`text-xs font-semibold uppercase tracking-widest ${meta.accent}`}>{meta.label}</span>
-                  </div>
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${meta.bg} ${meta.accent}`}>{cards.length}</span>
-                </div>
-
-                {/* Cards */}
-                <div className="space-y-3">
-                  {cards.length === 0 ? (
-                    <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-[#202028] py-8 text-center">
-                      <div className="h-8 w-8 rounded-full bg-[#0d0d10] flex items-center justify-center">
-                        <Target className="h-4 w-4 text-slate-600" />
-                      </div>
-                      <p className="text-[11px] text-slate-600">Drop roadmaps here</p>
-                    </div>
-                  ) : (
-                    cards.map((card) => (
-                      <motion.div
-                        key={card.id}
-                        draggable
-                        onDragStart={(e) => {
-                          if ("dataTransfer" in e) {
-                            (e as unknown as React.DragEvent).dataTransfer.setData("cardId", card.id);
-                          }
-                          hasDragged.current = true;
-                        }}
-                        whileHover={{ y: -3, boxShadow: "0 12px 40px rgba(0,0,0,0.8)" }}
-                        whileDrag={{ scale: 1.04, boxShadow: "0 20px 60px rgba(0,0,0,0.9)", zIndex: 50, opacity: 0.9 }}
-                        className="cursor-grab active:cursor-grabbing rounded-xl border border-[#1a1a1f] bg-[#0a0a0d] p-4 select-none"
-                      >
-                        <h4 className="text-sm font-semibold text-white leading-snug line-clamp-2">{card.title}</h4>
-                        <p className="mt-1.5 text-[11px] text-slate-500 line-clamp-2">{card.summary}</p>
-                        <div className="mt-3 flex items-center justify-between text-[10px]">
-                          <div className="flex gap-2">
-                            <span className="rounded-md border border-[#202028] bg-[#0d0d10] px-2 py-0.5 text-slate-400">
-                              {card.effort}
-                            </span>
-                            {card.resourceCount > 0 && (
-                              <span className="rounded-md border border-[#202028] bg-[#0d0d10] px-2 py-0.5 text-slate-400">
-                                {card.resourceCount} links
-                              </span>
-                            )}
-                          </div>
-                          <span className={`font-bold ${card.progress >= 100 ? "text-emerald-400" : card.progress > 0 ? "text-amber-400" : "text-slate-500"}`}>
-                            {card.progress}%
-                          </span>
-                        </div>
-                        {card.progress > 0 && (
-                          <div className="mt-2.5 h-1 rounded-full bg-[#141418] overflow-hidden">
-                            <motion.div
-                              className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-indigo-500"
-                              initial={{ width: 0 }}
-                              animate={{ width: `${card.progress}%` }}
-                              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-                            />
-                          </div>
-                        )}
-                      </motion.div>
-                    ))
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {kanban.length === 0 && (
-          <div className="mt-4 flex flex-col items-center gap-3 rounded-[20px] border border-dashed border-[#202028] py-14 text-center">
-            <div className="h-14 w-14 rounded-2xl bg-[#0d0d10] flex items-center justify-center">
-              <Map className="h-6 w-6 text-slate-600" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-400">No roadmaps yet</p>
-              <p className="mt-1 text-xs text-slate-600">Generate your first roadmap to start tracking sprints</p>
-            </div>
-            <Link href="/roadmaps" className="mt-2 rounded-full border border-cyan-400/25 bg-cyan-400/10 px-5 py-2 text-xs font-semibold text-cyan-300 hover:bg-cyan-400/15 transition">
-              Build Roadmap
-            </Link>
-          </div>
-        )}
-      </motion.section>
-
-      {/* ═══ SECTION 4 + 5: CAREER HEALTH + AI MENTOR (side-by-side) ════════ */}
-      <motion.section variants={fadeUp} className="grid gap-5 lg:grid-cols-[1fr_380px]">
-
-        {/* CAREER HEALTH PANEL */}
-        <div className="liquid-panel rounded-[24px] p-6">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <p className="caption text-slate-500">Career Metrics</p>
-              <h3 className="mt-1 text-lg font-semibold text-white">Health Panel</h3>
-            </div>
+          {/* Action CTAs */}
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end lg:self-center">
             <button
-              type="button"
-              onClick={() => setProgressModalOpen(true)}
-              className="tactile-btn tactile-btn-primary inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[11px] font-semibold text-black"
+              onClick={() => document.getElementById("todays-mission-section")?.scrollIntoView({ behavior: "smooth" })}
+              className="tactile-btn border border-[#202028] hover:border-cyan-400/30 text-white font-bold px-4 py-2.5 rounded-full text-xs transition"
             >
-              <TrendingUp className="h-3 w-3" />
-              Log Progress
+              Continue Sprint
+            </button>
+            <Link
+              href="/mentor"
+              className="tactile-btn border border-[#202028] hover:border-indigo-400/30 text-white font-bold px-4 py-2.5 rounded-full text-xs transition inline-flex items-center gap-1.5"
+            >
+              <MessageSquare className="h-3.5 w-3.5 text-indigo-400" />
+              Ask Mentor
+            </Link>
+            <button
+              onClick={() => setIsDrawerOpen(true)}
+              className="tactile-btn bg-cyan-400 hover:bg-cyan-300 font-extrabold text-black px-5 py-2.5 rounded-full text-xs transition inline-flex items-center gap-1.5 shadow-[0_0_15px_rgba(34,211,238,0.2)]"
+            >
+              View Opportunities
+              <ArrowRight className="h-3.5 w-3.5 stroke-[2.5]" />
             </button>
           </div>
+        </div>
+      </section>
 
-          <div className="flex flex-wrap justify-around gap-6">
-            {healthMetrics.map((m) => (
-              <div key={m.label} className="flex flex-col items-center gap-2">
-                <SmallRing value={m.value} color={m.color} />
-                <div className="text-center">
-                  <p className="text-[11px] font-semibold text-white">{m.label}</p>
-                  <p className={`text-[10px] font-bold ${m.trend === "up" ? "text-emerald-400" : "text-rose-400"}`}>
-                    {m.trend === "up" ? "↑ Rising" : "↓ Needs work"}
+      {/* ═══ SECTION 2: TODAY'S MISSION (Pinned top execution) ═══════════════ */}
+      {activeRoadmap && currentMilestone && (
+        <section id="todays-mission-section" className="scroll-mt-6">
+          <div className="liquid-panel relative overflow-hidden rounded-[24px] border-l-[3px] border-cyan-400 p-6 sm:p-8">
+            <div className="pointer-events-none absolute top-0 right-0 h-40 w-64 rounded-full bg-cyan-400/5 blur-3xl animate-pulse" />
+            
+            <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-3">
+                  <Flame className="h-4 w-4 text-cyan-400 animate-bounce" />
+                  <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Today&apos;s Mission</p>
+                  <span className="rounded-full border border-indigo-500/20 bg-indigo-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-indigo-400">
+                    High Priority
+                  </span>
+                </div>
+                
+                <h3 className="text-lg sm:text-xl font-bold text-white leading-snug">
+                  Active Milestone: <span className="text-cyan-300">{currentMilestone.title}</span>
+                </h3>
+                <p className="mt-2 text-xs sm:text-sm text-slate-400 max-w-2xl leading-relaxed">
+                  {currentMilestone.why_it_matters}
+                </p>
+
+                {/* Subchecklist of tasks due today */}
+                <div className="mt-4 space-y-2 max-w-xl">
+                  {currentMilestoneTasks.map((t, idx) => {
+                    const key = `${currentMilestone.title}::t::${idx}`;
+                    const isDone = checkedTasks[key] ?? false;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => toggleTaskState(key)}
+                        className={`w-full flex items-start gap-2.5 rounded-xl border p-3 text-left text-xs transition ${
+                          isDone
+                            ? "border-cyan-500/10 bg-cyan-950/5 text-slate-500"
+                            : "border-[#1c1c22] bg-[#070709]/80 text-slate-300 hover:border-[#252530]"
+                        }`}
+                      >
+                        <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${
+                          isDone ? "border-cyan-400 bg-cyan-400 text-black" : "border-slate-700"
+                        }`}>
+                          {isDone && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                        </span>
+                        <span className={isDone ? "line-through opacity-60" : ""}>{t}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Resources Needed */}
+                {currentMilestone.resource_links?.length > 0 && (
+                  <div className="mt-5">
+                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-2">Resources Needed</span>
+                    <div className="flex flex-wrap gap-2">
+                      {currentMilestone.resource_links.map((res, idx) => (
+                        <a
+                          key={idx}
+                          href={res.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 border border-[#1e1e24] hover:border-cyan-400/25 bg-[#0a0a0d] hover:bg-cyan-950/10 rounded-lg px-2.5 py-1 text-[11px] text-slate-300 hover:text-cyan-300 transition"
+                        >
+                          <BookOpen className="h-3 w-3" />
+                          {res.label}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Progress Panel side item */}
+              <div className="shrink-0 flex flex-col justify-between items-end gap-3 self-stretch min-w-[150px] bg-[#08080a] border border-[#141417] p-4 rounded-2xl">
+                <div className="text-right">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Estimated Hours</span>
+                  <span className="text-sm font-bold text-white mt-1 block">{timeRequiredString} left</span>
+                </div>
+                <div className="w-full text-right mt-4">
+                  <div className="flex justify-between items-center text-[10px] font-semibold text-slate-400 mb-1">
+                    <span>Task progress</span>
+                    <span className="text-cyan-400">{sprintProgress}%</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-[#141418] rounded-full overflow-hidden">
+                    <div className="h-full bg-cyan-400" style={{ width: `${sprintProgress}%` }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ═══ SECTION 3: CURRENT SPRINT BOARD (Milestones columns) ════ */}
+      {activeRoadmap && (
+        <section>
+          <div className="mb-4">
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Workspace Board</span>
+            <h3 className="text-base font-bold text-white mt-1">Sprint Board</h3>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            {(["upcoming", "inprogress", "completed"] as KanbanColumn[]).map(col => {
+              const meta = COLUMN_META[col];
+              
+              // Filter milestones belonging to this status column
+              const cards = allMilestones.map((m, idx) => {
+                const status = getMilestoneStatus(idx, completedCount, allMilestones.length);
+                const colMap: KanbanColumn = status === "completed" ? "completed" : status === "active" ? "inprogress" : "upcoming";
+                
+                // Calculate milestone progress
+                const msTasks = m.project_tasks ?? [];
+                const msDels = m.deliverables ?? [];
+                const msTotal = msTasks.length + msDels.length;
+                const msCompleted = 
+                  msTasks.filter((_, i) => checkedTasks[`${m.title}::t::${i}`]).length +
+                  msDels.filter((_, i) => checkedTasks[`${m.title}::d::${i}`]).length;
+                const msProgress = msTotal > 0 ? Math.round((msCompleted / msTotal) * 100) : (status === "completed" ? 100 : 0);
+
+                return {
+                  title: m.title,
+                  progress: msProgress,
+                  effort: `${m.estimated_duration_weeks}w`,
+                  priority: m.difficulty_level === "Advanced" ? "High" : m.difficulty_level === "Intermediate" ? "Medium" : "Low",
+                  column: colMap
+                };
+              }).filter(c => c.column === col);
+
+              return (
+                <div
+                  key={col}
+                  onDragOver={e => e.preventDefault()}
+                  onDrop={e => {
+                    e.preventDefault();
+                    const title = e.dataTransfer.getData("milestoneTitle");
+                    if (title) void handleMilestoneStatusUpdate(title, col);
+                  }}
+                  className="min-h-[220px] rounded-[20px] border border-[#141417] bg-[#07070a] p-4 flex flex-col"
+                >
+                  <div className="mb-3.5 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`h-2 w-2 rounded-full ${col === "upcoming" ? "bg-slate-400" : col === "inprogress" ? "bg-amber-400" : "bg-emerald-400"}`} />
+                      <span className={`text-xs font-semibold uppercase tracking-widest ${meta.accent}`}>{meta.label}</span>
+                    </div>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${meta.bg} ${meta.accent}`}>
+                      {cards.length}
+                    </span>
+                  </div>
+
+                  <div className="space-y-3 flex-1">
+                    {cards.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-full border border-dashed border-[#202028]/80 py-8 rounded-xl">
+                        <p className="text-[11px] text-slate-600">Drag items here</p>
+                      </div>
+                    ) : (
+                      cards.map(card => (
+                        <div
+                          key={card.title}
+                          draggable
+                          onDragStart={e => e.dataTransfer.setData("milestoneTitle", card.title)}
+                        >
+                          <motion.div
+                            whileHover={{ y: -3, boxShadow: "0 10px 30px rgba(0,0,0,0.8)" }}
+                            className="cursor-grab active:cursor-grabbing rounded-xl border border-[#1a1a1f] bg-[#0a0a0d] p-4 select-none group"
+                          >
+                            <h4 className="text-xs sm:text-sm font-semibold text-white group-hover:text-cyan-300 transition line-clamp-2 leading-snug">{card.title}</h4>
+                            
+                            <div className="mt-3 flex items-center justify-between text-[10px] text-slate-500 font-semibold">
+                              <div className="flex gap-1.5">
+                                <span className="rounded bg-[#0d0d10] border border-[#202028] px-1.5 py-0.5 text-slate-400">{card.effort}</span>
+                                <span className={`rounded px-1.5 py-0.5 border ${
+                                  card.priority === "High"
+                                    ? "border-rose-500/20 bg-rose-500/10 text-rose-300"
+                                    : card.priority === "Medium"
+                                    ? "border-amber-500/20 bg-amber-500/10 text-amber-300"
+                                    : "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+                                }`}>{card.priority}</span>
+                              </div>
+                              <span className={card.progress === 100 ? "text-emerald-400" : "text-cyan-300"}>
+                                {card.progress}%
+                              </span>
+                            </div>
+
+                            {card.progress > 0 && (
+                              <div className="mt-2.5 h-1 rounded-full bg-[#141418] overflow-hidden">
+                                <div className="h-full bg-cyan-400" style={{ width: `${card.progress}%` }} />
+                              </div>
+                            )}
+                          </motion.div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* ═══ SECTION 4: PROGRESS OVERVIEW (Unified Grid) ════════════════════ */}
+      {activeRoadmap && (
+        <section>
+          <div className="mb-4">
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Metrics Consolidation</span>
+            <h3 className="text-base font-bold text-white mt-1">Progress Overview</h3>
+          </div>
+
+          <div className="liquid-panel rounded-[24px] p-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+              {[
+                { label: "Readiness Score", value: `${profile?.readiness_score || 0}%`, sub: "Career benchmark", color: "text-cyan-400" },
+                { label: "Roadmap Completion", value: `${activeRoadmap.progress}%`, sub: "Overall progress", color: "text-indigo-400" },
+                { label: "Milestones", value: `${completedCount}/${allMilestones.length}`, sub: "Completed track", color: "text-emerald-400" },
+                { label: "Projects Completed", value: `${completedProjectsCount}/${totalProjectsCount}`, sub: "Evidence portfolio", color: "text-amber-400" },
+                { label: "Weekly Consistency", value: `${weeklyConsistency}%`, sub: "Log completions", color: "text-rose-400" },
+                { label: "Applications", value: String(applicationsCount), sub: "Opportunities log", color: "text-white" },
+              ].map(stat => (
+                <div key={stat.label} className="bg-[#08080a] border border-[#141417] p-3.5 rounded-xl flex flex-col justify-between hover:border-slate-800 transition duration-200">
+                  <div>
+                    <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">{stat.label}</span>
+                    <p className={`text-base sm:text-lg font-bold mt-1.5 ${stat.color} leading-none`}>
+                      {stat.value}
+                    </p>
+                  </div>
+                  <span className="text-[9px] text-slate-500 mt-2 block">{stat.sub}</span>
+                </div>
+              ))}
+            </div>
+            
+            <div className="mt-5 pt-4 border-t border-[#1e1e24] flex justify-end">
+              <button
+                onClick={() => setProgressModalOpen(true)}
+                className="tactile-btn border border-[#202028] hover:border-cyan-400/20 px-4 py-2 rounded-xl text-xs text-slate-300 hover:text-white transition inline-flex items-center gap-1.5 font-bold"
+              >
+                <TrendingUp className="h-3.5 w-3.5 text-cyan-400" />
+                Log Progress Update
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ═══ SECTION 5 & 6: INSIGHTS & BLOCKERS (Side-by-side) ══════════════ */}
+      <section className="grid gap-5 lg:grid-cols-2">
+        {/* SECTION 5: MENTOR INSIGHTS */}
+        <div className="liquid-panel rounded-[24px] p-6 flex flex-col justify-between relative overflow-hidden">
+          <div className="pointer-events-none absolute -bottom-16 -right-16 h-44 w-44 rounded-full bg-cyan-400/5 blur-2xl" />
+          
+          <div className="relative z-10">
+            <div className="flex items-center gap-2.5 mb-4">
+              <Sparkles className="h-4 w-4 text-cyan-400" />
+              <h3 className="text-base font-bold text-white">Mentor Insights</h3>
+            </div>
+
+            <div className="rounded-xl border border-[#141417] bg-[#08080a] p-4">
+              <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Latest recommendation</span>
+              <p className="text-xs sm:text-sm text-slate-300 mt-1.5 leading-relaxed font-medium">
+                {workspace?.ai_chats?.[0]?.messages?.slice(-1)?.[0]?.content || (
+                  currentMilestone 
+                    ? `Prioritize completing tasks in your active "${currentMilestone.title}" milestone to establish your frontend engineering foundations.`
+                    : "No mentor logs available yet. Initiate career strategy chats."
+                )}
+              </p>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="border border-[#141417] bg-[#070709] p-3 rounded-lg">
+                <span className="text-[9px] text-indigo-400 font-bold uppercase tracking-wider block">Why it matters</span>
+                <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                  Completing scheduled tasks updates your readiness metrics and provides project evidence.
+                </p>
+              </div>
+              <div className="border border-[#141417] bg-[#070709] p-3 rounded-lg">
+                <span className="text-[9px] text-cyan-400 font-bold uppercase tracking-wider block">Recommended action</span>
+                <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                  Focus on the primary Next Action highlighted at the top of your workspace.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5 pt-4 border-t border-[#1e1e24]/60 flex justify-end">
+            <Link
+              href="/mentor"
+              className="tactile-btn border border-[#202028] hover:border-cyan-400/25 px-4 py-2 rounded-xl text-xs text-slate-300 hover:text-white transition font-bold"
+            >
+              Open Mentor Strategy
+            </Link>
+          </div>
+        </div>
+
+        {/* SECTION 6: BLOCKERS & SKILL GAPS */}
+        <div className="liquid-panel rounded-[24px] p-6 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center gap-2.5 mb-4">
+              <AlertTriangle className="h-4 w-4 text-rose-400" />
+              <h3 className="text-base font-bold text-white">Blockers & Skill Gaps</h3>
+            </div>
+
+            {(profile?.obstacles && profile.obstacles.length > 0) || (profile?.weaknesses && profile.weaknesses.length > 0) ? (
+              <div className="space-y-4">
+                {/* Blocked areas */}
+                {profile?.obstacles && profile.obstacles.length > 0 && (
+                  <div>
+                    <span className="text-[9px] text-amber-400 font-bold uppercase tracking-wider block mb-1.5">Blocked Areas</span>
+                    <div className="flex flex-wrap gap-1">
+                      {profile.obstacles.map(ob => (
+                        <span key={ob} className="rounded border border-amber-500/10 bg-amber-500/5 text-amber-300 text-[10px] px-2 py-0.5">{ob}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Missing skills */}
+                {profile?.weaknesses && profile.weaknesses.length > 0 && (
+                  <div>
+                    <span className="text-[9px] text-rose-400 font-bold uppercase tracking-wider block mb-1.5">Missing Skills</span>
+                    <div className="flex flex-wrap gap-1">
+                      {profile.weaknesses.map(w => (
+                        <span key={w} className="rounded border border-rose-500/10 bg-rose-500/5 text-rose-300 text-[10px] px-2 py-0.5">{w}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Stalled Milestones */}
+                <div>
+                  <span className="text-[9px] text-indigo-400 font-bold uppercase tracking-wider block mb-1">Recommended Fix</span>
+                  <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                    Bridge gaps dynamically. Request behavioral sessions or study modules from the AI Mentor on <span className="text-white font-semibold">{profile?.weaknesses?.[0] || "core topics"}</span>.
                   </p>
                 </div>
               </div>
-            ))}
+            ) : (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <Check className="h-7 w-7 text-emerald-400 mb-1.5" />
+                <p className="text-xs text-slate-500 font-semibold">No blockers detected.</p>
+              </div>
+            )}
           </div>
+        </div>
+      </section>
 
-          {/* Progress logs */}
-          {(workspace?.progress.length ?? 0) > 0 && (
-            <div className="mt-6 space-y-3 border-t border-white/5 pt-5">
-              {workspace!.progress.slice(0, 3).map((item) => (
-                <div key={item.id} className="flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-slate-400 truncate">{item.label}</span>
-                      <span className="text-cyan-300 font-semibold shrink-0 ml-2">{item.value}%</span>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-[#141418] overflow-hidden">
-                      <motion.div
-                        className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-indigo-400"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${item.value}%` }}
-                        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-                      />
-                    </div>
+      {/* ═══ SECTION 7: RECENT ACTIVITY (Sorted feed) ═════════════════════════ */}
+      <section>
+        <div className="mb-4">
+          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Workspace Logs</span>
+          <h3 className="text-base font-bold text-white mt-1">Recent Activity</h3>
+        </div>
+
+        <div className="liquid-panel rounded-[24px] p-6">
+          {activityFeedList.length > 0 ? (
+            <div className="relative space-y-4.5">
+              <div className="absolute left-[15px] top-3 bottom-3 w-px bg-gradient-to-b from-white/10 via-white/5 to-transparent" />
+              {activityFeedList.map((act, idx) => (
+                <div key={idx} className="relative flex items-start gap-4 pl-0.5">
+                  <div className={`relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#202028] bg-[#0d0d10] text-xs ${
+                    act.type === "milestone" ? "text-emerald-400" : act.type === "roadmap" ? "text-cyan-400" : "text-slate-400"
+                  }`}>
+                    {act.type === "milestone" ? <Check className="h-3 w-3 stroke-[2.5]" /> : <Activity className="h-3 w-3" />}
+                  </div>
+                  <div className="pt-0.5">
+                    <p className="text-xs sm:text-sm text-slate-300 leading-snug">{act.label}</p>
+                    <p className="text-[10px] text-slate-600 mt-0.5">{act.time}</p>
                   </div>
                 </div>
               ))}
             </div>
+          ) : (
+            <p className="text-xs text-slate-500 py-6 text-center">No recent activities logged.</p>
           )}
         </div>
+      </section>
 
-        {/* AI MENTOR CARD */}
-        <div className="liquid-panel relative overflow-hidden rounded-[24px] p-6">
-          <div className="pointer-events-none absolute -bottom-16 -right-16 h-48 w-48 rounded-full bg-cyan-500/5 blur-3xl" />
-          <div className="relative z-10 flex flex-col h-full gap-5">
-            <div className="flex items-center gap-3">
-              {/* Pulse glow avatar */}
-              <div className="relative shrink-0">
-                <div className="absolute -inset-2 rounded-full bg-cyan-400/10 animate-pulse" />
-                <div className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/25 bg-cyan-950/30 text-cyan-300">
-                  <Sparkles className="h-5 w-5" />
-                </div>
-              </div>
-              <div>
-                <p className="caption text-cyan-400">AI Mentor</p>
-                <p className="text-sm font-semibold text-white">Latest Recommendation</p>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/[0.04] bg-white/[0.01] p-4 flex-1">
-              <p className="text-sm leading-relaxed text-slate-300">
-                &ldquo;{workspace?.ai_chats?.[0]?.messages?.slice(-1)?.[0]?.content ??
-                  "You should focus on React state management before beginning system design. Complete the useReducer patterns first — it will make the architecture module significantly easier."}&rdquo;
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <MagneticButton asChild>
-                <Link href="/mentor" className="tactile-btn tactile-btn-primary flex items-center justify-center gap-2 rounded-full py-2.5 text-xs font-semibold text-black">
-                  <MessageSquare className="h-3.5 w-3.5" />
-                  Ask Mentor
-                </Link>
-              </MagneticButton>
-              <div className="grid grid-cols-2 gap-2">
-                <Link href="/roadmaps" className="tactile-btn flex items-center justify-center gap-1.5 rounded-full py-2 text-[11px] font-semibold text-slate-300 hover:text-white">
-                  <GitBranch className="h-3 w-3 text-cyan-400" />
-                  Generate Plan
-                </Link>
-                <Link href="/roadmaps" className="tactile-btn flex items-center justify-center gap-1.5 rounded-full py-2 text-[11px] font-semibold text-slate-300 hover:text-white">
-                  <Activity className="h-3 w-3 text-indigo-400" />
-                  Review Progress
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </motion.section>
-
-      {/* ═══ SECTION 6 — CAREER TWIN BENTO ══════════════════════════════════ */}
-      <motion.section variants={fadeUp}>
-        <div className="mb-4">
-          <p className="caption text-slate-500">Career Intelligence</p>
-          <h3 className="mt-1 text-lg font-semibold text-white">Career Twin Insights</h3>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
-          {/* Strengths — large */}
-          <div className="liquid-card col-span-2 lg:col-span-3 rounded-[20px] p-5 hover:-translate-y-1">
-            <div className="flex items-center gap-2 mb-4">
-              <Star className="h-4 w-4 text-amber-400" />
-              <p className="caption text-amber-400">Core Strengths</p>
-            </div>
-            {(profile?.skills?.length ?? 0) > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {profile!.skills.slice(0, 8).map((skill) => (
-                  <span key={skill} className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-200">
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6">
-                <p className="text-xs text-slate-500">Complete onboarding to see your strengths</p>
-              </div>
-            )}
-          </div>
-
-          {/* Skill Gaps — medium */}
-          <div className="liquid-card col-span-2 lg:col-span-3 rounded-[20px] p-5 hover:-translate-y-1">
-            <div className="flex items-center gap-2 mb-4">
-              <Target className="h-4 w-4 text-rose-400" />
-              <p className="caption text-rose-400">Skill Gaps</p>
-            </div>
-            {(profile?.weaknesses?.length ?? 0) > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {profile!.weaknesses.slice(0, 6).map((w) => (
-                  <span key={w} className="rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-1.5 text-xs font-medium text-rose-200">
-                    {w}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6">
-                <p className="text-xs text-slate-500">No gaps identified yet</p>
-              </div>
-            )}
-          </div>
-
-          {/* Predicted Timeline */}
-          <div className="liquid-card col-span-2 lg:col-span-2 rounded-[20px] p-5 hover:-translate-y-1">
-            <p className="caption text-slate-500">Predicted Timeline</p>
-            <p className="mt-3 text-2xl font-bold text-white">6–8 months</p>
-            <p className="mt-1 text-xs text-slate-400">to target readiness at current pace</p>
-            <div className="mt-3 h-1.5 rounded-full bg-[#141418] overflow-hidden">
-              <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-indigo-400 to-cyan-400"
-                initial={{ width: 0 }}
-                animate={{ width: "38%" }}
-                transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-              />
-            </div>
-            <p className="mt-2 text-[10px] text-slate-600">38% of journey complete</p>
-          </div>
-
-          {/* Market Match */}
-          <div className="liquid-card col-span-2 lg:col-span-2 rounded-[20px] p-5 hover:-translate-y-1">
-            <p className="caption text-slate-500">Market Match</p>
-            <div className="mt-3 flex items-end gap-2">
-              <span className="text-3xl font-bold text-emerald-300">87</span>
-              <span className="mb-1 text-sm text-slate-400">/ 100</span>
-            </div>
-            <p className="mt-1 text-xs text-slate-400">Strong alignment with SDE-I market demand</p>
-            <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-[10px] font-semibold text-emerald-400">
-              ↑ High demand domain
-            </div>
-          </div>
-
-          {/* Experience Level */}
-          <div className="liquid-card col-span-2 lg:col-span-2 rounded-[20px] p-5 hover:-translate-y-1">
-            <p className="caption text-slate-500">Experience Level</p>
-            <p className="mt-3 text-xl font-bold text-white capitalize">{profile?.experience_level ?? "Student"}</p>
-            <p className="mt-1 text-xs text-slate-400">
-              {profile?.learning_style ? `Learning style: ${profile.learning_style}` : "Structured self-paced learning"}
-            </p>
-            <p className="mt-2 text-xs text-slate-400">
-              {profile?.time_availability ? `${profile.time_availability} available weekly` : `${weeklyHours}h / week committed`}
-            </p>
-          </div>
-        </div>
-      </motion.section>
-
-      {/* ═══ SECTION 7 — NOTES (COLLAPSIBLE) ════════════════════════════════ */}
-      <motion.section variants={fadeUp}>
-        <div
-          className="liquid-panel rounded-[24px] overflow-hidden"
-        >
-          {/* Accordion trigger */}
-          <button
-            type="button"
-            onClick={() => setNotesExpanded(e => !e)}
-            className="w-full flex items-center justify-between px-6 py-5 cursor-pointer hover:bg-white/[0.01] transition"
-          >
-            <div className="flex items-center gap-3">
-              <BookOpen className="h-4 w-4 text-slate-400" />
-              <div className="text-left">
-                <p className="caption text-slate-500">Archive</p>
-                <h3 className="mt-0.5 text-base font-semibold text-white">
-                  Strategy Notes
-                  {(workspace?.notes.length ?? 0) > 0 && (
-                    <span className="ml-2 rounded-full bg-[#141418] border border-[#202028] px-2 py-0.5 text-xs text-slate-400">
-                      {workspace!.notes.length}
-                    </span>
-                  )}
-                </h3>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); setNoteModalOpen(true); }}
-                className="tactile-btn tactile-btn-primary inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[11px] font-semibold text-black"
-              >
-                <PlusCircle className="h-3 w-3" />
-                New Note
-              </button>
-              {notesExpanded ? (
-                <ChevronUp className="h-4 w-4 text-slate-500" />
-              ) : (
-                <ChevronDown className="h-4 w-4 text-slate-500" />
-              )}
-            </div>
-          </button>
-
-          <AnimatePresence initial={false}>
-            {notesExpanded && (
-              <motion.div
-                key="notes-content"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                className="overflow-hidden"
-              >
-                <div className="px-6 pb-6 space-y-4">
-                  {/* Search */}
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
-                    <input
-                      value={noteSearch}
-                      onChange={(e) => setNoteSearch(e.target.value)}
-                      placeholder="Search notes..."
-                      className="carved-input w-full rounded-xl py-2.5 pl-9 pr-4 text-sm text-white"
-                    />
+      {/* ═══ OPPORTUNITIES SIDE DRAWER ═══════════════════════════════════════ */}
+      <AnimatePresence>
+        {isDrawerOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.6 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsDrawerOpen(false)}
+              className="fixed inset-0 z-40 bg-black bg-opacity-70 backdrop-blur-sm"
+            />
+            {/* Drawer */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 26, stiffness: 220 }}
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-[#09090b] border-l border-[#202028] p-6 shadow-2xl flex flex-col justify-between"
+            >
+              <div className="flex flex-col flex-1 min-h-0">
+                <div className="flex items-center justify-between border-b border-[#202028] pb-4 mb-4">
+                  <div>
+                    <h3 className="text-base font-bold text-white">Career Opportunities Panel</h3>
+                    <p className="text-[10px] text-slate-500 mt-0.5">Job intelligence and strategy archives</p>
                   </div>
+                  <button
+                    onClick={() => setIsDrawerOpen(false)}
+                    className="h-8 w-8 rounded-full border border-[#202028] hover:border-cyan-400/25 flex items-center justify-center transition text-slate-400 hover:text-white"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
 
-                  <div className="max-h-72 space-y-3 overflow-y-auto pr-1">
-                    {filteredNotes.length > 0 ? (
-                      filteredNotes.map((note) => (
-                        <div key={note.id} className="liquid-card group relative rounded-2xl p-4 hover:bg-[#141418]">
-                          <div className="flex items-center justify-between">
-                            <span className="rounded-md border border-cyan-400/25 bg-[#082f49] px-2 py-0.5 caption font-medium text-cyan-200">
-                              {note.tag}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteNote(note.id)}
-                              className="opacity-0 group-hover:opacity-100 rounded p-1 text-slate-500 hover:bg-[#1a1a20] hover:text-rose-400 transition"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                          <h4 className="mt-3 text-sm font-semibold text-white">{note.title}</h4>
-                          <p className="mt-1.5 text-xs text-slate-400 leading-relaxed">{note.content}</p>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="flex flex-col items-center gap-2 py-10 text-center">
-                        <BookOpen className="h-8 w-8 text-slate-700" />
-                        <p className="text-sm text-slate-500">
-                          {noteSearch ? "No notes match your search" : "No strategy notes yet"}
-                        </p>
-                        {!noteSearch && (
-                          <button
-                            type="button"
-                            onClick={() => setNoteModalOpen(true)}
-                            className="mt-2 text-xs text-cyan-400 hover:text-cyan-300 transition"
-                          >
-                            Create your first note →
-                          </button>
-                        )}
+                <div className="space-y-6 overflow-y-auto flex-1 pr-1.5 pb-4">
+                  {/* Market Match & Predicted Timeline */}
+                  <div className="grid gap-3 grid-cols-2">
+                    <div className="border border-[#1e1e24] bg-[#07070a] p-4 rounded-xl">
+                      <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Market Match Index</span>
+                      <div className="mt-2.5 flex items-baseline gap-1.5">
+                        <span className="text-2xl font-black text-emerald-400">{activeRoadmap?.career_demand_score || 87}</span>
+                        <span className="text-xs text-slate-500">/ 100</span>
                       </div>
-                    )}
+                      <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">
+                        Strong alignment with software target demands.
+                      </p>
+                    </div>
+
+                    <div className="border border-[#1e1e24] bg-[#07070a] p-4 rounded-xl">
+                      <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Predicted Timeline</span>
+                      <p className="text-lg font-bold text-white mt-2">
+                        {activeRoadmap ? `${Math.round(activeRoadmap.total_duration_weeks * 7 / 30)} months` : "6-8 months"}
+                      </p>
+                      <p className="text-[10px] text-slate-500 mt-1">To target readiness pace.</p>
+                    </div>
+                  </div>
+
+                  {/* Job Matches */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Job Matches</span>
+                      <span className="rounded bg-indigo-500/10 text-indigo-400 text-[8px] px-2 py-0.5 border border-indigo-500/20 font-bold uppercase">Opportunity Board</span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {jobListings.map(job => {
+                        const saved = savedJobs.includes(job.id);
+                        return (
+                          <div
+                            key={job.id}
+                            className="border border-[#141417] bg-[#07070a] p-4 rounded-xl relative hover:border-slate-800 transition"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="h-9 w-9 rounded-lg bg-[#0d0d10] border border-[#202028] flex items-center justify-center text-xs font-bold text-slate-300">
+                                  {job.company[0]}
+                                </div>
+                                <div>
+                                  <h4 className="text-xs sm:text-sm font-semibold text-white">{job.role}</h4>
+                                  <p className="text-[10px] text-slate-500">{job.company} &bull; {job.type}</p>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => setSavedJobs(s => saved ? s.filter(x => x !== job.id) : [...s, job.id])}
+                                className={`rounded p-1 transition ${saved ? "text-amber-400" : "text-slate-600 hover:text-slate-400"}`}
+                              >
+                                <Bookmark className={`h-4 w-4 ${saved ? "fill-amber-400" : ""}`} />
+                              </button>
+                            </div>
+
+                            <div className="mt-3 flex flex-wrap gap-2 text-[10px] text-slate-400">
+                              <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{job.location}</span>
+                              <span className="flex items-center gap-1"><DollarSign className="h-3 w-3" />{job.salary}</span>
+                              <span className="text-emerald-400 font-bold">&middot; {job.match}% match</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Strategy Notes (Search / Archive list) */}
+                  <div className="border-t border-[#1e1e24] pt-5">
+                    <div className="flex items-center justify-between mb-3.5">
+                      <div className="flex items-center gap-2">
+                        <Archive className="h-3.5 w-3.5 text-slate-400" />
+                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Strategy Notes & Archive</span>
+                      </div>
+                      <button
+                        onClick={() => setNoteModalOpen(true)}
+                        className="text-[10px] text-cyan-400 hover:text-cyan-300 transition inline-flex items-center gap-1 font-bold uppercase tracking-wider"
+                      >
+                        <PlusCircle className="h-3 w-3" />
+                        New Note
+                      </button>
+                    </div>
+
+                    <div className="mb-3">
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-500" />
+                        <input
+                          value={noteSearch}
+                          onChange={e => setNoteSearch(e.target.value)}
+                          placeholder="Search notes..."
+                          className="carved-input w-full rounded-lg py-1.5 pl-8 pr-3 text-xs text-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1">
+                      {filteredNotes.length > 0 ? (
+                        filteredNotes.map(note => (
+                          <div key={note.id} className="border border-[#141417] bg-[#07070a] p-3 rounded-lg relative group">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="bg-[#082f49] border border-cyan-500/20 px-1.5 py-0.2 rounded text-[8px] font-bold text-cyan-300 uppercase">
+                                {note.tag}
+                              </span>
+                              <button
+                                onClick={() => void handleDeleteNote(note.id)}
+                                className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-[#15151b] text-slate-500 hover:text-rose-400 transition"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
+                            <h5 className="text-xs font-semibold text-white leading-snug">{note.title}</h5>
+                            <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">{note.content}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-[10px] text-slate-500 text-center py-6">No strategy notes found.</p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </motion.section>
+              </div>
 
-      {/* ═══ SECTION 8 — JOB MATCHES ══════════════════════════════════════════ */}
-      <motion.section variants={fadeUp}>
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <p className="caption text-slate-500">Opportunity Board</p>
-            <h3 className="mt-1 text-lg font-semibold text-white">Job Matches</h3>
-          </div>
-          <span className="rounded-full border border-[#202028] bg-[#0d0d10] px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-            Coming Soon
-          </span>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {jobListings.map((job) => {
-            const saved = savedJobs.includes(job.id);
-            return (
-              <motion.div
-                key={job.id}
-                whileHover={{ y: -4, boxShadow: "0 20px 60px rgba(0,0,0,0.9)" }}
-                className="liquid-card group relative rounded-[20px] p-5 cursor-pointer overflow-hidden"
-              >
-                {/* Company avatar */}
-                <div className="flex items-start justify-between">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#202028] bg-[#0d0d10] text-sm font-bold text-slate-300">
-                    {job.company[0]}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setSavedJobs(s => saved ? s.filter(x => x !== job.id) : [...s, job.id])}
-                    className={`rounded-lg p-1.5 transition ${saved ? "text-amber-400" : "text-slate-600 hover:text-slate-400"}`}
-                  >
-                    <Bookmark className={`h-4 w-4 ${saved ? "fill-amber-400" : ""}`} />
-                  </button>
-                </div>
-
-                <div className="mt-3">
-                  <h4 className="text-sm font-semibold text-white">{job.role}</h4>
-                  <p className="mt-0.5 text-xs text-slate-400">{job.company} · {job.type}</p>
-                </div>
-
-                <div className="mt-3 flex flex-wrap gap-2 text-[10px]">
-                  <span className="flex items-center gap-1 text-slate-500"><MapPin className="h-3 w-3" />{job.location}</span>
-                  <span className="flex items-center gap-1 text-slate-500"><DollarSign className="h-3 w-3" />{job.salary}</span>
-                </div>
-
-                {/* Skills */}
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {job.skills.map(s => (
-                    <span key={s} className="rounded-md border border-[#202028] bg-[#0d0d10] px-2 py-0.5 text-[10px] text-slate-400">{s}</span>
-                  ))}
-                </div>
-
-                {/* Match badge + reveal button */}
-                <div className="mt-4 flex items-center justify-between">
-                  <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold text-emerald-400">
-                    {job.match}% Match
-                  </span>
-                  <button
-                    type="button"
-                    disabled
-                    className="opacity-0 group-hover:opacity-100 transition rounded-full border border-[#202028] bg-[#0d0d10] px-3 py-1.5 text-[10px] font-medium text-slate-400 cursor-not-allowed"
-                  >
-                    Save Job
-                  </button>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-      </motion.section>
-
-      {/* ═══ SECTION 9 — ACTIVITY FEED ════════════════════════════════════════ */}
-      <motion.section variants={fadeUp}>
-        <div className="mb-4">
-          <p className="caption text-slate-500">History</p>
-          <h3 className="mt-1 text-lg font-semibold text-white">Activity Feed</h3>
-        </div>
-
-        <div className="liquid-panel rounded-[24px] p-6">
-          <div className="relative space-y-5">
-            {/* Vertical connector */}
-            <div className="absolute left-[19px] top-4 bottom-4 w-px bg-gradient-to-b from-cyan-400/30 via-white/5 to-transparent" />
-
-            {activityItems.map((item, i) => {
-              const Icon = item.icon;
-              return (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, x: -12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.07, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                  className="relative flex items-start gap-4 pl-1"
+              <div className="border-t border-[#202028] pt-4 flex gap-2">
+                <button
+                  onClick={() => setIsDrawerOpen(false)}
+                  className="tactile-btn border border-[#202028] hover:border-slate-500 w-full rounded-xl py-2.5 text-xs text-slate-300 font-semibold transition"
                 >
-                  <div className={`relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#202028] ${item.color}`}>
-                    <Icon className="h-3.5 w-3.5" />
-                  </div>
-                  <div className="flex-1 min-w-0 pt-1.5">
-                    <p className="text-sm text-slate-300 leading-snug">{item.label}</p>
-                    <p className="mt-1 text-[11px] text-slate-600">{item.time}</p>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </motion.section>
+                  Close Options
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* ═══ MODAL: CREATE NOTE ══════════════════════════════════════════════ */}
       <AnimatePresence>
@@ -1064,23 +1051,23 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
               initial={{ opacity: 0, scale: 0.96, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 12 }}
-              className="liquid-panel w-full max-w-lg rounded-[24px] p-6 relative"
+              className="liquid-panel w-full max-w-lg rounded-[24px] p-6 relative bg-[#09090b]"
             >
               <button type="button" onClick={() => setNoteModalOpen(false)} className="absolute top-5 right-5 rounded-full p-2 text-slate-500 hover:text-white hover:bg-white/5 transition">
                 <X className="h-4 w-4" />
               </button>
-              <h3 className="text-base font-semibold text-white mb-5 relative z-10">Pin New Strategy Note</h3>
+              <h3 className="text-base font-bold text-white mb-5 relative z-10">Pin New Strategy Note</h3>
               <div className="space-y-4 relative z-10">
                 <label className="block space-y-1.5">
-                  <span className="caption text-slate-500">Title</span>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Title</span>
                   <input value={noteTitle} onChange={(e) => setNoteTitle(e.target.value)} placeholder="e.g. Portfolio positioning narrative" className="carved-input w-full rounded-xl px-4 py-2.5 text-sm text-white" />
                 </label>
                 <label className="block space-y-1.5">
-                  <span className="caption text-slate-500">Content</span>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Content</span>
                   <textarea value={noteContent} onChange={(e) => setNoteContent(e.target.value)} rows={4} placeholder="Strategy actions, milestones, observations..." className="carved-input w-full rounded-xl px-4 py-2.5 text-sm text-white resize-none" />
                 </label>
                 <div>
-                  <span className="caption text-slate-500 block mb-2">Tag</span>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-2">Tag</span>
                   <div className="flex flex-wrap gap-2">
                     {["Strategy", "Portfolio", "Technical", "Career"].map((tag) => (
                       <button key={tag} type="button" onClick={() => setNoteTag(tag)} className={`rounded-full px-4 py-1.5 text-xs font-semibold border transition ${noteTag === tag ? "border-cyan-400 bg-cyan-400/10 text-cyan-300" : "border-[#202028] bg-[#0c0c0e] text-slate-400"}`}>
@@ -1107,26 +1094,26 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
               initial={{ opacity: 0, scale: 0.96, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 12 }}
-              className="liquid-panel w-full max-w-lg rounded-[24px] p-6 relative"
+              className="liquid-panel w-full max-w-lg rounded-[24px] p-6 relative bg-[#09090b]"
             >
               <button type="button" onClick={() => setProgressModalOpen(false)} className="absolute top-5 right-5 rounded-full p-2 text-slate-500 hover:text-white hover:bg-white/5 transition">
                 <X className="h-4 w-4" />
               </button>
-              <h3 className="text-base font-semibold text-white mb-5 relative z-10">Log Career Momentum</h3>
+              <h3 className="text-base font-bold text-white mb-5 relative z-10">Log Career Momentum</h3>
               <div className="space-y-4 relative z-10">
                 <label className="block space-y-1.5">
-                  <span className="caption text-slate-500">Metric Label</span>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Metric Label</span>
                   <input value={progressLabel} onChange={(e) => setProgressLabel(e.target.value)} placeholder="e.g. Portfolio Readiness, AWS Certificate..." className="carved-input w-full rounded-xl px-4 py-2.5 text-sm text-white" />
                 </label>
                 <label className="block space-y-1.5">
-                  <span className="caption text-slate-500">Value ({progressValue}%)</span>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Value ({progressValue}%)</span>
                   <div className="flex gap-4 items-center">
                     <input type="range" min={10} max={100} value={progressValue} onChange={(e) => setProgressValue(Number(e.target.value))} className="w-full accent-cyan-400 cursor-pointer" />
                     <span className="font-semibold text-sm text-cyan-300 shrink-0 w-10 text-right">{progressValue}%</span>
                   </div>
                 </label>
                 <label className="block space-y-1.5">
-                  <span className="caption text-slate-500">Context Note</span>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Context Note</span>
                   <textarea value={progressNote} onChange={(e) => setProgressNote(e.target.value)} rows={3} placeholder="Observations, blockers, wins..." className="carved-input w-full rounded-xl px-4 py-2.5 text-sm text-white resize-none" />
                 </label>
                 <div className="flex justify-end gap-3 pt-2">
@@ -1138,17 +1125,6 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
           </div>
         )}
       </AnimatePresence>
-    </motion.div>
-  );
-}
-
-// Dummy icon used in empty kanban state
-function Map({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
-      <line x1="9" y1="3" x2="9" y2="18" />
-      <line x1="15" y1="6" x2="15" y2="21" />
-    </svg>
+    </div>
   );
 }

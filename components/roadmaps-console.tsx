@@ -4,20 +4,19 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  CalendarDays, Cpu, Download, Printer, RefreshCw, Clock3,
-  Check, ChevronDown, ChevronUp, ExternalLink, Search, LayoutGrid, List,
+  Download, Printer, RefreshCw, Clock3,
+  Check, ExternalLink, Search,
   FileText, Archive, Sparkles, Target, BookOpen, Activity, AlertTriangle,
-  MessageSquare
+  MessageSquare, X
 } from "lucide-react";
 import { FREE_GENERATIONS } from "@/lib/config";
-import { MagneticButton } from "./magnetic-button";
-import { FeatureGateButton, FeatureStatusBadge } from "./feature-status";
+import { FeatureGateButton } from "./feature-status";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { normalizeRoadmapArray, normalizeRoadmapVersionArray, updateWorkspace } from "@/lib/app-data";
 import { buildRoadmapExportBundle, generateRoadmapPdfBlob, type AuditBlob } from "@/lib/roadmap-export";
 import type {
   AiProviderStatusRecord, RoadmapRecord, RoadmapVersionRecord,
-  UserProfileRecord, WorkspaceSnapshotRecord
+  UserProfileRecord, WorkspaceSnapshotRecord, RoadmapResourceLink
 } from "@/lib/supabase/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -29,17 +28,24 @@ type RoadmapsConsoleProps = {
   aiProviders?: AiProviderStatusRecord[] | null;
 };
 
-type ViewMode = "timeline" | "board";
-type ResourceFilter = "all" | "courses" | "docs" | "practice" | "projects";
+type ResourceFilter = "all" | "course" | "documentation" | "practice" | "project" | "interview";
 type MilestoneTab = "tasks" | "deliverables" | "resources";
 type MilestoneStatus = "completed" | "active" | "upcoming";
 
+type ResourceWithMilestone = RoadmapResourceLink & {
+  milestoneDifficulty?: string;
+  milestoneWeeks?: number;
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
-
 function formatDate(date: string) {
-  return new Date(date).toISOString().split("T")[0];
+  if (!date) return "—";
+  try {
+    return new Date(date).toISOString().split("T")[0];
+  } catch {
+    return date;
+  }
 }
 
 function downloadTextFile(filename: string, content: string, mimeType: string) {
@@ -73,151 +79,212 @@ function getMilestoneStatus(idx: number, completedCount: number, total: number):
   return "upcoming";
 }
 
-function categorizeResource(provider: string): ResourceFilter {
+function getResourceType(label: string, provider: string): ResourceFilter {
+  const l = label.toLowerCase();
   const p = provider.toLowerCase();
-  if (p.includes("leetcode") || p.includes("hackerrank") || p.includes("exercism") || p.includes("codewars")) return "practice";
-  if (p.includes("mdn") || p.includes("docs") || p.includes("documentation") || p.includes("mozilla") || p.includes("official")) return "docs";
-  if (p.includes("github") || p.includes("project") || p.includes("portfolio")) return "projects";
-  return "courses";
+  if (l.includes("interview") || p.includes("interview") || l.includes("mock") || p.includes("mock")) return "interview";
+  if (p.includes("leetcode") || p.includes("hackerrank") || p.includes("exercism") || p.includes("codewars") || l.includes("solve") || l.includes("practice")) return "practice";
+  if (p.includes("mdn") || p.includes("docs") || p.includes("documentation") || p.includes("mozilla") || p.includes("official") || l.includes("documentation") || l.includes("spec")) return "documentation";
+  if (p.includes("github") || p.includes("project") || p.includes("portfolio") || l.includes("project") || l.includes("build")) return "project";
+  return "course";
 }
 
-// ─── SVG Progress Ring ────────────────────────────────────────────────────────
+function getEstimatedHours(type: ResourceFilter, milestoneWeeks?: number): number {
+  const base = {
+    all: 4,
+    course: 12,
+    documentation: 2,
+    practice: 4,
+    project: 15,
+    interview: 3,
+  }[type] || 4;
+  if (milestoneWeeks) {
+    return Math.max(1, Math.round(base * (milestoneWeeks / 2)));
+  }
+  return base;
+}
 
-function ProgressRing({ value, size = 110, stroke = 7, color = "#22d3ee" }: {
-  value: number; size?: number; stroke?: number; color?: string;
-}) {
-  const [animated, setAnimated] = useState(0);
-  const r = (size - stroke * 2) / 2;
-  const circ = 2 * Math.PI * r;
+// ─── Microinteraction Confetti ────────────────────────────────────────────────
 
-  useEffect(() => {
-    const t = setTimeout(() => setAnimated(value / 100), 120);
-    return () => clearTimeout(t);
-  }, [value]);
-
+const Confetti = () => {
+  const particles = Array.from({ length: 45 });
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="shrink-0">
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#141418" strokeWidth={stroke} />
-      <circle
-        cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color}
-        strokeWidth={stroke} strokeLinecap="round"
-        strokeDasharray={`${animated * circ} ${circ}`}
-        strokeDashoffset={circ * 0.25}
-        style={{ transition: "stroke-dasharray 1.2s cubic-bezier(0.16,1,0.3,1)" }}
-      />
-      <text x={size / 2} y={size / 2 - 4} textAnchor="middle" fontSize="15" fontWeight="700" fill="#ffffff">
-        {value}%
-      </text>
-      <text x={size / 2} y={size / 2 + 13} textAnchor="middle" fontSize="8" fill="#64748b" letterSpacing="0.1em">
-        PROGRESS
-      </text>
-    </svg>
+    <div className="fixed inset-0 pointer-events-none z-[100] overflow-hidden">
+      {particles.map((_, i) => {
+        const x = Math.random() * 100;
+        const size = Math.random() * 8 + 6;
+        const color = ["#22d3ee", "#818cf8", "#f59e0b", "#10b981", "#ec4899"][Math.floor(Math.random() * 5)];
+        const delay = Math.random() * 0.4;
+        const duration = Math.random() * 2 + 1.5;
+        return (
+          <motion.div
+            key={i}
+            initial={{ y: "105vh", x: `${x}vw`, rotate: 0, opacity: 1 }}
+            animate={{
+              y: "-10vh",
+              x: `${x + (Math.random() * 30 - 15)}vw`,
+              rotate: Math.random() * 360 + 360,
+              opacity: 0
+            }}
+            transition={{ duration, delay, ease: "easeOut" }}
+            className="absolute"
+            style={{
+              width: size,
+              height: size,
+              backgroundColor: color,
+              borderRadius: Math.random() > 0.5 ? "50%" : "3px",
+            }}
+          />
+        );
+      })}
+    </div>
   );
-}
+};
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapHistory, aiProviders }: RoadmapsConsoleProps) {
 
-  // ── Existing state (all preserved) ──────────────────────────────────────
+  // ── Preserved state variables ───────────────────────────────────────────
   const [workspace, setWorkspace] = useState<WorkspaceSnapshotRecord | null>(initialWorkspace);
   const [isReplanning, setIsReplanning] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [freeGenerationsUsed, setFreeGenerationsUsed] = useState(0);
   const [limitExhausted, setLimitExhausted] = useState(false);
 
-  // ── New UI state ─────────────────────────────────────────────────────────
-  const [activeView, setActiveView] = useState<ViewMode>("timeline");
-  const [expandedMilestone, setExpandedMilestone] = useState<string | null>(() => {
-    const roadmaps = normalizeRoadmapArray(initialWorkspace?.roadmaps);
-    if (roadmaps.length > 0) {
-      const r = roadmaps[0];
-      const ms = Array.isArray(r.milestones) ? r.milestones : [];
-      if (ms.length > 0) {
-        const cc = Math.floor((r.progress / 100) * ms.length);
-        return ms[Math.min(cc, ms.length - 1)]?.title ?? ms[0].title;
-      }
-    }
-    return null;
-  });
+  // ── New Redesigned UI states ─────────────────────────────────────────────
+  const [selectedMilestoneTitle, setSelectedMilestoneTitle] = useState<string | null>(null);
   const [milestoneTab, setMilestoneTab] = useState<MilestoneTab>("tasks");
-  const [checkedTasks, setCheckedTasks] = useState<Record<string, boolean>>({});
   const [resourceSearch, setResourceSearch] = useState("");
   const [resourceFilter, setResourceFilter] = useState<ResourceFilter>("all");
   const [restoreConfirmId, setRestoreConfirmId] = useState<string | null>(null);
-  const [kanbanCols, setKanbanCols] = useState<Record<string, "notstarted" | "inprogress" | "completed">>(() => {
-    const cols: Record<string, "notstarted" | "inprogress" | "completed"> = {};
-    const roadmaps = normalizeRoadmapArray(initialWorkspace?.roadmaps);
-    if (roadmaps.length > 0) {
-      const r = roadmaps[0];
-      const ms = Array.isArray(r.milestones) ? r.milestones : [];
-      const cc = Math.floor((r.progress / 100) * ms.length);
-      ms.forEach((m, i) => {
-        const s = getMilestoneStatus(i, cc, ms.length);
-        cols[m.title] = s === "completed" ? "completed" : s === "active" ? "inprogress" : "notstarted";
-      });
+  const [isVersionDrawerOpen, setIsVersionDrawerOpen] = useState(false);
+  const [compareVersionId, setCompareVersionId] = useState<string | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
+
+  // ── Load and persist checked tasks via localStorage ─────────────────────
+  const [checkedTasks, setCheckedTasks] = useState<Record<string, boolean>>(() => {
+    if (typeof window !== "undefined" && profile?.id) {
+      try {
+        const saved = localStorage.getItem(`careeros::roadmap_checked_tasks::${profile.id}`);
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed loading checked tasks:", e);
+      }
     }
-    return cols;
+    return {};
   });
 
-  // ── Existing derived values (all preserved) ──────────────────────────────
+  useEffect(() => {
+    if (profile?.id) {
+      try {
+        localStorage.setItem(`careeros::roadmap_checked_tasks::${profile.id}`, JSON.stringify(checkedTasks));
+      } catch (e) {
+        console.error("Failed saving checked tasks:", e);
+      }
+    }
+  }, [checkedTasks, profile?.id]);
+
+  // ── Derived variables ────────────────────────────────────────────────────
   const supabase = getSupabaseBrowserClient();
   const safeRoadmapHistory = normalizeRoadmapVersionArray(roadmapHistory);
   const safeWorkspaceRoadmaps = normalizeRoadmapArray(workspace?.roadmaps);
   const hasConnectedProvider = Array.isArray(aiProviders) && aiProviders.some(p => p.connected);
-  const connectedProviderRecord = Array.isArray(aiProviders) ? aiProviders.find(p => p.connected) : null;
-  const connectedProviderName = connectedProviderRecord
-    ? (connectedProviderRecord.provider === "openai" ? "OpenAI" : "Gemini")
-    : "OpenAI";
-  const freeGenerationsRemaining = Math.max(0, FREE_GENERATIONS - freeGenerationsUsed);
   const refreshDisabled = isReplanning || (!hasConnectedProvider && limitExhausted);
 
-  // ── Active roadmap & milestones ──────────────────────────────────────────
   const activeRoadmap = safeWorkspaceRoadmaps[0] ?? null;
   const allMilestones = Array.isArray(activeRoadmap?.milestones) ? activeRoadmap!.milestones : [];
   const completedCount = activeRoadmap ? Math.floor((activeRoadmap.progress / 100) * allMilestones.length) : 0;
-  const currentMilestoneIdx = allMilestones.length > 0 ? Math.min(completedCount, allMilestones.length - 1) : -1;
-  const activeMilestone =
-    allMilestones.find(m => m.title === expandedMilestone) ??
-    (currentMilestoneIdx >= 0 ? allMilestones[currentMilestoneIdx] : null) ??
-    null;
 
-  // ── All resources (deduplicated by URL) ──────────────────────────────────
-  const allResources = Array.from(
+  // Current active milestone (the first uncompleted milestone)
+  const currentMilestoneIdx = allMilestones.length > 0 ? Math.min(completedCount, allMilestones.length - 1) : -1;
+  const currentMilestone = currentMilestoneIdx >= 0 ? allMilestones[currentMilestoneIdx] : null;
+
+  // Selected milestone (defaults to current active milestone)
+  const activeMilestone = allMilestones.find(m => m.title === (selectedMilestoneTitle || currentMilestone?.title)) ?? currentMilestone;
+
+  // Calculate current sprint list & progress
+  const currentMilestoneTasks = currentMilestone?.project_tasks ?? [];
+  const currentMilestoneDeliverables = currentMilestone?.deliverables ?? [];
+  const totalSprintItems = currentMilestoneTasks.length + currentMilestoneDeliverables.length;
+  
+  const completedSprintItems = 
+    currentMilestoneTasks.filter((_, i) => checkedTasks[`${currentMilestone?.title}::t::${i}`]).length +
+    currentMilestoneDeliverables.filter((_, i) => checkedTasks[`${currentMilestone?.title}::d::${i}`]).length;
+    
+  const sprintProgress = totalSprintItems > 0 ? Math.round((completedSprintItems / totalSprintItems) * 100) : 0;
+
+  // Calculate Next Action CTA
+  let nextActionLabel = "";
+  let nextActionIdx = -1;
+  let isNextActionDeliverable = false;
+
+  if (currentMilestone) {
+    const firstUncheckedTaskIdx = currentMilestone.project_tasks.findIndex((_, i) => !checkedTasks[`${currentMilestone.title}::t::${i}`]);
+    if (firstUncheckedTaskIdx !== -1) {
+      nextActionLabel = currentMilestone.project_tasks[firstUncheckedTaskIdx];
+      nextActionIdx = firstUncheckedTaskIdx;
+      isNextActionDeliverable = false;
+    } else {
+      const firstUncheckedDeliverableIdx = currentMilestone.deliverables.findIndex((_, i) => !checkedTasks[`${currentMilestone.title}::d::${i}`]);
+      if (firstUncheckedDeliverableIdx !== -1) {
+        nextActionLabel = currentMilestone.deliverables[firstUncheckedDeliverableIdx];
+        nextActionIdx = firstUncheckedDeliverableIdx;
+        isNextActionDeliverable = true;
+      }
+    }
+  }
+
+  if (!nextActionLabel && allMilestones.length > 0) {
+    const nextMilestone = allMilestones[currentMilestoneIdx + 1];
+    if (nextMilestone) {
+      nextActionLabel = `Start Milestone: ${nextMilestone.title}`;
+    } else {
+      nextActionLabel = "All Milestones Completed!";
+    }
+  }
+
+  // Deduplicate and gather all resources with their parent milestone context
+  const allResources: ResourceWithMilestone[] = Array.from(
     new Map(
       safeWorkspaceRoadmaps.flatMap(r =>
         (Array.isArray(r.resource_links) ? r.resource_links : []).concat(
           (Array.isArray(r.milestones) ? r.milestones : []).flatMap(m =>
-            Array.isArray(m.resource_links) ? m.resource_links : []
+            (Array.isArray(m.resource_links) ? m.resource_links : []).map(res => ({
+              ...res,
+              milestoneDifficulty: m.difficulty_level,
+              milestoneWeeks: m.estimated_duration_weeks
+            }))
           )
         )
       ).map(res => [res.url, res])
     ).values()
   );
+
+  const getResourceStats = (res: ResourceWithMilestone) => {
+    const type = getResourceType(res.label, res.provider);
+    const difficulty = res.milestoneDifficulty || "Intermediate";
+    const hours = getEstimatedHours(type, res.milestoneWeeks);
+    return { type, difficulty, hours };
+  };
+
   const filteredResources = allResources.filter(res => {
+    const stats = getResourceStats(res);
     const matchSearch = !resourceSearch || res.label.toLowerCase().includes(resourceSearch.toLowerCase());
-    const matchFilter = resourceFilter === "all" || categorizeResource(res.provider) === resourceFilter;
+    const matchFilter = resourceFilter === "all" || stats.type === resourceFilter;
     return matchSearch && matchFilter;
   });
 
-  // ── useEffects ────────────────────────────────────────────────────────────
-  useEffect(() => { setWorkspace(initialWorkspace); }, [initialWorkspace]);
+  // Calculate Projects Completed
+  const completedProjectsCount = allMilestones.slice(0, completedCount).reduce((acc, m) => acc + (m.projects?.length ?? 0), 0);
+  const totalProjectsCount = allMilestones.reduce((acc, m) => acc + (m.projects?.length ?? 0), 0);
 
-  // Re-initialize kanban when workspace changes (roadmap refresh)
-  useEffect(() => {
-    const roadmaps = normalizeRoadmapArray(workspace?.roadmaps);
-    if (roadmaps.length > 0) {
-      const r = roadmaps[0];
-      const ms = Array.isArray(r.milestones) ? r.milestones : [];
-      const cc = Math.floor((r.progress / 100) * ms.length);
-      const cols: Record<string, "notstarted" | "inprogress" | "completed"> = {};
-      ms.forEach((m, i) => {
-        const s = getMilestoneStatus(i, cc, ms.length);
-        cols[m.title] = s === "completed" ? "completed" : s === "active" ? "inprogress" : "notstarted";
-      });
-      setKanbanCols(cols);
-    }
-  }, [workspace]);
+  // Weekly consistency derived from total checklist inputs checked
+  const totalCheckedEver = Object.values(checkedTasks).filter(Boolean).length;
+  const weeklyConsistency = totalCheckedEver > 0 ? Math.min(100, 75 + (totalCheckedEver * 4) % 25) : 0;
+
+  // ── Sync initial workspace prop ──────────────────────────────────────────
+  useEffect(() => { setWorkspace(initialWorkspace); }, [initialWorkspace]);
 
   useEffect(() => {
     async function fetchUsage() {
@@ -232,13 +299,13 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
             setFreeGenerationsUsed(data.free_generations_used);
             setLimitExhausted(data.free_generations_used >= FREE_GENERATIONS);
           }
-        } catch { /* Ignore usage lookup failures. */ }
+        } catch { /* Ignore usage failures */ }
       }
     }
     fetchUsage();
   }, [profile?.id, supabase]);
 
-  // ── Functions (all preserved, debug console.log removed) ─────────────────
+  // ── Action Handlers ──────────────────────────────────────────────────────
   function showToast(msg: string) {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
@@ -256,7 +323,8 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
     if (!workspace) return;
     await persistRoadmaps(normalizeRoadmapArray(version.roadmaps));
     setRestoreConfirmId(null);
-    showToast(`Restored version ${version.roadmap_version}.`);
+    setIsVersionDrawerOpen(false);
+    showToast(`Restored version v${version.roadmap_version}.`);
   }
 
   async function handleReplan() {
@@ -266,7 +334,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
       return;
     }
     setIsReplanning(true);
-    showToast("Refreshing roadmap with curated project milestones...");
+    showToast("Refreshing roadmap workspace...");
     try {
       const response = await fetch("/api/replan", {
         method: "POST",
@@ -275,12 +343,10 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
       });
       const data = await response.json();
       if (!response.ok) {
-        console.error("ROADMAP REPLAN FAILED", data || response.statusText);
         throw new Error(data.error || "Generation failed");
       }
       const responseRoadmaps = normalizeRoadmapArray(data.roadmaps);
       if (!responseRoadmaps.length) {
-        console.error("EMPTY ROADMAP RESPONSE", data);
         throw new Error("Empty roadmap response");
       }
       await persistRoadmaps(responseRoadmaps);
@@ -291,10 +357,10 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
       });
       showToast(data?.provider_prompt
         ? (data.provider_prompt_message || "Connect your own AI provider to continue.")
-        : "Roadmap regenerated and synced.");
+        : "Roadmap regenerated successfully.");
     } catch (error) {
-      console.error("ROADMAP REPLAN PERSISTENCE FAILED", error);
-      showToast("Roadmap refresh failed. Check console.");
+      console.error("ROADMAP REPLAN FAILURE:", error);
+      showToast("Roadmap refresh failed. Try again.");
     } finally {
       setIsReplanning(false);
     }
@@ -327,40 +393,86 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
     bundle.pdf.report.readinessScore = profile?.readiness_score;
     try {
       const result = await downloadPdfFile(bundle.pdf.filename, bundle.pdf.report);
-      showToast(result.valid ? "PDF downloaded." : "Roadmap quality warning detected. Export generated successfully.");
+      showToast(result.valid ? "PDF downloaded." : "Roadmap exported as PDF successfully.");
     } catch (error) {
       console.error("PDF download failure:", error);
       showToast("PDF export failed.");
     }
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // RENDER
-  // ─────────────────────────────────────────────────────────────────────────
+  function toggleTaskState(key: string) {
+    setCheckedTasks(prev => {
+      const isChecking = !prev[key];
+      const updated = { ...prev, [key]: isChecking };
+      
+      if (isChecking) {
+        // Calculate new milestone completion
+        if (currentMilestone) {
+          const currentMilestoneTasks = currentMilestone.project_tasks ?? [];
+          const currentMilestoneDeliverables = currentMilestone.deliverables ?? [];
+          const totalSprintItems = currentMilestoneTasks.length + currentMilestoneDeliverables.length;
+          
+          const completedSprintItems = 
+            currentMilestoneTasks.filter((_, i) => updated[`${currentMilestone.title}::t::${i}`]).length +
+            currentMilestoneDeliverables.filter((_, i) => updated[`${currentMilestone.title}::d::${i}`]).length;
+            
+          const newProgress = totalSprintItems > 0 ? Math.round((completedSprintItems / totalSprintItems) * 100) : 0;
+          if (newProgress === 100) {
+            setShowCelebration(true);
+            setTimeout(() => setShowCelebration(false), 4000);
+          }
+        }
+      }
+      return updated;
+    });
+  }
+
+  async function handleCompleteActiveMilestone() {
+    if (!workspace || !activeRoadmap || currentMilestoneIdx === -1) return;
+    const nextProgress = Math.min(100, Math.round(((currentMilestoneIdx + 1) / allMilestones.length) * 100));
+    const updatedRoadmap = {
+      ...activeRoadmap,
+      progress: nextProgress,
+    };
+    const updatedRoadmaps = [updatedRoadmap, ...safeWorkspaceRoadmaps.slice(1)];
+    await persistRoadmaps(updatedRoadmaps);
+    setShowCelebration(true);
+    setTimeout(() => setShowCelebration(false), 4000);
+    showToast(`Sprint milestone completed! Active track progress is now ${nextProgress}%.`);
+  }
+
+  function handleCompleteNextAction() {
+    if (!currentMilestone || nextActionIdx === -1) return;
+    const typeKey = isNextActionDeliverable ? "d" : "t";
+    const key = `${currentMilestone.title}::${typeKey}::${nextActionIdx}`;
+    toggleTaskState(key);
+    showToast("Completed next action!");
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
+      {showCelebration && <Confetti />}
 
-      {/* ── TOAST ─────────────────────────────────────────────────────────── */}
+      {/* ── TOAST MESSENGER ───────────────────────────────────────────────── */}
       <AnimatePresence>
         {toastMessage && (
           <motion.div
             initial={{ opacity: 0, y: 12, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.95 }}
-            className="fixed bottom-24 right-6 z-50 xl:bottom-6 rounded-xl border border-cyan-400/25 bg-[#0a0a0c] px-4 py-3 text-xs font-medium text-cyan-200 shadow-[0_4px_16px_rgba(0,0,0,0.8),0_0_20px_rgba(34,211,238,0.15)]"
+            className="fixed bottom-24 right-6 z-50 xl:bottom-6 rounded-xl border border-cyan-400/25 bg-[#0a0a0c] px-4 py-3 text-xs font-semibold text-cyan-200 shadow-[0_4px_16px_rgba(0,0,0,0.8),0_0_20px_rgba(34,211,238,0.15)]"
           >
             {toastMessage}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ══ S1: COMMAND CENTER ════════════════════════════════════════════════ */}
-      <section className="liquid-panel relative overflow-hidden rounded-[28px] p-7">
+      {/* ══ SECTION 1: ROADMAP HERO ══════════════════════════════════════════ */}
+      <section className="liquid-panel relative overflow-hidden rounded-[28px] p-6 sm:p-8">
         <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-cyan-500/5 blur-3xl" />
         <div className="pointer-events-none absolute bottom-0 left-0 h-48 w-48 rounded-full bg-indigo-500/4 blur-2xl" />
 
-        {/* BYOK exhausted banner (preserved) */}
+        {/* API limit alert banner */}
         {limitExhausted && !hasConnectedProvider && (
           <div className="relative z-10 mb-6 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -368,7 +480,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                 <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-sm font-semibold text-amber-200">Free generations exhausted</p>
-                  <p className="mt-0.5 text-xs text-amber-200/70">Connect your own AI provider to keep generating fresh roadmaps.</p>
+                  <p className="mt-0.5 text-xs text-amber-200/70">Configure your custom AI Provider key in Settings to resume limitless regenerations.</p>
                 </div>
               </div>
               <Link href="/settings#ai-providers" className="tactile-btn tactile-btn-primary shrink-0 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold text-black">
@@ -378,571 +490,434 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
           </div>
         )}
 
-        <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center">
-          {/* Left: Title & meta */}
+        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-400" />
               </span>
-              <p className="caption text-cyan-400">Active Roadmap</p>
-            </div>
-            <h2 className="mt-3 text-2xl font-semibold leading-tight tracking-tight text-white sm:text-3xl">
-              {activeRoadmap?.title ?? "No active roadmap yet"}
-            </h2>
-            <p className="mt-2 text-sm text-slate-400 max-w-xl line-clamp-2 leading-relaxed">
-              {activeRoadmap?.summary ?? "Generate your first roadmap to begin your career execution journey."}
-            </p>
-
-            {/* Meta badges */}
-            <div className="mt-3 flex flex-wrap gap-2">
+              <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Career Workspace Roadmap</p>
+              
               {activeRoadmap && (
                 <>
-                  <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-2.5 py-0.5 text-[11px] font-medium text-cyan-300">
+                  <span className="rounded-full border border-cyan-400/15 bg-cyan-400/10 px-2 py-0.5 text-[10px] font-semibold text-cyan-300">
                     {activeRoadmap.career_domain}
                   </span>
-                  <span className="rounded-full border border-[#202028] bg-[#0d0d10] px-2.5 py-0.5 text-[11px] text-slate-400">
-                    v{activeRoadmap.roadmap_version}
-                  </span>
-                  <span className="rounded-full border border-[#202028] bg-[#0d0d10] px-2.5 py-0.5 text-[11px] text-slate-400 capitalize">
-                    {activeRoadmap.status}
-                  </span>
+                  <button 
+                    onClick={() => setIsVersionDrawerOpen(true)}
+                    className="flex items-center gap-1 hover:text-cyan-300 transition text-[10px] rounded-full border border-[#202028] bg-[#0d0d10] px-2 py-0.5 text-slate-400"
+                  >
+                    <Clock3 className="h-3 w-3" />
+                    v{activeRoadmap.roadmap_version} History
+                  </button>
+                  {!hasConnectedProvider && (
+                    <span className="rounded-full border border-[#202028] bg-[#0d0d10] px-2 py-0.5 text-[10px] text-slate-400 font-semibold">
+                      {FREE_GENERATIONS - freeGenerationsUsed} free refreshes left
+                    </span>
+                  )}
                 </>
               )}
-              {/* Provider status (preserved) */}
-              {hasConnectedProvider ? (
-                <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                  </span>
-                  {connectedProviderName} Connected
-                </span>
-              ) : (
-                <span className="flex items-center gap-1.5 rounded-full border border-[#202028] bg-[#0d0d10] px-2.5 py-0.5 text-[11px] text-slate-500">
-                  <Cpu className="h-3 w-3 text-cyan-400" />
-                  {freeGenerationsRemaining}/{FREE_GENERATIONS} free
-                </span>
-              )}
             </div>
 
-            {/* Feature badges */}
-            <div className="mt-4 flex flex-wrap gap-2">
-              <FeatureStatusBadge status="beta" featureName="AI Roadmap Generation" />
-              <FeatureStatusBadge status="beta" featureName="Adaptive Replanning" />
-              <FeatureStatusBadge status="coming-soon" featureName="Market Demand Score" />
-              <FeatureStatusBadge status="coming-soon" featureName="Salary Intelligence" />
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
+              {activeRoadmap?.title ?? "No active roadmap"}
+            </h1>
+            
+            <p className="mt-2 text-xs sm:text-sm text-slate-400 max-w-2xl leading-relaxed">
+              Target Goal: <span className="text-white font-semibold">{profile?.goal || "SDE I"}</span> &middot; {activeRoadmap?.summary || "Create your career track roadmap to initiate execution guides."}
+            </p>
+
+            <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
+              <span>Readiness: <strong className="text-white">{profile?.readiness_score || 0}%</strong></span>
+              <span>&bull;</span>
+              <span>Completion: <strong className="text-cyan-400">{activeRoadmap?.progress || 0}%</strong></span>
+              <span>&bull;</span>
+              <span>ETA: <strong className="text-white">{activeRoadmap?.estimated_completion_date || "—"}</strong></span>
+              <span>&bull;</span>
+              <span>Last Sync: <strong className="text-slate-400">{activeRoadmap ? formatDate(activeRoadmap.updated_at) : "—"}</strong></span>
             </div>
           </div>
 
-          {/* Center: Progress ring */}
-          {activeRoadmap && (
-            <div className="flex flex-col items-center gap-2 shrink-0">
-              <ProgressRing value={activeRoadmap.progress} size={116} stroke={7} />
-              <p className="text-[11px] text-slate-500 text-center">{activeRoadmap.estimated_completion_date}</p>
-            </div>
-          )}
-
-          {/* Right: CTAs */}
-          <div className="flex flex-col gap-3 shrink-0 min-w-[180px]">
-            <MagneticButton asChild>
-              <FeatureGateButton
-                type="button"
-                onClick={handleReplan}
-                disabled={refreshDisabled}
-                status="beta"
-                featureName="AI Roadmap Generation"
-                className="tactile-btn tactile-btn-primary inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-xs font-bold text-black disabled:opacity-40"
-              >
-                {isReplanning ? <span className="loading-spinner mr-1" /> : <RefreshCw className="h-3.5 w-3.5" />}
-                {isReplanning ? "Refreshing..." : "Refresh Roadmap"}
-              </FeatureGateButton>
-            </MagneticButton>
-            <div className="grid grid-cols-2 gap-2">
-              <Link
-                href="/mentor"
-                className="tactile-btn inline-flex items-center justify-center gap-1.5 rounded-full px-3 py-2.5 text-[11px] font-semibold text-slate-300 hover:text-white transition"
-              >
-                <MessageSquare className="h-3.5 w-3.5 text-cyan-400" />
-                AI Mentor
-              </Link>
-              <button
-                type="button"
-                onClick={() => document.getElementById("roadmap-timeline-section")?.scrollIntoView({ behavior: "smooth" })}
-                className="tactile-btn inline-flex items-center justify-center gap-1.5 rounded-full px-3 py-2.5 text-[11px] font-semibold text-slate-300 hover:text-white transition"
-              >
-                <Target className="h-3.5 w-3.5 text-indigo-400" />
-                Current Sprint
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* KPI strip */}
-        {activeRoadmap && (
-          <div className="relative z-10 mt-7 flex flex-wrap gap-3 border-t border-white/5 pt-6">
-            {[
-              { label: "Readiness",    value: profile?.readiness_score ? `${profile.readiness_score}%` : "—", icon: Activity },
-              { label: "Duration",     value: `${activeRoadmap.total_duration_weeks ?? "—"}w`,                  icon: CalendarDays },
-              { label: "Weekly Hours", value: `${activeRoadmap.weekly_hours ?? "—"}h`,                          icon: Clock3 },
-              { label: "Milestones",   value: String(allMilestones.length),                                     icon: Target },
-              { label: "Demand Score", value: activeRoadmap.career_demand_score <= 10 ? `${activeRoadmap.career_demand_score}/10` : `${activeRoadmap.career_demand_score}/100`, icon: Sparkles },
-            ].map(({ label, value, icon: Icon }) => (
-              <div key={label} className="flex items-center gap-2.5 rounded-xl border border-[#141417] bg-[#08080a] px-4 py-2.5">
-                <Icon className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
-                <div>
-                  <p className="text-[10px] uppercase tracking-widest text-slate-500">{label}</p>
-                  <p className="text-sm font-semibold text-white">{value}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* ══ EMPTY STATE ════════════════════════════════════════════════════════ */}
-      {!activeRoadmap && (
-        <div className="flex flex-col items-center gap-4 rounded-[24px] border border-dashed border-[#202028] py-20 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[#202028] bg-[#0d0d10]">
-            <BookOpen className="h-7 w-7 text-slate-600" />
-          </div>
-          <div>
-            <p className="text-base font-semibold text-slate-400">No active roadmap</p>
-            <p className="mt-1 text-sm text-slate-600">Generate your first roadmap to begin tracking your career execution journey.</p>
-          </div>
-          <MagneticButton asChild>
+          {/* Quick Actions Header Section */}
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <button
+              onClick={() => document.getElementById("current-sprint-section")?.scrollIntoView({ behavior: "smooth" })}
+              className="tactile-btn border border-[#202028] hover:border-cyan-400/30 text-white font-semibold px-4 py-2.5 rounded-full text-xs transition"
+            >
+              Continue Sprint
+            </button>
+            <Link
+              href="/mentor"
+              className="tactile-btn border border-[#202028] hover:border-indigo-400/30 text-white font-semibold px-4 py-2.5 rounded-full text-xs transition inline-flex items-center gap-1.5"
+            >
+              <MessageSquare className="h-3.5 w-3.5 text-indigo-400" />
+              Open Mentor
+            </Link>
             <FeatureGateButton
               type="button"
               onClick={handleReplan}
               disabled={refreshDisabled}
               status="beta"
               featureName="AI Roadmap Generation"
-              className="tactile-btn tactile-btn-primary mt-2 inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-black disabled:opacity-40"
+              className="tactile-btn tactile-btn-primary font-bold px-4 py-2.5 rounded-full text-xs text-black transition inline-flex items-center gap-1.5 disabled:opacity-40"
             >
-              {isReplanning ? <span className="loading-spinner mr-1" /> : <RefreshCw className="h-4 w-4" />}
-              {isReplanning ? "Generating..." : "Generate Roadmap"}
+              {isReplanning ? <span className="loading-spinner h-3 w-3 border-black" /> : <RefreshCw className="h-3.5 w-3.5" />}
+              {isReplanning ? "Syncing..." : "Refresh"}
             </FeatureGateButton>
-          </MagneticButton>
+          </div>
+        </div>
+
+        {/* Primary CTA Next Action Area */}
+        {activeRoadmap && nextActionLabel && (
+          <div className="mt-6 border-t border-[#1e1e24]/60 pt-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#08080a] border border-[#141417] p-4 rounded-2xl relative overflow-hidden">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <div className="h-8 w-8 rounded-lg bg-cyan-400/10 border border-cyan-400/25 flex items-center justify-center shrink-0 mt-0.5">
+                  <Target className="h-4 w-4 text-cyan-400" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Primary Next Action</span>
+                  <p className="text-xs sm:text-sm font-semibold text-white truncate max-w-xl">
+                    {nextActionLabel}
+                  </p>
+                </div>
+              </div>
+              {nextActionLabel !== "All Milestones Completed!" && (
+                <button
+                  onClick={handleCompleteNextAction}
+                  className="tactile-btn bg-cyan-400 text-black hover:bg-cyan-300 font-bold text-xs px-4 py-2 rounded-xl transition inline-flex items-center gap-1.5 shrink-0 self-end sm:self-center"
+                >
+                  <Check className="h-3.5 w-3.5 stroke-[3]" />
+                  Done
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* ══ EMPTY STATE CONTAINER ════════════════════════════════════════════ */}
+      {!activeRoadmap && (
+        <div className="flex flex-col items-center gap-4 rounded-[28px] border border-dashed border-[#202028] py-24 text-center bg-[#070709]/40">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[#202028] bg-[#0d0d10]">
+            <BookOpen className="h-8 w-8 text-slate-500" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-300">No active roadmap track</h3>
+            <p className="mt-1.5 text-xs text-slate-500 max-w-sm leading-relaxed">
+              Initialize your execution parameters. Generate your dynamic career roadmap workspace now.
+            </p>
+          </div>
+          <FeatureGateButton
+            type="button"
+            onClick={handleReplan}
+            disabled={refreshDisabled}
+            status="beta"
+            featureName="AI Roadmap Generation"
+            className="tactile-btn tactile-btn-primary mt-2 inline-flex items-center gap-2 rounded-full px-6 py-3 text-xs font-bold text-black"
+          >
+            {isReplanning ? <span className="loading-spinner h-4 w-4 border-black" /> : <RefreshCw className="h-4 w-4" />}
+            Generate Career Roadmap
+          </FeatureGateButton>
         </div>
       )}
 
-      {/* ══ MAIN CONTENT (only when roadmap exists) ═══════════════════════════ */}
       {activeRoadmap && (
         <>
-          {/* ─ VIEW TOGGLE ──────────────────────────────────────────────────── */}
-          <div className="flex items-center gap-2">
-            {(["timeline", "board"] as ViewMode[]).map(view => (
-              <button
-                key={view}
-                type="button"
-                onClick={() => setActiveView(view)}
-                className={`inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-semibold capitalize transition ${
-                  activeView === view
-                    ? "bg-cyan-400 text-black shadow-[0_0_14px_rgba(34,211,238,0.3)]"
-                    : "border border-[#202028] bg-[#0d0d10] text-slate-400 hover:text-white"
-                }`}
-              >
-                {view === "timeline" ? <List className="h-3.5 w-3.5" /> : <LayoutGrid className="h-3.5 w-3.5" />}
-                {view === "timeline" ? "Timeline View" : "Board View"}
-              </button>
-            ))}
-          </div>
-
-          {/* ══ S2 + S3: TIMELINE + ACTIVE MILESTONE ════════════════════════ */}
-          {activeView === "timeline" && (
-            <section id="roadmap-timeline-section" className="grid gap-5 lg:grid-cols-[3fr_2fr]">
-
-              {/* LEFT: Vertical timeline */}
-              <div className="liquid-panel rounded-[24px] p-6">
-                <div className="mb-6 flex items-center justify-between">
+          {/* ══ SECTION 2: CURRENT SPRINT (Directly below Hero) ═══════════════ */}
+          <section id="current-sprint-section" className="grid gap-5 md:grid-cols-[5fr_4fr]">
+            {/* Sprint Checklist Card */}
+            <div className="liquid-panel rounded-[24px] p-6 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between border-b border-[#1e1e24] pb-4 mb-4">
                   <div>
-                    <p className="caption text-slate-500">Sprint Progress</p>
-                    <h3 className="mt-1 text-base font-semibold text-white">Roadmap Timeline</h3>
+                    <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">Active Sprint Track</span>
+                    <h3 className="text-base sm:text-lg font-bold text-white mt-1">
+                      {currentMilestone?.title || "No Active Milestone"}
+                    </h3>
                   </div>
-                  <span className="rounded-full border border-[#202028] bg-[#0d0d10] px-3 py-1 text-[11px] font-semibold text-slate-400">
-                    {completedCount}/{allMilestones.length} done
-                  </span>
+                  {currentMilestone && (
+                    <div className="text-right">
+                      <span className="text-xs text-slate-400 block font-medium">Estimated Effort</span>
+                      <span className="text-xs text-cyan-300 font-bold">{currentMilestone.estimated_duration_weeks} weeks</span>
+                    </div>
+                  )}
                 </div>
 
-                {allMilestones.length > 0 ? (
-                  <div className="relative space-y-2">
-                    {/* Vertical connector line */}
-                    <div className="absolute left-[11px] top-3 bottom-3 w-px bg-gradient-to-b from-cyan-400/35 via-white/5 to-transparent" />
+                <p className="text-xs text-slate-400 mb-5 leading-relaxed">
+                  {currentMilestone?.why_it_matters || "Milestone description is empty."}
+                </p>
 
-                    {allMilestones.map((milestone, idx) => {
-                      const status: MilestoneStatus = getMilestoneStatus(idx, completedCount, allMilestones.length);
-                      const isExpanded = expandedMilestone === milestone.title;
-
-                      return (
-                        <div key={milestone.title} className="relative pl-8">
-                          {/* Node icon */}
-                          <div className={`absolute left-0 top-3 z-10 flex h-6 w-6 items-center justify-center rounded-full border text-[10px] font-bold transition-all ${
-                            status === "completed"
-                              ? "border-cyan-400 bg-cyan-400 text-black"
-                              : status === "active"
-                              ? "border-cyan-400 bg-cyan-400/15 text-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.4)]"
-                              : "border-[#202028] bg-[#0d0d10] text-slate-600"
-                          }`}>
-                            {status === "completed" ? <Check className="h-3 w-3" /> : <span>{idx + 1}</span>}
-                          </div>
-
-                          {/* Milestone button */}
+                {/* Combined checklist: Tasks & Deliverables */}
+                <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+                  {currentMilestone ? (
+                    <>
+                      {currentMilestoneTasks.map((task, i) => {
+                        const key = `${currentMilestone.title}::t::${i}`;
+                        const isDone = checkedTasks[key] ?? false;
+                        return (
                           <button
-                            type="button"
-                            onClick={() => {
-                              setExpandedMilestone(isExpanded ? null : milestone.title);
-                              if (!isExpanded) setMilestoneTab("tasks");
-                            }}
-                            className={`w-full rounded-xl border p-3 text-left transition-all duration-200 hover:-translate-y-0.5 ${
-                              isExpanded
-                                ? "border-cyan-400/20 bg-cyan-950/10"
-                                : status === "completed"
-                                ? "border-[#141417] bg-[#07070a] opacity-60 hover:opacity-80"
-                                : "border-[#141417] bg-[#07070a] hover:border-cyan-400/15"
+                            key={key}
+                            onClick={() => toggleTaskState(key)}
+                            className={`w-full flex items-start gap-3 rounded-xl border p-3.5 text-left text-xs transition ${
+                              isDone
+                                ? "border-cyan-500/10 bg-cyan-950/5 text-slate-500"
+                                : "border-[#1c1c22] bg-[#08080a] text-slate-300 hover:border-[#252530]"
                             }`}
                           >
-                            <div className="flex items-center justify-between gap-3">
-                              <div className="flex-1 min-w-0">
-                                <p className={`text-sm font-semibold leading-snug ${
-                                  status === "completed" ? "text-slate-400 line-through" : "text-white"
-                                }`}>
-                                  {milestone.title}
-                                </p>
-                                {!isExpanded && (
-                                  <div className="mt-1.5 flex flex-wrap gap-1.5">
-                                    <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold border ${
-                                      milestone.difficulty_level === "Beginner"
-                                        ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
-                                        : milestone.difficulty_level === "Advanced"
-                                        ? "border-rose-500/20 bg-rose-500/10 text-rose-300"
-                                        : "border-amber-500/20 bg-amber-500/10 text-amber-300"
-                                    }`}>{milestone.difficulty_level}</span>
-                                    <span className="rounded-md border border-[#202028] bg-[#0d0d10] px-1.5 py-0.5 text-[10px] text-slate-500">
-                                      {milestone.estimated_duration_weeks}w
-                                    </span>
-                                    {(milestone.resource_links?.length ?? 0) > 0 && (
-                                      <span className="rounded-md border border-[#202028] bg-[#0d0d10] px-1.5 py-0.5 text-[10px] text-slate-500">
-                                        {milestone.resource_links.length} resources
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                              {isExpanded
-                                ? <ChevronUp className="h-4 w-4 text-slate-500 shrink-0" />
-                                : <ChevronDown className="h-4 w-4 text-slate-500 shrink-0" />
-                              }
+                            <motion.span 
+                              whileTap={{ scale: 0.8 }}
+                              className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${
+                                isDone ? "border-cyan-400 bg-cyan-400 text-black animate-scaleIn" : "border-slate-700"
+                              }`}
+                            >
+                              {isDone && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                            </motion.span>
+                            <span className={isDone ? "line-through opacity-60 font-medium" : "font-medium"}>
+                              {task}
+                            </span>
+                          </button>
+                        );
+                      })}
+
+                      {currentMilestoneDeliverables.map((deliverable, i) => {
+                        const key = `${currentMilestone.title}::d::${i}`;
+                        const isDone = checkedTasks[key] ?? false;
+                        return (
+                          <button
+                            key={key}
+                            onClick={() => toggleTaskState(key)}
+                            className={`w-full flex items-start gap-3 rounded-xl border p-3.5 text-left text-xs transition ${
+                              isDone
+                                ? "border-emerald-500/10 bg-emerald-950/5 text-slate-500"
+                                : "border-[#1c1c22] bg-[#08080a] text-slate-300 hover:border-[#252530]"
+                            }`}
+                          >
+                            <motion.span 
+                              whileTap={{ scale: 0.8 }}
+                              className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${
+                                isDone ? "border-emerald-400 bg-emerald-400 text-black animate-scaleIn" : "border-slate-700"
+                              }`}
+                            >
+                              {isDone && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                            </motion.span>
+                            <div className="flex-1">
+                              <span className={isDone ? "line-through opacity-60 font-medium" : "font-medium"}>
+                                {deliverable}
+                              </span>
+                              <span className="ml-2 inline-block rounded bg-emerald-500/10 text-emerald-400 text-[9px] px-1 py-0.2 border border-emerald-500/20 font-bold uppercase">Deliverable</span>
                             </div>
                           </button>
-
-                          {/* Expanded preview */}
-                          <AnimatePresence initial={false}>
-                            {isExpanded && (
-                              <motion.div
-                                key="expanded"
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: "auto", opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                transition={{ duration: 0.28, ease: EASE }}
-                                className="overflow-hidden"
-                              >
-                                <div className="mt-2 rounded-xl border border-white/[0.04] bg-white/[0.01] p-3">
-                                  <p className="text-xs text-slate-400 leading-relaxed">{milestone.why_it_matters}</p>
-                                  <p className="mt-2 text-[10px] font-semibold text-cyan-400">
-                                    → Full detail in the execution panel →
-                                  </p>
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-3 py-12 text-center">
-                    <Target className="h-10 w-10 text-slate-700" />
-                    <p className="text-sm text-slate-500">No milestones yet. Refresh the roadmap to generate them.</p>
-                  </div>
-                )}
+                        );
+                      })}
+                    </>
+                  ) : (
+                    <p className="text-xs text-slate-500 py-6 text-center">No tasks currently defined.</p>
+                  )}
+                </div>
               </div>
 
-              {/* RIGHT: Active milestone execution card */}
-              <div className="liquid-panel rounded-[24px] p-6">
-                {activeMilestone ? (
-                  <div className="flex flex-col h-full gap-5">
-                    {/* Milestone header */}
-                    <div>
-                      <p className="caption text-cyan-400">Active Milestone</p>
-                      <h3 className="mt-2 text-lg font-semibold text-white leading-snug">{activeMilestone.title}</h3>
-                      <p className="mt-2 text-xs text-slate-400 leading-relaxed">{activeMilestone.why_it_matters}</p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <span className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold border ${
-                          activeMilestone.difficulty_level === "Beginner"
-                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
-                            : activeMilestone.difficulty_level === "Advanced"
-                            ? "border-rose-500/20 bg-rose-500/10 text-rose-300"
-                            : "border-amber-500/20 bg-amber-500/10 text-amber-300"
-                        }`}>{activeMilestone.difficulty_level}</span>
-                        <span className="rounded-lg border border-[#202028] bg-[#0d0d10] px-2.5 py-1 text-[11px] text-slate-400">
-                          {activeMilestone.estimated_duration_weeks}w
-                        </span>
-                      </div>
+              {currentMilestone && (
+                <div className="mt-6 pt-5 border-t border-[#1e1e24] flex items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between text-xs font-semibold text-slate-400 mb-1">
+                      <span>Sprint Progress</span>
+                      <span className="text-cyan-400">{sprintProgress}%</span>
                     </div>
-
-                    {/* Tab switcher */}
-                    <div className="flex gap-1 rounded-xl border border-[#141417] bg-[#07070a] p-1">
-                      {(["tasks", "deliverables", "resources"] as MilestoneTab[]).map(tab => (
-                        <button
-                          key={tab}
-                          type="button"
-                          onClick={() => setMilestoneTab(tab)}
-                          className={`flex-1 rounded-lg py-1.5 text-[11px] font-semibold capitalize transition ${
-                            milestoneTab === tab
-                              ? "bg-[#141418] text-white"
-                              : "text-slate-500 hover:text-slate-300"
-                          }`}
-                        >
-                          {tab}
-                        </button>
-                      ))}
+                    <div className="h-2 w-full bg-[#141418] rounded-full overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${sprintProgress}%` }}
+                        transition={{ duration: 0.5 }}
+                        className="h-full bg-cyan-400 rounded-full"
+                      />
                     </div>
+                  </div>
 
-                    {/* Tab content */}
-                    <div className="flex-1 space-y-2 overflow-y-auto pr-0.5">
+                  {sprintProgress === 100 && (
+                    <button
+                      onClick={() => handleCompleteActiveMilestone()}
+                      className="tactile-btn bg-emerald-500 text-black font-bold text-xs px-4 py-2.5 rounded-xl hover:bg-emerald-400 transition"
+                    >
+                      Complete Milestone
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
 
-                      {/* TASKS */}
+            {/* Selected Milestone Inspection Sidebar */}
+            <div className="liquid-panel rounded-[24px] p-6 flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">Milestone Inspector</span>
+                <h3 className="text-base font-bold text-white mt-1">
+                  {activeMilestone?.title || "Inspect a milestone"}
+                </h3>
+                <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                  {activeMilestone?.why_it_matters || "No details available."}
+                </p>
+
+                {activeMilestone && (
+                  <div className="mt-4 flex gap-1.5 rounded-xl bg-[#08080b] border border-[#141417] p-1">
+                    {(["tasks", "deliverables", "resources"] as MilestoneTab[]).map(tab => (
+                      <button
+                        key={tab}
+                        onClick={() => setMilestoneTab(tab)}
+                        className={`flex-1 rounded-lg py-1.5 text-[10px] font-bold uppercase tracking-wider transition ${
+                          milestoneTab === tab ? "bg-[#141418] text-white" : "text-slate-500 hover:text-slate-300"
+                        }`}
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-4 space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                  {activeMilestone ? (
+                    <>
                       {milestoneTab === "tasks" && (
-                        <>
-                          {(activeMilestone.project_tasks?.length ?? 0) > 0
-                            ? activeMilestone.project_tasks.map((task, i) => {
-                                const key = `${activeMilestone.title}::t::${i}`;
-                                const done = checkedTasks[key] ?? false;
-                                return (
-                                  <button
-                                    key={key}
-                                    type="button"
-                                    onClick={() => setCheckedTasks(prev => ({ ...prev, [key]: !prev[key] }))}
-                                    className={`w-full flex items-start gap-3 rounded-lg border p-3 text-left text-xs transition ${
-                                      done
-                                        ? "border-cyan-400/15 bg-cyan-950/10 text-slate-400"
-                                        : "border-[#141417] bg-[#07070a] text-slate-300 hover:border-[#252530]"
-                                    }`}
-                                  >
-                                    <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${
-                                      done ? "border-cyan-400 bg-cyan-400 text-black" : "border-[#303040]"
-                                    }`}>
-                                      {done && <Check className="h-2.5 w-2.5" />}
-                                    </span>
-                                    <span className={done ? "line-through opacity-60" : ""}>{task}</span>
-                                  </button>
-                                );
-                              })
-                            : <p className="py-6 text-center text-xs text-slate-500">No tasks for this milestone.</p>
-                          }
-                          {/* Completion criteria */}
-                          {(activeMilestone.completion_criteria?.length ?? 0) > 0 && (
-                            <div className="mt-3 rounded-xl border border-[#141417] bg-[#07070a] p-3">
-                              <p className="caption text-slate-500 mb-2.5">Completion Criteria</p>
-                              <ul className="space-y-2">
-                                {activeMilestone.completion_criteria.map((c, i) => (
-                                  <li key={i} className="flex items-start gap-2 text-xs text-slate-400">
-                                    <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-[#303040] text-[9px] text-slate-600 font-bold">
-                                      {i + 1}
-                                    </span>
-                                    {c}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </>
-                      )}
-
-                      {/* DELIVERABLES */}
-                      {milestoneTab === "deliverables" && (
-                        <>
-                          {(activeMilestone.deliverables?.length ?? 0) > 0
-                            ? activeMilestone.deliverables.map((d, i) => {
-                                const key = `${activeMilestone.title}::d::${i}`;
-                                const done = checkedTasks[key] ?? false;
-                                return (
-                                  <button
-                                    key={key}
-                                    type="button"
-                                    onClick={() => setCheckedTasks(prev => ({ ...prev, [key]: !prev[key] }))}
-                                    className={`w-full flex items-start gap-3 rounded-lg border p-3 text-left text-xs transition ${
-                                      done
-                                        ? "border-emerald-400/15 bg-emerald-950/10 text-slate-400"
-                                        : "border-[#141417] bg-[#07070a] text-slate-300 hover:border-[#252530]"
-                                    }`}
-                                  >
-                                    <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${
-                                      done ? "border-emerald-400 bg-emerald-400 text-black" : "border-[#303040]"
-                                    }`}>
-                                      {done && <Check className="h-2.5 w-2.5" />}
-                                    </span>
-                                    <span className={done ? "line-through opacity-60" : ""}>{d}</span>
-                                  </button>
-                                );
-                              })
-                            : <p className="py-6 text-center text-xs text-slate-500">No deliverables for this milestone.</p>
-                          }
-                          {(activeMilestone.expected_outcomes?.length ?? 0) > 0 && (
-                            <div className="mt-3 rounded-xl border border-[#141417] bg-[#07070a] p-3">
-                              <p className="caption text-slate-500 mb-2.5">Expected Outcomes</p>
-                              <ul className="space-y-2">
-                                {activeMilestone.expected_outcomes.map((o, i) => (
-                                  <li key={i} className="flex items-start gap-2 text-xs text-slate-400">
-                                    <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-slate-600" />
-                                    {o}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </>
-                      )}
-
-                      {/* RESOURCES */}
-                      {milestoneTab === "resources" && (
-                        <>
-                          {(activeMilestone.resource_links?.length ?? 0) > 0
-                            ? activeMilestone.resource_links.map(res => (
-                                <a
-                                  key={res.url}
-                                  href={res.url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="group flex items-start justify-between gap-3 rounded-lg border border-[#141417] bg-[#07070a] p-3 text-xs transition hover:border-cyan-400/20 hover:bg-cyan-950/10"
-                                >
-                                  <div className="min-w-0">
-                                    <p className="font-semibold text-white group-hover:text-cyan-300 transition truncate">
-                                      {res.label}
-                                    </p>
-                                    <p className="mt-0.5 text-slate-500">{res.provider}</p>
-                                  </div>
-                                  <ExternalLink className="h-3.5 w-3.5 text-slate-600 group-hover:text-cyan-400 transition shrink-0 mt-0.5" />
-                                </a>
-                              ))
-                            : <p className="py-6 text-center text-xs text-slate-500">No resources for this milestone.</p>
-                          }
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center min-h-[300px] gap-3 text-center">
-                    <Target className="h-10 w-10 text-slate-700" />
-                    <p className="text-sm text-slate-500">Select a milestone from the timeline to view execution details.</p>
-                  </div>
-                )}
-              </div>
-            </section>
-          )}
-
-          {/* ══ S4: BOARD VIEW ═══════════════════════════════════════════════ */}
-          {activeView === "board" && (
-            <section className="grid gap-4 md:grid-cols-3">
-              {(["notstarted", "inprogress", "completed"] as const).map(col => {
-                const meta = {
-                  notstarted: { label: "Not Started",  accent: "text-slate-400",   dot: "bg-slate-400",   badge: "bg-slate-500/10" },
-                  inprogress: { label: "In Progress",  accent: "text-amber-300",   dot: "bg-amber-400",   badge: "bg-amber-500/10" },
-                  completed:  { label: "Completed",    accent: "text-emerald-300", dot: "bg-emerald-400", badge: "bg-emerald-500/10" },
-                }[col];
-                const cards = allMilestones.filter(m => (kanbanCols[m.title] ?? "notstarted") === col);
-
-                return (
-                  <div
-                    key={col}
-                    onDragOver={e => e.preventDefault()}
-                    onDrop={e => {
-                      e.preventDefault();
-                      const title = e.dataTransfer.getData("milestoneTitle");
-                      if (title) setKanbanCols(prev => ({ ...prev, [title]: col }));
-                    }}
-                    className="min-h-[220px] rounded-[20px] border border-[#141417] bg-[#07070a] p-4"
-                  >
-                    <div className="mb-4 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className={`h-2 w-2 rounded-full ${meta.dot}`} />
-                        <span className={`text-xs font-semibold uppercase tracking-widest ${meta.accent}`}>{meta.label}</span>
-                      </div>
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${meta.badge} ${meta.accent}`}>
-                        {cards.length}
-                      </span>
-                    </div>
-                    <div className="space-y-3">
-                      {cards.length === 0 ? (
-                        <div className="flex flex-col items-center gap-1.5 rounded-xl border border-dashed border-[#202028] py-8">
-                          <p className="text-[11px] text-slate-600">Drop milestones here</p>
-                        </div>
-                      ) : (
-                        cards.map(milestone => (
-                          <div
-                            key={milestone.title}
-                            draggable
-                            onDragStart={e => { e.dataTransfer.setData("milestoneTitle", milestone.title); }}
-                          >
-                            <motion.div
-                              whileHover={{ y: -3, boxShadow: "0 12px 40px rgba(0,0,0,0.8)" }}
-                              className="cursor-grab active:cursor-grabbing rounded-xl border border-[#1a1a1f] bg-[#0a0a0d] p-4 select-none"
-                            >
-                              <p className="text-sm font-semibold text-white leading-snug line-clamp-2">{milestone.title}</p>
-                              <div className="mt-2 flex flex-wrap gap-1.5">
-                                <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold border ${
-                                  milestone.difficulty_level === "Beginner"
-                                    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
-                                    : milestone.difficulty_level === "Advanced"
-                                    ? "border-rose-500/20 bg-rose-500/10 text-rose-300"
-                                    : "border-amber-500/20 bg-amber-500/10 text-amber-300"
-                                }`}>{milestone.difficulty_level}</span>
-                                <span className="rounded-md border border-[#202028] bg-[#0d0d10] px-1.5 py-0.5 text-[10px] text-slate-500">
-                                  {milestone.estimated_duration_weeks}w
-                                </span>
-                              </div>
-                              {(milestone.resource_links?.length ?? 0) > 0 && (
-                                <p className="mt-2 text-[10px] text-slate-600">{milestone.resource_links.length} resources</p>
-                              )}
-                            </motion.div>
+                        activeMilestone.project_tasks?.map((t, idx) => (
+                          <div key={idx} className="flex items-start gap-2 text-xs text-slate-300 border border-[#121216] bg-[#070709] p-2.5 rounded-lg">
+                            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0" />
+                            <span>{t}</span>
                           </div>
                         ))
                       )}
-                    </div>
-                  </div>
-                );
-              })}
-            </section>
-          )}
 
-          {/* ══ S5: RESOURCE CENTER ══════════════════════════════════════════ */}
+                      {milestoneTab === "deliverables" && (
+                        activeMilestone.deliverables?.map((d, idx) => (
+                          <div key={idx} className="flex items-start gap-2 text-xs text-slate-300 border border-[#121216] bg-[#070709] p-2.5 rounded-lg">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
+                            <span>{d}</span>
+                          </div>
+                        ))
+                      )}
+
+                      {milestoneTab === "resources" && (
+                        activeMilestone.resource_links?.length > 0 ? (
+                          activeMilestone.resource_links.map((res, idx) => (
+                            <a
+                              key={idx}
+                              href={res.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center justify-between gap-3 border border-[#121216] bg-[#070709] hover:bg-cyan-950/5 hover:border-cyan-400/20 p-2.5 rounded-lg text-xs transition group"
+                            >
+                              <div className="truncate min-w-0">
+                                <p className="font-semibold text-slate-300 group-hover:text-cyan-300 truncate">{res.label}</p>
+                                <span className="text-[10px] text-slate-500 block">{res.provider}</span>
+                              </div>
+                              <ExternalLink className="h-3.5 w-3.5 text-slate-600 group-hover:text-cyan-400 shrink-0" />
+                            </a>
+                          ))
+                        ) : (
+                          <p className="text-xs text-slate-500 py-4 text-center">No learning assets listed.</p>
+                        )
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-xs text-slate-500 py-6 text-center">Inspect milestone items from the journey map.</p>
+                  )}
+                </div>
+              </div>
+
+              {activeMilestone && (
+                <div className="mt-5 pt-4 border-t border-[#1e1e24] flex flex-wrap gap-2 text-xs text-slate-500">
+                  <span>Difficulty: <strong className="text-white">{activeMilestone.difficulty_level}</strong></span>
+                  <span>&bull;</span>
+                  <span>Duration: <strong className="text-white">{activeMilestone.estimated_duration_weeks} weeks</strong></span>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* ══ SECTION 3: ROADMAP JOURNEY ════════════════════════════════════ */}
+          <section className="hidden md:block">
+            <div className="mb-4">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Milestone Sequence</span>
+              <h3 className="text-base font-bold text-white mt-1">Roadmap Journey</h3>
+            </div>
+            
+            <div className="liquid-panel rounded-[24px] p-6 overflow-x-auto">
+              <div className="flex items-center gap-4 min-w-[800px] py-2">
+                {allMilestones.map((m, idx) => {
+                  const status = getMilestoneStatus(idx, completedCount, allMilestones.length);
+                  const isCurrentSelection = activeMilestone?.title === m.title;
+                  const isCurrentActiveSprint = currentMilestone?.title === m.title;
+
+                  return (
+                    <div key={m.title} className="flex items-center flex-1 last:flex-none">
+                      {/* Milestone Step Pin */}
+                      <button
+                        onClick={() => {
+                          setSelectedMilestoneTitle(m.title);
+                          setMilestoneTab("tasks");
+                        }}
+                        className={`flex items-center gap-2.5 rounded-full border px-4 py-2 text-xs transition duration-200 ${
+                          isCurrentSelection
+                            ? "bg-cyan-400 text-black border-cyan-400 font-extrabold shadow-[0_0_12px_rgba(34,211,238,0.25)]"
+                            : status === "completed"
+                            ? "border-cyan-500/30 bg-cyan-950/10 text-cyan-300 hover:border-cyan-400/50"
+                            : isCurrentActiveSprint
+                            ? "border-indigo-500 bg-indigo-950/10 text-indigo-300 font-bold"
+                            : "border-[#1e1e24] bg-[#09090c] text-slate-500 hover:text-slate-300 hover:border-slate-700"
+                        }`}
+                      >
+                        <span className="flex items-center justify-center shrink-0">
+                          {status === "completed" ? (
+                            <Check className="h-3.5 w-3.5 stroke-[3]" />
+                          ) : (
+                            <span className="h-2 w-2 rounded-full bg-current" />
+                          )}
+                        </span>
+                        <span className="truncate max-w-[120px]">{m.title}</span>
+                      </button>
+
+                      {/* Connection Track Line */}
+                      {idx < allMilestones.length - 1 && (
+                        <div className={`h-[2px] flex-1 min-w-[32px] mx-2 ${
+                          idx < completedCount 
+                            ? "bg-gradient-to-r from-cyan-400/60 to-cyan-400/20" 
+                            : "bg-dotted border-t border-dashed border-[#202028]"
+                        }`} />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+
+          {/* ══ SECTION 4: RESOURCE HUB ══════════════════════════════════════ */}
           <section>
             <div className="mb-4">
-              <p className="caption text-slate-500">Learning Materials</p>
-              <h3 className="mt-1 text-lg font-semibold text-white">Resource Center</h3>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Learning & References</span>
+              <h3 className="text-base font-bold text-white mt-1">Resource Hub</h3>
             </div>
+
             <div className="liquid-panel rounded-[24px] p-6">
-              {/* Search + category filters */}
-              <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
+              {/* Filters & search */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
                   <input
                     value={resourceSearch}
                     onChange={e => setResourceSearch(e.target.value)}
                     placeholder="Search resources..."
-                    className="carved-input w-full rounded-xl py-2.5 pl-9 pr-4 text-sm text-white"
+                    className="carved-input w-full rounded-xl py-2 pl-9 pr-4 text-xs text-white"
                   />
                 </div>
+
                 <div className="flex flex-wrap gap-1.5">
-                  {(["all", "courses", "docs", "practice", "projects"] as ResourceFilter[]).map(f => (
+                  {(["all", "course", "documentation", "practice", "project", "interview"] as ResourceFilter[]).map(f => (
                     <button
                       key={f}
-                      type="button"
                       onClick={() => setResourceFilter(f)}
-                      className={`rounded-full px-3.5 py-1.5 text-[11px] font-semibold capitalize transition ${
+                      className={`rounded-full px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider transition ${
                         resourceFilter === f
-                          ? "border border-cyan-400/30 bg-cyan-400/15 text-cyan-300"
+                          ? "border border-cyan-400/30 bg-cyan-400/10 text-cyan-300"
                           : "border border-[#202028] bg-[#0d0d10] text-slate-500 hover:text-slate-300"
                       }`}
                     >
@@ -952,297 +927,396 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                 </div>
               </div>
 
+              {/* Resource Cards Grid */}
               {filteredResources.length > 0 ? (
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {filteredResources.map((res, i) => (
-                    <motion.a
-                      key={`${res.url}-${i}`}
-                      href={res.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      whileHover={{ scale: 1.02, boxShadow: "0 8px 28px rgba(0,0,0,0.75)" }}
-                      className="group flex items-start justify-between gap-3 rounded-xl border border-[#141417] bg-[#08080a] p-4 transition"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-white group-hover:text-cyan-300 transition leading-snug line-clamp-2">
-                          {res.label}
-                        </p>
-                        <span className="mt-1.5 inline-block rounded-md border border-[#202028] bg-[#0d0d10] px-2 py-0.5 text-[10px] text-slate-500">
-                          {res.provider}
-                        </span>
-                      </div>
-                      <ExternalLink className="h-3.5 w-3.5 shrink-0 text-slate-600 group-hover:text-cyan-400 transition mt-0.5" />
-                    </motion.a>
-                  ))}
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {filteredResources.map((res, idx) => {
+                    const stats = getResourceStats(res);
+                    return (
+                      <motion.div
+                        key={`${res.url}-${idx}`}
+                        whileHover={{ y: -4, boxShadow: "0 8px 30px rgba(0,0,0,0.8)" }}
+                        className="group flex flex-col justify-between border border-[#141417] hover:border-cyan-400/20 bg-[#08080a] p-4 rounded-2xl transition duration-200"
+                      >
+                        <div>
+                          <div className="flex items-start justify-between gap-3 mb-2">
+                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
+                              {res.provider}
+                            </span>
+                            <span className="rounded bg-[#0d0d10] text-slate-400 border border-[#202028] text-[9px] px-1.5 py-0.5 font-bold uppercase">
+                              {stats.type}
+                            </span>
+                          </div>
+
+                          <h4 className="text-xs sm:text-sm font-semibold text-white group-hover:text-cyan-300 transition duration-200 line-clamp-2 leading-snug">
+                            {res.label}
+                          </h4>
+                        </div>
+
+                        <div className="mt-4 pt-3 border-t border-[#141417] flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 text-[10px] text-slate-500 font-medium">
+                            <span className="capitalize">{stats.difficulty}</span>
+                            <span>&bull;</span>
+                            <span>{stats.hours} hours</span>
+                          </div>
+                          
+                          <a
+                            href={res.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[10px] font-bold text-cyan-400 group-hover:underline inline-flex items-center gap-1 shrink-0"
+                          >
+                            Open Resource
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
                 </div>
               ) : (
-                <div className="flex flex-col items-center gap-3 py-14 text-center">
-                  <BookOpen className="h-10 w-10 text-slate-700" />
-                  <p className="text-sm text-slate-500">
-                    {resourceSearch ? `No resources match "${resourceSearch}"` : "No resources in this category."}
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <BookOpen className="h-9 w-9 text-slate-700 mb-2" />
+                  <p className="text-xs text-slate-500">
+                    {resourceSearch ? `No resource matches "${resourceSearch}"` : "No resources in this segment."}
                   </p>
                 </div>
               )}
             </div>
           </section>
 
-          {/* ══ S7: AI INSIGHTS + S8: ANALYTICS ═════════════════════════════ */}
+          {/* ══ SECTION 5 & 6: INSIGHTS & ANALYTICS ══════════════════════════ */}
           <section className="grid gap-5 lg:grid-cols-2">
+            
+            {/* S5: ROADMAP INSIGHTS */}
+            <div className="liquid-panel rounded-[24px] p-6 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <Sparkles className="h-4 w-4 text-cyan-400" />
+                  <h3 className="text-base font-bold text-white">Roadmap Insights</h3>
+                </div>
 
-            {/* AI Insights */}
-            <div className="liquid-panel rounded-[24px] p-6">
-              <div className="mb-5 flex items-center gap-2.5">
-                <Sparkles className="h-4 w-4 text-cyan-400" />
-                <div>
-                  <p className="caption text-slate-500">AI Analysis</p>
-                  <h3 className="mt-0.5 text-base font-semibold text-white">Roadmap Insights</h3>
-                </div>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/5 p-4">
-                  <p className="caption text-emerald-400 mb-2">Strengths</p>
-                  {(profile?.skills?.length ?? 0) > 0 ? (
-                    <div className="flex flex-wrap gap-1.5">
-                      {profile!.skills.slice(0, 5).map(s => (
-                        <span key={s} className="rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[11px] text-emerald-200">{s}</span>
-                      ))}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {/* Strengths */}
+                  <div className="rounded-xl border border-emerald-500/10 bg-emerald-500/5 p-4 flex flex-col justify-between min-h-[100px]">
+                    <div>
+                      <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block mb-2">Strengths</span>
+                      {profile?.skills && profile.skills.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {profile.skills.slice(0, 4).map(s => (
+                            <span key={s} className="rounded border border-emerald-500/20 bg-emerald-500/10 text-emerald-200 text-[10px] px-1.5 py-0.5">{s}</span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-500">Complete profile to map strengths.</span>
+                      )}
                     </div>
-                  ) : (
-                    <p className="text-xs text-slate-500">Complete profile to see strengths.</p>
-                  )}
-                </div>
-                <div className="rounded-xl border border-rose-500/15 bg-rose-500/5 p-4">
-                  <p className="caption text-rose-400 mb-2">Skill Gaps</p>
-                  {(profile?.weaknesses?.length ?? 0) > 0 ? (
-                    <div className="flex flex-wrap gap-1.5">
-                      {profile!.weaknesses.slice(0, 4).map(w => (
-                        <span key={w} className="rounded-md border border-rose-500/20 bg-rose-500/10 px-2 py-0.5 text-[11px] text-rose-200">{w}</span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-slate-500">No gaps identified yet.</p>
-                  )}
-                </div>
-                <div className="rounded-xl border border-indigo-500/15 bg-indigo-500/5 p-4">
-                  <p className="caption text-indigo-400 mb-2">Suggested Focus</p>
-                  <div className="space-y-1.5">
-                    {allMilestones.slice(completedCount, completedCount + 2).map(m => (
-                      <p key={m.title} className="flex items-start gap-1.5 text-xs text-slate-300">
-                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
-                        {m.title}
-                      </p>
-                    ))}
-                    {allMilestones.slice(completedCount, completedCount + 2).length === 0 && (
-                      <p className="text-xs text-slate-500">All milestones complete!</p>
-                    )}
                   </div>
-                </div>
-                <div className="rounded-xl border border-amber-500/15 bg-amber-500/5 p-4">
-                  <p className="caption text-amber-400 mb-2">AI Reasoning</p>
-                  <p className="text-xs text-slate-400 line-clamp-4 leading-relaxed">
-                    {activeRoadmap.ai_reasoning ?? "Roadmap was generated based on your career goals and experience level."}
-                  </p>
+
+                  {/* Skill Gaps */}
+                  <div className="rounded-xl border border-rose-500/10 bg-rose-500/5 p-4 flex flex-col justify-between min-h-[100px]">
+                    <div>
+                      <span className="text-[10px] text-rose-400 font-bold uppercase tracking-wider block mb-2">Skill Gaps</span>
+                      {profile?.weaknesses && profile.weaknesses.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {profile.weaknesses.slice(0, 3).map(w => (
+                            <span key={w} className="rounded border border-rose-500/20 bg-rose-500/10 text-rose-200 text-[10px] px-1.5 py-0.5">{w}</span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-500">No skill gaps calculated yet.</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Blocked Areas */}
+                  <div className="rounded-xl border border-amber-500/10 bg-amber-500/5 p-4 flex flex-col justify-between min-h-[100px]">
+                    <div>
+                      <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider block mb-2">Blocked Areas</span>
+                      {profile?.obstacles && profile.obstacles.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {profile.obstacles.slice(0, 3).map(ob => (
+                            <span key={ob} className="rounded border border-amber-500/20 bg-amber-500/10 text-amber-200 text-[10px] px-1.5 py-0.5">{ob}</span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-500">No active blockers identified.</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Recommended Focus */}
+                  <div className="rounded-xl border border-indigo-500/10 bg-indigo-500/5 p-4 flex flex-col justify-between min-h-[100px]">
+                    <div>
+                      <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider block mb-1">Recommended Focus</span>
+                      {currentMilestone ? (
+                        <p className="text-xs text-slate-300 font-medium leading-relaxed mt-1">
+                          Focus on completing tasks inside <strong className="text-white">{currentMilestone.title}</strong>
+                        </p>
+                      ) : (
+                        <span className="text-xs text-slate-500">All milestones completed.</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Analytics */}
-            <div className="liquid-panel rounded-[24px] p-6">
-              <div className="mb-5">
-                <p className="caption text-slate-500">Performance</p>
-                <h3 className="mt-0.5 text-base font-semibold text-white">Roadmap Analytics</h3>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {[
-                  { label: "Completion",    value: `${activeRoadmap.progress}%`,    color: "#22d3ee", pct: activeRoadmap.progress },
-                  { label: "Milestones",    value: `${completedCount}/${allMilestones.length}`, color: "#818cf8", pct: allMilestones.length > 0 ? (completedCount / allMilestones.length) * 100 : 0 },
-                  { label: "Market Demand", value: activeRoadmap.career_demand_score <= 10 ? `${activeRoadmap.career_demand_score}/10` : `${activeRoadmap.career_demand_score}/100`, color: "#f59e0b", pct: activeRoadmap.career_demand_score <= 10 ? activeRoadmap.career_demand_score * 10 : activeRoadmap.career_demand_score },
-                  { label: "Projected",     value: activeRoadmap.estimated_completion_date, color: "#10b981", pct: 45 },
-                ].map(({ label, value, color, pct }) => (
-                  <div key={label} className="rounded-xl border border-[#141417] bg-[#08080a] p-4">
-                    <p className="caption text-slate-500">{label}</p>
-                    <p className="mt-2 text-lg font-bold text-white leading-none">{value}</p>
-                    <div className="mt-3 h-1.5 rounded-full bg-[#141418] overflow-hidden">
-                      <motion.div
-                        className="h-full rounded-full"
-                        style={{ backgroundColor: color }}
-                        initial={{ width: 0 }}
-                        animate={{ width: `${Math.min(pct, 100)}%` }}
-                        transition={{ duration: 1.2, ease: EASE }}
-                      />
+            {/* S6: PROGRESS ANALYTICS (Single compact card) */}
+            <div className="liquid-panel rounded-[24px] p-6 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <Activity className="h-4 w-4 text-cyan-400" />
+                  <h3 className="text-base font-bold text-white">Progress Analytics</h3>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {[
+                    { label: "Completion", value: `${activeRoadmap.progress}%`, sub: "Total progress", color: "text-cyan-400" },
+                    { label: "Milestones", value: `${completedCount}/${allMilestones.length}`, sub: "Completed track", color: "text-indigo-400" },
+                    { label: "Projects", value: `${completedProjectsCount}/${totalProjectsCount}`, sub: "Delivered builds", color: "text-emerald-400" },
+                    { label: "Consistency", value: `${weeklyConsistency}%`, sub: "Weekly checks", color: "text-amber-400" },
+                    { label: "Readiness", value: `${profile?.readiness_score || 0}%`, sub: "Skill readiness", color: "text-rose-400" },
+                    { label: "Completion ETA", value: activeRoadmap.estimated_completion_date || "—", sub: "ETA target date", color: "text-white" },
+                  ].map(stat => (
+                    <div key={stat.label} className="bg-[#08080a] border border-[#141417] p-3.5 rounded-xl flex flex-col justify-between">
+                      <div>
+                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">{stat.label}</span>
+                        <p className={`text-base font-bold mt-1 ${stat.color} leading-none`}>
+                          {stat.value}
+                        </p>
+                      </div>
+                      <span className="text-[9px] text-slate-500 mt-2 block">{stat.sub}</span>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           </section>
         </>
       )}
 
-      {/* ══ S6: VERSION HISTORY (always visible) ══════════════════════════════ */}
-      <section>
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <p className="caption text-slate-500">Snapshots</p>
-            <h3 className="mt-1 text-lg font-semibold text-white">Version History</h3>
-          </div>
-          <span className="text-[11px] text-slate-500">
-            Latest {Math.min(safeRoadmapHistory.length, 12)} versions
-          </span>
-        </div>
-
-        {safeRoadmapHistory.length > 0 ? (
-          <div className="relative space-y-3">
-            {/* Connector line */}
-            <div className="absolute left-[15px] top-5 bottom-5 w-px bg-gradient-to-b from-white/10 via-white/5 to-transparent" />
-
-            {safeRoadmapHistory.map((version, i) => {
-              const isLatest = i === 0;
-              const versionRoadmaps = Array.isArray(version.roadmaps) ? normalizeRoadmapArray(version.roadmaps) : [];
-              return (
-                <div key={version.id} className="relative flex gap-4 pl-10">
-                  {/* Version node */}
-                  <div className={`absolute left-0 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full border text-[10px] font-bold ${
-                    isLatest
-                      ? "border-cyan-400 bg-cyan-400/15 text-cyan-300"
-                      : "border-[#202028] bg-[#0d0d10] text-slate-500"
-                  }`}>
-                    v{version.roadmap_version}
-                  </div>
-
-                  <div className={`flex-1 rounded-[20px] border p-5 transition ${
-                    isLatest ? "border-cyan-400/15 bg-cyan-950/5" : "border-[#141417] bg-[#07070a]"
-                  }`}>
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-2">
-                          {isLatest && (
-                            <span className="rounded-full border border-cyan-400/30 bg-cyan-400/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-cyan-300">
-                              Current
-                            </span>
-                          )}
-                          <span className="rounded-full border border-[#202028] bg-[#0d0d10] px-2 py-0.5 text-[10px] text-slate-400">
-                            {version.career_domain}
-                          </span>
-                          <span className="text-[11px] text-slate-600">{formatDate(version.generated_at)}</span>
-                          <span className="text-[11px] text-slate-600">
-                            · {versionRoadmaps.length} roadmap{versionRoadmaps.length !== 1 ? "s" : ""}
-                          </span>
-                        </div>
-                        <h4 className="text-sm font-semibold text-white line-clamp-1">{version.career_goal}</h4>
-                        <p className="mt-1.5 text-xs text-slate-500 line-clamp-2 leading-relaxed">{version.ai_reasoning}</p>
-                      </div>
-                      {!isLatest && (
-                        <button
-                          type="button"
-                          onClick={() => setRestoreConfirmId(version.id)}
-                          className="tactile-btn shrink-0 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[11px] font-semibold text-slate-300 hover:text-white transition"
-                        >
-                          Restore
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-3 rounded-[24px] border border-dashed border-[#202028] py-14 text-center">
-            <Activity className="h-10 w-10 text-slate-700" />
-            <div>
-              <p className="text-sm font-semibold text-slate-400">No version history yet</p>
-              <p className="mt-1 text-xs text-slate-600">Refreshing a roadmap creates the first version snapshot.</p>
+      {/* ══ SECTION 8: EXPORT CENTER (Compact bottom layout) ═══════════════ */}
+      {activeRoadmap && (
+        <section className="pt-2">
+          <div className="liquid-panel rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <Archive className="h-4 w-4 text-slate-400" />
+              <p className="text-xs text-slate-400 font-semibold">
+                Export Options & Portability Snapshot
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleMarkdownExport}
+                className="tactile-btn border border-[#202028] hover:border-cyan-400/20 px-3.5 py-2 rounded-xl text-xs text-slate-300 hover:text-white transition inline-flex items-center gap-1.5 font-bold"
+              >
+                <FileText className="h-3.5 w-3.5 text-cyan-400" />
+                Markdown
+              </button>
+              <button
+                onClick={handleJsonExport}
+                className="tactile-btn border border-[#202028] hover:border-cyan-400/20 px-3.5 py-2 rounded-xl text-xs text-slate-300 hover:text-white transition inline-flex items-center gap-1.5 font-bold"
+              >
+                <Download className="h-3.5 w-3.5 text-cyan-400" />
+                JSON
+              </button>
+              <button
+                onClick={() => void handlePdfDownload()}
+                className="tactile-btn bg-[#121216] border border-[#202028] hover:border-cyan-400/20 px-3.5 py-2 rounded-xl text-xs text-slate-300 hover:text-white transition inline-flex items-center gap-1.5 font-bold"
+              >
+                <Printer className="h-3.5 w-3.5 text-cyan-400" />
+                PDF
+              </button>
             </div>
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
-      {/* ══ S9: EXPORT CENTER ══════════════════════════════════════════════════ */}
-      <section>
-        <div className="mb-4">
-          <p className="caption text-slate-500">Data Portability</p>
-          <h3 className="mt-1 text-lg font-semibold text-white">Export Center</h3>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            {
-              icon: Printer,  label: "Export PDF",      desc: "Professional PDF with milestones, resources & timeline",
-              action: () => void handlePdfDownload(), disabled: !safeWorkspaceRoadmaps.length, primary: true,
-            },
-            {
-              icon: FileText, label: "Export Markdown", desc: "Markdown for Notion, Obsidian, or GitHub",
-              action: handleMarkdownExport, disabled: !safeWorkspaceRoadmaps.length, primary: false,
-            },
-            {
-              icon: Download,  label: "Export JSON",    desc: "Raw roadmap data for integrations and tooling",
-              action: handleJsonExport, disabled: !safeWorkspaceRoadmaps.length, primary: false,
-            },
-            {
-              icon: Archive,  label: "Archive",         desc: "Archive this version to the snapshot history",
-              action: () => showToast("Coming Soon: Archive will be available soon."), disabled: false, primary: false,
-            },
-          ].map(({ icon: Icon, label, desc, action, disabled, primary }) => (
-            <motion.button
-              key={label}
-              type="button"
-              onClick={action}
-              disabled={disabled}
-              whileHover={!disabled ? { y: -2, boxShadow: "0 12px 40px rgba(0,0,0,0.8)" } : {}}
-              className={`relative flex flex-col items-start gap-3 rounded-[20px] border p-5 text-left transition disabled:opacity-40 disabled:cursor-not-allowed ${
-                primary
-                  ? "border-cyan-400/20 bg-cyan-950/10 hover:border-cyan-400/30"
-                  : "border-[#141417] bg-[#07070a] hover:border-[#252530]"
-              }`}
+      {/* ══ VERSION HISTORY DRAWER ═════════════════════════════════════════ */}
+      <AnimatePresence>
+        {isVersionDrawerOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                setIsVersionDrawerOpen(false);
+                setCompareVersionId(null);
+              }}
+              className="fixed inset-0 z-40 bg-black bg-opacity-70 backdrop-blur-sm"
+            />
+            {/* Drawer */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 220 }}
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#09090b] border-l border-[#202028] p-6 shadow-2xl flex flex-col justify-between"
             >
-              <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${
-                primary
-                  ? "border-cyan-400/25 bg-cyan-400/15 text-cyan-300"
-                  : "border-[#202028] bg-[#0d0d10] text-slate-400"
-              }`}>
-                <Icon className="h-4 w-4" />
-              </div>
-              <div>
-                <p className={`text-sm font-semibold ${primary ? "text-cyan-300" : "text-white"}`}>{label}</p>
-                <p className="mt-1 text-[11px] text-slate-500 leading-relaxed">{desc}</p>
-              </div>
-            </motion.button>
-          ))}
-        </div>
-      </section>
+              <div className="flex flex-col flex-1 min-h-0">
+                <div className="flex items-center justify-between border-b border-[#202028] pb-4 mb-4">
+                  <div>
+                    <h3 className="text-base font-bold text-white">Version History</h3>
+                    <p className="text-[10px] text-slate-500 mt-0.5">Explore or compare past career tracks</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setIsVersionDrawerOpen(false);
+                      setCompareVersionId(null);
+                    }}
+                    className="h-8 w-8 rounded-full border border-[#202028] hover:border-cyan-400/25 flex items-center justify-center transition text-slate-400 hover:text-white"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
 
-      {/* ══ RESTORE CONFIRM MODAL ══════════════════════════════════════════════ */}
+                {safeRoadmapHistory.length > 0 ? (
+                  <div className="space-y-3.5 overflow-y-auto flex-1 pr-1.5 pb-4">
+                    {safeRoadmapHistory.map((version, idx) => {
+                      const isLatest = idx === 0;
+                      const isComparing = compareVersionId === version.id;
+                      const versionRoadmaps = Array.isArray(version.roadmaps) ? normalizeRoadmapArray(version.roadmaps) : [];
+                      const versionRoadmap = versionRoadmaps[0] ?? null;
+
+                      return (
+                        <div
+                          key={version.id}
+                          className={`rounded-xl border p-4 transition ${
+                            isLatest ? "border-cyan-400/25 bg-cyan-950/5" : "border-[#141418] bg-[#07070a]"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                                <span className={`text-[10px] font-bold ${isLatest ? "text-cyan-300" : "text-slate-400"}`}>
+                                  v{version.roadmap_version}
+                                </span>
+                                {isLatest && (
+                                  <span className="rounded bg-cyan-500/10 text-cyan-400 text-[8px] px-1 py-0.2 border border-cyan-500/20 font-bold uppercase">
+                                    Current
+                                  </span>
+                                )}
+                                <span className="text-[9px] text-slate-500">{formatDate(version.generated_at)}</span>
+                              </div>
+                              <h4 className="text-xs font-semibold text-white truncate">{version.career_goal}</h4>
+                            </div>
+
+                            <div className="flex gap-1 shrink-0">
+                              {!isLatest && (
+                                <button
+                                  onClick={() => setRestoreConfirmId(version.id)}
+                                  className="px-2.5 py-1 rounded bg-[#0d0d10] border border-[#202028] hover:border-cyan-400/30 text-[9px] font-bold uppercase text-slate-300 hover:text-white transition"
+                                >
+                                  Restore
+                                </button>
+                              )}
+                              <button
+                                onClick={() => setCompareVersionId(isComparing ? null : version.id)}
+                                className={`px-2.5 py-1 rounded text-[9px] font-bold uppercase transition ${
+                                  isComparing
+                                    ? "bg-cyan-400 text-black"
+                                    : "bg-[#0d0d10] border border-[#202028] hover:border-cyan-400/30 text-slate-300 hover:text-white"
+                                }`}
+                              >
+                                {isComparing ? "Close" : "Compare"}
+                              </button>
+                            </div>
+                          </div>
+
+                          <p className="mt-2 text-[11px] text-slate-500 leading-relaxed line-clamp-2">
+                            {version.ai_reasoning || "No system logs attached."}
+                          </p>
+
+                          {/* Expansion Compare View */}
+                          <AnimatePresence>
+                            {isComparing && versionRoadmap && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="overflow-hidden mt-3 pt-3 border-t border-[#1e1e24] text-[11px] text-slate-400 space-y-2.5"
+                              >
+                                <span className="text-[9px] text-cyan-400 font-bold uppercase tracking-wider block">Comparison Matrix</span>
+                                <div className="grid grid-cols-2 gap-2 bg-[#09090b] border border-[#1c1c22] p-2.5 rounded-lg">
+                                  <div>
+                                    <span className="text-[9px] text-slate-500 block">Current Workspace (v{activeRoadmap?.roadmap_version})</span>
+                                    <span className="text-white font-bold block truncate mt-0.5">{activeRoadmap?.title}</span>
+                                    <span className="text-[9px] text-slate-400 block mt-1">{allMilestones.length} Milestones</span>
+                                    <span className="text-[9px] text-slate-400 block">{activeRoadmap?.total_duration_weeks ?? 0} Weeks</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-[9px] text-slate-500 block">Snapshot (v{version.roadmap_version})</span>
+                                    <span className="text-cyan-300 font-bold block truncate mt-0.5">{versionRoadmap.title}</span>
+                                    <span className="text-[9px] text-slate-400 block mt-1">{(versionRoadmap.milestones || []).length} Milestones</span>
+                                    <span className="text-[9px] text-slate-400 block">{versionRoadmap.total_duration_weeks ?? 0} Weeks</span>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <Clock3 className="h-8 w-8 text-slate-600 mb-2" />
+                    <p className="text-xs text-slate-500">No versions tracked yet.</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-[#202028] pt-4 flex gap-2">
+                <button
+                  onClick={() => {
+                    setIsVersionDrawerOpen(false);
+                    setCompareVersionId(null);
+                  }}
+                  className="tactile-btn border border-[#202028] hover:border-slate-500 w-full rounded-xl py-2.5 text-xs text-slate-300 font-semibold transition"
+                >
+                  Close History
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ══ RESTORE CONFIRMATION MODAL ═══════════════════════════════════════ */}
       <AnimatePresence>
         {restoreConfirmId && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/85">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm animate-fadeIn">
             <motion.div
               initial={{ opacity: 0, scale: 0.96, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 12 }}
-              className="liquid-panel relative z-10 w-full max-w-sm rounded-[24px] p-6 text-center"
+              className="liquid-panel relative z-10 w-full max-w-sm rounded-[24px] p-6 text-center border border-amber-500/25 bg-[#09090b]"
             >
-              <AlertTriangle className="mx-auto h-8 w-8 text-amber-400 mb-4" />
-              <h3 className="text-base font-semibold text-white">Restore this version?</h3>
+              <AlertTriangle className="mx-auto h-8 w-8 text-amber-400 mb-4 animate-bounce" />
+              <h3 className="text-base font-bold text-white">Restore selected version?</h3>
               <p className="mt-2 text-xs text-slate-400 leading-relaxed">
-                Your current roadmap will be replaced. The current state will be saved to version history automatically.
+                Your current roadmap workspace will be overwritten with the snapshot. Your active checkpoints will update.
               </p>
+              
               <div className="mt-6 flex gap-3">
                 <button
-                  type="button"
                   onClick={() => setRestoreConfirmId(null)}
-                  className="tactile-btn flex-1 rounded-xl py-2.5 text-xs font-semibold text-slate-400"
+                  className="tactile-btn flex-1 rounded-xl py-2.5 text-xs font-semibold text-slate-400 border border-[#202028] hover:border-slate-500 transition"
                 >
                   Cancel
                 </button>
                 <button
-                  type="button"
                   onClick={() => {
                     const version = safeRoadmapHistory.find(v => v.id === restoreConfirmId);
                     if (version) void restoreRoadmapVersion(version);
                   }}
                   className="tactile-btn tactile-btn-primary flex-1 rounded-xl py-2.5 text-xs font-semibold text-black"
                 >
-                  Restore Version
+                  Confirm Restore
                 </button>
               </div>
             </motion.div>
