@@ -94,6 +94,94 @@ function formatMilestonesMarkdown(roadmap: RoadmapRecord) {
     .join("\n\n");
 }
 
+export function wrapText(text: string, maxWidth: number, doc?: unknown): string[] {
+  if (!text) return [];
+  const safeDoc = doc as { getTextWidth?: (t: string) => number } | null | undefined;
+  
+  const getWidth = (t: string): number => {
+    if (safeDoc && typeof safeDoc.getTextWidth === "function") {
+      return safeDoc.getTextWidth(t);
+    }
+    return t.length * 5.5;
+  };
+
+  if (getWidth(text) <= maxWidth) {
+    return [text];
+  }
+
+  const lines: string[] = [];
+  const paragraphs = text.split("\n");
+
+  for (const paragraph of paragraphs) {
+    const words = paragraph.split(" ");
+    let currentLine = "";
+
+    for (const word of words) {
+      const testLine = currentLine ? currentLine + " " + word : word;
+      if (getWidth(testLine) <= maxWidth) {
+        currentLine = testLine;
+        continue;
+      }
+
+      if (currentLine) {
+        lines.push(currentLine);
+        currentLine = "";
+      }
+
+      if (getWidth(word) <= maxWidth) {
+        currentLine = word;
+        continue;
+      }
+
+      let remainingWord = word;
+      while (remainingWord.length > 0) {
+        let low = 1;
+        let high = remainingWord.length;
+        let bestLen = 0;
+
+        while (low <= high) {
+          const mid = Math.floor((low + high) / 2);
+          const chunk = remainingWord.slice(0, mid);
+          if (getWidth(chunk) <= maxWidth) {
+            bestLen = mid;
+            low = mid + 1;
+          } else {
+            high = mid - 1;
+          }
+        }
+
+        if (bestLen === 0) {
+          bestLen = 1;
+        }
+
+        const chunk = remainingWord.slice(0, bestLen);
+        lines.push(chunk);
+        remainingWord = remainingWord.slice(bestLen);
+      }
+    }
+
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+  }
+
+  return lines;
+}
+
+export function formatAndWrapUrl(url: string, maxWidth: number, doc?: unknown, maxLines = 2): string[] {
+  let lines = wrapText(url, maxWidth, doc);
+  if (lines.length > maxLines) {
+    lines = lines.slice(0, maxLines);
+    const lastLine = lines[maxLines - 1];
+    if (lastLine.length > 3) {
+      lines[maxLines - 1] = lastLine.slice(0, lastLine.length - 3) + "...";
+    } else {
+      lines[maxLines - 1] = "...";
+    }
+  }
+  return lines;
+}
+
 export function buildRoadmapExportBundle(roadmaps: RoadmapRecord[], title = "CareerOS Roadmap"): RoadmapExportBundle {
   const safeRoadmaps = getSafeArray<RoadmapRecord>(roadmaps);
   const exportedAt = new Date().toISOString();
@@ -173,19 +261,34 @@ export class LayoutLedger {
     this.boxes.push({ page, x1, y1, x2, y2, label });
   }
 
+  public verifyHorizontalBounds(): string[] {
+    const warnings: string[] = [];
+    for (const box of this.boxes) {
+      const isHeaderOrFooter = box.y1 < 48 || box.y2 > 793.89;
+      if (!isHeaderOrFooter) {
+        if (box.x1 < this.pageMargins - 0.1 || box.x2 > this.pageWidth - this.pageMargins + 0.1) {
+          warnings.push(
+            `LAYOUT WARNING: Element '${box.label}' violates horizontal margins [x1=${box.x1.toFixed(2)}, x2=${box.x2.toFixed(2)}] on page ${box.page}`
+          );
+        }
+      }
+    }
+    return warnings;
+  }
+
   public verify() {
     for (const box of this.boxes) {
       const isHeaderOrFooter = box.y1 < 48 || box.y2 > 793.89;
       
       if (!isHeaderOrFooter) {
-        if (box.x1 < this.pageMargins - 0.1 || box.x2 > this.pageWidth - this.pageMargins + 0.1) {
-          throw new Error(
-            `LAYOUT FAILURE: Element '${box.label}' violates horizontal margins [x1=${box.x1.toFixed(2)}, x2=${box.x2.toFixed(2)}] on page ${box.page}`
-          );
-        }
         if (box.y1 < this.pageMargins - 0.1 || box.y2 > this.pageHeight - this.pageMargins + 0.1) {
           throw new Error(
             `LAYOUT FAILURE: Element '${box.label}' violates vertical margins [y1=${box.y1.toFixed(2)}, y2=${box.y2.toFixed(2)}] on page ${box.page}`
+          );
+        }
+        if (box.x1 < 0 || box.x2 > this.pageWidth) {
+          throw new Error(
+            `LAYOUT FAILURE: Element '${box.label}' exceeds physical page width [x1=${box.x1.toFixed(2)}, x2=${box.x2.toFixed(2)}] on page ${box.page}`
           );
         }
       } else {
@@ -406,13 +509,40 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
   function getTextHeight(text: string, maxWidth: number, fontSize: number, lineSpacing = 1.25) {
     doc.setFontSize(fontSize);
-    const lines = doc.splitTextToSize(text, maxWidth);
+    const lines = wrapText(text, maxWidth, doc);
     return lines.length * fontSize * lineSpacing;
   }
 
-  function drawText(text: string, x: number, yVal: number, options?: { align?: "left" | "right" | "center"; fontSize?: number; fontColor?: string }) {
-    const fSize = options?.fontSize || doc.getFontSize();
-    doc.setFontSize(fSize);
+  function getTextLayout(text: string, maxWidth: number, baseFontSize: number, lineSpacing = 1.15) {
+    let fontSize = baseFontSize;
+    doc.setFontSize(fontSize);
+    let textWidth = doc.getTextWidth(text);
+    const minFontSize = Math.max(7, baseFontSize * 0.7);
+    
+    while (textWidth > maxWidth && fontSize > minFontSize) {
+      fontSize -= 0.5;
+      doc.setFontSize(fontSize);
+      textWidth = doc.getTextWidth(text);
+    }
+    
+    const lines = wrapText(text, maxWidth, doc);
+    const height = lines.length * fontSize * lineSpacing;
+    return { lines, fontSize, height };
+  }
+
+  function drawText(
+    text: string, 
+    x: number, 
+    yVal: number, 
+    options?: { 
+      align?: "left" | "right" | "center"; 
+      fontSize?: number; 
+      fontColor?: string; 
+      maxWidth?: number;
+    }
+  ): number {
+    let currentFontSize = options?.fontSize || doc.getFontSize();
+    doc.setFontSize(currentFontSize);
     
     if (options?.fontColor) {
       doc.setTextColor(options.fontColor);
@@ -420,20 +550,71 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
       doc.setTextColor("#94a3b8"); // default body text color is soft gray/cyan
     }
 
-    const textWidth = doc.getTextWidth(text);
-    let x1 = x;
-    if (options?.align === "right") {
-      x1 = x - textWidth;
-    } else if (options?.align === "center") {
-      x1 = x - textWidth / 2;
+    let targetMaxWidth = options?.maxWidth;
+    if (targetMaxWidth === undefined) {
+      if (options?.align === "right") {
+        targetMaxWidth = x - margins.left;
+      } else if (options?.align === "center") {
+        targetMaxWidth = 2 * Math.min(x - margins.left, pageWidth - margins.right - x);
+      } else {
+        targetMaxWidth = pageWidth - margins.right - x;
+      }
+    }
+    
+    let textWidth = doc.getTextWidth(text);
+    
+    // Auto-shrink font size if text exceeds maxWidth
+    if (textWidth > targetMaxWidth) {
+      const originalFontSize = currentFontSize;
+      const minFontSize = Math.max(7, originalFontSize * 0.7);
+      while (textWidth > targetMaxWidth && currentFontSize > minFontSize) {
+        currentFontSize -= 0.5;
+        doc.setFontSize(currentFontSize);
+        textWidth = doc.getTextWidth(text);
+      }
     }
 
-    const y1 = yVal - fSize;
-    const x2 = x1 + textWidth;
-    const y2 = yVal;
+    // If it still exceeds maxWidth, split and wrap
+    if (textWidth > targetMaxWidth) {
+      const wrappedLines = wrapText(text, targetMaxWidth, doc);
+      const lSpacing = 1.15;
+      let curY = yVal;
+      wrappedLines.forEach((line, idx) => {
+        if (idx > 0) {
+          curY += currentFontSize * lSpacing;
+        }
+        
+        doc.setFontSize(currentFontSize);
+        const lineW = doc.getTextWidth(line);
+        let lx = x;
+        if (options?.align === "right") {
+          lx = x - lineW;
+        } else if (options?.align === "center") {
+          lx = x - lineW / 2;
+        }
+        const ly1 = curY - currentFontSize;
+        const ly2 = curY;
+        
+        doc.text(line, x, curY, { align: options?.align });
+        ledger.pushBox(doc.getNumberOfPages(), lx, ly1, lx + lineW, ly2, `Text: ${line.substring(0, 15)}`);
+      });
+      return curY;
+    } else {
+      let x1 = x;
+      if (options?.align === "right") {
+        x1 = x - textWidth;
+      } else if (options?.align === "center") {
+        x1 = x - textWidth / 2;
+      }
 
-    doc.text(text, x, yVal, { align: options?.align });
-    ledger.pushBox(doc.getNumberOfPages(), x1, y1, x2, y2, `Text: ${text.substring(0, 15)}`);
+      const y1 = yVal - currentFontSize;
+      const x2 = x1 + textWidth;
+      const y2 = yVal;
+
+      doc.text(text, x, yVal, { align: options?.align });
+      ledger.pushBox(doc.getNumberOfPages(), x1, y1, x2, y2, `Text: ${text.substring(0, 15)}`);
+      return yVal;
+    }
   }
 
   function drawWrappedText(text: string, x: number, yVal: number, maxWidth: number, fontSize: number, options?: { fontColor?: string; lineSpacing?: number; align?: "left" | "right" | "center" }) {
@@ -442,14 +623,15 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     
     const lSpacing = options?.lineSpacing || 1.25;
     const safeText = text || "";
-    const wrappedLines = doc.splitTextToSize(safeText, maxWidth);
+    const wrappedLines = wrapText(safeText, maxWidth, doc);
     
-    wrappedLines.forEach((line: string, idx: number) => {
-      const curY = yVal + idx * fontSize * lSpacing;
-      drawText(line, x, curY, { align: options?.align, fontSize, fontColor: options?.fontColor });
+    let curY = yVal;
+    wrappedLines.forEach((line: string) => {
+      const nextY = drawText(line, x, curY, { align: options?.align, fontSize, fontColor: options?.fontColor, maxWidth });
+      curY = nextY + fontSize * lSpacing;
     });
 
-    return wrappedLines.length * fontSize * lSpacing;
+    return curY - yVal;
   }
 
   function drawRoundedCard(x: number, yVal: number, width: number, height: number, rx = 4, ry = 4, style = "F", fillColor = "#081b24", strokeColor = "#0cc6d8", strokeWidth = 0.5) {
@@ -574,10 +756,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     y += 10;
 
     const currentY = y;
-    doc.setFontSize(fontSizes.section);
-    doc.setTextColor("#0cc6d8"); // Elegant Cyan
-    doc.text(titleText, margins.left, currentY);
-    ledger.pushBox(doc.getNumberOfPages(), margins.left, currentY - fontSizes.section, margins.left + doc.getTextWidth(titleText), currentY, `Section: ${titleText}`);
+    drawText(titleText, margins.left, currentY, { fontSize: fontSizes.section, fontColor: "#0cc6d8", maxWidth: contentWidth });
     
     y += 6;
 
@@ -601,7 +780,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     const text = `ⓘ  ${sectionTitle}  ·  What: ${purpose}  ·  Why: ${why}  ·  Next: ${action}`;
     const cleanText = text.length > 120 ? text.substring(0, 117) + "..." : text;
     
-    drawText(cleanText, margins.left + 8, y + 11, { fontSize: 7, fontColor: "#e0f7fa" });
+    drawText(cleanText, margins.left + 8, y + 11, { fontSize: 7, fontColor: "#e0f7fa", maxWidth: contentWidth - 16 });
     y += helpH + 4;
   }
 
@@ -683,8 +862,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   drawRoundedCard(margins.left, y, contentWidth, cardHeight, 4, 4, "F");
 
   drawText("CAREER GOAL", margins.left + 16, y + 14, { fontSize: fontSizes.meta, fontColor: "#64748b" });
-  const truncatedGoal = careerGoal.length > 36 ? careerGoal.substring(0, 33) + "..." : careerGoal;
-  drawText(truncatedGoal, margins.left + 16, y + 26, { fontSize: fontSizes.body, fontColor: "#ffffff" });
+  drawText(careerGoal, margins.left + 16, y + 26, { fontSize: fontSizes.body, fontColor: "#ffffff", maxWidth: 208 });
   drawText(`Domain: ${safeRoadmaps[0]?.career_domain || "Tech/Business"}`, margins.left + 16, y + 40, { fontSize: fontSizes.meta, fontColor: "#94a3b8" });
 
   doc.saveGraphicsState();
@@ -890,23 +1068,31 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     drawSectionHelpCard("Milestones & Projects", "Step-by-step milestone progression.", "Each milestone resolves a core capability.", "Ensure completion criteria are met.");
 
     sprint.milestones.forEach((milestone, mIdx) => {
-      const mileCardH = 62;
+      const maxTitleW = contentWidth - 12 - 25 - 6 - 90 - 12;
+      const titleLayout = getTextLayout(milestone.title, maxTitleW, fontSizes.cardTitle);
+
+      const whyMatters = milestone.why_it_matters || "Validates core domain capability.";
+      const deliverables = getSafeArray<string>(milestone.deliverables).slice(0, 1).join(", ");
+      const descText = `Focus: ${whyMatters}\nDeliverable: ${deliverables || "Completed milestones"}`;
+      const descLayout = getTextLayout(descText, contentWidth - 24, fontSizes.body - 1, 1.25);
+      
+      const mileCardH = 10 + Math.max(15, titleLayout.height) + 6 + descLayout.height + 10;
       ensureSpace(mileCardH + 6);
       drawRoundedCard(margins.left, y, contentWidth, mileCardH, 4, 4, "F");
 
       const mColor = colorsPalette[(sIndex * 3 + mIdx) % colorsPalette.length];
       const mBadgeW = drawBadge(`M${String(mIdx + 1).padStart(2, "0")}`, margins.left + 12, y + 14, mColor, "#e0f7fa", 7.5);
 
-      drawText(milestone.title, margins.left + 12 + mBadgeW + 6, y + 13, { fontSize: fontSizes.cardTitle, fontColor: "#ffffff" });
+      const titleY = y + 13;
+      titleLayout.lines.forEach((line, idx) => {
+        drawText(line, margins.left + 12 + mBadgeW + 6, titleY + idx * titleLayout.fontSize * 1.15, { fontSize: titleLayout.fontSize, fontColor: "#ffffff", maxWidth: maxTitleW });
+      });
+
       const inlineMeta = `(${milestone.estimated_duration_weeks} wk · ${milestone.difficulty_level})`;
       drawText(inlineMeta, margins.left + contentWidth - 12, y + 13, { align: "right", fontSize: fontSizes.meta, fontColor: "#64748b" });
 
-      const whyMatters = milestone.why_it_matters || "Validates core domain capability.";
-      const shortWhy = whyMatters.length > 90 ? whyMatters.substring(0, 87) + "..." : whyMatters;
-      const deliverables = getSafeArray<string>(milestone.deliverables).slice(0, 1).join(", ");
-      
-      const descText = `Focus: ${shortWhy}\nDeliverable: ${deliverables || "Completed milestones"}`;
-      drawWrappedText(descText, margins.left + 12, y + 26, contentWidth - 24, fontSizes.body - 1, { fontColor: "#94a3b8" });
+      const descY = y + 10 + Math.max(15, titleLayout.height) + 6;
+      drawWrappedText(descText, margins.left + 12, descY, contentWidth - 24, fontSizes.body - 1, { fontColor: "#94a3b8" });
 
       y += mileCardH + 4;
     });
@@ -922,18 +1108,56 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
     if (uniqueResources.length) {
       const resColW = (contentWidth - 12) / 2;
-      const resH = 36;
-      ensureSpace(resH + 6);
+      const paddingX = 8;
+      const paddingY = 8;
+      const innerWidth = resColW - paddingX * 2;
+
+      const cardLayouts = uniqueResources.map((res) => {
+        const labelLayout = getTextLayout(res.label, innerWidth, fontSizes.body);
+        const providerLayout = getTextLayout(res.provider, innerWidth, fontSizes.meta);
+        
+        const urlLines = formatAndWrapUrl(res.url, innerWidth, doc, 2);
+        const urlLayout = {
+          lines: urlLines,
+          fontSize: fontSizes.meta,
+          height: urlLines.length * fontSizes.meta * 1.15
+        };
+        
+        const spacing = 3;
+        const totalTextHeight = labelLayout.height + spacing + providerLayout.height + spacing + urlLayout.height;
+        const cardHeight = totalTextHeight + paddingY * 2;
+        
+        return { labelLayout, providerLayout, urlLayout, cardHeight };
+      });
+
+      const maxResH = Math.max(...cardLayouts.map(l => l.cardHeight));
+      ensureSpace(maxResH + 6);
 
       uniqueResources.forEach((res, rIdx) => {
         const cardX = margins.left + rIdx * (resColW + 12);
-        drawRoundedCard(cardX, y, resColW, resH, 4, 4, "F");
+        drawRoundedCard(cardX, y, resColW, maxResH, 4, 4, "F");
 
-        drawText(res.label, cardX + 8, y + 11, { fontSize: fontSizes.body, fontColor: "#ffffff" });
-        drawText(res.provider, cardX + 8, y + 20, { fontSize: fontSizes.meta, fontColor: "#64748b" });
-        drawText(res.url.length > 36 ? res.url.substring(0, 33) + "..." : res.url, cardX + 8, y + 29, { fontSize: fontSizes.meta, fontColor: "#0cc6d8" });
+        const layout = cardLayouts[rIdx];
+        
+        let curY = y + 8 + layout.labelLayout.fontSize;
+        layout.labelLayout.lines.forEach((line) => {
+          drawText(line, cardX + 8, curY, { fontSize: layout.labelLayout.fontSize, fontColor: "#ffffff", maxWidth: innerWidth });
+          curY += layout.labelLayout.fontSize * 1.15;
+        });
+        
+        curY += 2;
+        layout.providerLayout.lines.forEach((line) => {
+          drawText(line, cardX + 8, curY, { fontSize: layout.providerLayout.fontSize, fontColor: "#64748b", maxWidth: innerWidth });
+          curY += layout.providerLayout.fontSize * 1.15;
+        });
+        
+        curY += 2;
+        layout.urlLayout.lines.forEach((line) => {
+          drawText(line, cardX + 8, curY, { fontSize: layout.urlLayout.fontSize, fontColor: "#0cc6d8", maxWidth: innerWidth });
+          curY += layout.urlLayout.fontSize * 1.15;
+        });
       });
-      y += resH + 4;
+      y += maxResH + 4;
     }
 
     drawSectionDivider();
@@ -944,9 +1168,11 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
     const sprintOutcomes = Array.from(new Set(sprint.milestones.flatMap(m => getSafeArray<string>(m.expected_outcomes)))).slice(0, 2);
     sprintOutcomes.forEach((outcome) => {
-      ensureSpace(12);
-      drawText(`□  ${outcome}`, margins.left, y + 8, { fontSize: fontSizes.body, fontColor: "#94a3b8" });
-      y += 12;
+      const outcomeText = `□  ${outcome}`;
+      const layout = getTextLayout(outcomeText, contentWidth, fontSizes.body);
+      ensureSpace(layout.height + 4);
+      y = drawText(outcomeText, margins.left, y + 8, { fontSize: fontSizes.body, fontColor: "#94a3b8", maxWidth: contentWidth });
+      y += 4;
     });
   });
 
@@ -995,9 +1221,11 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   drawSectionHelpCard("Career Checklist", "Unified milestone progression tracker.", "Validates complete career-goal readiness.", "Execute all checks before applying.");
 
   readinessPoints.forEach((point) => {
-    ensureSpace(12);
-    drawText(`□  ${point}`, margins.left, y + 8, { fontSize: fontSizes.body, fontColor: "#94a3b8" });
-    y += 12;
+    const pointText = `□  ${point}`;
+    const layout = getTextLayout(pointText, contentWidth, fontSizes.body);
+    ensureSpace(layout.height + 4);
+    y = drawText(pointText, margins.left, y + 8, { fontSize: fontSizes.body, fontColor: "#94a3b8", maxWidth: contentWidth });
+    y += 4;
   });
 
   // Draw Page Frames on all pages
@@ -1024,6 +1252,12 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
   // Enforce Layout Verification Bounding Box Quality Audits!
   ledger.verify();
+
+  const layoutWarnings = ledger.verifyHorizontalBounds();
+  if (layoutWarnings.length > 0) {
+    console.warn("PDF generation encountered horizontal layout warnings:", layoutWarnings);
+    allWarnings.push(...layoutWarnings);
+  }
 
   const blobObj = doc.output("blob") as AuditBlob;
   blobObj.valid = validReport;

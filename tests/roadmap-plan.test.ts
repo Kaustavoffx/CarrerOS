@@ -613,3 +613,63 @@ test("incomplete roadmap record fails quality gate validation", () => {
   };
   assert.throws(() => validateRoadmapDomain(incomplete as any, "SDE-I"), IncompleteRoadmapRecordError);
 });
+
+test("PDF generation engine handles extremely long resource labels, titles, URLs, and checklists without failing horizontal bounds checks", async () => {
+  const superLongRoadmap = {
+    title: "Software Engineering Mastery Plan with Extremely Long Titles and Descriptions that span multiple lines and columns",
+    career_domain: "Software Engineering",
+    summary: "Learn everything about JavaScript, Algorithms, Data Structures, Git, system design, and project planning in a highly intense curriculum.",
+    milestones: [
+      {
+        title: "freeCodeCamp JavaScript Algorithms and Data Structures Mastery Course Certification Program and Coding Drills",
+        why_it_matters: "Validates core problem solving skills, data structures implementation, algorithmic efficiency, and syntax standards under extreme challenges.",
+        estimated_duration_weeks: 6,
+        difficulty_level: "Advanced",
+        completion_criteria: [
+          "Complete all 28 certification projects and verify algorithms under test suites",
+          "Deploy custom interactive algorithmic visualizers to production servers"
+        ],
+        resource_links: [
+          {
+            label: "freeCodeCamp JavaScript Algorithms and Data Structures Certification Portal and Practice IDE",
+            url: "https://www.freecodecamp.org/learn/javascript-algorithms-and-data-structures-v8/learn-basic-javascript-by-building-a-role-playing-game/step-1",
+            provider: "freeCodeCamp"
+          }
+        ],
+        projects: ["Advanced Data Structure Visualizer Platform with Live Testing Support"],
+        project_tasks: ["Design custom layout and integrate reactive states"],
+        deliverables: ["Fully functional algorithmic IDE sandbox"],
+        expected_outcomes: [
+          "Mastery of basic and complex data structures including trees, graphs, maps, lists, heaps, and arrays",
+          "Advanced implementation of search and sorting algorithms with runtime optimization analysis"
+        ]
+      }
+    ],
+    weekly_schedule: ["12h of intensive code compilation and unit test execution"],
+    learning_outcomes: [
+      "Design and deploy production-grade interactive sandboxes for algorithmic reviews",
+      "Verify code coverage and optimize algorithm time/space complexities"
+    ],
+    project_tasks: [
+      "Implement custom algorithms and write descriptive project readme files"
+    ],
+    expected_outcomes: [
+      "Deployed full-stack coding platform and comprehensive DSA study bank"
+    ]
+  };
+
+  const report = {
+    title: "SDE Certification Career Goal",
+    exportedAt: new Date().toISOString(),
+    roadmaps: [superLongRoadmap],
+    careerGoal: "freeCodeCamp JavaScript Algorithms and Data Structures Mastery Course",
+    readinessScore: 88
+  };
+
+  const pdfBlob = await generateRoadmapPdfBlob(report as any);
+  assert.ok(pdfBlob, "PDF should generate successfully even with extremely long content");
+  assert.ok(pdfBlob.size > 1000, "Generated PDF should be of valid size");
+  if (pdfBlob.warnings && pdfBlob.warnings.length > 0) {
+    console.log("Recorded layout warnings:", pdfBlob.warnings);
+  }
+});

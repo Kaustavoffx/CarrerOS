@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx",
-    "test": "node --import tsx --test tests/roadmap-plan.test.ts tests/ai-provider-vault.test.ts"
+    "test": "node --import tsx --test tests/roadmap-plan.test.ts tests/ai-provider-vault.test.ts tests/difficulty-normalization.test.ts"
   },
   "dependencies": {
     "@react-three/drei": "^10.0.0",

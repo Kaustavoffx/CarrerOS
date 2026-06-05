@@ -280,11 +280,66 @@ function normalizeResourceLink(value: unknown): RoadmapResourceLink {
   };
 }
 
+export function normalizeDifficulty(value: unknown): RoadmapDifficulty {
+  if (typeof value !== "string") {
+    return "Intermediate";
+  }
+  const cleaned = value.trim().toLowerCase();
+  if (cleaned === "easy" || cleaned === "basic" || cleaned === "beginner") {
+    return "Beginner";
+  }
+  if (cleaned === "medium" || cleaned === "moderate" || cleaned === "intermediate") {
+    return "Intermediate";
+  }
+  if (cleaned === "hard" || cleaned === "expert" || cleaned === "advanced") {
+    return "Advanced";
+  }
+  return "Intermediate";
+}
+
+export function normalizeRawPayloadDifficulty(payload: unknown): unknown {
+  if (!payload || typeof payload !== "object") {
+    return payload;
+  }
+  
+  const obj = payload as Record<string, unknown>;
+  if (!Array.isArray(obj.roadmaps)) {
+    return payload;
+  }
+
+  const roadmaps = obj.roadmaps.map((roadmap: unknown) => {
+    if (!roadmap || typeof roadmap !== "object") {
+      return roadmap;
+    }
+    const roadmapObj = roadmap as Record<string, unknown>;
+    if (!Array.isArray(roadmapObj.milestones)) {
+      return roadmap;
+    }
+    const milestones = roadmapObj.milestones.map((milestone: unknown) => {
+      if (!milestone || typeof milestone !== "object") {
+        return milestone;
+      }
+      const milestoneObj = milestone as Record<string, unknown>;
+      return {
+        ...milestoneObj,
+        difficulty_level: normalizeDifficulty(milestoneObj.difficulty_level)
+      };
+    });
+    return {
+      ...roadmapObj,
+      milestones
+    };
+  });
+
+  return {
+    ...obj,
+    roadmaps
+  };
+}
+
 function normalizeMilestone(value: unknown): RoadmapMilestoneRecord {
   const milestone = (value ?? {}) as Partial<RoadmapMilestoneRecord> & { difficulty_level?: unknown };
-  const difficultyLevel = typeof milestone.difficulty_level === "string" && ["Beginner", "Intermediate", "Advanced"].includes(milestone.difficulty_level)
-    ? (milestone.difficulty_level as RoadmapDifficulty)
-    : "Beginner";
+  const difficultyLevel = normalizeDifficulty(milestone.difficulty_level);
 
   return {
     title: toStringValue(milestone.title, "Untitled milestone"),

@@ -5,6 +5,7 @@ import { resolveUserAiProviderForGeneration } from "@/lib/ai-provider-store";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { auditRoadmapQuality, buildRoadmapPlanDetails, buildRoadmapPlanPrompt, resolveDomainProfile, validateRoadmapDomainConsistency, validateRoadmapDomain } from "@/lib/roadmap-plan";
 import type { RoadmapRecord } from "@/lib/supabase/types";
+import { normalizeRawPayloadDifficulty } from "@/lib/app-data";
 
 const ResourceLinkSchema = z.object({
   label: z.string(),
@@ -76,6 +77,7 @@ const ResponseSchema = z.object({
   ai_reasoning: z.string(),
   roadmaps: z.array(RoadmapSchema)
 });
+
 
 async function generateWithOpenAI(prompt: ReturnType<typeof buildRoadmapPlanPrompt>, apiKey: string) {
   const provider = "openai";
@@ -381,7 +383,8 @@ export async function POST(req: Request) {
           throw new Error("AI provider returned empty response");
         }
 
-        const validated = ResponseSchema.safeParse(aiPayload);
+        const normalizedPayload = normalizeRawPayloadDifficulty(aiPayload);
+        const validated = ResponseSchema.safeParse(normalizedPayload);
         if (!validated.success) {
           throw new Error(`Zod validation failed: ${JSON.stringify(validated.error.issues)}`);
         }
