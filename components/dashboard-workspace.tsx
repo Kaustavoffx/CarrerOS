@@ -136,8 +136,6 @@ const Confetti = () => {
   );
 };
 
-// ─── Main Component ────────────────────────────────────────────────────────────
-
 export function DashboardWorkspace({ profile, workspace: initialWorkspace }: DashboardWorkspaceProps) {
   const [workspace, setWorkspace] = useState<WorkspaceSnapshotRecord | null>(initialWorkspace);
 
@@ -147,6 +145,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [activityLimit, setActivityLimit] = useState(5);
 
   // Opportunities Drawer: Notes and search state
   const [noteTitle, setNoteTitle] = useState("");
@@ -205,7 +204,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
       } else {
         showToast("Saved locally.");
       }
-    } catch {
+    } catch (err) {
       showToast("Cloud sync failed. Saved to memory.");
     }
   }
@@ -251,6 +250,14 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
     p.label.toLowerCase().includes("application") || 
     p.label.toLowerCase().includes("job")
   ).length ?? 0;
+
+  // Filtered Notes
+  const notes = workspace?.notes ?? [];
+  const filteredNotes = notes.filter(n =>
+    n.title.toLowerCase().includes(noteSearch.toLowerCase()) ||
+    n.content.toLowerCase().includes(noteSearch.toLowerCase()) ||
+    (n.tag && n.tag.toLowerCase().includes(noteSearch.toLowerCase()))
+  );
 
   // ── Database Note Operations ─────────────────────────────────────────────
   async function handleCreateNote() {
@@ -364,7 +371,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
         });
       }
     });
-    workspace?.progress?.slice(0, 3).forEach(p => {
+    workspace?.progress?.forEach(p => {
       list.push({
         label: `Momentum logged: "${p.label}" (${p.value}%)`,
         time: p.date,
@@ -378,36 +385,13 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
         type: "profile"
       });
     }
-    return list.slice(0, 5);
+    return list;
   };
 
-  const activityFeedList = getTimelineActivity();
+  const allActivities = getTimelineActivity();
+  const activityFeedList = allActivities.slice(0, activityLimit);
 
-  // Matched Opportunities Mock data
-  const jobListings = [
-    {
-      id: "j1", role: "Frontend Engineer", company: "Vercel", location: "Remote",
-      salary: "$120k–$160k", match: 94, type: "Full-Time",
-      skills: ["React", "TypeScript", "Next.js"],
-    },
-    {
-      id: "j2", role: "Product Designer", company: "Linear", location: "NYC / Hybrid",
-      salary: "$110k–$140k", match: 89, type: "Full-Time",
-      skills: ["Figma", "Design Systems", "UX Research"],
-    },
-    {
-      id: "j3", role: "ML Engineer", company: "Stripe", location: "SF / Hybrid",
-      salary: "$150k–$190k", match: 91, type: "Full-Time",
-      skills: ["Python", "PyTorch", "MLOps"],
-    },
-  ];
-
-  const filteredNotes = (workspace?.notes ?? []).filter(n =>
-    n.title.toLowerCase().includes(noteSearch.toLowerCase()) ||
-    n.content.toLowerCase().includes(noteSearch.toLowerCase())
-  );
-
-  return (
+   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {showCelebration && <Confetti />}
 
@@ -425,34 +409,17 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
         )}
       </AnimatePresence>
 
-      {/* ═══ SECTION 1: MISSION HEADER ════════════════════════════════════════ */}
-      <section className="liquid-panel relative overflow-hidden rounded-[28px] p-6 sm:p-8">
-        <div className="pointer-events-none absolute -top-20 -left-20 h-56 w-56 rounded-full bg-cyan-500/5 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 right-0 h-48 w-48 rounded-full bg-indigo-500/4 blur-2xl" />
-
+      {/* ═══ MISSION HEADER (Neutral Info Bar) ═══════════════════════════════ */}
+      <section className="card-data relative overflow-hidden rounded-[24px] p-6">
         <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-start gap-5">
-            {/* Single Large Progress Ring */}
-            {activeRoadmap && (
-              <div className="shrink-0 relative">
-                <ProgressRing
-                  value={activeRoadmap.progress}
-                  size={110}
-                  strokeWidth={7}
-                  color="#22d3ee"
-                  label={`${activeRoadmap.progress}%`}
-                  sublabel="Progress"
-                />
-              </div>
-            )}
-
+          <div className="flex items-start gap-4">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-400" />
                 </span>
-                <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Mission Control Center</p>
+                <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Mission Workspace</p>
                 {activeRoadmap && (
                   <span className="rounded-full border border-[#202028] bg-[#0d0d10] px-2 py-0.5 text-[10px] text-slate-400">
                     Roadmap v{activeRoadmap.roadmap_version}
@@ -460,64 +427,82 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                 )}
               </div>
 
-              <h2 className="mt-3 text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
-                {profile?.goal || "SDE I Career Mission"}
+              <h2 className="mt-2 text-xl sm:text-2xl font-extrabold text-white tracking-tight leading-tight">
+                {profile?.goal || "SDE I Target Track"}
               </h2>
 
-              <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-500 font-medium">
-                <span>Readiness: <strong className="text-cyan-400">{profile?.readiness_score || 0}%</strong></span>
+              <div className="mt-2 flex flex-wrap gap-4 text-xs text-slate-500 font-medium">
+                <span>Readiness Score: <strong className="text-cyan-400">{profile?.readiness_score || 0}%</strong></span>
                 <span>&bull;</span>
-                <span>Sprint Track: <strong className="text-white">{currentMilestone?.title || "No Sprint Active"}</strong></span>
+                <span>Active Sprint: <strong className="text-white">{currentMilestone?.title || "No Sprint Active"}</strong></span>
                 <span>&bull;</span>
-                <span>Availability: <strong className="text-white">{activeRoadmap?.weekly_hours || 15}h/week</strong></span>
+                <span>Weekly Available Target: <strong className="text-white">{activeRoadmap?.weekly_hours || 10} hours</strong></span>
               </div>
             </div>
           </div>
 
-          {/* Action CTAs */}
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end lg:self-center">
-            <button
-              onClick={() => document.getElementById("todays-mission-section")?.scrollIntoView({ behavior: "smooth" })}
-              className="tactile-btn border border-[#202028] hover:border-cyan-400/30 text-white font-bold px-4 py-2.5 rounded-full text-xs transition"
-            >
-              Continue Sprint
-            </button>
-            <Link
-              href="/mentor"
-              className="tactile-btn border border-[#202028] hover:border-indigo-400/30 text-white font-bold px-4 py-2.5 rounded-full text-xs transition inline-flex items-center gap-1.5"
-            >
-              <MessageSquare className="h-3.5 w-3.5 text-indigo-400" />
-              Ask Mentor
-            </Link>
+          <div className="flex items-center gap-2.5">
             <button
               onClick={() => setIsDrawerOpen(true)}
               className="tactile-btn bg-cyan-400 hover:bg-cyan-300 font-extrabold text-black px-5 py-2.5 rounded-full text-xs transition inline-flex items-center gap-1.5 shadow-[0_0_15px_rgba(34,211,238,0.2)]"
             >
-              View Opportunities
+              View Notes Archives
               <ArrowRight className="h-3.5 w-3.5 stroke-[2.5]" />
             </button>
           </div>
         </div>
       </section>
 
-      {/* ═══ SECTION 2: TODAY'S MISSION (Pinned top execution) ═══════════════ */}
+      {/* ── QUICK ACTIONS ROW (Action Cards) ──────────────────────────────── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <button
+          onClick={() => document.getElementById("todays-mission-section")?.scrollIntoView({ behavior: "smooth" })}
+          className="card-action p-4 rounded-xl text-left flex flex-col justify-between"
+        >
+          <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Sprint Plan</span>
+          <span className="text-xs font-bold text-white mt-2">Continue Sprint &rarr;</span>
+        </button>
+        <Link
+          href="/mentor"
+          className="card-action p-4 rounded-xl text-left flex flex-col justify-between"
+        >
+          <span className="text-[10px] text-indigo-400 uppercase tracking-wider block">AI Strategist</span>
+          <span className="text-xs font-bold text-white mt-2">Open Mentor &rarr;</span>
+        </Link>
+        <button
+          onClick={() => setProgressModalOpen(true)}
+          className="card-action p-4 rounded-xl text-left flex flex-col justify-between"
+        >
+          <span className="text-[10px] text-cyan-400 uppercase tracking-wider block">Log Metrics</span>
+          <span className="text-xs font-bold text-white mt-2">Log Progress &rarr;</span>
+        </button>
+        <Link
+          href="/roadmaps"
+          className="card-action p-4 rounded-xl text-left flex flex-col justify-between"
+        >
+          <span className="text-[10px] text-amber-400 uppercase tracking-wider block">Execution Track</span>
+          <span className="text-xs font-bold text-white mt-2">Review Roadmap &rarr;</span>
+        </Link>
+      </div>
+
+      {/* ═══ SECTION 2: TODAY'S MISSION (Spotlight Card 1) ═══════════════ */}
       {activeRoadmap && currentMilestone && (
         <section id="todays-mission-section" className="scroll-mt-6">
-          <div className="liquid-panel relative overflow-hidden rounded-[24px] border-l-[3px] border-cyan-400 p-6 sm:p-8">
-            <div className="pointer-events-none absolute top-0 right-0 h-40 w-64 rounded-full bg-cyan-400/5 blur-3xl animate-pulse" />
+          <div className="card-spotlight relative overflow-hidden rounded-[24px] p-6 sm:p-8">
+            <div className="pointer-events-none absolute top-0 right-0 h-40 w-64 bg-cyan-400/5 rounded-full blur-3xl animate-pulse" />
             
             <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-3">
                   <Flame className="h-4 w-4 text-cyan-400 animate-bounce" />
                   <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Today&apos;s Mission</p>
-                  <span className="rounded-full border border-indigo-500/20 bg-indigo-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-indigo-400">
-                    High Priority
+                  <span className="rounded-full border border-cyan-400/10 bg-cyan-400/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-cyan-300">
+                    Active Sprint Milestone
                   </span>
                 </div>
                 
                 <h3 className="text-lg sm:text-xl font-bold text-white leading-snug">
-                  Active Milestone: <span className="text-cyan-300">{currentMilestone.title}</span>
+                  {currentMilestone.title}
                 </h3>
                 <p className="mt-2 text-xs sm:text-sm text-slate-400 max-w-2xl leading-relaxed">
                   {currentMilestone.why_it_matters}
@@ -572,31 +557,40 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
               </div>
 
               {/* Progress Panel side item */}
-              <div className="shrink-0 flex flex-col justify-between items-end gap-3 self-stretch min-w-[150px] bg-[#08080a] border border-[#141417] p-4 rounded-2xl">
+              <div className="shrink-0 flex flex-col justify-between items-end gap-3 self-stretch min-w-[170px] bg-black/40 border border-white/5 p-4 rounded-2xl">
                 <div className="text-right">
                   <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Estimated Hours</span>
                   <span className="text-sm font-bold text-white mt-1 block">{timeRequiredString} left</span>
+                  <span className="text-[10px] text-slate-400 mt-1 block">{currentMilestoneTasks.length - completedSprintItems} tasks remaining</span>
                 </div>
+                
                 <div className="w-full text-right mt-4">
                   <div className="flex justify-between items-center text-[10px] font-semibold text-slate-400 mb-1">
-                    <span>Task progress</span>
+                    <span>Sprint Progress</span>
                     <span className="text-cyan-400">{sprintProgress}%</span>
                   </div>
                   <div className="h-1.5 w-full bg-[#141418] rounded-full overflow-hidden">
                     <div className="h-full bg-cyan-400" style={{ width: `${sprintProgress}%` }} />
                   </div>
                 </div>
+
+                <Link
+                  href="/roadmaps"
+                  className="tactile-btn tactile-btn-primary w-full py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 mt-2"
+                >
+                  Start Working &rarr;
+                </Link>
               </div>
             </div>
           </div>
         </section>
       )}
 
-      {/* ═══ SECTION 3: CURRENT SPRINT BOARD (Milestones columns) ════ */}
+      {/* ═══ SECTION 3: CURRENT SPRINT BOARD (Neutral Kanban card layout) ════ */}
       {activeRoadmap && (
         <section>
           <div className="mb-4">
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Workspace Board</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider font-semibold">Workspace Board</span>
             <h3 className="text-base font-bold text-white mt-1">Sprint Board</h3>
           </div>
 
@@ -604,12 +598,10 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
             {(["upcoming", "inprogress", "completed"] as KanbanColumn[]).map(col => {
               const meta = COLUMN_META[col];
               
-              // Filter milestones belonging to this status column
               const cards = allMilestones.map((m, idx) => {
                 const status = getMilestoneStatus(idx, completedCount, allMilestones.length);
                 const colMap: KanbanColumn = status === "completed" ? "completed" : status === "active" ? "inprogress" : "upcoming";
                 
-                // Calculate milestone progress
                 const msTasks = m.project_tasks ?? [];
                 const msDels = m.deliverables ?? [];
                 const msTotal = msTasks.length + msDels.length;
@@ -636,7 +628,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                     const title = e.dataTransfer.getData("milestoneTitle");
                     if (title) void handleMilestoneStatusUpdate(title, col);
                   }}
-                  className="min-h-[220px] rounded-[20px] border border-[#141417] bg-[#07070a] p-4 flex flex-col"
+                  className="min-h-[200px] rounded-[20px] border border-[#141417] bg-[#07070a] p-4 flex flex-col"
                 >
                   <div className="mb-3.5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -699,100 +691,87 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
         </section>
       )}
 
-      {/* ═══ SECTION 4: PROGRESS OVERVIEW (Unified Grid) ════════════════════ */}
+      {/* ═══ SECTION 4: PROGRESS OVERVIEW (Compact Horizontal Metrics Strip) ═══ */}
       {activeRoadmap && (
         <section>
           <div className="mb-4">
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Metrics Consolidation</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider font-semibold">Metrics Consolidation</span>
             <h3 className="text-base font-bold text-white mt-1">Progress Overview</h3>
           </div>
 
-          <div className="liquid-panel rounded-[24px] p-6">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-              {[
-                { label: "Readiness Score", value: `${profile?.readiness_score || 0}%`, sub: "Career benchmark", color: "text-cyan-400" },
-                { label: "Roadmap Completion", value: `${activeRoadmap.progress}%`, sub: "Overall progress", color: "text-indigo-400" },
-                { label: "Milestones", value: `${completedCount}/${allMilestones.length}`, sub: "Completed track", color: "text-emerald-400" },
-                { label: "Projects Completed", value: `${completedProjectsCount}/${totalProjectsCount}`, sub: "Evidence portfolio", color: "text-amber-400" },
-                { label: "Weekly Consistency", value: `${weeklyConsistency}%`, sub: "Log completions", color: "text-rose-400" },
-                { label: "Applications", value: String(applicationsCount), sub: "Opportunities log", color: "text-white" },
-              ].map(stat => (
-                <div key={stat.label} className="bg-[#08080a] border border-[#141417] p-3.5 rounded-xl flex flex-col justify-between hover:border-slate-800 transition duration-200">
-                  <div>
-                    <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">{stat.label}</span>
-                    <p className={`text-base sm:text-lg font-bold mt-1.5 ${stat.color} leading-none`}>
-                      {stat.value}
-                    </p>
-                  </div>
-                  <span className="text-[9px] text-slate-500 mt-2 block">{stat.sub}</span>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+            {[
+              { label: "Readiness Score", value: `${profile?.readiness_score || 0}%`, sub: "Career benchmark" },
+              { label: "Roadmap progress", value: `${activeRoadmap.progress}%`, sub: "Overall completed" },
+              { label: "Completed milestones", value: `${completedCount}/${allMilestones.length}`, sub: "Milestone tracks" },
+              { label: "Projects Completed", value: `${completedProjectsCount}/${totalProjectsCount}`, sub: "Evidence items" },
+              { label: "Consistency Rate", value: `${weeklyConsistency}%`, sub: "Sprint logins" },
+              { label: "Logged Applications", value: String(applicationsCount), sub: "Target tracking" },
+            ].map(stat => (
+              <div key={stat.label} className="card-data p-3.5 rounded-xl flex flex-col justify-between border border-[#1f1f23]">
+                <div>
+                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">{stat.label}</span>
+                  <p className="text-base font-extrabold text-white mt-1.5 leading-none">{stat.value}</p>
                 </div>
-              ))}
-            </div>
-            
-            <div className="mt-5 pt-4 border-t border-[#1e1e24] flex justify-end">
-              <button
-                onClick={() => setProgressModalOpen(true)}
-                className="tactile-btn border border-[#202028] hover:border-cyan-400/20 px-4 py-2 rounded-xl text-xs text-slate-300 hover:text-white transition inline-flex items-center gap-1.5 font-bold"
-              >
-                <TrendingUp className="h-3.5 w-3.5 text-cyan-400" />
-                Log Progress Update
-              </button>
-            </div>
+                <span className="text-[9px] text-slate-500 mt-2 block">{stat.sub}</span>
+              </div>
+            ))}
           </div>
         </section>
       )}
 
-      {/* ═══ SECTION 5 & 6: INSIGHTS & BLOCKERS (Side-by-side) ══════════════ */}
+      {/* ═══ SECTION 5 & 6: AI MENTOR SPOTLIGHT & BLOCKERS (Side-by-side) ═════ */}
       <section className="grid gap-5 lg:grid-cols-2">
-        {/* SECTION 5: MENTOR INSIGHTS */}
-        <div className="liquid-panel rounded-[24px] p-6 flex flex-col justify-between relative overflow-hidden">
-          <div className="pointer-events-none absolute -bottom-16 -right-16 h-44 w-44 rounded-full bg-cyan-400/5 blur-2xl" />
+        {/* SECTION 5: AI MENTOR CARD (Spotlight Card 2) */}
+        <div className="card-spotlight rounded-[24px] p-6 flex flex-col justify-between relative overflow-hidden">
+          <div className="pointer-events-none absolute -bottom-16 -right-16 h-44 w-44 bg-cyan-400/5 rounded-full blur-2xl" />
           
-          <div className="relative z-10">
-            <div className="flex items-center gap-2.5 mb-4">
+          <div className="relative z-10 space-y-4">
+            <div className="flex items-center gap-2.5">
               <Sparkles className="h-4 w-4 text-cyan-400" />
-              <h3 className="text-base font-bold text-white">Mentor Insights</h3>
+              <h3 className="text-base font-bold text-white">AI Mentor Insights</h3>
+              <span className="rounded-full bg-cyan-400/10 text-cyan-300 border border-cyan-400/25 text-[9px] px-2 py-0.5 font-bold uppercase tracking-wider">AI Strategist</span>
             </div>
 
-            <div className="rounded-xl border border-[#141417] bg-[#08080a] p-4">
-              <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Latest recommendation</span>
-              <p className="text-xs sm:text-sm text-slate-300 mt-1.5 leading-relaxed font-medium">
+            <div className="bg-black/30 border border-white/5 p-4 rounded-xl">
+              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Latest recommendation</span>
+              <p className="text-xs sm:text-sm text-slate-200 mt-1.5 leading-relaxed font-medium">
                 {workspace?.ai_chats?.[0]?.messages?.slice(-1)?.[0]?.content || (
                   currentMilestone 
                     ? `Prioritize completing tasks in your active "${currentMilestone.title}" milestone to establish your frontend engineering foundations.`
-                    : "No mentor logs available yet. Initiate career strategy chats."
+                    : "No advisor recommendation logged. Start conversations inside the Mentor module."
                 )}
               </p>
             </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="border border-[#141417] bg-[#070709] p-3 rounded-lg">
-                <span className="text-[9px] text-indigo-400 font-bold uppercase tracking-wider block">Why it matters</span>
+            <div className="grid gap-3 sm:grid-cols-2 text-xs">
+              <div className="bg-black/20 border border-white/5 p-3 rounded-lg">
+                <span className="text-[9px] text-cyan-300 font-bold uppercase tracking-wider block">Why this matters</span>
                 <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                  Completing scheduled tasks updates your readiness metrics and provides project evidence.
+                  Completing recommended tasks updates readiness metrics and logs project evidence.
                 </p>
               </div>
-              <div className="border border-[#141417] bg-[#070709] p-3 rounded-lg">
-                <span className="text-[9px] text-cyan-400 font-bold uppercase tracking-wider block">Recommended action</span>
+              <div className="bg-black/20 border border-white/5 p-3 rounded-lg">
+                <span className="text-[9px] text-indigo-300 font-bold uppercase tracking-wider block">Generated timestamp</span>
                 <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                  Focus on the primary Next Action highlighted at the top of your workspace.
+                  {workspace?.ai_chats?.[0]?.updated_at ? new Date(workspace.ai_chats[0].updated_at).toLocaleTimeString() : "Just now"}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="mt-5 pt-4 border-t border-[#1e1e24]/60 flex justify-end">
+          <div className="mt-5 pt-4 border-t border-white/5 flex justify-end">
             <Link
               href="/mentor"
-              className="tactile-btn border border-[#202028] hover:border-cyan-400/25 px-4 py-2 rounded-xl text-xs text-slate-300 hover:text-white transition font-bold"
+              className="tactile-btn border border-[#202028] hover:border-cyan-400/35 px-4 py-2 rounded-xl text-xs text-slate-300 hover:text-white transition font-bold"
             >
               Open Mentor Strategy
             </Link>
           </div>
         </div>
 
-        {/* SECTION 6: BLOCKERS & SKILL GAPS */}
-        <div className="liquid-panel rounded-[24px] p-6 flex flex-col justify-between">
+        {/* SECTION 6: BLOCKERS & SKILL GAPS (Neutral Data Card) */}
+        <div className="card-data rounded-[24px] p-6 flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2.5 mb-4">
               <AlertTriangle className="h-4 w-4 text-rose-400" />
@@ -843,16 +822,16 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
         </div>
       </section>
 
-      {/* ═══ SECTION 7: RECENT ACTIVITY (Sorted feed) ═════════════════════════ */}
+      {/* ═══ SECTION 7: RECENT ACTIVITY (Compact timeline logs) ═══════════════ */}
       <section>
         <div className="mb-4">
           <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Workspace Logs</span>
           <h3 className="text-base font-bold text-white mt-1">Recent Activity</h3>
         </div>
 
-        <div className="liquid-panel rounded-[24px] p-6">
+        <div className="card-data rounded-[24px] p-6">
           {activityFeedList.length > 0 ? (
-            <div className="relative space-y-4.5">
+            <div className="relative space-y-4">
               <div className="absolute left-[15px] top-3 bottom-3 w-px bg-gradient-to-b from-white/10 via-white/5 to-transparent" />
               {activityFeedList.map((act, idx) => (
                 <div key={idx} className="relative flex items-start gap-4 pl-0.5">
@@ -867,6 +846,17 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                   </div>
                 </div>
               ))}
+
+              {allActivities.length > activityLimit && (
+                <div className="mt-4 flex justify-center border-t border-white/5 pt-4">
+                  <button
+                    onClick={() => setActivityLimit(prev => prev + 5)}
+                    className="tactile-btn border border-[#202028] hover:border-slate-500 px-4 py-1.5 rounded-lg text-xs text-slate-400 hover:text-white transition font-semibold"
+                  >
+                    Load More Activities
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <p className="text-xs text-slate-500 py-6 text-center">No recent activities logged.</p>
@@ -874,7 +864,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
         </div>
       </section>
 
-      {/* ═══ OPPORTUNITIES SIDE DRAWER ═══════════════════════════════════════ */}
+      {/* ═══ NOTES SIDE DRAWER (Simplified, removed Job Matches) ══════════════ */}
       <AnimatePresence>
         {isDrawerOpen && (
           <>
@@ -892,13 +882,13 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 26, stiffness: 220 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-[#09090b] border-l border-[#202028] p-6 shadow-2xl flex flex-col justify-between"
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#09090b] border-l border-[#202028] p-6 shadow-2xl flex flex-col justify-between"
             >
               <div className="flex flex-col flex-1 min-h-0">
                 <div className="flex items-center justify-between border-b border-[#202028] pb-4 mb-4">
                   <div>
-                    <h3 className="text-base font-bold text-white">Career Opportunities Panel</h3>
-                    <p className="text-[10px] text-slate-500 mt-0.5">Job intelligence and strategy archives</p>
+                    <h3 className="text-base font-bold text-white">Strategy Notes & Archives</h3>
+                    <p className="text-[10px] text-slate-500 mt-0.5">Workspace notes and execution strategies</p>
                   </div>
                   <button
                     onClick={() => setIsDrawerOpen(false)}
@@ -909,79 +899,10 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                 </div>
 
                 <div className="space-y-6 overflow-y-auto flex-1 pr-1.5 pb-4">
-                  {/* Market Match & Predicted Timeline */}
-                  <div className="grid gap-3 grid-cols-2">
-                    <div className="border border-[#1e1e24] bg-[#07070a] p-4 rounded-xl">
-                      <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Market Match Index</span>
-                      <div className="mt-2.5 flex items-baseline gap-1.5">
-                        <span className="text-2xl font-black text-emerald-400">{activeRoadmap?.career_demand_score || 87}</span>
-                        <span className="text-xs text-slate-500">/ 100</span>
-                      </div>
-                      <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">
-                        Strong alignment with software target demands.
-                      </p>
-                    </div>
-
-                    <div className="border border-[#1e1e24] bg-[#07070a] p-4 rounded-xl">
-                      <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Predicted Timeline</span>
-                      <p className="text-lg font-bold text-white mt-2">
-                        {activeRoadmap ? `${Math.round(activeRoadmap.total_duration_weeks * 7 / 30)} months` : "6-8 months"}
-                      </p>
-                      <p className="text-[10px] text-slate-500 mt-1">To target readiness pace.</p>
-                    </div>
-                  </div>
-
-                  {/* Job Matches */}
+                  {/* Strategy Notes Panel */}
                   <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Job Matches</span>
-                      <span className="rounded bg-indigo-500/10 text-indigo-400 text-[8px] px-2 py-0.5 border border-indigo-500/20 font-bold uppercase">Opportunity Board</span>
-                    </div>
-
-                    <div className="space-y-3">
-                      {jobListings.map(job => {
-                        const saved = savedJobs.includes(job.id);
-                        return (
-                          <div
-                            key={job.id}
-                            className="border border-[#141417] bg-[#07070a] p-4 rounded-xl relative hover:border-slate-800 transition"
-                          >
-                            <div className="flex items-start justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="h-9 w-9 rounded-lg bg-[#0d0d10] border border-[#202028] flex items-center justify-center text-xs font-bold text-slate-300">
-                                  {job.company[0]}
-                                </div>
-                                <div>
-                                  <h4 className="text-xs sm:text-sm font-semibold text-white">{job.role}</h4>
-                                  <p className="text-[10px] text-slate-500">{job.company} &bull; {job.type}</p>
-                                </div>
-                              </div>
-                              <button
-                                onClick={() => setSavedJobs(s => saved ? s.filter(x => x !== job.id) : [...s, job.id])}
-                                className={`rounded p-1 transition ${saved ? "text-amber-400" : "text-slate-600 hover:text-slate-400"}`}
-                              >
-                                <Bookmark className={`h-4 w-4 ${saved ? "fill-amber-400" : ""}`} />
-                              </button>
-                            </div>
-
-                            <div className="mt-3 flex flex-wrap gap-2 text-[10px] text-slate-400">
-                              <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{job.location}</span>
-                              <span className="flex items-center gap-1"><DollarSign className="h-3 w-3" />{job.salary}</span>
-                              <span className="text-emerald-400 font-bold">&middot; {job.match}% match</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Strategy Notes (Search / Archive list) */}
-                  <div className="border-t border-[#1e1e24] pt-5">
                     <div className="flex items-center justify-between mb-3.5">
-                      <div className="flex items-center gap-2">
-                        <Archive className="h-3.5 w-3.5 text-slate-400" />
-                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Strategy Notes & Archive</span>
-                      </div>
+                      <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">All Active Notes</span>
                       <button
                         onClick={() => setNoteModalOpen(true)}
                         className="text-[10px] text-cyan-400 hover:text-cyan-300 transition inline-flex items-center gap-1 font-bold uppercase tracking-wider"
@@ -1003,7 +924,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                       </div>
                     </div>
 
-                    <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1">
+                    <div className="space-y-2">
                       {filteredNotes.length > 0 ? (
                         filteredNotes.map(note => (
                           <div key={note.id} className="border border-[#141417] bg-[#07070a] p-3 rounded-lg relative group">
@@ -1035,7 +956,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                   onClick={() => setIsDrawerOpen(false)}
                   className="tactile-btn border border-[#202028] hover:border-slate-500 w-full rounded-xl py-2.5 text-xs text-slate-300 font-semibold transition"
                 >
-                  Close Options
+                  Close Drawer
                 </button>
               </div>
             </motion.div>

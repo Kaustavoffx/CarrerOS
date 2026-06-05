@@ -162,6 +162,15 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
   const [compareVersionId, setCompareVersionId] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
 
+  // V4 Resource Status & Milestone Edit States
+  const [bookmarkedResources, setBookmarkedResources] = useState<Record<string, boolean>>({});
+  const [completedResources, setCompletedResources] = useState<Record<string, boolean>>({});
+  const [isEditingMilestone, setIsEditingMilestone] = useState(false);
+  const [editTasksText, setEditTasksText] = useState("");
+  const [editDeliverablesText, setEditDeliverablesText] = useState("");
+  const [editWhyItMatters, setEditWhyItMatters] = useState("");
+  const [editNotesText, setEditNotesText] = useState("");
+
   // ── Load and persist checked tasks via localStorage ─────────────────────
   const [checkedTasks, setCheckedTasks] = useState<Record<string, boolean>>(() => {
     if (typeof window !== "undefined" && profile?.id) {
@@ -174,6 +183,20 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
     }
     return {};
   });
+
+  // Load resource status tracking on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const b = localStorage.getItem("careeros::bookmarked_resources");
+        if (b) setBookmarkedResources(JSON.parse(b));
+        const c = localStorage.getItem("careeros::completed_resources");
+        if (c) setCompletedResources(JSON.parse(c));
+      } catch (e) {
+        console.error("Failed loading resources state:", e);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (profile?.id) {
@@ -318,6 +341,66 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
       await updateWorkspace(supabase, profile.id, { roadmaps: safeRoadmaps });
     }
   }
+
+  const toggleBookmark = (url: string) => {
+    setBookmarkedResources(prev => {
+      const updated = { ...prev, [url]: !prev[url] };
+      if (typeof window !== "undefined") {
+        localStorage.setItem("careeros::bookmarked_resources", JSON.stringify(updated));
+      }
+      return updated;
+    });
+    showToast("Resource bookmark updated.");
+  };
+
+  const toggleCompleted = (url: string) => {
+    setCompletedResources(prev => {
+      const updated = { ...prev, [url]: !prev[url] };
+      if (typeof window !== "undefined") {
+        localStorage.setItem("careeros::completed_resources", JSON.stringify(updated));
+      }
+      return updated;
+    });
+    showToast("Resource completion updated.");
+  };
+
+  const startEditingMilestone = () => {
+    if (!activeMilestone) return;
+    setEditWhyItMatters(activeMilestone.why_it_matters || "");
+    setEditTasksText((activeMilestone.project_tasks || []).join("\n"));
+    setEditDeliverablesText((activeMilestone.deliverables || []).join("\n"));
+    setEditNotesText(activeMilestone.notes || "");
+    setIsEditingMilestone(true);
+  };
+
+  const saveMilestoneDetails = async () => {
+    if (!activeRoadmap || !activeMilestone) return;
+    
+    const parsedTasks = editTasksText.split("\n").map(t => t.trim()).filter(Boolean);
+    const parsedDeliverables = editDeliverablesText.split("\n").map(d => d.trim()).filter(Boolean);
+
+    const updatedMilestones = allMilestones.map(m => {
+      if (m.title === activeMilestone.title) {
+        return {
+          ...m,
+          why_it_matters: editWhyItMatters.trim(),
+          project_tasks: parsedTasks,
+          deliverables: parsedDeliverables,
+          notes: editNotesText.trim()
+        };
+      }
+      return m;
+    });
+
+    const updatedRoadmap = {
+      ...activeRoadmap,
+      milestones: updatedMilestones
+    };
+
+    await persistRoadmaps([updatedRoadmap, ...safeWorkspaceRoadmaps.slice(1)]);
+    setIsEditingMilestone(false);
+    showToast("Milestone specifications updated in profile.");
+  };
 
   async function restoreRoadmapVersion(version: RoadmapVersionRecord) {
     if (!workspace) return;
@@ -467,11 +550,8 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
         )}
       </AnimatePresence>
 
-      {/* ══ SECTION 1: ROADMAP HERO ══════════════════════════════════════════ */}
-      <section className="liquid-panel relative overflow-hidden rounded-[28px] p-6 sm:p-8">
-        <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-cyan-500/5 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 left-0 h-48 w-48 rounded-full bg-indigo-500/4 blur-2xl" />
-
+      {/* ══ SECTION 1: ROADMAP HERO (Minimal Info Card) ══════════════════════ */}
+      <section className="card-data relative overflow-hidden rounded-[24px] p-6 sm:p-8">
         {/* API limit alert banner */}
         {limitExhausted && !hasConnectedProvider && (
           <div className="relative z-10 mb-6 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
@@ -497,7 +577,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-400" />
               </span>
-              <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Career Workspace Roadmap</p>
+              <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Workspace Roadmap</p>
               
               {activeRoadmap && (
                 <>
@@ -511,42 +591,21 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                     <Clock3 className="h-3 w-3" />
                     v{activeRoadmap.roadmap_version} History
                   </button>
-                  {!hasConnectedProvider && (
-                    <span className="rounded-full border border-[#202028] bg-[#0d0d10] px-2 py-0.5 text-[10px] text-slate-400 font-semibold">
-                      {FREE_GENERATIONS - freeGenerationsUsed} free refreshes left
-                    </span>
-                  )}
                 </>
               )}
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
+            <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight leading-tight">
               {activeRoadmap?.title ?? "No active roadmap"}
             </h1>
             
-            <p className="mt-2 text-xs sm:text-sm text-slate-400 max-w-2xl leading-relaxed">
-              Target Goal: <span className="text-white font-semibold">{profile?.goal || "SDE I"}</span> &middot; {activeRoadmap?.summary || "Create your career track roadmap to initiate execution guides."}
+            <p className="mt-1 text-xs sm:text-sm text-slate-400 max-w-2xl leading-relaxed">
+              Target Career Goal: <span className="text-white font-semibold">{profile?.goal || "SDE I"}</span> &middot; {activeRoadmap?.summary || "Create your career track roadmap to initiate execution guides."}
             </p>
-
-            <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
-              <span>Readiness: <strong className="text-white">{profile?.readiness_score || 0}%</strong></span>
-              <span>&bull;</span>
-              <span>Completion: <strong className="text-cyan-400">{activeRoadmap?.progress || 0}%</strong></span>
-              <span>&bull;</span>
-              <span>ETA: <strong className="text-white">{activeRoadmap?.estimated_completion_date || "—"}</strong></span>
-              <span>&bull;</span>
-              <span>Last Sync: <strong className="text-slate-400">{activeRoadmap ? formatDate(activeRoadmap.updated_at) : "—"}</strong></span>
-            </div>
           </div>
 
           {/* Quick Actions Header Section */}
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-            <button
-              onClick={() => document.getElementById("current-sprint-section")?.scrollIntoView({ behavior: "smooth" })}
-              className="tactile-btn border border-[#202028] hover:border-cyan-400/30 text-white font-semibold px-4 py-2.5 rounded-full text-xs transition"
-            >
-              Continue Sprint
-            </button>
             <Link
               href="/mentor"
               className="tactile-btn border border-[#202028] hover:border-indigo-400/30 text-white font-semibold px-4 py-2.5 rounded-full text-xs transition inline-flex items-center gap-1.5"
@@ -563,7 +622,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
               className="tactile-btn tactile-btn-primary font-bold px-4 py-2.5 rounded-full text-xs text-black transition inline-flex items-center gap-1.5 disabled:opacity-40"
             >
               {isReplanning ? <span className="loading-spinner h-3 w-3 border-black" /> : <RefreshCw className="h-3.5 w-3.5" />}
-              {isReplanning ? "Syncing..." : "Refresh"}
+              {isReplanning ? "Syncing..." : "Refresh track"}
             </FeatureGateButton>
           </div>
         </div>
@@ -625,280 +684,310 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
 
       {activeRoadmap && (
         <>
-          {/* ══ SECTION 2: CURRENT SPRINT (Directly below Hero) ═══════════════ */}
-          <section id="current-sprint-section" className="grid gap-5 md:grid-cols-[5fr_4fr]">
-            {/* Sprint Checklist Card */}
-            <div className="liquid-panel rounded-[24px] p-6 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between border-b border-[#1e1e24] pb-4 mb-4">
-                  <div>
-                    <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">Active Sprint Track</span>
-                    <h3 className="text-base sm:text-lg font-bold text-white mt-1">
-                      {currentMilestone?.title || "No Active Milestone"}
-                    </h3>
+          {/* ══ SECTION 2: CURRENT SPRINT (Spotlight Card 1) ═══════════════════ */}
+          <section id="current-sprint-section" className="scroll-mt-6">
+            <div className="card-spotlight rounded-[24px] p-6 relative overflow-hidden">
+              <div className="pointer-events-none absolute top-0 right-0 h-40 w-64 bg-cyan-400/5 rounded-full blur-3xl animate-pulse" />
+              
+              <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Target className="h-4 w-4 text-cyan-400" />
+                    <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Current Sprint</p>
+                    <span className="rounded-full border border-cyan-400/10 bg-cyan-400/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-cyan-300">
+                      Execution Focus
+                    </span>
                   </div>
-                  {currentMilestone && (
-                    <div className="text-right">
-                      <span className="text-xs text-slate-400 block font-medium">Estimated Effort</span>
-                      <span className="text-xs text-cyan-300 font-bold">{currentMilestone.estimated_duration_weeks} weeks</span>
-                    </div>
-                  )}
+
+                  <h3 className="text-lg sm:text-xl font-bold text-white leading-snug">
+                    {currentMilestone?.title || "No Sprint Active"}
+                  </h3>
+                  <p className="mt-2 text-xs text-slate-300 max-w-2xl leading-relaxed">
+                    {currentMilestone?.why_it_matters || "Studies and deliverables of your active milestone."}
+                  </p>
+
+                  <div className="mt-5 space-y-2 max-w-xl">
+                    {currentMilestoneTasks.map((task, i) => {
+                      const key = `${currentMilestone?.title}::t::${i}`;
+                      const isDone = checkedTasks[key] ?? false;
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => toggleTaskState(key)}
+                          className={`w-full flex items-start gap-3 rounded-xl border p-3 text-left text-xs transition ${
+                            isDone
+                              ? "border-cyan-500/10 bg-cyan-950/5 text-slate-500"
+                              : "border-[#1c1c22] bg-[#08080a] text-slate-300 hover:border-[#252530]"
+                          }`}
+                        >
+                          <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${
+                            isDone ? "border-cyan-400 bg-cyan-400 text-black" : "border-slate-700"
+                          }`}>
+                            {isDone && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                          </span>
+                          <span className={isDone ? "line-through opacity-60 font-medium" : "font-medium"}>
+                            {task}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                <p className="text-xs text-slate-400 mb-5 leading-relaxed">
-                  {currentMilestone?.why_it_matters || "Milestone description is empty."}
-                </p>
+                <div className="shrink-0 flex flex-col justify-between items-end gap-3 self-stretch min-w-[170px] bg-black/40 border border-white/5 p-4 rounded-2xl">
+                  <div className="text-right">
+                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Estimated Duration</span>
+                    <span className="text-sm font-bold text-white mt-1 block">{currentMilestone?.estimated_duration_weeks || 1} weeks</span>
+                  </div>
 
-                {/* Combined checklist: Tasks & Deliverables */}
-                <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
-                  {currentMilestone ? (
-                    <>
-                      {currentMilestoneTasks.map((task, i) => {
-                        const key = `${currentMilestone.title}::t::${i}`;
-                        const isDone = checkedTasks[key] ?? false;
-                        return (
-                          <button
-                            key={key}
-                            onClick={() => toggleTaskState(key)}
-                            className={`w-full flex items-start gap-3 rounded-xl border p-3.5 text-left text-xs transition ${
-                              isDone
-                                ? "border-cyan-500/10 bg-cyan-950/5 text-slate-500"
-                                : "border-[#1c1c22] bg-[#08080a] text-slate-300 hover:border-[#252530]"
-                            }`}
-                          >
-                            <motion.span 
-                              whileTap={{ scale: 0.8 }}
-                              className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${
-                                isDone ? "border-cyan-400 bg-cyan-400 text-black animate-scaleIn" : "border-slate-700"
-                              }`}
-                            >
-                              {isDone && <Check className="h-2.5 w-2.5 stroke-[3]" />}
-                            </motion.span>
-                            <span className={isDone ? "line-through opacity-60 font-medium" : "font-medium"}>
-                              {task}
-                            </span>
-                          </button>
-                        );
-                      })}
-
-                      {currentMilestoneDeliverables.map((deliverable, i) => {
-                        const key = `${currentMilestone.title}::d::${i}`;
-                        const isDone = checkedTasks[key] ?? false;
-                        return (
-                          <button
-                            key={key}
-                            onClick={() => toggleTaskState(key)}
-                            className={`w-full flex items-start gap-3 rounded-xl border p-3.5 text-left text-xs transition ${
-                              isDone
-                                ? "border-emerald-500/10 bg-emerald-950/5 text-slate-500"
-                                : "border-[#1c1c22] bg-[#08080a] text-slate-300 hover:border-[#252530]"
-                            }`}
-                          >
-                            <motion.span 
-                              whileTap={{ scale: 0.8 }}
-                              className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${
-                                isDone ? "border-emerald-400 bg-emerald-400 text-black animate-scaleIn" : "border-slate-700"
-                              }`}
-                            >
-                              {isDone && <Check className="h-2.5 w-2.5 stroke-[3]" />}
-                            </motion.span>
-                            <div className="flex-1">
-                              <span className={isDone ? "line-through opacity-60 font-medium" : "font-medium"}>
-                                {deliverable}
-                              </span>
-                              <span className="ml-2 inline-block rounded bg-emerald-500/10 text-emerald-400 text-[9px] px-1 py-0.2 border border-emerald-500/20 font-bold uppercase">Deliverable</span>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </>
-                  ) : (
-                    <p className="text-xs text-slate-500 py-6 text-center">No tasks currently defined.</p>
-                  )}
-                </div>
-              </div>
-
-              {currentMilestone && (
-                <div className="mt-6 pt-5 border-t border-[#1e1e24] flex items-center justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between text-xs font-semibold text-slate-400 mb-1">
+                  <div className="w-full text-right mt-4">
+                    <div className="flex justify-between items-center text-[10px] font-semibold text-slate-400 mb-1">
                       <span>Sprint Progress</span>
                       <span className="text-cyan-400">{sprintProgress}%</span>
                     </div>
-                    <div className="h-2 w-full bg-[#141418] rounded-full overflow-hidden">
-                      <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${sprintProgress}%` }}
-                        transition={{ duration: 0.5 }}
-                        className="h-full bg-cyan-400 rounded-full"
-                      />
+                    <div className="h-1.5 w-full bg-[#141418] rounded-full overflow-hidden">
+                      <div className="h-full bg-cyan-400" style={{ width: `${sprintProgress}%` }} />
                     </div>
                   </div>
 
                   {sprintProgress === 100 && (
                     <button
-                      onClick={() => handleCompleteActiveMilestone()}
-                      className="tactile-btn bg-emerald-500 text-black font-bold text-xs px-4 py-2.5 rounded-xl hover:bg-emerald-400 transition"
+                      onClick={() => void handleCompleteActiveMilestone()}
+                      className="tactile-btn bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs w-full py-2 rounded-xl transition flex items-center justify-center gap-1.5 mt-2"
                     >
-                      Complete Milestone
+                      <Check className="h-3.5 w-3.5 stroke-[3]" />
+                      Complete Sprint
                     </button>
                   )}
                 </div>
-              )}
-            </div>
-
-            {/* Selected Milestone Inspection Sidebar */}
-            <div className="liquid-panel rounded-[24px] p-6 flex flex-col justify-between">
-              <div>
-                <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">Milestone Inspector</span>
-                <h3 className="text-base font-bold text-white mt-1">
-                  {activeMilestone?.title || "Inspect a milestone"}
-                </h3>
-                <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                  {activeMilestone?.why_it_matters || "No details available."}
-                </p>
-
-                {activeMilestone && (
-                  <div className="mt-4 flex gap-1.5 rounded-xl bg-[#08080b] border border-[#141417] p-1">
-                    {(["tasks", "deliverables", "resources"] as MilestoneTab[]).map(tab => (
-                      <button
-                        key={tab}
-                        onClick={() => setMilestoneTab(tab)}
-                        className={`flex-1 rounded-lg py-1.5 text-[10px] font-bold uppercase tracking-wider transition ${
-                          milestoneTab === tab ? "bg-[#141418] text-white" : "text-slate-500 hover:text-slate-300"
-                        }`}
-                      >
-                        {tab}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                <div className="mt-4 space-y-2 max-h-[160px] overflow-y-auto pr-1">
-                  {activeMilestone ? (
-                    <>
-                      {milestoneTab === "tasks" && (
-                        activeMilestone.project_tasks?.map((t, idx) => (
-                          <div key={idx} className="flex items-start gap-2 text-xs text-slate-300 border border-[#121216] bg-[#070709] p-2.5 rounded-lg">
-                            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0" />
-                            <span>{t}</span>
-                          </div>
-                        ))
-                      )}
-
-                      {milestoneTab === "deliverables" && (
-                        activeMilestone.deliverables?.map((d, idx) => (
-                          <div key={idx} className="flex items-start gap-2 text-xs text-slate-300 border border-[#121216] bg-[#070709] p-2.5 rounded-lg">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
-                            <span>{d}</span>
-                          </div>
-                        ))
-                      )}
-
-                      {milestoneTab === "resources" && (
-                        activeMilestone.resource_links?.length > 0 ? (
-                          activeMilestone.resource_links.map((res, idx) => (
-                            <a
-                              key={idx}
-                              href={res.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="flex items-center justify-between gap-3 border border-[#121216] bg-[#070709] hover:bg-cyan-950/5 hover:border-cyan-400/20 p-2.5 rounded-lg text-xs transition group"
-                            >
-                              <div className="truncate min-w-0">
-                                <p className="font-semibold text-slate-300 group-hover:text-cyan-300 truncate">{res.label}</p>
-                                <span className="text-[10px] text-slate-500 block">{res.provider}</span>
-                              </div>
-                              <ExternalLink className="h-3.5 w-3.5 text-slate-600 group-hover:text-cyan-400 shrink-0" />
-                            </a>
-                          ))
-                        ) : (
-                          <p className="text-xs text-slate-500 py-4 text-center">No learning assets listed.</p>
-                        )
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-xs text-slate-500 py-6 text-center">Inspect milestone items from the journey map.</p>
-                  )}
-                </div>
               </div>
-
-              {activeMilestone && (
-                <div className="mt-5 pt-4 border-t border-[#1e1e24] flex flex-wrap gap-2 text-xs text-slate-500">
-                  <span>Difficulty: <strong className="text-white">{activeMilestone.difficulty_level}</strong></span>
-                  <span>&bull;</span>
-                  <span>Duration: <strong className="text-white">{activeMilestone.estimated_duration_weeks} weeks</strong></span>
-                </div>
-              )}
             </div>
           </section>
 
-          {/* ══ SECTION 3: ROADMAP JOURNEY ════════════════════════════════════ */}
-          <section className="hidden md:block">
-            <div className="mb-4">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Milestone Sequence</span>
-              <h3 className="text-base font-bold text-white mt-1">Roadmap Journey</h3>
-            </div>
-            
-            <div className="liquid-panel rounded-[24px] p-6 overflow-x-auto">
-              <div className="flex items-center gap-4 min-w-[800px] py-2">
+          {/* ══ SECTION 3: ROADMAP JOURNEY TIMELINE RAIL ═══════════════════════ */}
+          <section className="grid gap-5 md:grid-cols-[1.5fr_3.5fr]">
+            {/* Left Col: Interactive Milestone Rail */}
+            <div className="card-data rounded-[24px] p-5 flex flex-col space-y-4">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Timeline Journey</span>
+              <h4 className="text-sm font-bold text-white leading-none">Milestone Rail</h4>
+              
+              <div className="relative border-l border-white/5 pl-4 ml-2.5 py-2 space-y-5">
                 {allMilestones.map((m, idx) => {
                   const status = getMilestoneStatus(idx, completedCount, allMilestones.length);
                   const isCurrentSelection = activeMilestone?.title === m.title;
                   const isCurrentActiveSprint = currentMilestone?.title === m.title;
+                  const isLocked = status === "upcoming" && !isCurrentActiveSprint;
 
                   return (
-                    <div key={m.title} className="flex items-center flex-1 last:flex-none">
-                      {/* Milestone Step Pin */}
+                    <div key={m.title} className="relative">
+                      {/* Connection node indicator */}
                       <button
+                        disabled={isLocked}
                         onClick={() => {
                           setSelectedMilestoneTitle(m.title);
                           setMilestoneTab("tasks");
+                          setIsEditingMilestone(false);
                         }}
-                        className={`flex items-center gap-2.5 rounded-full border px-4 py-2 text-xs transition duration-200 ${
+                        className={`absolute -left-[23px] top-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition ${
                           isCurrentSelection
-                            ? "bg-cyan-400 text-black border-cyan-400 font-extrabold shadow-[0_0_12px_rgba(34,211,238,0.25)]"
+                            ? "bg-cyan-400 border-cyan-400 text-black shadow-[0_0_10px_rgba(34,211,238,0.4)]"
                             : status === "completed"
-                            ? "border-cyan-500/30 bg-cyan-950/10 text-cyan-300 hover:border-cyan-400/50"
+                            ? "bg-cyan-950/20 border-cyan-400 text-cyan-300"
                             : isCurrentActiveSprint
-                            ? "border-indigo-500 bg-indigo-950/10 text-indigo-300 font-bold"
-                            : "border-[#1e1e24] bg-[#09090c] text-slate-500 hover:text-slate-300 hover:border-slate-700"
+                            ? "bg-indigo-950/20 border-indigo-400 text-indigo-300 animate-pulse"
+                            : "bg-[#050507] border-slate-700 text-slate-500"
                         }`}
                       >
-                        <span className="flex items-center justify-center shrink-0">
-                          {status === "completed" ? (
-                            <Check className="h-3.5 w-3.5 stroke-[3]" />
-                          ) : (
-                            <span className="h-2 w-2 rounded-full bg-current" />
-                          )}
-                        </span>
-                        <span className="truncate max-w-[120px]">{m.title}</span>
+                        {status === "completed" ? (
+                          <Check className="h-2.5 w-2.5 stroke-[3]" />
+                        ) : (
+                          <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                        )}
                       </button>
 
-                      {/* Connection Track Line */}
-                      {idx < allMilestones.length - 1 && (
-                        <div className={`h-[2px] flex-1 min-w-[32px] mx-2 ${
-                          idx < completedCount 
-                            ? "bg-gradient-to-r from-cyan-400/60 to-cyan-400/20" 
-                            : "bg-dotted border-t border-dashed border-[#202028]"
-                        }`} />
-                      )}
+                      <div className="pl-1">
+                        <button
+                          disabled={isLocked}
+                          onClick={() => {
+                            setSelectedMilestoneTitle(m.title);
+                            setMilestoneTab("tasks");
+                            setIsEditingMilestone(false);
+                          }}
+                          className={`text-xs font-semibold text-left transition ${
+                            isCurrentSelection
+                              ? "text-cyan-300 font-bold"
+                              : isLocked
+                              ? "text-slate-600 cursor-not-allowed"
+                              : "text-slate-300 hover:text-white"
+                          }`}
+                        >
+                          {m.title}
+                          {isLocked && <span className="ml-1 text-[9px] text-slate-600 block">(Locked)</span>}
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
               </div>
             </div>
+
+            {/* Right Col: Milestone Details & Inspector */}
+            <div className="card-data rounded-[24px] p-6 flex flex-col justify-between border border-[#1f1f23]">
+              <div>
+                <div className="flex justify-between items-center border-b border-white/5 pb-3">
+                  <div>
+                    <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider block">Milestone Details</span>
+                    <h3 className="text-base font-bold text-white mt-1">
+                      {activeMilestone?.title || "Select a Milestone"}
+                    </h3>
+                  </div>
+                  {activeMilestone && !isEditingMilestone && (
+                    <button
+                      onClick={startEditingMilestone}
+                      className="text-xs font-semibold text-cyan-400 hover:text-white transition"
+                    >
+                      Edit details
+                    </button>
+                  )}
+                </div>
+
+                {activeMilestone && (
+                  <div className="mt-4">
+                    {isEditingMilestone ? (
+                      <div className="space-y-4 text-xs">
+                        <label className="block">
+                          <span className="text-slate-400 font-semibold block mb-1">Why it matters</span>
+                          <textarea
+                            value={editWhyItMatters}
+                            onChange={(e) => setEditWhyItMatters(e.target.value)}
+                            className="carved-input w-full rounded-xl px-3 py-2 h-20 resize-none"
+                          />
+                        </label>
+                        <label className="block">
+                          <span className="text-slate-400 font-semibold block mb-1">Milestone Tasks (one per line)</span>
+                          <textarea
+                            value={editTasksText}
+                            onChange={(e) => setEditTasksText(e.target.value)}
+                            className="carved-input w-full rounded-xl px-3 py-2 h-24 font-mono text-[10.5px] leading-relaxed"
+                          />
+                        </label>
+                        <label className="block">
+                          <span className="text-slate-400 font-semibold block mb-1">Deliverables (one per line)</span>
+                          <textarea
+                            value={editDeliverablesText}
+                            onChange={(e) => setEditDeliverablesText(e.target.value)}
+                            className="carved-input w-full rounded-xl px-3 py-2 h-20 font-mono text-[10.5px] leading-relaxed"
+                          />
+                        </label>
+                        <label className="block">
+                          <span className="text-slate-400 font-semibold block mb-1">Study/Concept Notes</span>
+                          <textarea
+                            value={editNotesText}
+                            onChange={(e) => setEditNotesText(e.target.value)}
+                            className="carved-input w-full rounded-xl px-3 py-2 h-20"
+                            placeholder="Add concepts, definitions, or study notes..."
+                          />
+                        </label>
+
+                        <div className="flex gap-2 justify-end pt-2 border-t border-white/5">
+                          <button
+                            type="button"
+                            onClick={() => setIsEditingMilestone(false)}
+                            className="tactile-btn px-4 py-2 text-xs font-semibold rounded-xl text-slate-400"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={saveMilestoneDetails}
+                            className="tactile-btn tactile-btn-primary px-5 py-2 text-xs font-semibold rounded-xl text-black"
+                          >
+                            Save specifications
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                          {activeMilestone.why_it_matters || "No description set."}
+                        </p>
+
+                        <div className="mt-4 flex gap-1 rounded-xl bg-[#08080b] border border-[#141417] p-1">
+                          {(["tasks", "deliverables", "resources"] as MilestoneTab[]).map(tab => (
+                            <button
+                              key={tab}
+                              onClick={() => setMilestoneTab(tab)}
+                              className={`flex-1 rounded-lg py-1.5 text-[10px] font-bold uppercase tracking-wider transition ${
+                                milestoneTab === tab ? "bg-[#141418] text-white" : "text-slate-500 hover:text-slate-300"
+                              }`}
+                            >
+                              {tab}
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className="mt-4 space-y-2 max-h-[180px] overflow-y-auto pr-1">
+                          {milestoneTab === "tasks" && (
+                            activeMilestone.project_tasks?.map((t, idx) => (
+                              <div key={idx} className="flex items-start gap-2 text-xs text-slate-300 border border-[#121216] bg-[#070709] p-2.5 rounded-lg">
+                                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0" />
+                                <span>{t}</span>
+                              </div>
+                            ))
+                          )}
+                          {milestoneTab === "deliverables" && (
+                            activeMilestone.deliverables?.map((d, idx) => (
+                              <div key={idx} className="flex items-start gap-2 text-xs text-slate-300 border border-[#121216] bg-[#070709] p-2.5 rounded-lg">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
+                                <span>{d}</span>
+                              </div>
+                            ))
+                          )}
+                          {milestoneTab === "resources" && (
+                            activeMilestone.resource_links?.length > 0 ? (
+                              activeMilestone.resource_links.map((res, idx) => (
+                                <a
+                                  key={idx}
+                                  href={res.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="flex items-center justify-between gap-3 border border-[#121216] bg-[#070709] hover:bg-cyan-950/5 hover:border-cyan-400/20 p-2.5 rounded-lg text-xs transition group"
+                                >
+                                  <div className="truncate min-w-0">
+                                    <p className="font-semibold text-slate-300 group-hover:text-cyan-300 truncate">{res.label}</p>
+                                    <span className="text-[10px] text-slate-500 block">{res.provider}</span>
+                                  </div>
+                                  <ExternalLink className="h-3.5 w-3.5 text-slate-600 group-hover:text-cyan-400 shrink-0" />
+                                </a>
+                              ))
+                            ) : (
+                              <p className="text-xs text-slate-500 py-4 text-center">No resources listed.</p>
+                            )
+                          )}
+                        </div>
+
+                        {activeMilestone.notes && (
+                          <div className="mt-4 p-3.5 rounded-xl border border-white/5 bg-black/10 text-xs">
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">Milestone Concept Notes</span>
+                            <p className="text-slate-300 leading-relaxed">{activeMilestone.notes}</p>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </section>
 
-          {/* ══ SECTION 4: RESOURCE HUB ══════════════════════════════════════ */}
+          {/* ══ SECTION 4: RESOURCE HUB (Bookmark / Completed Status Tracking) ══ */}
           <section>
             <div className="mb-4">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Learning & References</span>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider font-semibold">Learning References</span>
               <h3 className="text-base font-bold text-white mt-1">Resource Hub</h3>
             </div>
 
-            <div className="liquid-panel rounded-[24px] p-6">
-              {/* Filters & search */}
+            <div className="card-data rounded-[24px] p-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                 <div className="relative flex-1 max-w-sm">
                   <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
@@ -927,11 +1016,13 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                 </div>
               </div>
 
-              {/* Resource Cards Grid */}
               {filteredResources.length > 0 ? (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {filteredResources.map((res, idx) => {
                     const stats = getResourceStats(res);
+                    const isBookmarked = bookmarkedResources[res.url] ?? false;
+                    const isCompleted = completedResources[res.url] ?? false;
+
                     return (
                       <motion.div
                         key={`${res.url}-${idx}`}
@@ -943,9 +1034,21 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                             <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
                               {res.provider}
                             </span>
-                            <span className="rounded bg-[#0d0d10] text-slate-400 border border-[#202028] text-[9px] px-1.5 py-0.5 font-bold uppercase">
-                              {stats.type}
-                            </span>
+                            <div className="flex gap-1 items-center">
+                              {isCompleted && (
+                                <span className="rounded bg-emerald-500/15 text-emerald-400 text-[8px] px-1.5 py-0.5 border border-emerald-500/25 font-bold uppercase">
+                                  Completed
+                                </span>
+                              )}
+                              {isBookmarked && (
+                                <span className="rounded bg-cyan-500/15 text-cyan-400 text-[8px] px-1.5 py-0.5 border border-cyan-500/25 font-bold uppercase">
+                                  Bookmarked
+                                </span>
+                              )}
+                              <span className="rounded bg-[#0d0d10] text-slate-400 border border-[#202028] text-[9px] px-1.5 py-0.5 font-bold uppercase">
+                                {stats.type}
+                              </span>
+                            </div>
                           </div>
 
                           <h4 className="text-xs sm:text-sm font-semibold text-white group-hover:text-cyan-300 transition duration-200 line-clamp-2 leading-snug">
@@ -954,10 +1057,27 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                         </div>
 
                         <div className="mt-4 pt-3 border-t border-[#141417] flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 text-[10px] text-slate-500 font-medium">
-                            <span className="capitalize">{stats.difficulty}</span>
-                            <span>&bull;</span>
-                            <span>{stats.hours} hours</span>
+                          <div className="flex gap-1.5">
+                            <button
+                              onClick={() => toggleBookmark(res.url)}
+                              className={`rounded px-2 py-0.5 text-[9px] font-bold uppercase border transition ${
+                                isBookmarked 
+                                  ? "border-cyan-400/30 bg-cyan-400/10 text-cyan-300"
+                                  : "border-[#1e1e24] bg-black/40 text-slate-500 hover:text-slate-300"
+                              }`}
+                            >
+                              Bookmark
+                            </button>
+                            <button
+                              onClick={() => toggleCompleted(res.url)}
+                              className={`rounded px-2 py-0.5 text-[9px] font-bold uppercase border transition ${
+                                isCompleted
+                                  ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+                                  : "border-[#1e1e24] bg-black/40 text-slate-500 hover:text-slate-300"
+                              }`}
+                            >
+                              Completed
+                            </button>
                           </div>
                           
                           <a
@@ -985,121 +1105,55 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
             </div>
           </section>
 
-          {/* ══ SECTION 5 & 6: INSIGHTS & ANALYTICS ══════════════════════════ */}
-          <section className="grid gap-5 lg:grid-cols-2">
-            
-            {/* S5: ROADMAP INSIGHTS */}
-            <div className="liquid-panel rounded-[24px] p-6 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <Sparkles className="h-4 w-4 text-cyan-400" />
-                  <h3 className="text-base font-bold text-white">Roadmap Insights</h3>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {/* Strengths */}
-                  <div className="rounded-xl border border-emerald-500/10 bg-emerald-500/5 p-4 flex flex-col justify-between min-h-[100px]">
-                    <div>
-                      <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block mb-2">Strengths</span>
-                      {profile?.skills && profile.skills.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {profile.skills.slice(0, 4).map(s => (
-                            <span key={s} className="rounded border border-emerald-500/20 bg-emerald-500/10 text-emerald-200 text-[10px] px-1.5 py-0.5">{s}</span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-slate-500">Complete profile to map strengths.</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Skill Gaps */}
-                  <div className="rounded-xl border border-rose-500/10 bg-rose-500/5 p-4 flex flex-col justify-between min-h-[100px]">
-                    <div>
-                      <span className="text-[10px] text-rose-400 font-bold uppercase tracking-wider block mb-2">Skill Gaps</span>
-                      {profile?.weaknesses && profile.weaknesses.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {profile.weaknesses.slice(0, 3).map(w => (
-                            <span key={w} className="rounded border border-rose-500/20 bg-rose-500/10 text-rose-200 text-[10px] px-1.5 py-0.5">{w}</span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-slate-500">No skill gaps calculated yet.</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Blocked Areas */}
-                  <div className="rounded-xl border border-amber-500/10 bg-amber-500/5 p-4 flex flex-col justify-between min-h-[100px]">
-                    <div>
-                      <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider block mb-2">Blocked Areas</span>
-                      {profile?.obstacles && profile.obstacles.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {profile.obstacles.slice(0, 3).map(ob => (
-                            <span key={ob} className="rounded border border-amber-500/20 bg-amber-500/10 text-amber-200 text-[10px] px-1.5 py-0.5">{ob}</span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-slate-500">No active blockers identified.</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Recommended Focus */}
-                  <div className="rounded-xl border border-indigo-500/10 bg-indigo-500/5 p-4 flex flex-col justify-between min-h-[100px]">
-                    <div>
-                      <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider block mb-1">Recommended Focus</span>
-                      {currentMilestone ? (
-                        <p className="text-xs text-slate-300 font-medium leading-relaxed mt-1">
-                          Focus on completing tasks inside <strong className="text-white">{currentMilestone.title}</strong>
-                        </p>
-                      ) : (
-                        <span className="text-xs text-slate-500">All milestones completed.</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* S6: PROGRESS ANALYTICS (Single compact card) */}
-            <div className="liquid-panel rounded-[24px] p-6 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <Activity className="h-4 w-4 text-cyan-400" />
-                  <h3 className="text-base font-bold text-white">Progress Analytics</h3>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {[
-                    { label: "Completion", value: `${activeRoadmap.progress}%`, sub: "Total progress", color: "text-cyan-400" },
-                    { label: "Milestones", value: `${completedCount}/${allMilestones.length}`, sub: "Completed track", color: "text-indigo-400" },
-                    { label: "Projects", value: `${completedProjectsCount}/${totalProjectsCount}`, sub: "Delivered builds", color: "text-emerald-400" },
-                    { label: "Consistency", value: `${weeklyConsistency}%`, sub: "Weekly checks", color: "text-amber-400" },
-                    { label: "Readiness", value: `${profile?.readiness_score || 0}%`, sub: "Skill readiness", color: "text-rose-400" },
-                    { label: "Completion ETA", value: activeRoadmap.estimated_completion_date || "—", sub: "ETA target date", color: "text-white" },
-                  ].map(stat => (
-                    <div key={stat.label} className="bg-[#08080a] border border-[#141417] p-3.5 rounded-xl flex flex-col justify-between">
-                      <div>
-                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">{stat.label}</span>
-                        <p className={`text-base font-bold mt-1 ${stat.color} leading-none`}>
-                          {stat.value}
-                        </p>
-                      </div>
-                      <span className="text-[9px] text-slate-500 mt-2 block">{stat.sub}</span>
-                    </div>
+          {/* ══ SECTION 5: DYNAMIC INSIGHTS (Strengths, Blockers, Recommended) ══ */}
+          <section className="grid gap-5 md:grid-cols-3">
+            {/* Strengths */}
+            <div className="card-data rounded-[24px] p-5 border border-[#1f1f23]">
+              <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block mb-2">Strengths</span>
+              {profile?.skills && profile.skills.length > 0 ? (
+                <div className="flex flex-wrap gap-1">
+                  {profile.skills.slice(0, 4).map(s => (
+                    <span key={s} className="rounded border border-emerald-500/20 bg-emerald-500/10 text-emerald-200 text-[10px] px-1.5 py-0.5">{s}</span>
                   ))}
                 </div>
-              </div>
+              ) : (
+                <span className="text-xs text-slate-500">Complete profile to map strengths.</span>
+              )}
+            </div>
+
+            {/* Skill Gaps / Obstacles */}
+            <div className="card-data rounded-[24px] p-5 border border-[#1f1f23]">
+              <span className="text-[10px] text-rose-400 font-bold uppercase tracking-wider block mb-2">Active Blockers</span>
+              {profile?.weaknesses && profile.weaknesses.length > 0 ? (
+                <div className="flex flex-wrap gap-1">
+                  {profile.weaknesses.slice(0, 3).map(w => (
+                    <span key={w} className="rounded border border-rose-500/20 bg-rose-500/10 text-rose-200 text-[10px] px-1.5 py-0.5">{w}</span>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-xs text-slate-500">No skill gaps calculated yet.</span>
+              )}
+            </div>
+
+            {/* Recommended Focus */}
+            <div className="card-data rounded-[24px] p-5 border border-[#1f1f23]">
+              <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider block mb-2">Recommended Focus</span>
+              {currentMilestone ? (
+                <p className="text-xs text-slate-300 font-medium leading-relaxed">
+                  Focus on completing tasks inside <strong className="text-white">{currentMilestone.title}</strong> to keep up consistency.
+                </p>
+              ) : (
+                <span className="text-xs text-slate-500">All milestones completed.</span>
+              )}
             </div>
           </section>
         </>
       )}
 
-      {/* ══ SECTION 8: EXPORT CENTER (Compact bottom layout) ═══════════════ */}
+      {/* ══ SECTION 8: EXPORT CENTER ═════════════════════════════════════════ */}
       {activeRoadmap && (
         <section className="pt-2">
-          <div className="liquid-panel rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="card-data rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Archive className="h-4 w-4 text-slate-400" />
               <p className="text-xs text-slate-400 font-semibold">

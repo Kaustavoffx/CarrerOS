@@ -29,6 +29,7 @@ export type RoadmapMilestoneRecord = {
   project_tasks: string[];
   deliverables: string[];
   expected_outcomes: string[];
+  notes?: string;
 };
 
 export type UserProfileRecord = {

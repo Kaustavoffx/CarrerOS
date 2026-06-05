@@ -201,6 +201,71 @@ body {
     position: relative;
     overflow: hidden;
   }
+
+  /* Card Type 1: Spotlight Card */
+  .card-spotlight {
+    background: linear-gradient(135deg, rgba(0,220,255,.12), rgba(0,120,255,.04));
+    border: 1px solid rgba(0,220,255,.25);
+    box-shadow: 0 0 40px rgba(0,220,255,.12);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  /* Card Type 2: Action Card */
+  .card-action {
+    background: linear-gradient(155deg, #09090b, #050506);
+    border: 1px solid #141417;
+    border-left: 2px solid rgba(34, 211, 238, 0.5);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+  }
+  .card-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.8), 0 0 20px rgba(34, 211, 238, 0.05);
+    border-color: rgba(34, 211, 238, 0.3);
+    border-left-color: rgba(34, 211, 238, 0.8);
+  }
+
+  /* Card Type 3: Insight Card */
+  .card-insight {
+    background: linear-gradient(135deg, rgba(147, 51, 234, 0.08), rgba(79, 70, 229, 0.03));
+    border: 1px solid rgba(147, 51, 234, 0.2);
+    box-shadow: 0 4px 20px rgba(147, 51, 234, 0.05);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Card Type 4: Data Card */
+  .card-data {
+    background: #09090b;
+    border: 1px solid #1f1f23;
+    box-shadow: none;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Card Type 5: Danger Card */
+  .card-danger {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(220, 38, 38, 0.02));
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    box-shadow: none;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Skeleton Loading Styles */
+  .animate-skeleton {
+    background: linear-gradient(90deg, #121214 25%, #1c1c20 50%, #121214 75%);
+    background-size: 200% 100%;
+    animation: loading-pulse 1.5s infinite;
+  }
+
+  @keyframes loading-pulse {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
   
   .liquid-panel::before {
     content: "";

@@ -1,31 +1,26 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
-  Send,
-  Sparkles,
-  User,
-  Award,
-  Zap,
-  Brain,
-  Clipboard,
-  Flame,
-  Star,
-  X,
-  ChevronRight,
-  Link2
+  Send, Sparkles, User, Award, Zap, Brain, Clipboard, Flame, Star, X,
+  ChevronRight, Link2, Check, Edit2, Plus, FileText, CheckSquare, Square
 } from "lucide-react";
 import { MagneticButton } from "./magnetic-button";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { generateId } from "@/lib/id";
-import { updateWorkspace } from "@/lib/app-data";
+import { updateWorkspace, updateProfile } from "@/lib/app-data";
 import type { ChatMessage, UserProfileRecord, WorkspaceSnapshotRecord } from "@/lib/supabase/types";
 
-// ─── Formatting Helper for Actionable Structured Messages ────────────────────
+type MentorChatConsoleProps = {
+  profile: UserProfileRecord | null;
+  workspace: WorkspaceSnapshotRecord | null;
+};
+
+type MentorMode = "coach" | "interview" | "skill" | "resume" | "project";
 
 function renderFormattedContent(content: string) {
   return content.split("\n\n").map((para, paraIdx) => {
-    // Check if it's a code block
     if (para.startsWith("```")) {
       const code = para.replace(/```[a-z]*/g, "").trim();
       return (
@@ -35,14 +30,12 @@ function renderFormattedContent(content: string) {
       );
     }
     
-    // Check if it's bullet list
     if (para.startsWith("- ") || para.startsWith("* ")) {
       const items = para.split(/\n[-*]\s+/);
       return (
         <ul key={paraIdx} className="list-disc pl-5 my-2.5 space-y-1.5 text-slate-300 text-xs">
           {items.map((item, itemIdx) => {
             const cleaned = item.replace(/^[-*]\s+/, "").trim();
-            // Parse bold inside items
             const parts = cleaned.split(/(\*\*.*?\*\*)/g);
             return (
               <li key={itemIdx} className="leading-relaxed">
@@ -59,7 +52,6 @@ function renderFormattedContent(content: string) {
       );
     }
 
-    // Check if it's heading
     if (para.startsWith("### ")) {
       return (
         <h4 key={paraIdx} className="text-xs font-bold text-cyan-300 tracking-widest uppercase mt-4 mb-2">
@@ -68,7 +60,6 @@ function renderFormattedContent(content: string) {
       );
     }
 
-    // Regular paragraph with bold text parsing
     const parts = para.split(/(\*\*.*?\*\*)/g);
     return (
       <p key={paraIdx} className="leading-relaxed text-xs text-slate-300">
@@ -83,16 +74,10 @@ function renderFormattedContent(content: string) {
   });
 }
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-type MentorChatConsoleProps = {
-  profile: UserProfileRecord | null;
-  workspace: WorkspaceSnapshotRecord | null;
-};
-
-type MentorMode = "coach" | "interview" | "skill" | "resume" | "project";
-
 export function MentorChatConsole({ profile, workspace: initialWorkspace }: MentorChatConsoleProps) {
+  const router = useRouter();
+  const supabase = getSupabaseBrowserClient();
+
   const [workspace, setWorkspace] = useState<WorkspaceSnapshotRecord | null>(initialWorkspace);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState("");
@@ -104,6 +89,13 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
   const [pinnedMessageId, setPinnedMessageId] = useState<string | null>(null);
   const [reactions, setReactions] = useState<Record<string, string>>({});
   const [savedInsights, setSavedInsights] = useState<string[]>([]);
+  const [checkedRecs, setCheckedRecs] = useState<Record<string, boolean>>({});
+
+  // Inline context editors state
+  const [isEditingContext, setIsEditingContext] = useState(false);
+  const [editGoal, setEditGoal] = useState("");
+  const [editTimeAvailability, setEditTimeAvailability] = useState("");
+  const [editWeeklyHours, setEditWeeklyHours] = useState("");
 
   // Mobile / Tablet Drawer states
   const [isLeftDrawerOpen, setIsLeftDrawerOpen] = useState(false);
@@ -119,7 +111,6 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
   const [inlineUrlVal, setInlineUrlVal] = useState("");
 
   const chatBottomRef = useRef<HTMLDivElement>(null);
-  const supabase = getSupabaseBrowserClient();
 
   useEffect(() => {
     setWorkspace(initialWorkspace);
@@ -128,7 +119,6 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
     }
   }, [initialWorkspace]);
 
-  // Sync URLs from LocalStorage on mount/update
   useEffect(() => {
     if (typeof window !== "undefined") {
       setResumeConnected(!!localStorage.getItem("profile_resume_url"));
@@ -137,7 +127,6 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
     }
   }, [profile]);
 
-  // Scroll chat to bottom
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [workspace, activeThreadId, isTyping]);
@@ -148,7 +137,6 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
   }
 
   // ─── Real Data Fetching/Parsing Calculations ────────────────────────────────
-
   const activeRoadmap = workspace?.roadmaps?.find((r) => r.status === "Active") ?? workspace?.roadmaps?.[0] ?? null;
   const allMilestones = activeRoadmap ? (Array.isArray(activeRoadmap.milestones) ? activeRoadmap.milestones : []) : [];
   const completedCount = activeRoadmap ? Math.floor((activeRoadmap.progress / 100) * allMilestones.length) : 0;
@@ -165,12 +153,10 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
   const readiness = profile?.readiness_score ?? 0;
   const weeklyHours = activeRoadmap?.weekly_hours ?? 10;
   
-  // Focus calculation
   const currentFocus = allMilestones[completedCount] 
     ? allMilestones[completedCount].title 
     : (profile?.skills?.[0] ?? "Core Strategy");
 
-  // Interview status label
   const interviewReadiness = readiness > 80 ? "High" : readiness > 50 ? "Moderate" : "Low";
 
   // Dynamic priorities tasks
@@ -182,7 +168,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
     ...completionCriteria
   ].slice(0, 3);
 
-  // Proactive insight alerts array
+  // Pinned insight recommendations
   const getProactiveInsights = () => {
     const list: string[] = [];
     if (activeRoadmap) {
@@ -198,24 +184,53 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
     if (!portfolioConnected) {
       list.push("Portfolio is not linked. Connect your developer portfolio under Profile settings.");
     }
-    if (profile?.skills && profile.skills.length < 3) {
-      list.push("Your skills list is limited. Connect more technical skills in Profile settings.");
-    }
     return list;
   };
   const activeInsights = getProactiveInsights();
 
-  // ─── Messaging Core with Mode & Action awareness ────────────────────────────
+  // Initialize context editing parameters
+  const startEditingContext = () => {
+    setEditGoal(profile?.goal || "");
+    setEditTimeAvailability(profile?.time_availability || "");
+    setEditWeeklyHours(weeklyHours.toString());
+    setIsEditingContext(true);
+  };
 
+  const saveContext = async () => {
+    if (!profile || !supabase) return;
+    try {
+      await updateProfile(supabase, profile.id, {
+        goal: editGoal,
+        time_availability: editTimeAvailability
+      });
+
+      if (activeRoadmap && workspace) {
+        const updatedRoadmaps = workspace.roadmaps.map(r => {
+          if (r.id === activeRoadmap.id) {
+            return { ...r, weekly_hours: parseInt(editWeeklyHours) || 10 };
+          }
+          return r;
+        });
+        await updateWorkspace(supabase, profile.id, { roadmaps: updatedRoadmaps });
+        setWorkspace(prev => prev ? { ...prev, roadmaps: updatedRoadmaps } : null);
+      }
+      setIsEditingContext(false);
+      showToast("Mentor context parameters updated successfully.");
+      router.refresh();
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to save context updates.");
+    }
+  };
+
+  // ─── Messaging Core ─────────────────────────────────────────────────────────
   async function handleSendMessage(e?: React.FormEvent, customText?: string) {
     if (e) e.preventDefault();
-    
     const queryText = (customText || newMessage).trim();
     if (!queryText || !workspace || !activeThreadId) return;
 
     setNewMessage("");
 
-    // Create user message
     const userMsg: ChatMessage = {
       id: generateId(),
       role: "user",
@@ -233,12 +248,11 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
     setIsTyping(true);
 
     try {
-      if (supabase && profile?.id) {
+      if (profile?.id && supabase) {
         await updateWorkspace(supabase, profile.id, { ai_chats: updatedChats });
       }
     } catch {}
 
-    // Fetch strategical advice
     try {
       const response = await fetch("/api/mentor", {
         method: "POST",
@@ -268,7 +282,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
 
       setWorkspace({ ...nextWorkspace, ai_chats: finalChats });
 
-      if (supabase && profile?.id) {
+      if (profile?.id && supabase) {
         await updateWorkspace(supabase, profile.id, { ai_chats: finalChats });
       }
     } catch {
@@ -291,45 +305,81 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
     }
   }
 
-  // Adaptive strategic AI response generator
   function getSimulatedResponse(query: string, mode: MentorMode): string {
     const q = query.toLowerCase();
     const role = profile?.goal || "Frontend Engineer";
     const experience = profile?.experience_level || "Junior";
 
-    // Handle Quick Action questions
-    if (q.includes("review my resume") || q.includes("analyze my resume")) {
-      return `### Resume Diagnostic Assessment\n\nYour profile lists target tracks for **${role}**. Let's align your resume elements:\n\n- **Issue**: Experience entries list tasks rather than metrics (e.g., 'Wrote backend middleware').\n- **Strategic Rewrite**: 'Architected Supabase and Node middleware routing pools, optimizing load latency by 28% and ensuring type-safe client syncs.'\n- **Missing**: No listed coverage stats. Add your automated test frameworks explicitly.`;
+    if (q.includes("resume")) {
+      return `### Resume Performance Insights\n\nYour linked resume requires structural modifications to target **${role}** positions:\n\n- **Objective Audit**: Shift entries to highlight accomplishments (e.g. 'Optimized app renders by 32% under Next.js 15 routing pools.').\n- **Keyword Alignments**: Ensure TypeScript, Tailwind CSS, and testing libraries Jest/Vitest are indexed clearly.`;
     }
-    if (q.includes("mock interview") || q.includes("practice interview")) {
-      return `### Mock Technical Challenge Initiated\n\n*Target: React 19 State Management & Fiber Rendering*\n\nLet's test this scenario. Evaluate the code snippet:\n\n\`\`\`javascript\n// How do you optimize this dispatch loop to prevent child re-renders?\nconst [workspace, setWorkspace] = useState({ id: 1, items: [] });\n\`\`\`\n\nHow do React 19 hooks like \`useMemo\` or state isolation patterns help here? Give me your explanation and we will analyze.`;
+    if (q.includes("interview")) {
+      return `### Technical Mock Challenge Initialized\n\n*Focus Area: React State Management*\n\nEvaluate this statement:\n\`\`\`javascript\nconst [data, setData] = useState({ state: 'active' });\n\`\`\`\nWhy is direct mutating state bad, and how does React Fiber schedule renders differently when set functions execute? Describe your understanding.`;
     }
-    if (q.includes("optimize linkedin")) {
-      return `### LinkedIn Profile Calibration\n\nTo capture recruiter loops for **${role}**:\n\n- **Headline**: Shift from 'Student' to 'SDE | React & TS Engineering'. Add target stack keyword indicators.\n- **About**: Pitch your technical complexity projects directly. Outline specific performance latency wins.\n- **Keywords**: Ensure TypeScript, Next.js, and Vitest are in your core skills lists.`;
+    if (q.includes("project")) {
+      return `### Recommended Technical Spec\n\nFor a **${experience}** target, build a **Distributed Latency Cache API**:\n\n- Node.js API with strict TypeScript schemas.\n- Redis key-value invalidation on state hooks.\n- Playwright integration verifying layout shifts.`;
     }
-    if (q.includes("build project")) {
-      return `### Tailored Project Suggestions\n\nFor a **${experience}** target domain, recruiters want system complexity. Focus on:\n\n1. **Type-safe Dashboard Workspace**: Build a concentric layout with responsive custom SVG line/radar charts and Supabase integration.\n2. **Horizontal Latency Cacher**: Ship an isolated Node.js API client featuring Redis key-invalidations.\n\nWhich repository setup matches your week's capacity?`;
-    }
-    if (q.includes("apply to jobs")) {
-      return `### Job Acquisition Roadmap\n\nTo lock in job opportunities for **${role}**:\n\n- **Evidence Check**: Ensure your linked digital portfolio is fully optimized and live.\n- **Sourcing**: Prioritize mid-market startups where your portfolio code quality speaks louder than pedigree.\n- **Outreach**: Write direct structural notes to developers explaining optimization choices you've implemented.`;
-    }
-
-    // Handle generic questions based on modes
+    
     switch (mode) {
       case "interview":
-        return `### Interview Strategist Feedback\n\nUnder **Interview Coach mode**, let's focus strictly on validation. For a ${experience} applicant, mock speeds and behavioral framing are key.\n\n- **DSA target**: Solve Leetcode arrays under 28 minutes.\n- **Behavioral target**: Structure answers using the STAR format (Situation, Task, Action, Result). Focus heavily on technical tradeoffs you resolved.\n\nAsk me to mock a specific topic (e.g. 'mock JS loops' or 'mock system structures')!`;
+        return `### Technical Readiness Drill\n\n- Focus on array manipulation logic.\n- STAR structure: Star with target problem details first.`;
       case "resume":
-        return `### Resume Reviewer Assessment\n\nTo align your resume with modern dashboard developers:\n\n- Ensure your top projects contain direct links to live deployments and GitHub repositories.\n- List testing framework (Playwright, Jest) directly under technical skills.\n- Keep the structure to exactly **1 page** with high information density.\n\nPaste a bullet point here and I will rewrite it strategically!`;
+        return `### Resume Reviewer Output\n\nEnsure direct links to your GitHub code repos are attached to all project descriptions.`;
       case "project":
-        return `### Project Advisor Recommendation\n\nTo elevate your projects from simple templates to enterprise-ready portfolios:\n\n- **State Management**: Use context providers and clean dispatch callbacks.\n- **Database**: Add structured index constraints in your PostgreSQL migrations.\n- **Responsive layouts**: The interface must adjust flawlessly on mobile viewports down to 320px.\n\nWhat project feature are we validating next?`;
-      case "skill":
-        return `### Skill Advisor Diagnostic\n\nAnalyzing skill capabilities for **${role}**:\n\n- Ensure you avoid any type casting (\`as any\`) in your files.\n- Restructure your layout files to use CSS grid/flex properties directly instead of arbitrary margins.\n- When creating custom components, separate client-side event logic cleanly into isolated files.`;
+        return `### Project Spec Assessment\n\nIsolate client-side state hooks from core business handlers.`;
       default:
-        return `### Career Coach Strategy\n\nAs your **Career Strategist**, I have synced your Career Twin parameters: goal is **${role}** with a readiness score of **${readiness}%**.\n\nTo build momentum:\n- Maintain your consistency metrics by submitting progress logs regularly.\n- Focus this week's sprint on completing project milestones.\n\nWhat bottleneck can we resolve together today?`;
+        return `### Strategist Calibration\n\nTarget is **${role}** at **${readiness}%** readiness. Work on active tasks to speed up milestone progress.`;
     }
   }
 
-  // Micro interaction actions
+  const addToRoadmap = async (taskText: string) => {
+    if (!activeRoadmap || !workspace || !profile || !supabase) return;
+    const updatedMilestones = allMilestones.map((m, idx) => {
+      if (idx === completedCount) {
+        return {
+          ...m,
+          project_tasks: [...(m.project_tasks || []), taskText]
+        };
+      }
+      return m;
+    });
+    const updatedRoadmaps = workspace.roadmaps.map(r => {
+      if (r.id === activeRoadmap.id) {
+        return { ...r, milestones: updatedMilestones };
+      }
+      return r;
+    });
+    try {
+      await updateWorkspace(supabase, profile.id, { roadmaps: updatedRoadmaps });
+      setWorkspace(prev => prev ? { ...prev, roadmaps: updatedRoadmaps } : null);
+      showToast("Added task draft to current roadmap milestone!");
+      router.refresh();
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to write task draft to roadmap.");
+    }
+  };
+
+  const saveNote = async (noteText: string) => {
+    if (!profile || !workspace || !supabase) return;
+    const newNote = {
+      id: generateId(),
+      title: "Strategist Insight Note",
+      content: noteText,
+      tag: "Strategy",
+      created_at: new Date().toISOString()
+    };
+    const updatedNotes = [...(workspace.notes || []), newNote];
+    try {
+      await updateWorkspace(supabase, profile.id, { notes: updatedNotes });
+      setWorkspace(prev => prev ? { ...prev, notes: updatedNotes } : null);
+      showToast("Strategist note saved successfully.");
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to save note.");
+    }
+  };
+
   const copyToClipboard = (text: string) => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       void navigator.clipboard.writeText(text);
@@ -366,119 +416,150 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
     setIsRightDrawerOpen(false);
   };
 
-  // ─── Shared Layout Render Elements ──────────────────────────────────────────
+  const triggerInlineEdit = (type: "resume" | "github") => {
+    setInlineEditAccount(type);
+    setInlineUrlVal(localStorage.getItem(`profile_${type}_url`) || "");
+  };
 
+  // ─── Shared Layout Render Elements ──────────────────────────────────────────
   const renderLeftSidebarContent = () => (
     <div className="space-y-6">
-      {/* SECTION 1: MENTOR CONTEXT */}
       <section className="space-y-4">
-        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/5 pb-2">
-          Mentor Context
-        </h4>
-        <div className="space-y-3.5 text-xs">
-          <div>
-            <span className="text-slate-400 font-semibold block text-[10px] uppercase">Goal Target</span>
-            <span className="text-white font-bold block mt-0.5">
-              {profile?.goal || <span className="text-slate-500 italic text-[11px]">No goal specified</span>}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <span className="text-slate-400 font-semibold block text-[10px] uppercase">Roadmap Version</span>
-              <span className="text-slate-200 font-bold block mt-0.5">
-                {activeRoadmap?.roadmap_version ? `v${activeRoadmap.roadmap_version}` : <span className="text-slate-500 italic text-[11px]">None</span>}
-              </span>
-            </div>
-            <div>
-              <span className="text-slate-400 font-semibold block text-[10px] uppercase">Readiness Score</span>
-              <span className="text-cyan-400 font-extrabold block mt-0.5">{readiness}%</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 border-t border-white/5 pt-3">
-            <div>
-              <span className="text-slate-400 font-semibold block text-[10px] uppercase">Weekly Capacity</span>
-              <span className="text-slate-200 font-bold block mt-0.5">
-                {profile?.time_availability ? `${profile.time_availability}` : <span className="text-slate-500 italic text-[11px]">Not set</span>}
-              </span>
-            </div>
-            <div>
-              <span className="text-slate-400 font-semibold block text-[10px] uppercase">Projects Done</span>
-              <span className="text-slate-200 font-bold block mt-0.5">{completedProjectsCount}</span>
-            </div>
-          </div>
-
-          <div className="border-t border-white/5 pt-3">
-            <span className="text-slate-400 font-semibold block text-[10px] uppercase">Current Sprint</span>
-            <span className="text-slate-200 font-bold block mt-0.5 truncate leading-tight">
-              {activeRoadmap?.title || <span className="text-slate-500 italic text-[11px]">No active sprint</span>}
-            </span>
-          </div>
-
-          <div>
-            <span className="text-slate-400 font-semibold block text-[10px] uppercase">Milestones Completed</span>
-            <span className="text-slate-200 font-bold block mt-0.5">
-              {completedCount} Completed / {remainingCount} Remaining
-            </span>
-          </div>
-
-          <div>
-            <span className="text-slate-400 font-semibold block text-[10px] uppercase">Next Milestone Target</span>
-            <span className="text-indigo-300 font-bold block mt-0.5 leading-snug">
-              {nextMilestone}
-            </span>
-          </div>
+        <div className="flex justify-between items-center border-b border-white/5 pb-2">
+          <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+            Mentor Context
+          </h4>
+          {!isEditingContext && (
+            <button
+              onClick={startEditingContext}
+              className="text-slate-500 hover:text-cyan-300 transition"
+              aria-label="Edit context parameters"
+            >
+              <Edit2 className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
+
+        {isEditingContext ? (
+          <div className="space-y-3 text-xs bg-[#0b0b0e] p-3 rounded-xl border border-white/5">
+            <div>
+              <label className="block text-[9px] text-slate-400 font-bold uppercase mb-1">Target Goal</label>
+              <input
+                type="text"
+                value={editGoal}
+                onChange={e => setEditGoal(e.target.value)}
+                className="carved-input w-full px-2 py-1 text-xs rounded-lg"
+              />
+            </div>
+            <div>
+              <label className="block text-[9px] text-slate-400 font-bold uppercase mb-1">Weekly Capacity</label>
+              <input
+                type="text"
+                value={editTimeAvailability}
+                onChange={e => setEditTimeAvailability(e.target.value)}
+                className="carved-input w-full px-2 py-1 text-xs rounded-lg"
+              />
+            </div>
+            <div>
+              <label className="block text-[9px] text-slate-400 font-bold uppercase mb-1">Weekly Hours</label>
+              <input
+                type="number"
+                value={editWeeklyHours}
+                onChange={e => setEditWeeklyHours(e.target.value)}
+                className="carved-input w-full px-2 py-1 text-xs rounded-lg"
+              />
+            </div>
+            <div className="flex gap-1.5 justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => setIsEditingContext(false)}
+                className="text-[10px] font-semibold text-slate-400 px-2 py-1 hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={saveContext}
+                className="text-[10px] font-bold text-black bg-cyan-400 px-3 py-1 rounded-md"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3.5 text-xs">
+            <div>
+              <span className="text-slate-400 font-semibold block text-[10px] uppercase">Goal Target</span>
+              <span className="text-white font-bold block mt-0.5">{profile?.goal || "SDE I"}</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <span className="text-slate-400 font-semibold block text-[10px] uppercase">Roadmap</span>
+                <span className="text-slate-200 font-bold block mt-0.5">
+                  {activeRoadmap?.roadmap_version ? `v${activeRoadmap.roadmap_version}` : "None"}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 font-semibold block text-[10px] uppercase">Readiness</span>
+                <span className="text-cyan-400 font-extrabold block mt-0.5">{readiness}%</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 border-t border-white/5 pt-3">
+              <div>
+                <span className="text-slate-400 font-semibold block text-[10px] uppercase">Capacity</span>
+                <span className="text-slate-200 font-bold block mt-0.5">{profile?.time_availability || "Not set"}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 font-semibold block text-[10px] uppercase">Weekly Hours</span>
+                <span className="text-slate-200 font-bold block mt-0.5">{weeklyHours} hrs</span>
+              </div>
+            </div>
+
+            <div className="border-t border-white/5 pt-3">
+              <span className="text-slate-400 font-semibold block text-[10px] uppercase">Current focus area</span>
+              <span className="text-indigo-300 font-bold block mt-0.5 leading-snug">{currentFocus}</span>
+            </div>
+
+            <div>
+              <span className="text-slate-400 font-semibold block text-[10px] uppercase">Milestones</span>
+              <span className="text-slate-200 font-bold block mt-0.5">
+                {completedCount} Completed / {remainingCount} Remaining
+              </span>
+            </div>
+          </div>
+        )}
       </section>
 
-      {/* SECTION 2: MENTOR MEMORY */}
       <section className="space-y-4 pt-4 border-t border-white/5">
         <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/5 pb-2">
-          Mentor Memory
+          Identity Assets
         </h4>
         <div className="space-y-3.5 text-xs">
-          <div>
-            <span className="text-slate-400 font-semibold block text-[10px] uppercase">Active Focus</span>
-            <span className="text-amber-400 font-bold block mt-0.5 leading-tight">
-              {currentFocus}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-2">
             <div>
-              <span className="text-slate-400 font-semibold block text-[10px] uppercase">Weekly Hours</span>
-              <span className="text-slate-200 font-bold block mt-0.5">{weeklyHours} hrs</span>
-            </div>
-            <div>
-              <span className="text-slate-400 font-semibold block text-[10px] uppercase">Interview Status</span>
-              <span className="text-slate-200 font-bold block mt-0.5">{interviewReadiness}</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 border-t border-white/5 pt-3">
-            <div>
-              <span className="text-slate-400 font-semibold block text-[10px] uppercase font-bold">Resume</span>
-              <span className={`text-[9px] font-extrabold px-1 py-0.5 rounded mt-1 inline-block border ${
+              <span className="text-slate-400 font-semibold block text-[9px] uppercase font-bold">Resume</span>
+              <span className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded mt-1 inline-block border ${
                 resumeConnected ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20" : "bg-white/5 text-slate-400 border-white/5"
               }`}>
-                {resumeConnected ? "Connected" : "Missing"}
+                {resumeConnected ? "Active" : "Missing"}
               </span>
             </div>
             <div>
-              <span className="text-slate-400 font-semibold block text-[10px] uppercase font-bold">Portfolio</span>
-              <span className={`text-[9px] font-extrabold px-1 py-0.5 rounded mt-1 inline-block border ${
+              <span className="text-slate-400 font-semibold block text-[9px] uppercase font-bold">Portfolio</span>
+              <span className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded mt-1 inline-block border ${
                 portfolioConnected ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20" : "bg-white/5 text-slate-400 border-white/5"
               }`}>
-                {portfolioConnected ? "Linked" : "Missing"}
+                {portfolioConnected ? "Active" : "Missing"}
               </span>
             </div>
             <div>
-              <span className="text-slate-400 font-semibold block text-[10px] uppercase font-bold">GitHub</span>
-              <span className={`text-[9px] font-extrabold px-1 py-0.5 rounded mt-1 inline-block border ${
+              <span className="text-slate-400 font-semibold block text-[9px] uppercase font-bold">GitHub</span>
+              <span className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded mt-1 inline-block border ${
                 githubConnected ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20" : "bg-white/5 text-slate-400 border-white/5"
               }`}>
-                {githubConnected ? "Linked" : "Missing"}
+                {githubConnected ? "Active" : "Missing"}
               </span>
             </div>
           </div>
@@ -489,14 +570,13 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
 
   const renderRightSidebarContent = () => (
     <div className="space-y-6">
-      {/* SECTION 7: TODAY'S PRIORITIES */}
       <section className="space-y-4">
         <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/5 pb-2">
-          Today&apos;s Priorities
+          Priority Sprint Queue
         </h4>
         {prioritiesList.length === 0 ? (
           <div className="bg-black/20 border border-white/5 rounded-xl p-4 text-center text-xs text-slate-500">
-            No active priorities found in current milestone. Generate or configure milestones on the Dashboard.
+            No active sprint goals cataloged.
           </div>
         ) : (
           <ul className="space-y-3">
@@ -512,99 +592,72 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
         )}
       </section>
 
-      {/* SECTION 8: MENTOR RECOMMENDATIONS */}
       <section className="space-y-4 pt-4 border-t border-white/5">
         <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/5 pb-2">
-          Mentor Recommendations
+          Action Recommendations
         </h4>
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           {[
-            { label: "Review Resume", query: "Please review my resume details and alignment.", mode: "resume" as const },
-            { label: "Practice Interview", query: "Let's begin a mock interview simulation.", mode: "interview" as const },
-            { label: "Optimize LinkedIn", query: "What should I adjust on LinkedIn to trigger matches?", mode: "coach" as const },
-            { label: "Build Project", query: "Provide targeted projects architecture suggestions.", mode: "project" as const },
-            { label: "Apply to Jobs", query: "How should I structure my current applications?", mode: "coach" as const }
-          ].map((rec, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => handleRecommendationClick(rec.query, rec.mode)}
-              className="relative w-full text-left bg-black/20 border border-white/5 hover:border-cyan-400/20 hover:shadow-[0_4px_12px_rgba(0,0,0,0.5)] hover:-translate-y-0.5 p-3 rounded-xl transition-all duration-300 group flex justify-between items-center text-xs text-white"
-            >
-              <div className="flex flex-col gap-0.5">
-                <span className="font-semibold text-slate-200 group-hover:text-cyan-300 transition-colors">
-                  {rec.label}
-                </span>
-                <span className="text-[9px] text-slate-500 uppercase font-semibold">
-                  Mode: {rec.mode === "coach" ? "Career" : rec.mode} Coach
-                </span>
-              </div>
-              <ChevronRight className="h-4 w-4 text-slate-500 group-hover:text-cyan-400 group-hover:translate-x-0.5 transition-all" />
-              {i === 0 && (
-                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-ping absolute right-2.5 top-2.5" />
-              )}
-            </button>
-          ))}
-        </div>
-      </section>
+            { id: "ar1", action: "Resume Review Simulation", query: "Please run diagnostic checks on my credentials resume.", impact: "Optimizes recruiter targeting score", priority: "High" },
+            { id: "ar2", action: "State Management Challenge", query: "Let's perform mock interview drills for React/Redux.", impact: "Improves technical coding confidence", priority: "High" },
+            { id: "ar3", action: "LinkedIn SEO Calibration", query: "How should I structure keyword indexes on LinkedIn?", impact: "Triggers recruiter match loops", priority: "Medium" }
+          ].map((rec) => {
+            const isChecked = checkedRecs[rec.id] ?? false;
+            return (
+              <div key={rec.id} className={`border p-3 rounded-xl transition ${
+                isChecked ? "border-cyan-500/10 bg-cyan-950/[0.01] text-slate-500" : "border-white/5 bg-black/20 hover:border-cyan-400/25"
+              }`}>
+                <div className="flex items-start gap-2.5">
+                  <button
+                    onClick={() => setCheckedRecs(prev => ({ ...prev, [rec.id]: !prev[rec.id] }))}
+                    className="shrink-0 mt-0.5 text-cyan-400"
+                  >
+                    {isChecked ? (
+                      <CheckSquare className="h-4 w-4 fill-cyan-400 text-black" />
+                    ) : (
+                      <Square className="h-4 w-4 text-slate-600" />
+                    )}
+                  </button>
 
-      {/* SECTION 9: ROADMAP INSIGHTS */}
-      <section className="space-y-4 pt-4 border-t border-white/5">
-        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/5 pb-2">
-          Roadmap Insights
-        </h4>
-        {!activeRoadmap ? (
-          <div className="bg-black/20 border border-white/5 rounded-xl p-4 text-center text-xs text-slate-500">
-            No roadmap insights loaded.
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3 text-center">
-            <div className="bg-black/25 border border-white/5 rounded-xl p-3">
-              <span className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Completed</span>
-              <span className="text-base font-extrabold text-white">{completedCount}</span>
-            </div>
-            <div className="bg-black/25 border border-white/5 rounded-xl p-3">
-              <span className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Remaining</span>
-              <span className="text-base font-extrabold text-white">{remainingCount}</span>
-            </div>
-            <div className="bg-black/25 border border-white/5 rounded-xl p-3">
-              <span className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Readiness</span>
-              <span className="text-base font-extrabold text-cyan-300">{readiness}%</span>
-            </div>
-            <div className="bg-black/25 border border-white/5 rounded-xl p-3">
-              <span className="text-[9px] font-bold text-slate-500 uppercase block mb-1">ETA</span>
-              <span className="text-base font-extrabold text-white">{remainingWeeks} Weeks</span>
-            </div>
-          </div>
-        )}
+                  <div className="flex-1 space-y-1 min-w-0">
+                    <span className="text-[8px] font-extrabold uppercase tracking-wider block text-cyan-300">{rec.priority} Priority</span>
+                    <h5 className={`text-xs font-bold truncate text-white ${isChecked ? "line-through opacity-40 text-slate-400" : ""}`}>{rec.action}</h5>
+                    <p className="text-[9px] text-slate-500 leading-tight">{rec.impact}</p>
+
+                    {!isChecked && (
+                      <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5 mt-2">
+                        <button
+                          onClick={() => handleRecommendationClick(rec.query, "coach")}
+                          className="text-[9px] text-cyan-400 font-bold hover:underline"
+                        >
+                          Ask AI
+                        </button>
+                        <button
+                          onClick={() => void addToRoadmap(rec.action)}
+                          className="text-[9px] text-indigo-400 font-bold hover:underline"
+                        >
+                          + Roadmap
+                        </button>
+                        <button
+                          onClick={() => void saveNote(rec.action + ": " + rec.impact)}
+                          className="text-[9px] text-slate-400 font-bold hover:underline"
+                        >
+                          Save Note
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </section>
     </div>
   );
 
-  // ─── Smart input checks ─────────────────────────────────────────────────────
-
-  const showResumeAction = newMessage.toLowerCase().includes("resume");
-  const showProjectAction = newMessage.toLowerCase().includes("project");
-  const showInterviewAction = newMessage.toLowerCase().includes("interview");
-
-  const startMockInterviewFromChip = () => {
-    setMentorMode("interview");
-    void handleSendMessage(undefined, "Let's do a mock interview!");
-  };
-
-  const triggerInlineEdit = (type: "resume" | "github") => {
-    setInlineEditAccount(type);
-    setInlineUrlVal(localStorage.getItem(`profile_${type}_url`) || "");
-  };
-
   return (
     <div className="min-h-screen text-slate-200 max-w-[1440px] mx-auto relative px-4 sm:px-6">
-      {/* Toast message popup */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 rounded-xl border border-cyan-400/30 bg-[#0a0a0c] px-4 py-3 text-xs font-semibold text-cyan-200 shadow-[0_4px_12px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.08),0_0_20px_rgba(34,211,238,0.2)]">
-          {toastMessage}
-        </div>
-      )}
       <div className="absolute inset-x-0 top-0 -z-10 h-80 bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.03),transparent_50%)]" />
 
       {/* Mobile drawer overlays for screen sizes below lg */}
@@ -613,7 +666,6 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
           type="button"
           onClick={() => setIsLeftDrawerOpen(true)}
           className="tactile-btn flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-slate-300 rounded-xl flex-1 bg-white/5"
-          aria-label="Toggle Mentor Context Sidebar"
         >
           <Brain className="h-4 w-4 text-cyan-400" />
           Context Memory
@@ -622,24 +674,22 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
           type="button"
           onClick={() => setIsRightDrawerOpen(true)}
           className="tactile-btn flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-slate-300 rounded-xl flex-1 bg-white/5"
-          aria-label="Toggle Actions Sidebar"
         >
           <Zap className="h-4 w-4 text-cyan-400" />
           Action Center
         </button>
       </div>
 
-      {/* Left drawer for tablet/mobile viewports */}
+      {/* Mobile left side drawer */}
       {isLeftDrawerOpen && (
-        <div className="fixed inset-0 z-50 flex lg:hidden bg-black/80 backdrop-blur-sm transition-opacity">
-          <div className="relative w-80 max-w-[85vw] bg-[#0b0b0e] border-r border-white/10 p-6 space-y-6 overflow-y-auto animate-fade-in shadow-2xl">
+        <div className="fixed inset-0 z-50 flex lg:hidden bg-black/80 backdrop-blur-sm">
+          <div className="relative w-80 max-w-[85vw] bg-[#0b0b0e] border-r border-white/10 p-6 space-y-6 overflow-y-auto">
             <div className="flex justify-between items-center border-b border-white/5 pb-3">
               <span className="text-xs font-bold text-white uppercase tracking-widest">Mentor Context</span>
               <button 
                 type="button"
                 onClick={() => setIsLeftDrawerOpen(false)} 
                 className="text-slate-400 hover:text-white p-1"
-                aria-label="Close Left Sidebar"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -650,17 +700,16 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
         </div>
       )}
 
-      {/* Right bottom sheet drawer for tablet/mobile viewports */}
+      {/* Mobile right side drawer */}
       {isRightDrawerOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end lg:hidden bg-black/80 backdrop-blur-sm transition-opacity">
-          <div className="relative max-h-[85vh] bg-[#0b0b0e] border-t border-white/10 p-6 rounded-t-[28px] space-y-6 overflow-y-auto animate-slide-up shadow-2xl">
+        <div className="fixed inset-0 z-50 flex flex-col justify-end lg:hidden bg-black/80 backdrop-blur-sm">
+          <div className="relative max-h-[85vh] bg-[#0b0b0e] border-t border-white/10 p-6 rounded-t-[28px] space-y-6 overflow-y-auto">
             <div className="flex justify-between items-center border-b border-white/5 pb-3">
               <span className="text-xs font-bold text-white uppercase tracking-widest">Action Center</span>
               <button 
                 type="button"
                 onClick={() => setIsRightDrawerOpen(false)} 
                 className="text-slate-400 hover:text-white p-1"
-                aria-label="Close Right Sidebar"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -674,16 +723,15 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
       {/* ─── 3-Column Workspace Layout (Desktop grid) ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-[20%_55%_25%] gap-6 pb-20 items-start">
         
-        {/* LEFT COLUMN: Mentor Context Panel (Hidden on mobile/tablet, native on desktop) */}
+        {/* LEFT COLUMN: Context Memory Sidebar */}
         <aside className="hidden lg:block space-y-6 bg-[#08080a] border border-white/5 rounded-[24px] p-5.5 shadow-xl">
           {renderLeftSidebarContent()}
         </aside>
 
-        {/* CENTER COLUMN: Conversation workspace */}
+        {/* CENTER COLUMN: Chat Interface */}
         <main className="flex flex-col min-h-[580px] bg-[#040405] border border-white/5 rounded-[28px] p-5 sm:p-6 shadow-2xl relative">
-          <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-cyan-950/5 to-transparent pointer-events-none rounded-t-[28px]" />
-
-          {/* MENTOR HEADER - Pillar toggle */}
+          
+          {/* MENTOR HEADER - Advisor Pillars */}
           <div className="relative z-10 border-b border-white/5 pb-4 mb-5">
             <div className="flex flex-wrap gap-1 rounded-full border border-white/5 bg-[#0a0a0c] p-1 justify-around max-w-[550px] mx-auto shadow-inner">
               {[
@@ -698,7 +746,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
                   type="button"
                   onClick={() => {
                     setMentorMode(item.mode);
-                    showToast(`Active Advisor Switched: ${item.label}`);
+                    showToast(`Active Strategist swapped: ${item.label}`);
                   }}
                   className={`rounded-full px-3 py-1.5 text-[10px] font-bold transition-all duration-300 ${
                     mentorMode === item.mode
@@ -714,26 +762,24 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
 
           <div className="max-w-[900px] mx-auto w-full flex-1 flex flex-col justify-between h-full relative z-10">
             
-            {/* PROACTIVE INSIGHT CARD */}
+            {/* ═══ SPOTLIGHT CARD 1: AI STRATEGIST INSIGHT ════════════════════ */}
             {activeInsights.length > 0 && (
-              <article className="bg-[#09151e] border border-cyan-500/20 rounded-2xl p-4 mb-4 flex items-start gap-3 relative overflow-hidden group shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/[0.02] to-transparent pointer-events-none" />
-                <Sparkles className="h-5 w-5 text-cyan-400 shrink-0 mt-0.5" />
-                <div className="space-y-1 flex-1 text-xs">
-                  <span className="text-cyan-300 font-extrabold uppercase tracking-widest text-[9px]">Proactive Insights</span>
-                  <ul className="space-y-1 text-slate-300 font-medium">
-                    {activeInsights.slice(0, 2).map((ins, i) => (
-                      <li key={i} className="flex gap-2 items-center leading-relaxed">
-                        <span className="h-1 w-1 rounded-full bg-cyan-400 shrink-0" />
-                        {ins}
-                      </li>
-                    ))}
-                  </ul>
+              <article className="card-spotlight rounded-[24px] p-5 mb-5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 h-32 w-48 bg-cyan-400/5 rounded-full blur-3xl pointer-events-none" />
+                <div className="relative z-10 flex items-start gap-3.5">
+                  <Sparkles className="h-5 w-5 text-cyan-400 shrink-0 mt-0.5 animate-pulse" />
+                  <div className="space-y-1.5 flex-1 text-xs">
+                    <span className="text-cyan-300 font-extrabold uppercase tracking-widest text-[9px]">Live Strategist Insights</span>
+                    <ul className="space-y-1 text-slate-200 font-semibold list-disc list-inside">
+                      {activeInsights.slice(0, 2).map((ins, i) => (
+                        <li key={i} className="leading-relaxed">{ins}</li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </article>
             )}
 
-            {/* Pinned message card */}
             {pinnedMessageId && activeThread && (
               <div className="relative z-10 rounded-2xl border border-cyan-400/25 bg-[#082f49]/60 p-4 mb-4 text-xs text-cyan-200">
                 <p className="caption text-cyan-400 font-bold uppercase tracking-wider mb-1">Pinned Strategy</p>
@@ -743,14 +789,14 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
               </div>
             )}
 
-            {/* Chat conversation area */}
+            {/* Chat Messages */}
             <div className="flex-1 overflow-y-auto pr-1 space-y-5 max-h-[420px] min-h-[300px] scrollbar-thin scrollbar-thumb-white/5 relative mb-4">
               {activeThread?.messages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center p-8 space-y-3">
                   <Brain className="h-10 w-10 text-slate-600 animate-pulse" />
-                  <h4 className="text-slate-400 font-semibold text-sm">Ask your Personal Strategist</h4>
+                  <h4 className="text-slate-400 font-semibold text-sm">Strategist Session Initialized</h4>
                   <p className="text-xs text-slate-500 max-w-sm leading-relaxed">
-                    Type a message below to review milestones, analyze resume verbs, set mock challenges, or evaluate project gaps.
+                    Query parameters dynamically calibrated to goal {profile?.goal || "SDE"}. Send a message below to strategize.
                   </p>
                 </div>
               ) : (
@@ -765,11 +811,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
                         isMentor ? "mr-auto" : "ml-auto flex-row-reverse"
                       }`}
                     >
-                      {/* Avatar */}
                       <div className="relative shrink-0 mt-1">
-                        {isMentor && isTyping && (
-                          <span className="absolute -inset-1 rounded-full bg-cyan-400/20 animate-ping" />
-                        )}
                         <span className={`h-8.5 w-8.5 rounded-full flex items-center justify-center border text-xs transition-transform group-hover:scale-105 ${
                           isMentor 
                             ? "border-cyan-400/20 bg-cyan-950/40 text-cyan-300 shadow-[0_0_8px_rgba(34,211,238,0.1)]" 
@@ -779,7 +821,6 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
                         </span>
                       </div>
 
-                      {/* Message bubble */}
                       <div className="relative">
                         <div className={`rounded-[20px] px-4.5 py-3.5 text-xs shadow-md group-hover:shadow-[0_0_15px_rgba(34,211,238,0.03)] transition duration-300 ${
                           isMentor
@@ -788,7 +829,6 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
                         }`}>
                           {isMentor ? renderFormattedContent(message.content) : <p className="leading-relaxed text-xs">{message.content}</p>}
                           
-                          {/* Reaction Display */}
                           {reactEmoji && (
                             <span className="absolute -bottom-2 right-3 bg-slate-900 border border-white/10 rounded-full px-1.5 py-0.5 text-[10px]">
                               {reactEmoji}
@@ -796,7 +836,6 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
                           )}
                         </div>
 
-                        {/* Speech Bubble Hover Controls */}
                         {isMentor && (
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 absolute right-2 -top-7.5 bg-slate-950/85 backdrop-blur-md border border-white/5 rounded-full p-1 flex gap-1.5 shadow-2xl z-20">
                             <button
@@ -817,14 +856,6 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
                             </button>
                             <button
                               type="button"
-                              onClick={() => convertToRoadmapTask()}
-                              title="Convert to roadmap milestone"
-                              className="p-1 text-slate-400 hover:text-indigo-400 rounded-full hover:bg-white/5 transition"
-                            >
-                              <Award className="h-3 w-3" />
-                            </button>
-                            <button
-                              type="button"
                               onClick={() => togglePinMessage(message.id)}
                               title="Pin strategy message"
                               className="p-1 text-slate-400 hover:text-yellow-400 rounded-full hover:bg-white/5 transition"
@@ -834,7 +865,6 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
                             <button
                               type="button"
                               onClick={() => setReaction(message.id, "👍")}
-                              title="Thumb up"
                               className="p-1 text-slate-500 hover:text-emerald-400 rounded-full hover:bg-white/5 transition text-[9px]"
                             >
                               👍
@@ -847,14 +877,13 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
                 })
               )}
 
-              {/* Typing indicator */}
               {isTyping && (
                 <div className="flex gap-3.5 max-w-[85%] mr-auto items-center animate-pulse">
                   <span className="h-8.5 w-8.5 rounded-full flex items-center justify-center border border-cyan-400/20 bg-cyan-950/40 text-cyan-300 shrink-0 text-xs">
                     <Sparkles className="h-4.5 w-4.5 text-cyan-400 animate-spin-slow" />
                   </span>
                   <div className="rounded-[20px] px-4.5 py-3 text-xs text-slate-400 border border-white/5 bg-[#08080a]">
-                    AI Strategist is generating dynamic advice...
+                    AI Strategist is thinking...
                   </div>
                 </div>
               )}
@@ -865,9 +894,9 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
             {/* Smart input actions panel */}
             <div className="border-t border-white/5 pt-4 space-y-3 relative">
               
-              {/* SMART ACTIONS (Keyword triggered inline overlays) */}
+              {/* SMART ACTIONS */}
               <div className="flex flex-wrap gap-2">
-                {showResumeAction && (
+                {newMessage.toLowerCase().includes("resume") && (
                   <button
                     type="button"
                     onClick={() => triggerInlineEdit("resume")}
@@ -877,7 +906,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
                     Upload Resume Link
                   </button>
                 )}
-                {showProjectAction && (
+                {newMessage.toLowerCase().includes("project") && (
                   <button
                     type="button"
                     onClick={() => triggerInlineEdit("github")}
@@ -887,31 +916,20 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
                     Attach GitHub Repo
                   </button>
                 )}
-                {showInterviewAction && (
-                  <button
-                    type="button"
-                    onClick={startMockInterviewFromChip}
-                    className="inline-flex items-center gap-1 bg-cyan-950/50 hover:bg-cyan-900/50 border border-cyan-500/20 px-3 py-1.5 rounded-xl text-[10px] font-bold text-cyan-300 animate-slide-up"
-                  >
-                    <Flame className="h-3 w-3 text-rose-400" />
-                    Start Mock Interview
-                  </button>
-                )}
               </div>
 
               {/* Inline connector inputs */}
               {inlineEditAccount && (
                 <div className="flex items-center gap-2 bg-[#08080a] border border-white/10 rounded-xl p-2.5 animate-slide-up shadow-2xl">
                   <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider shrink-0 pl-1">
-                    {inlineEditAccount === "resume" ? "Resume" : "GitHub Repo"} URL:
+                    {inlineEditAccount === "resume" ? "Resume" : "GitHub"} URL:
                   </span>
                   <input
                     type="text"
                     value={inlineUrlVal}
                     onChange={(e) => setInlineUrlVal(e.target.value)}
-                    className="carved-input flex-1 text-xs px-2.5 py-1.5 focus:ring-1 focus:ring-cyan-400 text-white"
+                    className="carved-input flex-1 text-xs px-2.5 py-1.5 text-white"
                     placeholder="https://..."
-                    aria-label={`Enter link URL for ${inlineEditAccount}`}
                   />
                   <div className="flex gap-1">
                     <button
@@ -930,7 +948,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
                           if (inlineEditAccount === "github") setGithubConnected(!!inlineUrlVal.trim());
                         }
                         setInlineEditAccount(null);
-                        showToast(`${inlineEditAccount === "resume" ? "Resume" : "GitHub"} URL connected!`);
+                        showToast(`${inlineEditAccount === "resume" ? "Resume" : "GitHub"} URL linked.`);
                       }}
                       className="text-[10px] font-extrabold px-3 py-1.5 rounded bg-cyan-400 text-black hover:bg-cyan-300 transition-colors"
                     >
@@ -940,20 +958,18 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
                 </div>
               )}
 
-              {/* Chat Input form */}
+              {/* Chat Input */}
               <form onSubmit={handleSendMessage} className="flex gap-2 relative">
                 <input
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Ask about roadmap execution, interview prep, resume feedback, project reviews, or career strategy."
-                  className="carved-input w-full rounded-2xl px-5 py-3.5 text-xs text-white outline-none focus:border-cyan-400/50 focus:shadow-[inset_0_2px_4px_rgba(0,0,0,0.9),0_0_15px_rgba(34,211,238,0.18)] transition-all placeholder:text-slate-500"
-                  aria-label="Ask about career strategy"
+                  placeholder="Ask advisor about roadmap, resume review, mock interviews, or project specification..."
+                  className="carved-input w-full rounded-2xl px-5 py-3.5 text-xs text-white outline-none focus:border-cyan-400/50 transition-all placeholder:text-slate-500"
                 />
                 <MagneticButton asChild>
                   <button
                     type="submit"
                     className="tactile-btn tactile-btn-primary h-12 w-12 rounded-2xl text-black flex items-center justify-center shrink-0 hover:shadow-[0_0_15px_rgba(34,211,238,0.4)] transition"
-                    aria-label="Send message"
                   >
                     <Send className="h-4.5 w-4.5" />
                   </button>
@@ -964,30 +980,29 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
           </div>
         </main>
 
-        {/* RIGHT COLUMN: Action Center (Hidden on mobile/tablet, native on desktop) */}
+        {/* RIGHT COLUMN: Action Center Sidebar */}
         <aside className="hidden lg:block space-y-6 bg-[#08080a] border border-white/5 rounded-[24px] p-5.5 shadow-xl">
           {renderRightSidebarContent()}
         </aside>
 
       </div>
 
-      {/* Pinned Insights side log if active */}
+      {/* Pinned Insights bottom log */}
       {savedInsights.length > 0 && (
-        <section className="liquid-panel rounded-[24px] p-5.5 shadow-xl mb-20 max-w-[1440px] mx-auto">
+        <section className="card-data rounded-[24px] p-5 shadow-xl mb-20 max-w-[1440px] mx-auto border border-white/5">
           <div className="flex items-center gap-2 border-b border-white/5 pb-3 mb-4">
             <Star className="h-4.5 w-4.5 text-cyan-400" />
             <h4 className="text-xs font-bold text-white uppercase tracking-wider">
-              Saved Pinned Insights ({savedInsights.length})
+              Pinned Strategy Notes ({savedInsights.length})
             </h4>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {savedInsights.map((ins, i) => (
-              <div key={i} className="text-[11px] text-slate-300 leading-relaxed border border-white/5 bg-black/15 rounded-xl p-3.5 select-text relative">
+              <div key={i} className="text-[11px] text-slate-300 leading-relaxed border border-white/5 bg-black/15 rounded-xl p-3.5 relative">
                 <button
                   type="button"
                   onClick={() => setSavedInsights(prev => prev.filter((_, idx) => idx !== i))}
                   className="absolute right-2 top-2 p-1 text-slate-500 hover:text-rose-400"
-                  title="Remove insight"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -997,9 +1012,6 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
           </div>
         </section>
       )}
-
-      {/* Screen reader tags */}
-      <span className="sr-only">AI Career Mentor Workspace loaded. Proactive strategist logic.</span>
     </div>
   );
 }

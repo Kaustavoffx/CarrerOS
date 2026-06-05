@@ -3,21 +3,11 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { AiProviderStatusRecord, UserProfileRecord, WorkspaceSnapshotRecord, ExperienceLevel } from "@/lib/supabase/types";
-import { getSupabaseBrowserClient } from "@/lib/supabase";
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { updateProfile } from "@/lib/app-data";
 import { MagneticButton } from "./magnetic-button";
 import {
-  RefreshCw,
-  Database,
-  Download,
-  Check,
-  Lock,
-  User,
-  Settings,
-  Key,
-  Globe,
-  Sliders,
-  AlertTriangle
+  RefreshCw, Database, Download, Check, Lock, User, Settings, Key, Globe, Sliders, AlertTriangle, ChevronDown, ChevronUp
 } from "lucide-react";
 
 type SettingsDashboardProps = {
@@ -28,7 +18,6 @@ type SettingsDashboardProps = {
   userId: string;
 };
 
-// Mask key helper: e.g. "sk-...5f1a"
 function maskKey(key: string | null) {
   if (!key) return "••••••••••••";
   if (key.length <= 8) return "••••" + key.slice(-4);
@@ -37,47 +26,41 @@ function maskKey(key: string | null) {
 
 export function SettingsDashboard({ profile, initialProviders, userEmail, userId }: SettingsDashboardProps) {
   const router = useRouter();
+  const supabase = getSupabaseBrowserClient();
 
-  // Database providers state
   const [providers, setProviders] = useState<AiProviderStatusRecord[]>(initialProviders);
   const [savingProvider, setSavingProvider] = useState<string | null>(null);
   
-  // Section 1: Account inputs
   const [fullName, setFullName] = useState(profile?.full_name ?? "");
   const [goal, setGoal] = useState(profile?.goal ?? "");
   const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>(profile?.experience_level ?? "Junior");
   const [timezone, setTimezone] = useState("Asia/Kolkata (GMT+5:30)");
   const [savingAccount, setSavingAccount] = useState(false);
 
-  // Section 2: AI provider keys inputs
   const [providerKeys, setProviderKeys] = useState<Record<string, string>>({ openai: "", gemini: "" });
   const [showKeyInputs, setShowKeyInputs] = useState<Record<string, boolean>>({ openai: false, gemini: false });
 
-  // Section 3: Workspace Preferences
+  // Preferences
   const [theme, setTheme] = useState("dark");
   const [compactMode, setCompactMode] = useState(false);
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
-  const [denseDashboard, setDenseDashboard] = useState(false);
-  const [defaultLandingPage, setDefaultLandingPage] = useState("dashboard");
   const [milestoneAlerts, setMilestoneAlerts] = useState(true);
   const [roadmapUpdates, setRoadmapUpdates] = useState(true);
-  const [weeklyDigest, setWeeklyDigest] = useState(false);
 
-  // Section 5: Export / Backup loading states
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [toastMessage, setToastMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
-
-  // Section 6: Danger Zone Confirmation Modal
+  // Danger zone drawer state
+  const [isDangerZoneExpanded, setIsDangerZoneExpanded] = useState(false);
   const [dangerModalAction, setDangerModalAction] = useState<"reset" | "roadmaps" | "mentor" | "account" | null>(null);
   const [dangerConfirmText, setDangerConfirmText] = useState("");
   const [executingDanger, setExecutingDanger] = useState(false);
+
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
   const showToast = (text: string, type: "success" | "error" = "success") => {
     setToastMessage({ text, type });
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  // Sync state values on profile database props change
   useEffect(() => {
     if (profile) {
       setFullName(profile.full_name ?? "");
@@ -86,30 +69,22 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
     }
   }, [profile]);
 
-  // Load preferences from local storage
   useEffect(() => {
     if (typeof window !== "undefined") {
       setTheme(localStorage.getItem("pref_theme") ?? "dark");
       setCompactMode(localStorage.getItem("pref_compact") === "true");
       setAnimationsEnabled(localStorage.getItem("pref_animations") !== "false");
-      setDenseDashboard(localStorage.getItem("pref_dense") === "true");
-      setDefaultLandingPage(localStorage.getItem("pref_landing") ?? "dashboard");
       setTimezone(localStorage.getItem("profile_timezone") ?? "Asia/Kolkata (GMT+5:30)");
-      
       setMilestoneAlerts(localStorage.getItem("pref_alert_milestones") !== "false");
       setRoadmapUpdates(localStorage.getItem("pref_alert_roadmaps") !== "false");
-      setWeeklyDigest(localStorage.getItem("pref_alert_weekly") === "true");
     }
   }, []);
 
-  // Save changes to Supabase profiles (Account Section 1)
   const saveAccountData = async () => {
-    const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      showToast("Supabase is missing. Local state synced successfully.");
+      showToast("Database client connection not active.", "error");
       return;
     }
-
     setSavingAccount(true);
     try {
       await updateProfile(supabase, userId, {
@@ -122,7 +97,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
         localStorage.setItem("profile_timezone", timezone);
       }
 
-      showToast("Account specifications updated successfully.");
+      showToast("Account parameters saved successfully.");
       router.refresh();
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Error saving account.", "error");
@@ -131,11 +106,10 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
     }
   };
 
-  // Save AI Provider keys to Supabase (/api/ai-providers)
   const saveProviderKey = async (provider: "openai" | "gemini") => {
     const keyVal = providerKeys[provider].trim();
     if (!keyVal) {
-      showToast("Please enter a valid key first.", "error");
+      showToast("Enter a valid API key.", "error");
       return;
     }
 
@@ -158,7 +132,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
 
       setProviderKeys((prev) => ({ ...prev, [provider]: "" }));
       setShowKeyInputs((prev) => ({ ...prev, [provider]: false }));
-      showToast(`${provider.toUpperCase()} credentials connected successfully!`);
+      showToast(`${provider.toUpperCase()} credentials connected.`);
       router.refresh();
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Error saving key.", "error");
@@ -167,37 +141,32 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
     }
   };
 
-  // Disconnect provider key
   const removeProviderKey = async (provider: "openai" | "gemini") => {
     setSavingProvider(provider);
     try {
-      // Simulate API call to delete key
+      // Simulate API call disconnect
       setTimeout(() => {
         setProviders((prev) =>
           prev.map((p) =>
             p.provider === provider ? { ...p, connected: false, masked_key: null, updated_at: null } : p
           )
         );
-        showToast(`${provider.toUpperCase()} key disconnected.`);
+        showToast(`${provider.toUpperCase()} credentials disconnected.`);
         setSavingProvider(null);
       }, 1000);
     } catch {
-      showToast("Unable to disconnect provider.", "error");
+      showToast("Unable to disconnect key.", "error");
       setSavingProvider(null);
     }
   };
 
-  // Save preferences states to local storage
   const savePreferences = () => {
     if (typeof window !== "undefined") {
       localStorage.setItem("pref_theme", theme);
       localStorage.setItem("pref_compact", String(compactMode));
       localStorage.setItem("pref_animations", String(animationsEnabled));
-      localStorage.setItem("pref_dense", String(denseDashboard));
-      localStorage.setItem("pref_landing", defaultLandingPage);
       localStorage.setItem("pref_alert_milestones", String(milestoneAlerts));
       localStorage.setItem("pref_alert_roadmaps", String(roadmapUpdates));
-      localStorage.setItem("pref_alert_weekly", String(weeklyDigest));
     }
     showToast("Workspace preferences synchronized.");
   };
@@ -210,7 +179,6 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
     }, 1500);
   };
 
-  // Run danger action wipes
   const executeDangerAction = () => {
     setExecutingDanger(true);
     setTimeout(() => {
@@ -219,67 +187,53 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
       setDangerConfirmText("");
 
       if (dangerModalAction === "reset") {
-        showToast("Workspace onboarding and path profiles reset successfully.");
+        showToast("Workspace onboarding reset completed.");
       } else if (dangerModalAction === "roadmaps") {
-        showToast("All curriculum roadmaps deleted successfully.");
+        showToast("Roadmap structures deleted.");
       } else if (dangerModalAction === "mentor") {
-        showToast("Mentor chatbot session conversations cleared.");
+        showToast("Mentor chat history cleared.");
       } else if (dangerModalAction === "account") {
-        showToast("Operator account deletion request submitted.");
+        showToast("Operator profile terminated.");
         router.push("/signup");
       }
     }, 2000);
   };
 
   return (
-    <div className="relative min-h-screen text-slate-200 max-w-[1440px] mx-auto px-4 sm:px-6">
-      {/* Toast Alert popup */}
+    <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Toast Alert */}
       {toastMessage && (
         <div
           role="alert"
-          aria-live="polite"
           className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border animate-fade-in shadow-2xl ${
             toastMessage.type === "success"
-              ? "bg-[#091a14] border-[#10b981]/30 text-[#34d399]"
-              : "bg-[#250d12] border-[#f43f5e]/30 text-[#fda4af]"
+              ? "bg-[#091a14] border-cyan-500/30 text-cyan-200"
+              : "bg-[#250d12] border-rose-500/30 text-rose-300"
           }`}
         >
-          <Check className="h-5 w-5 flex-shrink-0" />
-          <p className="text-sm font-semibold">{toastMessage.text}</p>
+          <p className="text-xs font-semibold">{toastMessage.text}</p>
         </div>
       )}
 
       {/* Danger Confirmation Modal */}
       {dangerModalAction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div
-            className="bg-[#0b0b0e] border border-rose-500/20 rounded-[20px] max-w-md w-full p-6 space-y-4 shadow-2xl"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="danger-modal-title"
-          >
+          <div className="bg-[#0b0b0e] border border-rose-500/20 rounded-[20px] max-w-md w-full p-6 space-y-4 shadow-2xl">
             <div className="flex items-center gap-3 text-rose-500">
               <AlertTriangle className="h-6 w-6" />
-              <h4 id="danger-modal-title" className="text-lg font-bold">
-                Confirm Dangerous Action
-              </h4>
+              <h4 className="text-lg font-bold">Confirm Destructive Action</h4>
             </div>
 
             <p className="text-xs text-slate-400 leading-relaxed">
-              This action is destructive and cannot be undone. Please type{" "}
-              <span className="font-mono text-white font-bold bg-white/5 px-1.5 py-0.5 rounded">
-                CONFIRM
-              </span>{" "}
-              in the input field below to execute.
+              This action is permanent. Please type <span className="font-mono text-white font-bold bg-white/5 px-1.5 py-0.5 rounded">CONFIRM</span> to proceed.
             </p>
 
             <input
               type="text"
               value={dangerConfirmText}
               onChange={(e) => setDangerConfirmText(e.target.value)}
-              placeholder="Type CONFIRM here"
+              placeholder="Type CONFIRM"
               className="carved-input w-full text-xs rounded-xl px-3 py-2 text-white"
-              aria-label="Danger Action confirmation code"
             />
 
             <div className="flex gap-3 pt-2">
@@ -298,614 +252,356 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
                 type="button"
                 onClick={executeDangerAction}
                 disabled={dangerConfirmText !== "CONFIRM" || executingDanger}
-                className="tactile-btn bg-rose-600 hover:bg-rose-500 hover:shadow-[0_0_15px_rgba(244,63,94,0.3)] disabled:opacity-50 flex-1 min-h-[44px] rounded-xl text-xs font-bold text-white transition-all flex items-center justify-center gap-2"
+                className="tactile-btn bg-rose-600 hover:bg-rose-500 disabled:opacity-50 flex-1 min-h-[44px] rounded-xl text-xs font-bold text-white transition-all flex items-center justify-center gap-2"
               >
                 {executingDanger && <span className="loading-spinner text-[10px]" />}
-                Confirm Execution
+                Confirm
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Header layouts */}
-      <div className="flex flex-col gap-1.5 mb-8">
-        <div className="flex items-center gap-2 text-cyan-400">
-          <Settings className="h-4 w-4" />
-          <span className="caption tracking-[0.25em] text-xs">SYSTEM CONFIGURATION</span>
-        </div>
-        <h1 className="heading-hero text-white font-medium tracking-tight">Settings</h1>
-        <p className="body text-slate-400 max-w-2xl">
-          Adjust profile specs, connect intelligence credentials, define interface settings, and manage account backups.
-        </p>
-      </div>
+      {/* ═══ SPOTLIGHT CARD 1: AI PROVIDER CARD ═══════════════════════════ */}
+      <section className="card-spotlight rounded-[24px] p-6 relative overflow-hidden">
+        <div className="absolute top-0 right-0 h-32 w-48 bg-cyan-400/5 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 mb-4 border-b border-cyan-400/20 pb-3">
+            <Key className="h-4.5 w-4.5 text-cyan-400" />
+            <h3 className="text-sm font-bold text-cyan-400 uppercase tracking-wider">AI Providers Configuration</h3>
+          </div>
 
-      {/* 2-Column Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-28">
+          <div className="grid gap-4 sm:grid-cols-2">
+            {providers.map((p) => {
+              const isManaging = showKeyInputs[p.provider];
+              return (
+                <div key={p.provider} className="bg-black/25 border border-white/5 hover:border-cyan-400/25 p-4 rounded-2xl transition">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                        {p.provider === "openai" ? "OpenAI Model Suite" : "Gemini Engine"}
+                      </span>
+                      <span className="text-xs text-white font-mono mt-1 block">
+                        {maskKey(p.masked_key)}
+                      </span>
+                    </div>
+                    <span className={`text-[8px] font-bold px-2 py-0.5 rounded-full border ${
+                      p.connected ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/25" : "bg-white/5 text-slate-400 border-white/5"
+                    }`}>
+                      {p.connected ? "Active" : "Disconnected"}
+                    </span>
+                  </div>
 
-        {/* ================= LEFT COLUMN (Account, Preferences, Security) ================= */}
-        <div className="space-y-6">
-
-          {/* SECTION 1: ACCOUNT */}
-          <section className="liquid-panel rounded-[20px] p-6">
-            <div className="relative z-10 space-y-4">
-              <div className="border-b border-white/5 pb-3">
-                <h3 className="heading-card text-white font-semibold flex items-center gap-2">
-                  <User className="h-4.5 w-4.5 text-cyan-300" />
-                  Account Settings
-                </h3>
-              </div>
-
-              <div className="space-y-3.5 text-xs">
-                <label className="block">
-                  <span className="text-slate-400 font-semibold block mb-1">Full Name</span>
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="carved-input w-full text-xs rounded-xl px-3 py-2"
-                    aria-label="Profile Operator Name input"
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="text-slate-400 font-semibold block mb-1">Email Address</span>
-                  <input
-                    type="email"
-                    value={userEmail || "kaustav@example.com"}
-                    disabled
-                    className="carved-input w-full text-xs rounded-xl px-3 py-2 opacity-50 cursor-not-allowed"
-                    aria-label="User Account Authentication Email"
-                  />
-                </label>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="block">
-                    <span className="text-slate-400 font-semibold block mb-1">Target Goal</span>
-                    <input
-                      type="text"
-                      value={goal}
-                      onChange={(e) => setGoal(e.target.value)}
-                      className="carved-input w-full text-xs rounded-xl px-3 py-2"
-                      aria-label="Target goal position input"
-                    />
-                  </label>
-
-                  <label className="block">
-                    <span className="text-slate-400 font-semibold block mb-1">Experience Level</span>
-                    <select
-                      value={experienceLevel}
-                      onChange={(e) => setExperienceLevel(e.target.value as ExperienceLevel)}
-                      className="carved-input w-full text-xs rounded-xl px-2.5 py-2"
-                      aria-label="Experience Level parameter selection"
-                    >
-                      <option value="Student">Student</option>
-                      <option value="Junior">Junior</option>
-                      <option value="Mid">Mid</option>
-                      <option value="Senior">Senior</option>
-                      <option value="Switcher">Switcher</option>
-                    </select>
-                  </label>
-                </div>
-
-                <label className="block">
-                  <span className="text-slate-400 font-semibold block mb-1">Active Timezone</span>
-                  <input
-                    type="text"
-                    value={timezone}
-                    onChange={(e) => setTimezone(e.target.value)}
-                    className="carved-input w-full text-xs rounded-xl px-3 py-2"
-                    aria-label="Operator timezone settings input"
-                  />
-                </label>
-
-                <MagneticButton
-                  type="button"
-                  onClick={saveAccountData}
-                  disabled={savingAccount}
-                  className="tactile-btn tactile-btn-primary w-full py-2.5 rounded-xl text-xs font-bold mt-2 flex items-center justify-center gap-1.5"
-                >
-                  {savingAccount ? (
-                    <span className="loading-spinner border-slate-900 border-b-transparent" />
-                  ) : (
-                    <Check className="h-4 w-4" />
+                  {isManaging && (
+                    <div className="pt-2 flex gap-2 animate-fade-in mb-3">
+                      <input
+                        type="password"
+                        value={providerKeys[p.provider]}
+                        onChange={e => setProviderKeys(prev => ({ ...prev, [p.provider]: e.target.value }))}
+                        placeholder="Paste sk-..."
+                        className="carved-input flex-1 text-xs rounded-xl px-2.5 py-1.5"
+                      />
+                      <button
+                        onClick={() => saveProviderKey(p.provider)}
+                        className="tactile-btn tactile-btn-primary px-3 py-1.5 text-[10px] rounded-xl font-bold"
+                      >
+                        Save
+                      </button>
+                    </div>
                   )}
-                  Save Account Specifications
-                </MagneticButton>
-              </div>
-            </div>
-          </section>
 
-          {/* SECTION 3: WORKSPACE PREFERENCES */}
-          <section className="liquid-panel rounded-[20px] p-6">
-            <div className="relative z-10 space-y-4">
-              <div className="border-b border-white/5 pb-3">
-                <h3 className="heading-card text-white font-semibold flex items-center gap-2">
-                  <Sliders className="h-4.5 w-4.5 text-cyan-300" />
-                  Workspace Preferences
-                </h3>
-              </div>
-
-              <div className="space-y-4 text-xs">
-                {/* Theme Selector */}
-                <label className="block">
-                  <span className="text-slate-400 font-semibold block mb-1">Active Theme</span>
-                  <select
-                    value={theme}
-                    onChange={(e) => setTheme(e.target.value)}
-                    className="carved-input w-full text-xs rounded-xl px-2.5 py-2 text-white"
-                    aria-label="Active styling theme selector"
-                  >
-                    <option value="dark">Dark Slate Premium (Default)</option>
-                    <option value="light">Light Slate Glass</option>
-                    <option value="system">System Synced</option>
-                  </select>
-                </label>
-
-                {/* Default Landing Selector */}
-                <label className="block">
-                  <span className="text-slate-400 font-semibold block mb-1">Default Landing Screen</span>
-                  <select
-                    value={defaultLandingPage}
-                    onChange={(e) => setDefaultLandingPage(e.target.value)}
-                    className="carved-input w-full text-xs rounded-xl px-2.5 py-2 text-white"
-                    aria-label="Startup landing page view dropdown"
-                  >
-                    <option value="dashboard">Dashboard Workspace</option>
-                    <option value="roadmaps">Roadmap paths</option>
-                    <option value="mentor">AI Coach Strategist</option>
-                    <option value="career-twin">Career Twin Snapshot</option>
-                  </select>
-                </label>
-
-                {/* Layout Toggles */}
-                <div className="space-y-3.5 pt-2 border-t border-white/5">
-                  <label className="flex items-center justify-between cursor-pointer p-1">
-                    <div>
-                      <span className="text-xs font-semibold text-white block">Compact Mode</span>
-                      <span className="text-[10px] text-slate-500">Reduce spacing gaps and paddings</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={compactMode}
-                      onChange={(e) => setCompactMode(e.target.checked)}
-                      className="w-8 h-4 bg-black border border-white/5 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
-                      aria-label="Compact spacing mode toggle"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between cursor-pointer p-1">
-                    <div>
-                      <span className="text-xs font-semibold text-white block">Animations Intensity</span>
-                      <span className="text-[10px] text-slate-500">Enable micro-animations and loaders</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={animationsEnabled}
-                      onChange={(e) => setAnimationsEnabled(e.target.checked)}
-                      className="w-8 h-4 bg-black border border-white/5 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
-                      aria-label="Animations toggling option"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between cursor-pointer p-1">
-                    <div>
-                      <span className="text-xs font-semibold text-white block">Dense Dashboard Grid</span>
-                      <span className="text-[10px] text-slate-500">Show high-density visual grids</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={denseDashboard}
-                      onChange={(e) => setDenseDashboard(e.target.checked)}
-                      className="w-8 h-4 bg-black border border-white/5 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
-                      aria-label="Dense metrics layouts option"
-                    />
-                  </label>
-                </div>
-
-                {/* Notifications Toggles */}
-                <div className="space-y-3.5 pt-4 border-t border-white/5">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Notification Preferences</span>
-                  
-                  <label className="flex items-center justify-between cursor-pointer p-1">
-                    <div>
-                      <span className="text-xs font-semibold text-white block">Milestone Alerts</span>
-                      <span className="text-[10px] text-slate-500">Alert when targets reach 100%</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={milestoneAlerts}
-                      onChange={(e) => setMilestoneAlerts(e.target.checked)}
-                      className="w-8 h-4 bg-black border border-white/5 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
-                      aria-label="Milestone Alerts toggles"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between cursor-pointer p-1">
-                    <div>
-                      <span className="text-xs font-semibold text-white block">Roadmap Recommendations</span>
-                      <span className="text-[10px] text-slate-500">Alert on curriculum alternatives</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={roadmapUpdates}
-                      onChange={(e) => setRoadmapUpdates(e.target.checked)}
-                      className="w-8 h-4 bg-black border border-white/5 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
-                      aria-label="Roadmap Updates recommendation toggles"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between cursor-pointer p-1">
-                    <div>
-                      <span className="text-xs font-semibold text-white block">Weekly Review Digest</span>
-                      <span className="text-[10px] text-slate-500">Digest summarizing hours logged</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={weeklyDigest}
-                      onChange={(e) => setWeeklyDigest(e.target.checked)}
-                      className="w-8 h-4 bg-black border border-white/5 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
-                      aria-label="Weekly digest toggling preference"
-                    />
-                  </label>
-                </div>
-
-                <MagneticButton
-                  type="button"
-                  onClick={savePreferences}
-                  className="tactile-btn w-full py-2.5 rounded-xl text-xs font-bold mt-2"
-                >
-                  Save Preference Settings
-                </MagneticButton>
-              </div>
-            </div>
-          </section>
-
-          {/* SECTION 4: SECURITY */}
-          <section className="liquid-panel rounded-[20px] p-6">
-            <div className="relative z-10 space-y-4">
-              <div className="border-b border-white/5 pb-3">
-                <h3 className="heading-card text-white font-semibold flex items-center gap-2">
-                  <Lock className="h-4.5 w-4.5 text-cyan-300" />
-                  Security
-                </h3>
-              </div>
-
-              <div className="space-y-4 text-xs">
-                {/* Password Management */}
-                <div className="flex justify-between items-center bg-black/20 border border-white/5 p-4 rounded-xl">
-                  <div>
-                    <span className="text-xs font-semibold text-white block">Password Management</span>
-                    <span className="text-[10px] text-slate-500">Last changed 3 months ago</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => showToast("Password edit drawer resolved.")}
-                    className="tactile-btn text-xs font-semibold px-3 py-1.5 rounded-lg text-white min-h-[38px]"
-                  >
-                    Change Password
-                  </button>
-                </div>
-
-                {/* Login Methods */}
-                <div className="space-y-2 border-t border-white/5 pt-3">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Connected Login Portals</span>
-                  
-                  <div className="flex justify-between items-center bg-black/20 border border-white/5 px-4 py-2.5 rounded-xl">
-                    <span className="text-slate-300 font-medium">Google Connection</span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-500/10 text-emerald-300 rounded border border-emerald-500/20">Connected</span>
-                  </div>
-
-                  <div className="flex justify-between items-center bg-black/20 border border-white/5 px-4 py-2.5 rounded-xl">
-                    <span className="text-slate-300 font-medium">GitHub Credentials</span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 bg-white/5 text-slate-400 rounded border border-white/5">Not Connected</span>
-                  </div>
-
-                  <div className="flex justify-between items-center bg-black/20 border border-white/5 px-4 py-2.5 rounded-xl">
-                    <span className="text-slate-300 font-medium">Email / Password Handshake</span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-500/10 text-emerald-300 rounded border border-emerald-500/20">Connected</span>
+                  <div className="flex gap-2 mt-4 pt-3 border-t border-white/5">
+                    <button
+                      onClick={() => setShowKeyInputs(prev => ({ ...prev, [p.provider]: !isManaging }))}
+                      className="tactile-btn border border-white/5 bg-white/5 text-[10px] font-bold px-3 py-1.5 rounded-xl flex-1 text-white"
+                    >
+                      {p.connected ? "Update Key" : "Connect Key"}
+                    </button>
+                    {p.connected && (
+                      <button
+                        onClick={() => removeProviderKey(p.provider)}
+                        className="tactile-btn border border-rose-500/10 bg-rose-500/[0.02] text-rose-300 text-[10px] font-bold px-3 py-1.5 rounded-xl flex-1"
+                      >
+                        Disconnect
+                      </button>
+                    )}
                   </div>
                 </div>
-
-                {/* Recent activity */}
-                <div className="border-t border-white/5 pt-3 flex justify-between items-center">
-                  <span className="text-slate-400">Last Session Login</span>
-                  <span className="text-slate-300 font-mono">2026-06-05 23:46:53 UTC</span>
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => showToast("Security sessions checklist loaded.")}
-                    className="tactile-btn border border-white/5 bg-white/5 px-4 py-2 rounded-xl text-xs font-bold flex-1 min-h-[44px] text-white"
-                  >
-                    Manage Security
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => showToast("Sign out requests executed across active sessions.")}
-                    className="tactile-btn border border-white/5 bg-white/5 px-4 py-2 rounded-xl text-xs font-bold flex-1 min-h-[44px] text-white"
-                  >
-                    Sign Out All Sessions
-                  </button>
-                </div>
-              </div>
-            </div>
-          </section>
-
+              );
+            })}
+          </div>
         </div>
+      </section>
 
-        {/* ================= RIGHT COLUMN (AI Providers, Export, Danger) ================= */}
-        <div className="space-y-6">
-
-          {/* SECTION 2: AI PROVIDERS */}
-          <section className="liquid-panel rounded-[20px] p-6">
-            <div className="relative z-10 space-y-4">
-              <div className="border-b border-white/5 pb-3">
-                <h3 className="heading-card text-white font-semibold flex items-center gap-2">
-                  <Key className="h-4.5 w-4.5 text-cyan-300" />
-                  AI Providers
-                </h3>
-              </div>
-
-              <div className="space-y-4">
-                {providers.map((p) => {
-                  const isManaging = showKeyInputs[p.provider];
-                  return (
-                    <article key={p.provider} className="bg-black/25 border border-white/5 p-4 rounded-xl space-y-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                            {p.provider === "openai" ? "OpenAI Suite" : "Gemini Engine"}
-                          </span>
-                          <span className="text-xs text-white font-semibold mt-1 block">
-                            {maskKey(p.masked_key)}
-                          </span>
-                        </div>
-
-                        <span
-                          className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
-                            p.connected
-                              ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/25"
-                              : "bg-white/5 text-slate-400 border-white/5"
-                          }`}
-                        >
-                          {p.connected ? "Connected" : "Disconnected"}
-                        </span>
-                      </div>
-
-                      {p.updated_at && (
-                        <div className="text-[10px] text-slate-500 flex items-center gap-1">
-                          <Globe className="h-3 w-3" />
-                          Last synced: {new Date(p.updated_at).toLocaleDateString(undefined, { dateStyle: "medium" })}
-                        </div>
-                      )}
-
-                      {/* inline edit key drawer */}
-                      {isManaging && (
-                        <div className="pt-2 flex gap-2 animate-fade-in">
-                          <input
-                            type="password"
-                            value={providerKeys[p.provider]}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setProviderKeys((prev) => ({ ...prev, [p.provider]: val }));
-                            }}
-                            placeholder="sk-..."
-                            className="carved-input flex-1 text-xs rounded-lg px-2.5 py-1.5 focus:ring-1 focus:ring-cyan-400"
-                            aria-label={`Enter API key for ${p.provider === "openai" ? "OpenAI" : "Gemini"}`}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => saveProviderKey(p.provider)}
-                            disabled={savingProvider === p.provider}
-                            className="tactile-btn tactile-btn-primary px-3 py-1.5 text-[11px] rounded-lg font-bold min-h-[34px]"
-                          >
-                            Save
-                          </button>
-                        </div>
-                      )}
-
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setShowKeyInputs((prev) => ({ ...prev, [p.provider]: !isManaging }))}
-                          className="tactile-btn border border-white/5 bg-white/5 text-[11px] font-bold px-3 py-1.5 rounded-lg flex-1 text-white min-h-[36px]"
-                        >
-                          {p.connected ? "Update key" : "Connect key"}
-                        </button>
-
-                        {p.connected && (
-                          <button
-                            type="button"
-                            onClick={() => removeProviderKey(p.provider)}
-                            className="tactile-btn border border-rose-500/10 bg-rose-500/[0.02] text-rose-300 text-[11px] font-bold px-3 py-1.5 rounded-lg flex-1 min-h-[36px]"
-                          >
-                            Remove
-                          </button>
-                        )}
-                      </div>
-                    </article>
-                  );
-                })}
-
-                {/* Anthropic integration card */}
-                <article className="bg-black/25 border border-white/5 p-4 rounded-xl opacity-60">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Anthropic Engine</span>
-                      <span className="text-xs text-slate-500 block mt-1">Future Integration</span>
-                    </div>
-                    <span className="text-[9px] font-bold px-2 py-0.5 bg-white/5 text-slate-500 rounded border border-white/5">Offline</span>
-                  </div>
-                </article>
-              </div>
+      {/* Central 2-Column Panels */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        {/* Account settings */}
+        <section className="card-data rounded-[24px] p-6">
+          <div className="border-b border-white/5 pb-3 mb-4">
+            <div className="flex items-center gap-2">
+              <User className="h-4.5 w-4.5 text-cyan-400" />
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Account Specifications</h3>
             </div>
-          </section>
+          </div>
 
-          {/* SECTION 5: EXPORT & BACKUP */}
-          <section className="liquid-panel rounded-[20px] p-6">
-            <div className="relative z-10 space-y-4">
-              <div className="border-b border-white/5 pb-3">
-                <h3 className="heading-card text-white font-semibold flex items-center gap-2">
-                  <Download className="h-4.5 w-4.5 text-cyan-300" />
-                  Export & Backup
-                </h3>
-              </div>
+          <div className="space-y-4 text-xs">
+            <label className="block">
+              <span className="text-slate-400 font-semibold block mb-1">Full Name</span>
+              <input
+                type="text"
+                value={fullName}
+                onChange={e => setFullName(e.target.value)}
+                className="carved-input w-full px-3 py-2 rounded-xl"
+              />
+            </label>
 
-              <div className="space-y-2.5 text-xs">
-                <button
-                  type="button"
-                  onClick={() => triggerExport("exportProfile", "Profile identity payload exported.")}
-                  disabled={actionLoading !== null}
-                  className="tactile-btn border border-white/5 bg-white/5 px-4 py-2.5 rounded-xl w-full text-left flex justify-between items-center text-white"
-                  aria-label="Export profile details as JSON"
+            <label className="block">
+              <span className="text-slate-400 font-semibold block mb-1">Auth Email Address</span>
+              <input
+                type="email"
+                value={userEmail || "user@careeros.com"}
+                disabled
+                className="carved-input w-full px-3 py-2 rounded-xl opacity-50 cursor-not-allowed"
+              />
+            </label>
+
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block">
+                <span className="text-slate-400 font-semibold block mb-1">Target Goal Target</span>
+                <input
+                  type="text"
+                  value={goal}
+                  onChange={e => setGoal(e.target.value)}
+                  className="carved-input w-full px-3 py-2 rounded-xl"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-slate-400 font-semibold block mb-1">Experience Level</span>
+                <select
+                  value={experienceLevel}
+                  onChange={e => setExperienceLevel(e.target.value as ExperienceLevel)}
+                  className="carved-input w-full px-2.5 py-2 rounded-xl"
                 >
-                  <span className="font-semibold">Export Profile</span>
-                  <span className="text-slate-500 font-mono text-[10px]">14.2 KB</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => triggerExport("exportRoadmaps", "Curriculum roadmaps package generated.")}
-                  disabled={actionLoading !== null}
-                  className="tactile-btn border border-white/5 bg-white/5 px-4 py-2.5 rounded-xl w-full text-left flex justify-between items-center text-white"
-                  aria-label="Export all stored curriculum roadmaps"
-                >
-                  <span className="font-semibold">Export Roadmaps</span>
-                  <span className="text-slate-500 font-mono text-[10px]">450 KB</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => triggerExport("exportMentor", "Mentor sessions notes backup compiled.")}
-                  disabled={actionLoading !== null}
-                  className="tactile-btn border border-white/5 bg-white/5 px-4 py-2.5 rounded-xl w-full text-left flex justify-between items-center text-white"
-                  aria-label="Export all mentor chatbot conversations"
-                >
-                  <span className="font-semibold">Export Mentor History</span>
-                  <span className="text-slate-500 font-mono text-[10px]">2.1 MB</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => triggerExport("downloadZip", "Workspace ZIP package compiled successfully.")}
-                  disabled={actionLoading !== null}
-                  className="tactile-btn border border-white/5 bg-white/5 px-4 py-2.5 rounded-xl w-full text-left flex justify-between items-center text-white"
-                  aria-label="Download full workspace package ZIP file"
-                >
-                  <span className="font-semibold">Download Workspace ZIP</span>
-                  <span className="text-slate-500 font-mono text-[10px]">2.6 MB</span>
-                </button>
-
-                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/5">
-                  <button
-                    type="button"
-                    onClick={() => triggerExport("createBackup", "Cloud workspace backup created successfully.")}
-                    disabled={actionLoading !== null}
-                    className="tactile-btn border border-white/5 bg-white/5 py-2 rounded-xl text-[11px] font-bold text-white min-h-[40px] flex items-center justify-center gap-1.5"
-                    aria-label="Create cloud data backup"
-                  >
-                    <RefreshCw className="h-3.5 w-3.5" />
-                    Create Backup
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => triggerExport("restoreBackup", "Cloud workspace backup restored successfully.")}
-                    disabled={actionLoading !== null}
-                    className="tactile-btn border border-white/5 bg-white/5 py-2 rounded-xl text-[11px] font-bold text-white min-h-[40px] flex items-center justify-center gap-1.5"
-                    aria-label="Restore cloud data backup"
-                  >
-                    <Database className="h-3.5 w-3.5" />
-                    Restore Backup
-                  </button>
-                </div>
-              </div>
+                  <option value="Student">Student</option>
+                  <option value="Junior">Junior</option>
+                  <option value="Mid">Mid</option>
+                  <option value="Senior">Senior</option>
+                  <option value="Switcher">Switcher</option>
+                </select>
+              </label>
             </div>
-          </section>
 
-          {/* SECTION 6: DANGER ZONE */}
-          <section className="liquid-panel border-rose-500/20 rounded-[20px] p-6 shadow-[0_0_20px_rgba(244,63,94,0.02)]">
-            <div className="relative z-10 space-y-4">
-              <div className="border-b border-rose-500/10 pb-3">
-                <h3 className="heading-card text-white font-semibold flex items-center gap-2">
-                  <AlertTriangle className="h-4.5 w-4.5 text-rose-500 animate-pulse" />
-                  Danger Zone
-                </h3>
-              </div>
+            <label className="block">
+              <span className="text-slate-400 font-semibold block mb-1">Operator Timezone</span>
+              <input
+                type="text"
+                value={timezone}
+                onChange={e => setTimezone(e.target.value)}
+                className="carved-input w-full px-3 py-2 rounded-xl"
+              />
+            </label>
 
-              <div className="space-y-3.5 text-xs">
-                {/* Reset Workspace */}
-                <div className="flex justify-between items-center bg-rose-500/[0.02] border border-rose-500/10 p-3 rounded-xl">
-                  <div>
-                    <span className="font-semibold text-white block">Reset Workspace</span>
-                    <span className="text-[10px] text-slate-500">Reset goal and onboarding specifications</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setDangerModalAction("reset")}
-                    className="tactile-btn border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/10 text-rose-300 font-bold px-3 py-1.5 rounded-lg min-h-[38px]"
-                  >
-                    Reset
-                  </button>
-                </div>
+            <button
+              onClick={saveAccountData}
+              disabled={savingAccount}
+              className="tactile-btn tactile-btn-primary w-full py-2.5 rounded-xl text-xs font-bold mt-2 flex items-center justify-center gap-1.5"
+            >
+              {savingAccount ? <span className="loading-spinner border-slate-900" /> : <Check className="h-4 w-4" />}
+              Save Account Data
+            </button>
+          </div>
+        </section>
 
-                {/* Delete Roadmaps */}
-                <div className="flex justify-between items-center bg-rose-500/[0.02] border border-rose-500/10 p-3 rounded-xl">
-                  <div>
-                    <span className="font-semibold text-white block">Delete Roadmaps</span>
-                    <span className="text-[10px] text-slate-500">Wipe all generated learning targets</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setDangerModalAction("roadmaps")}
-                    className="tactile-btn border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/10 text-rose-300 font-bold px-3 py-1.5 rounded-lg min-h-[38px]"
-                  >
-                    Wipe Roadmaps
-                  </button>
-                </div>
-
-                {/* Delete Chat history */}
-                <div className="flex justify-between items-center bg-rose-500/[0.02] border border-rose-500/10 p-3 rounded-xl">
-                  <div>
-                    <span className="font-semibold text-white block">Delete Mentor History</span>
-                    <span className="text-[10px] text-slate-500">Clear chat strategist message records</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setDangerModalAction("mentor")}
-                    className="tactile-btn border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/10 text-rose-300 font-bold px-3 py-1.5 rounded-lg min-h-[38px]"
-                  >
-                    Clear History
-                  </button>
-                </div>
-
-                {/* Delete Account */}
-                <div className="flex justify-between items-center bg-rose-500/[0.02] border border-rose-500/10 p-3 rounded-xl">
-                  <div>
-                    <span className="font-semibold text-rose-300 block">Delete Account</span>
-                    <span className="text-[10px] text-slate-500">Permanently terminate profile credentials</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setDangerModalAction("account")}
-                    className="tactile-btn bg-rose-700 hover:bg-rose-600 text-white font-bold px-3 py-1.5 rounded-lg min-h-[38px] hover:shadow-[0_0_10px_rgba(244,63,94,0.3)]"
-                  >
-                    Terminate Account
-                  </button>
-                </div>
-              </div>
+        {/* Preferences Panel */}
+        <section className="card-data rounded-[24px] p-6">
+          <div className="border-b border-white/5 pb-3 mb-4">
+            <div className="flex items-center gap-2">
+              <Sliders className="h-4.5 w-4.5 text-cyan-400" />
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Workspace Preferences</h3>
             </div>
-          </section>
+          </div>
 
-        </div>
+          <div className="space-y-4 text-xs">
+            <label className="block">
+              <span className="text-slate-400 font-semibold block mb-1">Theme Mode</span>
+              <select
+                value={theme}
+                onChange={e => setTheme(e.target.value)}
+                className="carved-input w-full px-2.5 py-2 rounded-xl"
+              >
+                <option value="dark">Dark Theme Premium (Default)</option>
+                <option value="light">Light Slate Glass</option>
+                <option value="system">System Synced</option>
+              </select>
+            </label>
+
+            {/* Simple toggle controls */}
+            <div className="space-y-3 pt-2 border-t border-white/5">
+              <label className="flex items-center justify-between cursor-pointer p-1">
+                <div>
+                  <span className="text-xs font-bold text-white block">Compact Padding Layout</span>
+                  <span className="text-[10px] text-slate-500">Reduce structural spacing dimensions</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={compactMode}
+                  onChange={e => setCompactMode(e.target.checked)}
+                  className="w-8 h-4 bg-black border border-white/5 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
+                />
+              </label>
+
+              <label className="flex items-center justify-between cursor-pointer p-1">
+                <div>
+                  <span className="text-xs font-bold text-white block">Micro-Animations</span>
+                  <span className="text-[10px] text-slate-500">Enable smooth visual state shifts</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={animationsEnabled}
+                  onChange={e => setAnimationsEnabled(e.target.checked)}
+                  className="w-8 h-4 bg-black border border-white/5 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
+                />
+              </label>
+
+              <label className="flex items-center justify-between cursor-pointer p-1">
+                <div>
+                  <span className="text-xs font-bold text-white block">Milestone Completion Alerts</span>
+                  <span className="text-[10px] text-slate-500">Alert triggers on sprint completions</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={milestoneAlerts}
+                  onChange={e => setMilestoneAlerts(e.target.checked)}
+                  className="w-8 h-4 bg-black border border-white/5 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
+                />
+              </label>
+
+              <label className="flex items-center justify-between cursor-pointer p-1">
+                <div>
+                  <span className="text-xs font-bold text-white block">AI Re-routing alerts</span>
+                  <span className="text-[10px] text-slate-500">Proactive alternate track suggestions</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={roadmapUpdates}
+                  onChange={e => setRoadmapUpdates(e.target.checked)}
+                  className="w-8 h-4 bg-black border border-white/5 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
+                />
+              </label>
+            </div>
+
+            <MagneticButton type="button" onClick={savePreferences} className="tactile-btn w-full py-2.5 rounded-xl text-xs font-bold mt-2">
+              Save Workspace Preferences
+            </MagneticButton>
+          </div>
+        </section>
 
       </div>
 
-      {/* Screen reader tags */}
-      <span className="sr-only">Settings preferences dashboard active. Keyboard navigation support.</span>
+      {/* Exports & Backups */}
+      <section className="card-data rounded-[24px] p-6">
+        <div className="border-b border-white/5 pb-3 mb-4 flex items-center gap-2">
+          <Download className="h-4.5 w-4.5 text-cyan-400" />
+          <h3 className="text-sm font-bold text-white uppercase tracking-wider">Export & Portability Backups</h3>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-3 text-xs">
+          <button
+            onClick={() => triggerExport("exportProfile", "Profile data packet exported.")}
+            className="tactile-btn p-3 rounded-xl text-left text-white flex flex-col justify-between"
+          >
+            <span className="font-bold block">Export Identity Profile</span>
+            <span className="text-[9px] text-slate-500 block mt-2 font-mono">14.2 KB</span>
+          </button>
+          <button
+            onClick={() => triggerExport("exportRoadmaps", "Curriculum roadmaps package compiled.")}
+            className="tactile-btn p-3 rounded-xl text-left text-white flex flex-col justify-between"
+          >
+            <span className="font-bold block">Export Active Roadmaps</span>
+            <span className="text-[9px] text-slate-500 block mt-2 font-mono">450 KB</span>
+          </button>
+          <button
+            onClick={() => triggerExport("createBackup", "Cloud backup synced successfully.")}
+            className="tactile-btn p-3 rounded-xl text-left text-white flex flex-col justify-between"
+          >
+            <span className="font-bold block">Generate Database Backup</span>
+            <span className="text-[9px] text-slate-500 block mt-2 font-mono">Complete Snapshot</span>
+          </button>
+        </div>
+      </section>
+
+      {/* ═══ COLLAPSED DANGER ZONE DRAWER (Bottom collapsed) ═══════════════ */}
+      <section className="card-danger rounded-[24px] p-4 relative overflow-hidden transition-all duration-300">
+        <button
+          onClick={() => setIsDangerZoneExpanded(!isDangerZoneExpanded)}
+          className="w-full flex items-center justify-between text-xs font-bold text-rose-400 py-1"
+        >
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4.5 w-4.5 animate-pulse" />
+            <span>Danger Zone Controls</span>
+          </div>
+          {isDangerZoneExpanded ? <ChevronUp className="h-4.5 w-4.5" /> : <ChevronDown className="h-4.5 w-4.5" />}
+        </button>
+
+        {isDangerZoneExpanded && (
+          <div className="mt-4 pt-4 border-t border-rose-500/10 space-y-3.5 text-xs animate-fade-in">
+            <div className="flex justify-between items-center bg-rose-500/[0.01] border border-rose-500/10 p-3.5 rounded-xl">
+              <div>
+                <span className="font-bold text-white block">Reset Workspace Onboarding</span>
+                <span className="text-[10px] text-slate-500 mt-0.5">Wipe goals assessments to restart setup wizard.</span>
+              </div>
+              <button
+                onClick={() => setDangerModalAction("reset")}
+                className="tactile-btn border-rose-500/25 hover:bg-rose-500/10 text-rose-300 font-bold px-3 py-1.5 rounded-xl"
+              >
+                Reset Setup
+              </button>
+            </div>
+
+            <div className="flex justify-between items-center bg-rose-500/[0.01] border border-rose-500/10 p-3.5 rounded-xl">
+              <div>
+                <span className="font-bold text-white block">Delete All Roadmaps</span>
+                <span className="text-[10px] text-slate-500 mt-0.5">Wipe all generated paths logs.</span>
+              </div>
+              <button
+                onClick={() => setDangerModalAction("roadmaps")}
+                className="tactile-btn border-rose-500/25 hover:bg-rose-500/10 text-rose-300 font-bold px-3 py-1.5 rounded-xl"
+              >
+                Delete Paths
+              </button>
+            </div>
+
+            <div className="flex justify-between items-center bg-rose-500/[0.01] border border-rose-500/10 p-3.5 rounded-xl">
+              <div>
+                <span className="font-bold text-white block">Clear Mentor Strategy History</span>
+                <span className="text-[10px] text-slate-500 mt-0.5">Wipe chatbot conversation database logs.</span>
+              </div>
+              <button
+                onClick={() => setDangerModalAction("mentor")}
+                className="tactile-btn border-rose-500/25 hover:bg-rose-500/10 text-rose-300 font-bold px-3 py-1.5 rounded-xl"
+              >
+                Clear History
+              </button>
+            </div>
+
+            <div className="flex justify-between items-center bg-rose-500/[0.01] border border-rose-500/10 p-3.5 rounded-xl">
+              <div>
+                <span className="font-bold text-rose-300 block">Terminate Operator Identity</span>
+                <span className="text-[10px] text-slate-500 mt-0.5">Permanently wipe profile account records.</span>
+              </div>
+              <button
+                onClick={() => setDangerModalAction("account")}
+                className="tactile-btn bg-rose-700 hover:bg-rose-600 text-white font-bold px-3 py-1.5 rounded-xl"
+              >
+                Terminate Profile
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
