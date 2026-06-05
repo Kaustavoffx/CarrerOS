@@ -363,9 +363,9 @@ export class RoadmapQualityGateError extends Error {
 
 export const DOMAIN_DISALLOWED_KEYWORDS: Record<string, string[]> = {
   "Software Engineering": [
-    "operations", "ops", "academia", "product design", "experience design", "ux design", "ux", 
+    "ops", "academia", "product design", "experience design", "ux design", "ux", 
     "ui design", "figma", "user research", "wireframing", "design systems", "marketing", 
-    "operations strategy", "research papers", "academic journals"
+    "operations strategy", "operations and strategy", "research papers", "academic journals"
   ],
   "Design and UX": [
     "dsa", "algorithms", "system design", "competitive programming", "leet code", "leetcode",
@@ -1047,12 +1047,10 @@ export function validateRoadmapDomainConsistency(
       severity: "warning"
     };
     const errMsg = `Roadmap domain mismatch: ${JSON.stringify(errorDetails)}`;
-    console.log({
-      roadmapTitle: roadmap.title,
+    console.warn("ROADMAP CONSISTENCY WARNING", {
       careerDomain: profile.label,
       validationSeverity: "warning"
     });
-    console.warn(errMsg);
     warnings.push(errMsg);
   }
 
@@ -1095,11 +1093,8 @@ export function validateRoadmapDomainConsistency(
       };
       const errMsg = `Roadmap domain mismatch: ${JSON.stringify(errorDetails)}`;
       if (options.throwOnError) {
-        console.error("DISALLOWED KEYWORD HIT");
-        console.error({
-          keyword: matched[0],
+        console.error("DISALLOWED KEYWORD HIT", {
           field: "textBlob",
-          matchedText: textBlob,
           validatorName: "validateRoadmapDomainConsistency"
         });
         throw new Error(errMsg);
@@ -1118,12 +1113,10 @@ export function validateRoadmapDomainConsistency(
         severity: "warning"
       };
       const errMsg = `Roadmap domain mismatch: ${JSON.stringify(errorDetails)}`;
-      console.log({
-        roadmapTitle: roadmap.title,
+      console.warn("ROADMAP CONSISTENCY WARNING", {
         careerDomain: profile.label,
         validationSeverity: "warning"
       });
-      console.warn(errMsg);
       warnings.push(errMsg);
     }
   }
@@ -1137,12 +1130,10 @@ export function validateRoadmapDomainConsistency(
         severity: "warning"
       };
       const errMsg = `Roadmap domain mismatch: ${JSON.stringify(errorDetails)}`;
-      console.log({
-        roadmapTitle: roadmap.title,
+      console.warn("ROADMAP CONSISTENCY WARNING", {
         careerDomain: profile.label,
         validationSeverity: "warning"
       });
-      console.warn(errMsg);
       warnings.push(errMsg);
     }
   }
@@ -1156,12 +1147,10 @@ export function validateRoadmapDomainConsistency(
         severity: "warning"
       };
       const errMsg = `Roadmap domain mismatch: ${JSON.stringify(errorDetails)}`;
-      console.log({
-        roadmapTitle: roadmap.title,
+      console.warn("ROADMAP CONSISTENCY WARNING", {
         careerDomain: profile.label,
         validationSeverity: "warning"
       });
-      console.warn(errMsg);
       warnings.push(errMsg);
     }
   }
@@ -1175,12 +1164,10 @@ export function validateRoadmapDomainConsistency(
         severity: "warning"
       };
       const errMsg = `Roadmap domain mismatch: ${JSON.stringify(errorDetails)}`;
-      console.log({
-        roadmapTitle: roadmap.title,
+      console.warn("ROADMAP CONSISTENCY WARNING", {
         careerDomain: profile.label,
         validationSeverity: "warning"
       });
-      console.warn(errMsg);
       warnings.push(errMsg);
     }
   }
@@ -1319,53 +1306,40 @@ export function validateRoadmapDomain(roadmap: RoadmapRecord, goal: string): voi
 
         // Find the exact field triggering the disallowed keyword
         let fieldName = "unknown";
-        let matchedText = "";
 
         if (roadmap.title && regex.test(roadmap.title)) {
           fieldName = "title";
-          matchedText = roadmap.title;
         } else if (roadmap.summary && regex.test(roadmap.summary)) {
           fieldName = "summary";
-          matchedText = roadmap.summary;
         } else if (roadmap.learning_outcomes && Array.isArray(roadmap.learning_outcomes) && roadmap.learning_outcomes.some(o => regex.test(o))) {
           fieldName = "learning_outcomes";
-          matchedText = JSON.stringify(roadmap.learning_outcomes);
         } else if (roadmap.project_tasks && Array.isArray(roadmap.project_tasks) && roadmap.project_tasks.some(o => regex.test(o))) {
           fieldName = "project_tasks";
-          matchedText = JSON.stringify(roadmap.project_tasks);
         } else if (roadmap.expected_outcomes && Array.isArray(roadmap.expected_outcomes) && roadmap.expected_outcomes.some(o => regex.test(o))) {
           fieldName = "expected_outcomes";
-          matchedText = JSON.stringify(roadmap.expected_outcomes);
         } else if (roadmap.milestones && Array.isArray(roadmap.milestones)) {
           for (let i = 0; i < roadmap.milestones.length; i++) {
             const m = roadmap.milestones[i];
             if (m.title && regex.test(m.title)) {
               fieldName = `milestones[${i}].title`;
-              matchedText = m.title;
               break;
             } else if (m.why_it_matters && regex.test(m.why_it_matters)) {
               fieldName = `milestones[${i}].why_it_matters`;
-              matchedText = m.why_it_matters;
               break;
             } else if (m.completion_criteria && Array.isArray(m.completion_criteria) && m.completion_criteria.some((c: string) => regex.test(c))) {
               fieldName = `milestones[${i}].completion_criteria`;
-              matchedText = JSON.stringify(m.completion_criteria);
               break;
             } else if (m.projects && Array.isArray(m.projects) && m.projects.some((p: string) => regex.test(p))) {
               fieldName = `milestones[${i}].projects`;
-              matchedText = JSON.stringify(m.projects);
               break;
             } else if (m.project_tasks && Array.isArray(m.project_tasks) && m.project_tasks.some((t: string) => regex.test(t))) {
               fieldName = `milestones[${i}].project_tasks`;
-              matchedText = JSON.stringify(m.project_tasks);
               break;
             } else if (m.deliverables && Array.isArray(m.deliverables) && m.deliverables.some((d: string) => regex.test(d))) {
               fieldName = `milestones[${i}].deliverables`;
-              matchedText = JSON.stringify(m.deliverables);
               break;
             } else if (m.expected_outcomes && Array.isArray(m.expected_outcomes) && m.expected_outcomes.some((e: string) => regex.test(e))) {
               fieldName = `milestones[${i}].expected_outcomes`;
-              matchedText = JSON.stringify(m.expected_outcomes);
               break;
             }
           }
@@ -1376,30 +1350,12 @@ export function validateRoadmapDomain(roadmap: RoadmapRecord, goal: string): voi
             const strVal = typeof val === "string" ? val : JSON.stringify(val) || "";
             if (regex.test(strVal)) {
               fieldName = key;
-              matchedText = strVal;
               break;
             }
           }
         }
-
-        const validationTarget = roadmap;
-        console.log("VALIDATION INPUT");
-        console.log(JSON.stringify(validationTarget, null, 2));
-
-        console.log("MATCHED KEYWORD");
-        console.log(keyword);
-
-        console.log("MATCHED FIELD");
-        console.log(fieldName);
-
-        console.log("MATCHED TEXT");
-        console.log(matchedText);
-
-        console.error("DISALLOWED KEYWORD HIT");
-        console.error({
-          keyword,
+        console.error("DISALLOWED KEYWORD HIT", {
           field: fieldName,
-          matchedText,
           validatorName: "validateRoadmapDomain"
         });
 
@@ -2368,10 +2324,9 @@ export function buildRoadmapPlanDetails(input: RoadmapPlanInput): RoadmapPlanPay
   }
 
   // Diagnostics logging
-  console.log({
+  console.info("ROADMAP GENERATED", {
     requestedDomain: profile.label,
-    generatedDomain: roadmap.career_domain,
-    roadmapTitle: roadmap.title
+    generatedDomain: roadmap.career_domain
   });
 
   return {

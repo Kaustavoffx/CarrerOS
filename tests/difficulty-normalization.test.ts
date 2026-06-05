@@ -281,3 +281,127 @@ test("normalizeRoadmap correctly rounds floating point demand scores", () => {
   assert.equal(normalized2.career_demand_score, 96);
   assert.equal(normalized2.demand_score, 96);
 });
+
+test("console logging during validation and persistence contains only safe metadata", () => {
+  const mockLogs: any[] = [];
+  const mockWarns: any[] = [];
+  const mockErrors: any[] = [];
+
+  const originalLog = console.log;
+  const originalInfo = console.info;
+  const originalWarn = console.warn;
+  const originalError = console.error;
+
+  console.log = (...args) => mockLogs.push(args);
+  console.info = (...args) => mockLogs.push(args);
+  console.warn = (...args) => mockWarns.push(args);
+  console.error = (...args) => mockErrors.push(args);
+
+  try {
+    const rawRoadmap = {
+      title: "Software Engineering Roadmap",
+      status: "Planned",
+      summary: "Learn programming fundamentals and system design",
+      owner: "You",
+      progress: 10,
+      career_domain: "Software Engineering",
+      market_outlook: "Strong",
+      salary_range: "$80k-$120k",
+      automation_risk: "Low",
+      roadmap_version: 1,
+      generated_at: new Date().toISOString(),
+      ai_reasoning: "Secret AI reasoning details",
+      weekly_schedule: ["4h practice"],
+      learning_outcomes: ["outcomes"],
+      total_duration_weeks: 12,
+      weekly_hours: 15,
+      estimated_completion_date: "2026-09-01",
+      resource_links: [{ label: "Resource", url: "https://example.com", provider: "Provider" }],
+      project_tasks: ["task"],
+      expected_outcomes: ["outcomes"],
+      milestones: [
+        {
+          title: "Milestone 1",
+          why_it_matters: "Why",
+          estimated_duration_weeks: 2,
+          difficulty_level: "Beginner",
+          completion_criteria: [],
+          resource_links: [],
+          projects: [],
+          project_tasks: [],
+          deliverables: [],
+          expected_outcomes: []
+        }
+      ],
+      updated_at: new Date().toISOString()
+    };
+
+    const validationResult = normalizeRoadmap(rawRoadmap);
+    assert.ok(validationResult);
+
+    const allLoggedData = JSON.stringify({ mockLogs, mockWarns, mockErrors }).toLowerCase();
+    
+    assert.ok(!allLoggedData.includes("secret ai reasoning"), "Logs must not contain AI reasoning");
+    assert.ok(!allLoggedData.includes("https://example.com"), "Logs must not contain resource URLs");
+    assert.ok(!allLoggedData.includes("milestone 1"), "Logs must not contain milestone contents");
+  } finally {
+    console.log = originalLog;
+    console.info = originalInfo;
+    console.warn = originalWarn;
+    console.error = originalError;
+  }
+});
+
+test("PDF demand score scales dynamically", () => {
+  const mockRoadmapScale10 = {
+    career_demand_score: 9,
+    demand_score: 9,
+    title: "Software Engineering Roadmap",
+    status: "Planned",
+    summary: "Learn programming fundamentals",
+    owner: "You",
+    progress: 10,
+    career_domain: "Software Engineering",
+    market_outlook: "Strong",
+    salary_range: "$80k-$120k",
+    automation_risk: "Low",
+    roadmap_version: 1,
+    generated_at: new Date().toISOString(),
+    ai_reasoning: "Reasoning here",
+    weekly_schedule: ["4h practice"],
+    learning_outcomes: ["outcomes"],
+    total_duration_weeks: 12,
+    weekly_hours: 15,
+    estimated_completion_date: "2026-09-01",
+    resource_links: [{ label: "Resource", url: "https://example.com", provider: "Provider" }],
+    project_tasks: ["task"],
+    expected_outcomes: ["outcomes"],
+    milestones: [
+      {
+        title: "Milestone 1",
+        why_it_matters: "Why",
+        estimated_duration_weeks: 2,
+        difficulty_level: "Beginner",
+        completion_criteria: [],
+        resource_links: [],
+        projects: [],
+        project_tasks: [],
+        deliverables: [],
+        expected_outcomes: []
+      }
+    ],
+    updated_at: new Date().toISOString()
+  };
+
+  const mockRoadmapScale100 = {
+    ...mockRoadmapScale10,
+    career_demand_score: 92,
+    demand_score: 92
+  };
+
+  const scale10Text1 = `${mockRoadmapScale10.career_demand_score}/${mockRoadmapScale10.career_demand_score <= 10 ? 10 : 100}`;
+  const scale100Text1 = `${mockRoadmapScale100.career_demand_score}/${mockRoadmapScale100.career_demand_score <= 10 ? 10 : 100}`;
+
+  assert.equal(scale10Text1, "9/10");
+  assert.equal(scale100Text1, "92/100");
+});

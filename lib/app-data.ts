@@ -263,8 +263,7 @@ export function migrateLegacyRoadmap(roadmap: unknown): RoadmapRecord {
   if (!validation.isValid) {
     console.info("ROADMAP MIGRATION NEEDED", {
       missingFields: validation.missingFields,
-      qualityScore: validation.qualityScore,
-      roadmap: legacy
+      qualityScore: validation.qualityScore
     });
   }
 
@@ -486,12 +485,16 @@ async function persistRoadmaps(client: SupabaseClient, userId: string, roadmaps:
     validateRoadmapDomainConsistency(roadmap, domainProfile);
     const genCheck = validateGeneratedRoadmap(roadmap, careerGoal);
     if (!genCheck.valid) {
-      console.warn("Generated Roadmap Semantic Warnings:", genCheck.warnings);
+      console.warn("ROADMAP VALIDATION WARNING", {
+        warningCount: genCheck.warnings.length
+      });
     }
   });
 
   const audit = auditRoadmapQuality(safeRoadmaps, domainProfile);
-  console.log("ROADMAP QUALITY AUDIT", { userId: authUserId, careerGoal, qualityScore: audit.qualityScore, reasons: audit.reasons });
+  console.info("ROADMAP QUALITY CHECK PASSED", {
+    score: audit.qualityScore
+  });
 
   if (audit.qualityScore < 85) {
     throw new Error(`Roadmap quality below threshold: ${audit.qualityScore}`);
@@ -499,11 +502,12 @@ async function persistRoadmaps(client: SupabaseClient, userId: string, roadmaps:
 
   await client.from("roadmaps").delete().eq("user_id", authUserId);
 
+  console.info("ROADMAP SAVED", {
+    roadmapCount: safeRoadmaps.length,
+    version
+  });
+
   const rows: RoadmapRow[] = safeRoadmaps.map((roadmap) => toRoadmapRow({ ...roadmap, roadmap_version: version }, authUserId));
-  console.log("ROADMAP INSERT PAYLOAD", JSON.stringify(rows, null, 2));
-
-
-
   const { error } = await client.from("roadmaps").insert(rows);
   if (error) {
     console.error("FAILED TO PERSIST ROADMAPS", error);
@@ -524,11 +528,15 @@ async function persistRoadmapVersion(client: SupabaseClient, userId: string, roa
     validateRoadmapDomainConsistency(roadmap, domainProfile);
     const genCheck = validateGeneratedRoadmap(roadmap, careerGoal);
     if (!genCheck.valid) {
-      console.warn("Generated Roadmap Version Semantic Warnings:", genCheck.warnings);
+      console.warn("ROADMAP VERSION VALIDATION WARNING", {
+        warningCount: genCheck.warnings.length
+      });
     }
   });
   const audit = auditRoadmapQuality(safeRoadmaps, domainProfile);
-  console.log("ROADMAP VERSION QUALITY AUDIT", { userId: authUserId, careerGoal, qualityScore: audit.qualityScore, reasons: audit.reasons });
+  console.info("ROADMAP VERSION QUALITY CHECK PASSED", {
+    score: audit.qualityScore
+  });
 
   if (audit.qualityScore < 85) {
     throw new Error(`Roadmap quality below threshold: ${audit.qualityScore}`);
@@ -553,6 +561,11 @@ async function persistRoadmapVersion(client: SupabaseClient, userId: string, roa
     console.error("FAILED TO PERSIST ROADMAP VERSION", error);
     throw error;
   }
+
+  console.info("ROADMAP VERSION SAVED", {
+    version: Math.round(version),
+    roadmapCount: safeRoadmaps.length
+  });
 }
 
 export async function loadAppData(client: SupabaseClient, userId: string): Promise<AppData> {

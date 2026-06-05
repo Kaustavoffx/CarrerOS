@@ -406,7 +406,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                     <p className="mt-2 small text-slate-400">{roadmap.summary}</p>
                     <div className="mt-3 flex flex-wrap gap-2 caption text-slate-400">
                       <span className="rounded-full border border-[#141417] bg-[#0a0a0c] px-2 py-1">{roadmap.career_domain}</span>
-                      <span className="rounded-full border border-[#141417] bg-[#0a0a0c] px-2 py-1">Demand {roadmap.career_demand_score}/100</span>
+                      <span className="rounded-full border border-[#141417] bg-[#0a0a0c] px-2 py-1">Demand {roadmap.career_demand_score}/{roadmap.career_demand_score <= 10 ? 10 : 100}</span>
                       <span className="rounded-full border border-[#141417] bg-[#0a0a0c] px-2 py-1">Version {roadmap.roadmap_version}</span>
                     </div>
                   </div>

@@ -205,7 +205,7 @@ export function buildRoadmapExportBundle(roadmaps: RoadmapRecord[], title = "Car
       `Status: ${roadmap.status}`,
       `Summary: ${roadmap.summary}`,
       `Domain: ${roadmap.career_domain}`,
-      `Demand score: ${roadmap.career_demand_score}/100`,
+      `Demand score: ${roadmap.career_demand_score}/${roadmap.career_demand_score <= 10 ? 10 : 100}`,
       `Market outlook: ${roadmap.market_outlook}`,
       `Salary range: ${roadmap.salary_range}`,
       `Automation risk: ${roadmap.automation_risk}`,
@@ -900,7 +900,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     // Equal heights calculations
     const labels = ["DEMAND SCORE", "SALARY RANGE", "MARKET OUTLOOK", "AUTOMATION RISK"];
     const values = [
-      `${firstRoadmap.career_demand_score}/100`,
+      `${firstRoadmap.career_demand_score}/${firstRoadmap.career_demand_score <= 10 ? 10 : 100}`,
       firstRoadmap.salary_range || "N/A",
       firstRoadmap.market_outlook || "Stable",
       firstRoadmap.automation_risk || "Low"

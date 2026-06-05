@@ -282,7 +282,6 @@ test("SDE-I roadmap is strictly free of contamination and contains only valid re
 
   // 2. Assert zero forbidden keywords (UX, design, wireframe, figma, user research, operations, management, academia, research, etc.)
   const forbiddenKeywords = [
-    "operations",
     "ops",
     "academia",
     "product design",
@@ -507,6 +506,29 @@ test("pure Software Engineering roadmap passes validation", () => {
     experience: "Junior",
     weeklyHours: 10
   }).roadmaps[0];
+  validateRoadmapDomain(roadmap, "SDE-I");
+  const result = validateRoadmapDomainConsistency(roadmap, "SDE-I");
+  assert.ok(result.valid);
+});
+
+test("Software Engineering roadmap containing standard programming operations phrases passes validation", () => {
+  const baseRoadmap = buildRoadmapPlanDetails({
+    goal: "SDE-I",
+    experience: "Junior",
+    weeklyHours: 10
+  }).roadmaps[0];
+
+  const roadmap = {
+    ...baseRoadmap,
+    project_tasks: [
+      "Implement input/output operations",
+      "Perform CRUD operations",
+      "Database operations",
+      "File operations",
+      "Array operations"
+    ]
+  };
+
   validateRoadmapDomain(roadmap, "SDE-I");
   const result = validateRoadmapDomainConsistency(roadmap, "SDE-I");
   assert.ok(result.valid);
