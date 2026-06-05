@@ -7,7 +7,7 @@ import {
   ArrowRight, Sparkles, Trash2, Check, TrendingUp, X, PlusCircle,
   Target, ChevronDown, ChevronUp, Search, Clock, Flame,
   Activity, Zap, BookOpen, GitBranch, MessageSquare, Star, MapPin,
-  DollarSign, Bookmark, Circle
+  DollarSign, Bookmark
 } from "lucide-react";
 import { MagneticButton } from "./magnetic-button";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -351,32 +351,64 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
 
           <div className="relative z-10 flex flex-col gap-7 lg:flex-row lg:items-center">
             {/* Progress ring */}
-            <div className="flex flex-col items-center gap-2 shrink-0">
-              <div className="relative">
+            <div className="flex flex-col items-center gap-4 shrink-0">
+              <div className="relative w-[152px] h-[152px]">
                 {/* Target ring (outer) */}
                 <ProgressRing
                   value={readiness > 0 ? readiness : 90}
-                  size={132}
-                  strokeWidth={7}
+                  size={152}
+                  strokeWidth={8}
                   color="#22d3ee"
-                  label={`${readiness > 0 ? readiness : 90}%`}
-                  sublabel="Target"
                 />
                 {/* Current progress ring (inner) */}
-                <div className="absolute inset-[14px] flex items-center justify-center">
+                <div className="absolute inset-[16px] flex items-center justify-center">
                   <ProgressRing
                     value={avgProgress > 0 ? avgProgress : 54}
-                    size={104}
+                    size={120}
                     strokeWidth={6}
                     color="#818cf8"
-                    label={`${avgProgress > 0 ? avgProgress : 54}%`}
-                    sublabel="Current"
                   />
                 </div>
+                {/* Center Content Area */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minWidth: "90px",
+                      minHeight: "90px",
+                      gap: "6px",
+                    }}
+                    className="select-none"
+                  >
+                    <span className="text-[24px] md:text-[30px] font-extrabold text-white leading-none">
+                      {avgProgress > 0 ? avgProgress : 54}%
+                    </span>
+                    <span
+                      style={{ whiteSpace: "nowrap" }}
+                      className="text-[8px] md:text-[10px] font-bold uppercase tracking-wider text-slate-400"
+                    >
+                      Current Progress
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="flex gap-3 text-[10px] font-medium uppercase tracking-widest">
-                <span className="flex items-center gap-1 text-cyan-400"><Circle className="h-2 w-2 fill-cyan-400" /> Target</span>
-                <span className="flex items-center gap-1 text-indigo-400"><Circle className="h-2 w-2 fill-indigo-400" /> Current</span>
+              {/* Target & Current metrics legend outside the chart */}
+              <div className="mt-2 flex flex-col items-center gap-3 w-full">
+                <div className="text-center">
+                  <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold whitespace-nowrap">Target Readiness</p>
+                  <p className="mt-0.5 text-base font-extrabold text-cyan-400">
+                    {readiness > 0 ? readiness : 90}%
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold whitespace-nowrap">Current Progress</p>
+                  <p className="mt-0.5 text-base font-extrabold text-indigo-400">
+                    {avgProgress > 0 ? avgProgress : 54}%
+                  </p>
+                </div>
               </div>
             </div>
 
