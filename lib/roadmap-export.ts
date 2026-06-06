@@ -26,6 +26,7 @@ export interface AuditBlob extends Blob {
 
 const CMGEOM_FONT_URL = new URL("../assets/fonts/CMGeom-Regular.ttf", import.meta.url).toString();
 const LOGO_IMAGE_URL = new URL("../assets/logo.png", import.meta.url).toString();
+const BACKGROUND_IMAGE_URL = new URL("../public/background.png", import.meta.url).toString();
 
 export interface JsPdfExtended {
   GState: new (options: { opacity: number }) => unknown;
@@ -78,6 +79,27 @@ async function loadLogoBase64(): Promise<string> {
     }
     if (!response.ok) {
       throw new Error(`Failed to load logo image: ${response.status}`);
+    }
+    base64 = arrayBufferToBase64(await response.arrayBuffer());
+  }
+  return `data:image/png;base64,${base64}`;
+}
+
+async function loadBackgroundBase64(): Promise<string> {
+  let base64 = "";
+  if (typeof window === "undefined") {
+    const { readFile } = await import("node:fs/promises");
+    const { fileURLToPath } = await import("node:url");
+    base64 = arrayBufferToBase64(await readFile(fileURLToPath(BACKGROUND_IMAGE_URL)).then((buffer) => buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)));
+  } else {
+    let response: Response;
+    try {
+      response = await fetch("/background.png");
+    } catch {
+      response = await fetch(BACKGROUND_IMAGE_URL);
+    }
+    if (!response.ok) {
+      throw new Error(`Failed to load background image: ${response.status}`);
     }
     base64 = arrayBufferToBase64(await response.arrayBuffer());
   }
@@ -440,6 +462,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   const doc = new jsPDF({ unit: "pt", format: "a4", compress: true });
   const fontBase64 = await loadCmGeomFontBase64();
   const logoBase64 = await loadLogoBase64();
+  const backgroundBase64 = await loadBackgroundBase64();
   const fontFileName = "CMGeom-Regular.ttf";
 
   doc.addFileToVFS(fontFileName, fontBase64);
@@ -541,12 +564,13 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   // Visual Utility functions
   function drawAtmosphericCloud(x: number, y: number, radius: number, hexColor: string, maxOpacity: number) {
     doc.setFillColor(hexColor);
-    const steps = 40;
+    const steps = 120;
+    const safeMaxOpacity = Math.min(0.12, maxOpacity);
     for (let i = steps; i > 0; i--) {
       const t = i / steps;
       const r = radius * t;
-      const opacity = maxOpacity * Math.pow(1 - t, 2.5); // very smooth exponential decay
-      if (opacity <= 0.0005) continue;
+      const opacity = safeMaxOpacity * Math.pow(1 - t, 3.5); // extremely soft falloff
+      if (opacity <= 0.0001) continue;
       
       doc.saveGraphicsState();
       const gState = new (doc as unknown as JsPdfExtended).GState({ opacity });
@@ -572,21 +596,20 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     doc.setFillColor("#04070D");
     doc.rect(0, 0, pageWidth, pageHeight, "F");
 
-    // Vertical atmospheric gradient top-down
-    const gradientHeight = 450;
-    const gradSteps = 60;
-    doc.setFillColor("#00D8FF");
-    for (let i = 0; i < gradSteps; i++) {
-      const t = i / gradSteps;
-      const opacity = 0.08 * Math.pow(1 - t, 2.5);
-      if (opacity > 0.001) {
-        doc.saveGraphicsState();
-        const gState = new (doc as unknown as JsPdfExtended).GState({ opacity });
-        doc.setGState(gState);
-        doc.rect(0, i * (gradientHeight / gradSteps), pageWidth, (gradientHeight / gradSteps) + 0.5, "F");
-        doc.restoreGraphicsState();
-      }
-    }
+    // Draw background.png at 0.12 opacity
+    doc.saveGraphicsState();
+    const bgGState = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.12 });
+    doc.setGState(bgGState);
+    doc.addImage(backgroundBase64, "PNG", 0, 0, pageWidth, pageHeight);
+    doc.restoreGraphicsState();
+
+    // Draw dark overlay at 0.65 opacity
+    doc.saveGraphicsState();
+    const overlayGState = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.65 });
+    doc.setGState(overlayGState);
+    doc.setFillColor("#04070D");
+    doc.rect(0, 0, pageWidth, pageHeight, "F");
+    doc.restoreGraphicsState();
 
     if (pageNum > 1) {
       drawWatermark();
@@ -633,8 +656,8 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
       style?: string;
     }
   ) {
-    const rx = options?.rx ?? 24;
-    const ry = options?.ry ?? 24;
+    const rx = options?.rx ?? 20;
+    const ry = options?.ry ?? 20;
 
     // 1. Soft environmental glow behind card (if glowColor is provided)
     if (options?.glowColor) {
@@ -687,7 +710,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     // 6. Colored border highlight (edge lighting) if glowColor exists
     if (options?.glowColor) {
       doc.saveGraphicsState();
-      const edgeGState = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.15 });
+      const edgeGState = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.08 });
       doc.setGState(edgeGState);
       doc.setDrawColor(options.glowColor);
       doc.setLineWidth(1.2);
@@ -807,14 +830,14 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     const badgeHeight = fontSize + paddingY * 2;
     
     doc.setFillColor("#090C12");
-    doc.roundedRect(x, yVal - fontSize - paddingY + 1, badgeWidth, badgeHeight, 3, 3, "F");
+    doc.roundedRect(x, yVal - fontSize - paddingY + 1, badgeWidth, badgeHeight, 12, 12, "F");
     
     doc.saveGraphicsState();
     const badgeBorderOpacity = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.2 });
     doc.setGState(badgeBorderOpacity);
     doc.setDrawColor(bgColor);
     doc.setLineWidth(0.6);
-    doc.roundedRect(x, yVal - fontSize - paddingY + 1, badgeWidth, badgeHeight, 3, 3, "D");
+    doc.roundedRect(x, yVal - fontSize - paddingY + 1, badgeWidth, badgeHeight, 12, 12, "D");
     doc.restoreGraphicsState();
     
     doc.setTextColor(textColor);
@@ -885,8 +908,8 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     drawLiquidGlassCard(x, yVal, width, height, {
       glowColor: color,
       glowOpacity: 0.05,
-      rx: 16,
-      ry: 16
+      rx: 12,
+      ry: 12
     });
     
     doc.setFont("CMGeom", "normal");
@@ -907,8 +930,8 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     drawLiquidGlassCard(x, yVal, width, height, {
       glowColor,
       glowOpacity: 0.04,
-      rx: 16,
-      ry: 16
+      rx: 20,
+      ry: 20
     });
 
     let curY = yVal + paddingY;
@@ -1179,20 +1202,20 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   doc.setTextColor("#64748b");
   doc.text("CAREER EXECUTION PLAN", pageWidth - margins.right, 51, { align: "right" });
 
-  // Large centered logo on cover
-  doc.addImage(logoBase64, "PNG", centerX - 65, 80, 130, 130);
-
-  // SDE I Huge Title (Vertical middle layout)
+  // SDE I Huge Title Centered Horizontally
   const hugeTitleText = careerGoal;
-  const hugeTitleSize = hugeTitleText.length > 15 ? 40 : 72;
-  doc.setFontSize(hugeTitleSize);
-  doc.setTextColor("#FFFFFF");
-  drawText(hugeTitleText, margins.left, 240, { maxWidth: contentWidth });
+  const hugeTitleSize = hugeTitleText.length > 15 ? 36 : 48;
+  const titleEndY = drawText(hugeTitleText, centerX, 150, { align: "center", fontSize: hugeTitleSize, fontColor: "#FFFFFF", maxWidth: contentWidth });
 
-  // Subheading
-  doc.setFontSize(14);
-  doc.setTextColor("#00D8FF");
-  drawText(`${domainLabel} Career Execution Plan`, margins.left, 240 + hugeTitleSize + 14, { maxWidth: contentWidth });
+  // DIRECTLY BELOW TITLE: Place logo. Logo size: 120px Centered.
+  const logoSize = 120;
+  const logoX = centerX - logoSize / 2;
+  const logoY = titleEndY + 20;
+  doc.addImage(logoBase64, "PNG", logoX, logoY, logoSize, logoSize);
+
+  // Centered target subtitle below logo
+  const subtitleY = logoY + logoSize + 25;
+  drawText(`${domainLabel} Career Execution Plan`, centerX, subtitleY, { align: "center", fontSize: 13, fontColor: "#00D8FF", maxWidth: contentWidth });
 
   // Bottom row split composition
   // Left Column Metadata
@@ -1365,8 +1388,8 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     drawLiquidGlassCard(cardX, y, summaryColW, maxSummaryH, {
       glowColor: "#3B82F6",
       glowOpacity: 0.03,
-      rx: 16,
-      ry: 16
+      rx: 20,
+      ry: 20
     });
 
     doc.setFont("CMGeom", "normal");
@@ -1423,8 +1446,8 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     drawLiquidGlassCard(margins.left, y, contentWidth, statsCardH, {
       glowColor: "#00D8FF",
       glowOpacity: 0.04,
-      rx: 16,
-      ry: 16
+      rx: 20,
+      ry: 20
     });
 
     drawText("DURATION", margins.left + 16, y + 15, { fontSize: 8, fontColor: "#64748b" });
@@ -1462,8 +1485,8 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     drawLiquidGlassCard(margins.left, y, halfColW, overviewH, {
       glowColor: "#3B82F6",
       glowOpacity: 0.03,
-      rx: 16,
-      ry: 16
+      rx: 20,
+      ry: 20
     });
     doc.setFont("CMGeom", "normal");
     doc.setFontSize(8.5);
@@ -1508,8 +1531,8 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     drawLiquidGlassCard(margins.left + halfColW + 12, y, halfColW, overviewH, {
       glowColor: "#3B82F6",
       glowOpacity: 0.03,
-      rx: 16,
-      ry: 16
+      rx: 20,
+      ry: 20
     });
     doc.setFontSize(8.5);
     doc.setTextColor("#00D8FF");
@@ -1544,8 +1567,8 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
       drawLiquidGlassCard(cardsLeft, cardY, cardsWidth, cardH, {
         glowColor: "#00D8FF",
         glowOpacity: 0.03,
-        rx: 16,
-        ry: 16
+        rx: 20,
+        ry: 20
       });
 
       const mColor = colorsPalette[(sIndex * 3 + mIdx) % colorsPalette.length];
@@ -1624,8 +1647,8 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
         drawLiquidGlassCard(cardX, y, resCardW, resCardH, {
           glowColor: "#10B981",
           glowOpacity: 0.03,
-          rx: 16,
-          ry: 16
+          rx: 20,
+          ry: 20
         });
 
         // Platform title
@@ -1647,7 +1670,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
       });
     } else {
       // Placeholder resources
-      drawLiquidGlassCard(margins.left, y, contentWidth, resCardH, { rx: 16, ry: 16 });
+      drawLiquidGlassCard(margins.left, y, contentWidth, resCardH, { rx: 20, ry: 20 });
       doc.setFont("CMGeom", "normal");
       doc.setFontSize(8.5);
       doc.setTextColor("#64748b");
@@ -1723,8 +1746,8 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     drawLiquidGlassCard(cardX, cardY, checkCardW, checkCardH, {
       glowColor: item.color,
       glowOpacity: 0.03,
-      rx: 16,
-      ry: 16
+      rx: 20,
+      ry: 20
     });
 
     doc.setFont("CMGeom", "normal");
