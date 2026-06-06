@@ -308,48 +308,48 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
 
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {/* Metric 1 */}
-              <div className="bg-black/25 border border-white/5 p-4 rounded-2xl">
+              <div className="bg-white/[0.03] border border-white/[0.06] backdrop-blur-md p-4 rounded-2xl">
                 <div className="flex justify-between items-baseline mb-2">
                   <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Readiness Score</span>
                   <span className="text-lg font-extrabold text-cyan-300">{readiness}%</span>
                 </div>
-                <div className="h-1.5 w-full bg-[#111114] rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
                   <div className="h-full bg-cyan-400" style={{ width: `${readiness}%` }} />
                 </div>
                 <span className="text-[9px] text-slate-500 block mt-1.5 font-medium">Target velocity: 85%+</span>
               </div>
 
               {/* Metric 2 */}
-              <div className="bg-black/25 border border-white/5 p-4 rounded-2xl">
+              <div className="bg-white/[0.03] border border-white/[0.06] backdrop-blur-md p-4 rounded-2xl">
                 <div className="flex justify-between items-baseline mb-2">
                   <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Market Match</span>
                   <span className="text-lg font-extrabold text-cyan-300">{marketMatch}%</span>
                 </div>
-                <div className="h-1.5 w-full bg-[#111114] rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
                   <div className="h-full bg-cyan-400" style={{ width: `${marketMatch}%` }} />
                 </div>
                 <span className="text-[9px] text-slate-500 block mt-1.5 font-medium">Based on skill tags count</span>
               </div>
 
               {/* Metric 3 */}
-              <div className="bg-black/25 border border-white/5 p-4 rounded-2xl">
+              <div className="bg-white/[0.03] border border-white/[0.06] backdrop-blur-md p-4 rounded-2xl">
                 <div className="flex justify-between items-baseline mb-2">
                   <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Momentum</span>
                   <span className="text-lg font-extrabold text-cyan-300">{momentum}%</span>
                 </div>
-                <div className="h-1.5 w-full bg-[#111114] rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
                   <div className="h-full bg-cyan-400" style={{ width: `${momentum}%` }} />
                 </div>
                 <span className="text-[9px] text-slate-500 block mt-1.5 font-medium">Active logs & milestones consistency</span>
               </div>
 
               {/* Metric 4 */}
-              <div className="bg-black/25 border border-white/5 p-4 rounded-2xl">
+              <div className="bg-white/[0.03] border border-white/[0.06] backdrop-blur-md p-4 rounded-2xl">
                 <div className="flex justify-between items-baseline mb-2">
                   <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Execution</span>
                   <span className="text-lg font-extrabold text-cyan-300">{execution}%</span>
                 </div>
-                <div className="h-1.5 w-full bg-[#111114] rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
                   <div className="h-full bg-cyan-400" style={{ width: `${execution}%` }} />
                 </div>
                 <span className="text-[9px] text-slate-500 block mt-1.5 font-medium">Roadmap progress tracks completed</span>
@@ -417,7 +417,7 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
                 </ul>
               </div>
 
-              <div className="border border-white/5 bg-[#08080a] p-4 rounded-2xl sm:col-span-2">
+              <div className="border border-white/5 bg-white/[0.02] p-4 rounded-2xl sm:col-span-2">
                 <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest block mb-1">Execution Risks</span>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {risks.map((r, i) => (
@@ -464,7 +464,7 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
               {userSkills.map(s => (
                 <div
                   key={s}
-                  className="bg-[#0b0b0e] border border-white/5 hover:border-cyan-400/25 pl-3 pr-2 py-1.5 rounded-xl text-xs text-white font-medium inline-flex items-center justify-between gap-3 group transition"
+                  className="bg-white/[0.03] border border-white/[0.06] hover:border-cyan-400/20 pl-3 pr-2 py-1.5 rounded-xl text-xs text-white font-medium inline-flex items-center justify-between gap-3 group transition"
                 >
                   <span>{s}</span>
                   <button
@@ -491,10 +491,10 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
 
             <div className="grid gap-4 sm:grid-cols-3">
               {jobs.map(job => (
-                <div key={job.id} className="border border-white/5 bg-[#08080a] hover:border-cyan-400/20 p-4 rounded-2xl flex flex-col justify-between transition group">
+                <div key={job.id} className="border border-white/10 bg-white/[0.02] hover:border-cyan-400/20 p-4 rounded-2xl flex flex-col justify-between transition group">
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-2.5">
-                      <span className="h-7 w-7 rounded bg-[#101014] border border-white/5 flex items-center justify-center font-bold text-white text-xs">
+                      <span className="h-7 w-7 rounded bg-white/5 border border-white/10 flex items-center justify-center font-bold text-white text-xs">
                         {job.logo}
                       </span>
                       <span className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-[9px] font-extrabold px-1.5 py-0.5 rounded">
@@ -541,7 +541,7 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
                     className={`border p-3.5 rounded-2xl transition duration-200 flex items-start gap-3 relative ${
                       isChecked
                         ? "border-cyan-500/10 bg-cyan-950/[0.02] text-slate-500"
-                        : "border-[#141417] bg-[#070709] hover:border-cyan-400/25"
+                        : "border-white/[0.06] bg-white/[0.03] hover:border-cyan-400/20"
                     }`}
                   >
                     <button
@@ -594,7 +594,7 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
               <div className="relative border-l border-white/5 pl-4 ml-2 space-y-5">
                 {sortedEvents.map((ev, index) => (
                   <div key={index} className="relative group">
-                    <span className="absolute -left-[20px] top-1.5 h-2 w-2 rounded-full bg-cyan-400 border border-black group-hover:scale-125 transition" />
+                    <span className="absolute -left-[20px] top-1.5 h-2 w-2 rounded-full bg-cyan-400 border border-white/20 group-hover:scale-125 transition" />
                     <div className="flex justify-between items-baseline text-[9px]">
                       <span className="text-cyan-300 font-extrabold uppercase tracking-wider">{ev.type}</span>
                       <span className="text-slate-500">{formatUtcShortDate(ev.date)}</span>

@@ -212,7 +212,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
 
       {/* Danger Confirmation Modal */}
       {dangerModalAction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="bg-[#0b0b0e] border border-rose-500/20 rounded-[20px] max-w-md w-full p-6 space-y-4 shadow-2xl">
             <div className="flex items-center gap-3 text-rose-500">
               <AlertTriangle className="h-6 w-6" />
@@ -247,7 +247,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
                 type="button"
                 onClick={executeDangerAction}
                 disabled={dangerConfirmText !== "CONFIRM" || executingDanger}
-                className="tactile-btn bg-rose-600 hover:bg-rose-500 disabled:opacity-50 flex-1 min-h-[44px] rounded-xl text-xs font-bold text-white transition-all flex items-center justify-center gap-2"
+                className="tactile-btn border-rose-500/25 bg-rose-950/20 hover:bg-rose-950/40 text-rose-300 disabled:opacity-50 flex-1 min-h-[44px] rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
               >
                 {executingDanger && <span className="loading-spinner text-[10px]" />}
                 Confirm
@@ -271,7 +271,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
             {providers.map((p) => {
               const isManaging = showKeyInputs[p.provider];
               return (
-                <div key={p.provider} className="bg-black/25 border border-white/5 hover:border-cyan-400/25 p-4 rounded-2xl transition">
+                <div key={p.provider} className="bg-white/[0.03] border border-white/[0.06] hover:border-cyan-400/20 p-4 rounded-2xl transition">
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
@@ -444,7 +444,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
                   type="checkbox"
                   checked={compactMode}
                   onChange={e => setCompactMode(e.target.checked)}
-                  className="w-8 h-4 bg-black border border-white/5 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
+                  className="w-8 h-4 bg-white/[0.05] border border-white/10 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
                 />
               </label>
 
@@ -457,7 +457,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
                   type="checkbox"
                   checked={animationsEnabled}
                   onChange={e => setAnimationsEnabled(e.target.checked)}
-                  className="w-8 h-4 bg-black border border-white/5 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
+                  className="w-8 h-4 bg-white/[0.05] border border-white/10 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
                 />
               </label>
 
@@ -470,7 +470,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
                   type="checkbox"
                   checked={milestoneAlerts}
                   onChange={e => setMilestoneAlerts(e.target.checked)}
-                  className="w-8 h-4 bg-black border border-white/5 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
+                  className="w-8 h-4 bg-white/[0.05] border border-white/10 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
                 />
               </label>
 
@@ -483,7 +483,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
                   type="checkbox"
                   checked={roadmapUpdates}
                   onChange={e => setRoadmapUpdates(e.target.checked)}
-                  className="w-8 h-4 bg-black border border-white/5 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
+                  className="w-8 h-4 bg-white/[0.05] border border-white/10 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
                 />
               </label>
             </div>
@@ -543,7 +543,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
 
         {isDangerZoneExpanded && (
           <div className="mt-4 pt-4 border-t border-rose-500/10 space-y-3.5 text-xs">
-            <div className="flex justify-between items-center bg-rose-500/[0.01] border border-rose-500/10 p-3.5 rounded-xl">
+            <div className="flex justify-between items-center bg-rose-950/10 border border-rose-500/15 p-3.5 rounded-xl">
               <div>
                 <span className="font-bold text-white block">Reset Workspace Onboarding</span>
                 <span className="text-[10px] text-slate-500 mt-0.5">Wipe goals assessments to restart setup wizard.</span>
@@ -556,7 +556,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
               </button>
             </div>
 
-            <div className="flex justify-between items-center bg-rose-500/[0.01] border border-rose-500/10 p-3.5 rounded-xl">
+            <div className="flex justify-between items-center bg-rose-950/10 border border-rose-500/15 p-3.5 rounded-xl">
               <div>
                 <span className="font-bold text-white block">Delete All Roadmaps</span>
                 <span className="text-[10px] text-slate-500 mt-0.5">Wipe all generated paths logs.</span>
@@ -569,7 +569,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
               </button>
             </div>
 
-            <div className="flex justify-between items-center bg-rose-500/[0.01] border border-rose-500/10 p-3.5 rounded-xl">
+            <div className="flex justify-between items-center bg-rose-950/10 border border-rose-500/15 p-3.5 rounded-xl">
               <div>
                 <span className="font-bold text-white block">Clear Mentor Strategy History</span>
                 <span className="text-[10px] text-slate-500 mt-0.5">Wipe chatbot conversation database logs.</span>
@@ -582,14 +582,14 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
               </button>
             </div>
 
-            <div className="flex justify-between items-center bg-rose-500/[0.01] border border-rose-500/10 p-3.5 rounded-xl">
+            <div className="flex justify-between items-center bg-rose-950/10 border border-rose-500/15 p-3.5 rounded-xl">
               <div>
                 <span className="font-bold text-rose-300 block">Terminate Operator Identity</span>
                 <span className="text-[10px] text-slate-500 mt-0.5">Permanently wipe profile account records.</span>
               </div>
               <button
                 onClick={() => setDangerModalAction("account")}
-                className="tactile-btn bg-rose-700 hover:bg-rose-600 text-white font-bold px-3 py-1.5 rounded-xl"
+                className="tactile-btn border-rose-500/25 bg-rose-950/20 hover:bg-rose-950/40 text-rose-300 font-bold px-3 py-1.5 rounded-xl"
               >
                 Terminate Profile
               </button>
@@ -600,7 +600,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
 
       {/* Export Success Modal */}
       {exportSuccessOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/85 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
           <div className="liquid-panel w-full max-w-sm rounded-[24px] p-6 text-center bg-[#09090b] border border-cyan-500/20 relative">
             <button
               type="button"

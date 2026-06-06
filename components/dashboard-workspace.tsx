@@ -390,7 +390,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
       </div>
 
       {/* ═══ MISSION HEADER (Neutral Info Bar) ═══════════════════════════════ */}
-      <section className="card-data relative overflow-hidden rounded-[24px] p-6">
+      <section className="card-mission relative overflow-hidden rounded-[24px] p-6">
         <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-4">
             <div className="min-w-0">
@@ -556,7 +556,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
               </div>
 
               {/* Progress Panel side item */}
-              <div className="shrink-0 flex flex-col justify-between items-end gap-3 self-stretch min-w-[170px] bg-black/40 border border-white/5 p-4 rounded-2xl">
+              <div className="shrink-0 flex flex-col justify-between items-end gap-3 self-stretch min-w-[170px] bg-white/[0.02] border border-white/[0.06] backdrop-blur-md p-4 rounded-2xl">
                 <div className="text-right">
                   <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Estimated Hours</span>
                   <span className="text-sm font-bold text-white mt-1 block">{timeRequiredString} left</span>
@@ -728,7 +728,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
               <span className="rounded-full bg-cyan-400/10 text-cyan-300 border border-cyan-400/25 text-[9px] px-2 py-0.5 font-bold uppercase tracking-wider">AI Strategist</span>
             </div>
 
-            <div className="bg-black/30 border border-white/5 p-4 rounded-xl">
+            <div className="bg-white/[0.02] border border-white/[0.06] p-4 rounded-xl">
               <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Latest recommendation</span>
               <p className="text-xs sm:text-sm text-slate-200 mt-1.5 leading-relaxed font-medium">
                 {workspace?.ai_chats?.[0]?.messages?.slice(-1)?.[0]?.content || (
@@ -740,13 +740,13 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 text-xs">
-              <div className="bg-black/20 border border-white/5 p-3 rounded-lg">
+              <div className="bg-white/[0.02] border border-white/[0.05] p-3 rounded-lg">
                 <span className="text-[9px] text-cyan-300 font-bold uppercase tracking-wider block">Why this matters</span>
                 <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
                   Completing recommended tasks updates readiness metrics and logs project evidence.
                 </p>
               </div>
-              <div className="bg-black/20 border border-white/5 p-3 rounded-lg">
+              <div className="bg-white/[0.02] border border-white/[0.05] p-3 rounded-lg">
                 <span className="text-[9px] text-indigo-300 font-bold uppercase tracking-wider block">Generated timestamp</span>
                 <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
                   {workspace?.ai_chats?.[0]?.updated_at ? formatUtcTime(workspace.ai_chats[0].updated_at) : "Just now"}
@@ -864,12 +864,12 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
           {/* Backdrop */}
           <div
             onClick={() => setIsDrawerOpen(false)}
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px]"
+            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[4px]"
             style={{ animation: "none" }}
           />
           {/* Drawer */}
           <div
-            className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#09090b] border-l border-[#202028] p-6 shadow-2xl flex flex-col justify-between"
+            className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#09090b]/90 border-l border-white/10 p-6 shadow-2xl flex flex-col justify-between backdrop-blur-xl"
             style={{ transform: "translateX(0)", transition: "transform 220ms ease" }}
           >
             <div className="flex flex-col flex-1 min-h-0">
@@ -915,9 +915,9 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                   <div className="space-y-2">
                     {filteredNotes.length > 0 ? (
                       filteredNotes.map(note => (
-                        <div key={note.id} className="border border-[#141417] bg-[#07070a] p-3 rounded-lg relative group">
+                        <div key={note.id} className="border border-white/[0.06] bg-white/[0.02] p-3 rounded-lg relative group">
                           <div className="flex items-center justify-between mb-1.5">
-                            <span className="bg-[#082f49] border border-cyan-500/20 px-1.5 py-0.2 rounded text-[8px] font-bold text-cyan-300 uppercase">
+                            <span className="bg-cyan-950/30 border border-cyan-500/20 px-1.5 py-0.2 rounded text-[8px] font-bold text-cyan-300 uppercase">
                               {note.tag}
                             </span>
                             <button
@@ -953,7 +953,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
 
       {/* ═══ MODAL: CREATE NOTE ══════════════════════════════════════════════ */}
       {noteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/85">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
           <div
             className="liquid-panel w-full max-w-lg rounded-[24px] p-6 relative bg-[#09090b]"
             style={{ animation: "none" }}
@@ -992,7 +992,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
 
       {/* ═══ MODAL: LOG PROGRESS ════════════════════════════════════════════ */}
       {progressModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/85">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
           <div
             className="liquid-panel w-full max-w-lg rounded-[24px] p-6 relative bg-[#09090b]"
             style={{ animation: "none" }}
@@ -1027,7 +1027,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
       )}
       {/* Export Success Modal */}
       {exportSuccessOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/85 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
           <div className="liquid-panel w-full max-w-sm rounded-[24px] p-6 text-center bg-[#09090b] border border-cyan-500/20 relative">
             <button
               type="button"

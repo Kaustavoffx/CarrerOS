@@ -56,7 +56,10 @@ main {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  filter: brightness(0.75) contrast(1.08) saturate(1.10);
+  
+  /* V4 Visual Depth layer 1: background image properties */
+  opacity: 0.28;
+  filter: blur(18px) brightness(0.55) contrast(1.05) saturate(1.1);
 
   backface-visibility: hidden;
   transform: translate3d(0, 0, 0);
@@ -73,11 +76,12 @@ main {
   content: "";
   position: absolute;
   inset: 0;
+  /* V4 Visual Depth layer 2: soft dark atmospheric overlay */
   background: linear-gradient(
     180deg,
-    rgba(2, 3, 5, 0.45) 0%,
-    rgba(2, 3, 5, 0.30) 50%,
-    rgba(2, 3, 5, 0.50) 100%
+    rgba(2, 3, 5, 0.60) 0%,
+    rgba(2, 3, 5, 0.40) 50%,
+    rgba(2, 3, 5, 0.75) 100%
   );
 }
 
@@ -244,97 +248,71 @@ main {
 /* Custom dark liquid interface container classes */
 @layer components {
   .liquid-panel {
-    background: linear-gradient(145deg, #0A0A0C, #050506);
-    border: 1px solid #141418;
-    box-shadow: 
-      0 30px 90px rgba(0, 0, 0, 0.95), 
-      inset 0 1px 0 rgba(255, 255, 255, 0.08),
-      inset 0 -1px 2px rgba(0, 0, 0, 0.9);
+    background: linear-gradient(
+      180deg,
+      rgba(8, 12, 20, 0.22),
+      rgba(8, 12, 20, 0.35)
+    ) !important;
+    backdrop-filter: blur(40px) !important;
+    border: 1px solid rgba(0, 216, 255, 0.10) !important;
+    border-radius: 32px !important;
+    box-shadow: 0 20px 80px rgba(0, 0, 0, 0.5) !important;
     position: relative;
     overflow: hidden;
   }
 
-  /* ── CARD SYSTEM V2 ──────────────────────────────────────────────────────── */
+  /* ── CARD SYSTEM V4 — LIQUID GLASS MIGRATION ──────────────────────────── */
 
-  /* Card Type 1: Spotlight Card — 5% usage. Cyan glow. Active Mission, Sprint. */
+  .card-data, .liquid-card, .card-spotlight, .card-action, .card-insight, .card-gold, .card-purple, .card-green, .card-red, .card-danger {
+    backdrop-filter: blur(32px) saturate(160%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35) !important;
+    border-radius: 24px !important;
+    background: rgba(6, 10, 18, 0.32) !important;
+  }
+
+  /* Specific enhancements for semantic variants to keep branding and context */
   .card-spotlight {
-    background: linear-gradient(135deg, rgba(0,220,255,.065), rgba(0,120,255,.02));
-    border: 1px solid rgba(0,220,255,.25);
-    box-shadow: 0 0 40px rgba(0,220,255,.065);
-    position: relative;
-    overflow: hidden;
+    border-color: rgba(0, 216, 255, 0.25) !important;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35), 0 0 25px rgba(0, 216, 255, 0.08) !important;
+  }
+  .card-spotlight::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: radial-gradient(circle at 80% 20%, rgba(0, 216, 255, 0.12), transparent 50%);
+    pointer-events: none;
   }
 
-  /* Card Type 2: Action Card — neutral with left cyan accent */
   .card-action {
-    background: linear-gradient(155deg, #09090b, #050506);
-    border: 1px solid #141417;
-    border-left: 2px solid rgba(34, 211, 238, 0.5);
-    position: relative;
-    overflow: hidden;
-    transition: border-color var(--dur-hover) ease, opacity var(--dur-hover) ease;
+    border-left: 2.5px solid rgba(0, 216, 255, 0.5) !important;
+    transition: border-color 150ms ease, background-color 150ms ease !important;
   }
   .card-action:hover {
-    border-color: rgba(34, 211, 238, 0.3);
-    border-left-color: rgba(34, 211, 238, 0.8);
+    background: rgba(10, 20, 35, 0.45) !important;
+    border-left-color: rgba(0, 216, 255, 0.8) !important;
   }
 
-  /* Card Type 3: Insight Card — AI recommendations (legacy purple, kept for compat) */
-  .card-insight {
-    background: linear-gradient(135deg, rgba(130,120,255,.065), rgba(80,60,255,.02));
-    border: 1px solid rgba(130, 120, 255, 0.2);
-    position: relative;
-    overflow: hidden;
+  .card-purple, .card-insight {
+    background: linear-gradient(135deg, rgba(130, 120, 255, 0.08), rgba(6, 10, 18, 0.32)) !important;
+    border-color: rgba(130, 120, 255, 0.15) !important;
   }
 
-  /* Card Type 4: Data Card — neutral dark. 80% of all cards. */
-  .card-data {
-    background: #09090b;
-    border: 1px solid #1f1f23;
-    position: relative;
-    overflow: hidden;
-  }
-
-  /* Card Type 5: Danger Card */
-  .card-danger {
-    background: linear-gradient(135deg, rgba(255,80,100,.08), rgba(120,0,20,.03));
-    border: 1px solid rgba(255, 80, 100, 0.2);
-    position: relative;
-    overflow: hidden;
-  }
-
-  /* ── SEMANTIC GRADIENT CARDS V2 — 15% usage ─────────────────────────────── */
-
-  /* Gold: Momentum, Weekly Progress, Consistency, Execution Score */
-  .card-gold {
-    background: linear-gradient(135deg, rgba(255,190,50,.065), rgba(255,140,0,.02));
-    border: 1px solid rgba(255, 190, 50, 0.2);
-    position: relative;
-    overflow: hidden;
-  }
-
-  /* Purple: AI Mentor, Recommendations, Skill Analysis, Career Prediction */
-  .card-purple {
-    background: linear-gradient(135deg, rgba(130,120,255,.078), rgba(80,60,255,.02));
-    border: 1px solid rgba(130, 120, 255, 0.22);
-    position: relative;
-    overflow: hidden;
-  }
-
-  /* Green: Completed, Healthy Progress, Portfolio Connected */
   .card-green {
-    background: linear-gradient(135deg, rgba(0,255,180,.065), rgba(0,120,80,.02));
-    border: 1px solid rgba(0, 220, 150, 0.2);
-    position: relative;
-    overflow: hidden;
+    background: linear-gradient(135deg, rgba(0, 255, 180, 0.06), rgba(6, 10, 18, 0.32)) !important;
+    border-color: rgba(0, 220, 150, 0.18) !important;
   }
 
-  /* Red: Skill Gaps, Missing Resume, Risk, Attention */
   .card-red {
-    background: linear-gradient(135deg, rgba(255,80,100,.052), rgba(120,0,20,.02));
-    border: 1px solid rgba(255, 80, 100, 0.2);
-    position: relative;
-    overflow: hidden;
+    background: linear-gradient(135deg, rgba(255, 80, 100, 0.06), rgba(6, 10, 18, 0.32)) !important;
+    border-color: rgba(255, 80, 100, 0.18) !important;
+  }
+
+  .card-danger {
+    background: rgba(45, 10, 15, 0.35) !important;
+    border-color: rgba(255, 70, 85, 0.15) !important;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4) !important;
   }
 
   /* Skeleton Loading — GPU keyframe only */
@@ -359,15 +337,11 @@ main {
   }
 
   .liquid-card {
-    background: linear-gradient(155deg, #08080A, #050506);
-    border: 1px solid #141417;
-    box-shadow: 
-      0 20px 60px rgba(0, 0, 0, 0.9), 
-      inset 0 1px 0 rgba(255, 255, 255, 0.06),
-      inset 0 -1px 1px rgba(0, 0, 0, 0.9);
+    background: rgba(6, 10, 18, 0.32) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35) !important;
     position: relative;
     overflow: hidden;
-    /* GPU-safe: only opacity on hover */
     transition: opacity var(--dur-hover) ease;
   }
   
@@ -382,19 +356,19 @@ main {
 
   /* Physical Tactile Liquid Buttons — transform + opacity only */
   .tactile-btn {
-    background: linear-gradient(180deg, #16161c, #0a0a0c);
-    border: 1px solid #202028;
-    box-shadow: 
-      0 4px 12px rgba(0, 0, 0, 0.8),
-      inset 0 1px 0 rgba(255, 255, 255, 0.12),
-      inset 0 -1px 1px rgba(0, 0, 0, 0.8);
-    transition: transform var(--dur-btn) ease, opacity var(--dur-btn) ease;
+    background: rgba(255, 255, 255, 0.04) !important;
+    backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+    color: #ffffff !important;
+    transition: transform var(--dur-btn) ease, background-color var(--dur-btn) ease, border-color var(--dur-btn) ease !important;
     cursor: pointer;
   }
   
   .tactile-btn:hover {
-    transform: translateY(-1px);
-    opacity: 0.92;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    transform: translateY(-1px) !important;
   }
 
   .tactile-btn:focus-visible {
@@ -403,25 +377,24 @@ main {
   }
 
   .tactile-btn:active {
-    transform: translateY(1px);
-    opacity: 1;
+    transform: translateY(1px) !important;
+    background: rgba(255, 255, 255, 0.12) !important;
   }
 
   .tactile-btn-primary {
-    background: linear-gradient(180deg, #22d3ee, #0891b2);
-    border: 1px solid #67e8f9;
-    box-shadow: 
-      0 4px 12px rgba(34, 211, 238, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.35),
-      inset 0 -1px 1px rgba(0, 0, 0, 0.5);
-    transition: transform var(--dur-btn) ease, opacity var(--dur-btn) ease;
-    color: #000000;
-    font-weight: 755;
+    background: linear-gradient(135deg, #00D8FF, #42E8FF) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 0 30px rgba(0, 216, 255, 0.25) !important;
+    color: #04080e !important;
+    font-weight: 755 !important;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.2);
+    transition: transform var(--dur-btn) ease, opacity var(--dur-btn) ease !important;
   }
 
   .tactile-btn-primary:hover {
-    transform: translateY(-1px);
-    opacity: 0.9;
+    transform: translateY(-1px) !important;
+    opacity: 0.95 !important;
+    box-shadow: 0 0 35px rgba(0, 216, 255, 0.35) !important;
   }
 
   .tactile-btn-primary:focus-visible {
@@ -430,20 +403,84 @@ main {
   }
 
   .tactile-btn-primary:active {
-    transform: translateY(1px);
-    opacity: 1;
+    transform: translateY(1px) !important;
   }
 
   /* Carved Dark Liquid Input Fields */
   .carved-input {
-    background: #040405;
-    border: 1px solid #141417;
+    background: rgba(4, 8, 14, 0.45) !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
     box-shadow: 
-      inset 0 2px 4px rgba(0, 0, 0, 0.95),
+      inset 0 2px 4px rgba(0, 0, 0, 0.35),
       inset 0 -1px 0 rgba(255, 255, 255, 0.03);
-    transition: border-color var(--dur-hover) ease;
+    transition: border-color var(--dur-hover) ease, background-color var(--dur-hover) ease;
     color: #ffffff;
     outline: none;
+  }
+
+  /* V4 Floating Sidebar classes */
+  .sidebar-glass {
+    background: rgba(4, 8, 14, 0.38) !important;
+    backdrop-filter: blur(40px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .sidebar-active-item {
+    background: linear-gradient(
+      90deg,
+      rgba(0, 216, 255, 0.16),
+      rgba(0, 216, 255, 0.04)
+    ) !important;
+    border: 1px solid rgba(0, 216, 255, 0.18) !important;
+    box-shadow: 0 0 20px rgba(0, 216, 255, 0.15) !important;
+    color: #ffffff !important;
+  }
+
+  /* V4 Messages classes */
+  .chat-message-assistant {
+    background: rgba(0, 216, 255, 0.08) !important;
+    backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(0, 216, 255, 0.15) !important;
+  }
+
+  .chat-message-user {
+    background: rgba(255, 255, 255, 0.05) !important;
+    backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+
+  /* V4 Input dock */
+  .mentor-input-dock {
+    background: rgba(4, 8, 14, 0.38) !important;
+    backdrop-filter: blur(24px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35) !important;
+  }
+
+  /* V4 Mission card cyan -> blue glow */
+  .card-mission {
+    background: rgba(6, 10, 18, 0.32) !important;
+    backdrop-filter: blur(32px) saturate(160%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35) !important;
+    border-radius: 24px !important;
+    position: relative;
+    overflow: hidden;
+  }
+  .card-mission::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: radial-gradient(
+      circle at 50% 50%,
+      rgba(0, 216, 255, 0.15) 0%,
+      rgba(30, 80, 255, 0.05) 50%,
+      transparent 80%
+    );
+    pointer-events: none;
   }
 
   .carved-input:focus {

@@ -653,11 +653,11 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
       <div className="absolute inset-x-0 top-0 -z-10 h-80 bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.03),transparent_50%)]" />
 
       {/* Mobile drawer overlays for screen sizes below lg */}
-      <div className="flex items-center justify-between gap-4 lg:hidden bg-[#0a0a0c]/80 border border-white/5 backdrop-blur-md rounded-2xl p-3 mb-6 shadow-md">
+      <div className="flex items-center justify-between gap-4 lg:hidden bg-white/[0.02] border border-white/[0.06] backdrop-blur-md rounded-2xl p-3 mb-6 shadow-md">
         <button
           type="button"
           onClick={() => setIsLeftDrawerOpen(true)}
-          className="tactile-btn flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-slate-300 rounded-xl flex-1 bg-white/5"
+          className="tactile-btn flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-slate-300 rounded-xl flex-1"
         >
           <Brain className="h-4 w-4 text-cyan-400" />
           Context Memory
@@ -665,7 +665,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
         <button
           type="button"
           onClick={() => setIsRightDrawerOpen(true)}
-          className="tactile-btn flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-slate-300 rounded-xl flex-1 bg-white/5"
+          className="tactile-btn flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-slate-300 rounded-xl flex-1"
         >
           <Zap className="h-4 w-4 text-cyan-400" />
           Action Center
@@ -674,8 +674,8 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
 
       {/* Mobile left side drawer */}
       {isLeftDrawerOpen && (
-        <div className="fixed inset-0 z-50 flex lg:hidden bg-black/80 backdrop-blur-sm">
-          <div className="relative w-80 max-w-[85vw] bg-[#0b0b0e] border-r border-white/10 p-6 space-y-6 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex lg:hidden bg-black/40 backdrop-blur-sm">
+          <div className="relative w-80 max-w-[85vw] bg-[#0b0b0e]/90 border-r border-white/10 p-6 space-y-6 overflow-y-auto backdrop-blur-xl">
             <div className="flex justify-between items-center border-b border-white/5 pb-3">
               <span className="text-xs font-bold text-white uppercase tracking-widest">Mentor Context</span>
               <button 
@@ -694,8 +694,8 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
 
       {/* Mobile right side drawer */}
       {isRightDrawerOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end lg:hidden bg-black/80 backdrop-blur-sm">
-          <div className="relative max-h-[85vh] bg-[#0b0b0e] border-t border-white/10 p-6 rounded-t-[28px] space-y-6 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex flex-col justify-end lg:hidden bg-black/40 backdrop-blur-sm">
+          <div className="relative max-h-[85vh] bg-[#0b0b0e]/90 border-t border-white/10 p-6 rounded-t-[28px] space-y-6 overflow-y-auto backdrop-blur-xl">
             <div className="flex justify-between items-center border-b border-white/5 pb-3">
               <span className="text-xs font-bold text-white uppercase tracking-widest">Action Center</span>
               <button 
@@ -716,12 +716,12 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
       <div className="grid grid-cols-1 lg:grid-cols-[20%_55%_25%] gap-6 pb-20 items-start">
         
         {/* LEFT COLUMN: Context Memory Sidebar */}
-        <aside className="hidden lg:block space-y-6 bg-[#08080a] border border-white/5 rounded-[24px] p-5.5 shadow-xl">
+        <aside className="hidden lg:block space-y-6 card-data p-5.5 shadow-xl">
           {renderLeftSidebarContent()}
         </aside>
 
         {/* CENTER COLUMN: Chat Interface */}
-        <main className="flex flex-col min-h-[580px] bg-[#040405] border border-white/5 rounded-[28px] p-5 sm:p-6 shadow-2xl relative">
+        <main className="flex flex-col min-h-[580px] bg-white/[0.02] border border-white/[0.08] backdrop-blur-xl rounded-[28px] p-5 sm:p-6 shadow-2xl relative">
           
           {/* Conversation Header: CareerOS Strategist */}
           <div className="flex items-center gap-2.5 pb-3 mb-3 border-b border-white/5">
@@ -734,7 +734,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
           
           {/* MENTOR HEADER - Advisor Pillars */}
           <div className="relative z-10 border-b border-white/5 pb-4 mb-5">
-            <div className="flex flex-wrap gap-1 rounded-full border border-white/5 bg-[#0a0a0c] p-1 justify-around max-w-[550px] mx-auto shadow-inner">
+            <div className="flex flex-wrap gap-1 rounded-full border border-white/[0.06] bg-white/[0.02] p-1 justify-around max-w-[550px] mx-auto shadow-inner">
               {[
                 { mode: "coach" as const, label: "Career Coach" },
                 { mode: "resume" as const, label: "Resume Coach" },
@@ -825,8 +825,8 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
                       <div className="relative">
                         <div className={`rounded-[20px] px-4.5 py-3.5 text-xs shadow-md group-hover:shadow-[0_0_15px_rgba(34,211,238,0.03)] transition duration-300 ${
                           isMentor
-                            ? "border border-white/5 bg-[#08080a] text-slate-100 backdrop-blur-lg"
-                            : "bg-[#141418] text-slate-200 border border-[#22d3ee]/5"
+                            ? "chat-message-assistant text-slate-100"
+                            : "chat-message-user text-slate-200"
                         }`}>
                           {isMentor ? renderFormattedContent(message.content) : <p className="leading-relaxed text-xs">{message.content}</p>}
                           
@@ -883,7 +883,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
                   <span className="h-8.5 w-8.5 rounded-full flex items-center justify-center border border-cyan-400/20 bg-cyan-950/40 text-cyan-300 shrink-0 text-xs">
                     <Image src="/logo.png" alt="Thinking" width={18} height={18} className="object-contain" />
                   </span>
-                  <div className="rounded-[20px] px-4.5 py-3 text-xs text-slate-400 border border-white/5 bg-[#08080a]">
+                  <div className="rounded-[20px] px-4.5 py-3 text-xs text-slate-400 border border-white/5 bg-white/[0.03] backdrop-blur-md">
                     AI Strategist is thinking...
                   </div>
                 </div>
@@ -960,19 +960,19 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
               )}
 
               {/* Chat Input */}
-              <form onSubmit={handleSendMessage} className="flex gap-2 relative">
+              <form onSubmit={handleSendMessage} className="flex items-center gap-3 relative p-1.5 mentor-input-dock rounded-[20px]">
                 <input
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Ask advisor about roadmap, resume review, mock interviews, or project specification..."
-                  className="carved-input w-full rounded-2xl px-5 py-3.5 text-xs text-white outline-none focus:border-cyan-400/50 transition-all placeholder:text-slate-500"
+                  className="w-full bg-transparent px-4 py-2.5 text-xs text-white outline-none border-none placeholder:text-slate-500"
                 />
                 <MagneticButton asChild>
                   <button
                     type="submit"
-                    className="tactile-btn tactile-btn-primary h-12 w-12 rounded-2xl text-black flex items-center justify-center shrink-0 hover:shadow-[0_0_15px_rgba(34,211,238,0.4)] transition"
+                    className="tactile-btn-primary h-10 w-10 rounded-xl text-black flex items-center justify-center shrink-0 transition"
                   >
-                    <Send className="h-4.5 w-4.5" />
+                    <Send className="h-4 w-4" />
                   </button>
                 </MagneticButton>
               </form>

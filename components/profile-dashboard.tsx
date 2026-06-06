@@ -258,7 +258,7 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
         
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
-            <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-cyan-400/25 bg-black/40 flex items-center justify-center shrink-0">
+            <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-cyan-400/25 bg-white/[0.03] flex items-center justify-center shrink-0">
               {avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
@@ -442,8 +442,8 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
                 const mustPulse = pulseAccount === account.key;
 
                 return (
-                  <div key={account.key} className={`border p-3.5 rounded-2xl bg-black/15 transition ${
-                    mustPulse ? "border-cyan-400/40 animate-pulse" : "border-white/5"
+                  <div key={account.key} className={`border p-3.5 rounded-2xl bg-white/[0.03] transition ${
+                    mustPulse ? "border-cyan-400/40 animate-pulse" : "border-white/[0.06]"
                   }`}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -526,7 +526,7 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
               {skillsList.map(skill => (
                 <div
                   key={skill}
-                  className="bg-black/20 border border-white/5 pl-3 pr-2 py-1.5 rounded-xl text-xs text-white font-medium inline-flex items-center gap-2.5 hover:border-cyan-400/25 transition group"
+                  className="bg-white/[0.03] border border-white/[0.06] pl-3 pr-2 py-1.5 rounded-xl text-xs text-white font-medium inline-flex items-center gap-2.5 hover:border-cyan-400/20 transition group"
                 >
                   <span>{skill}</span>
                   <button
@@ -584,7 +584,7 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
 
         <button
           onClick={() => triggerExport("Permanent account deletion requested.")}
-          className="tactile-btn border-rose-500/25 hover:bg-rose-500/10 text-rose-300 font-bold px-4 py-2 rounded-xl text-xs"
+          className="tactile-btn border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/10 text-rose-300 font-bold px-4 py-2 rounded-xl text-xs"
         >
           Delete Operator Identity
         </button>
@@ -606,7 +606,7 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
 
       {/* Export Success Modal */}
       {exportSuccessOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/85 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
           <div className="liquid-panel w-full max-w-sm rounded-[24px] p-6 text-center bg-[#09090b] border border-cyan-500/20 relative">
             <button
               type="button"

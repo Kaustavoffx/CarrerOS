@@ -96,10 +96,10 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
           width: collapsed ? "4.5rem" : "15rem",
           transition: "width 220ms ease"
         }}
-        className="fixed left-0 top-0 z-30 hidden h-screen flex-col border-r border-[#141417] bg-[#07070a] xl:flex overflow-hidden"
+        className="fixed left-4 top-4 bottom-4 z-30 hidden flex-col rounded-[24px] border border-white/5 sidebar-glass xl:flex overflow-hidden"
       >
         {/* Logo row */}
-        <div className={`flex items-center gap-3 px-4 py-5 border-b border-[#141417] ${collapsed ? "justify-center" : ""}`}>
+        <div className={`flex items-center gap-3 px-4 py-5 border-b border-white/5 ${collapsed ? "justify-center" : ""}`}>
           <Image
             src="/logo.png"
             alt="CareerOS"
@@ -132,7 +132,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
             overflow: "hidden",
             transition: "opacity 150ms ease, max-height 220ms ease",
           }}
-          className="mx-4 mt-5 flex items-center gap-3 rounded-2xl border border-[#141417] bg-[#08080a] p-3"
+          className="mx-4 mt-5 flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-3"
         >
           <ScoreRing score={score} />
           <div className="min-w-0">
@@ -154,12 +154,12 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                 key={item.href}
                 href={item.href}
                 title={collapsed ? item.label : undefined}
-                className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors duration-[120ms] ${
+                className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-[120ms] ${
                   collapsed ? "justify-center" : ""
                 } ${
                   active
-                    ? "bg-[#0d1117] text-white"
-                    : "text-slate-500 hover:bg-[#0d0d10] hover:text-slate-300"
+                    ? "sidebar-active-item text-white"
+                    : "text-slate-500 hover:bg-white/[0.03] hover:text-slate-300"
                 }`}
               >
                 {/* Active left-bar indicator — keep layoutId for micro-animation */}
@@ -193,7 +193,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
         </nav>
 
         {/* Profile footer */}
-        <div className={`m-3 mt-0 rounded-2xl border border-[#141417] bg-[#08080a] p-3 ${collapsed ? "flex justify-center" : ""}`}>
+        <div className={`m-3 mt-0 rounded-2xl border border-white/5 bg-white/[0.03] p-3 ${collapsed ? "flex justify-center" : ""}`}>
           {collapsed ? (
             <AvatarCircle name={profile?.full_name ?? null} />
           ) : (
@@ -207,7 +207,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                 type="button"
                 onClick={handleSignOut}
                 title="Sign out"
-                className="rounded-lg p-1.5 text-slate-500 hover:bg-[#141417] hover:text-rose-400 transition-colors duration-[120ms] shrink-0"
+                className="rounded-lg p-1.5 text-slate-500 hover:bg-white/5 hover:text-rose-400 transition-colors duration-[120ms] shrink-0"
               >
                 <LogOut className="h-3.5 w-3.5" />
               </button>
@@ -219,7 +219,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
         <button
           type="button"
           onClick={() => setCollapsed(c => !c)}
-          className="absolute -right-3 top-20 z-40 flex h-6 w-6 items-center justify-center rounded-full border border-[#202028] bg-[#08080a] text-slate-400 hover:text-cyan-300 transition-colors duration-[120ms] shadow-md"
+          className="absolute -right-3 top-20 z-40 flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-[#08080a] text-slate-400 hover:text-cyan-300 transition-colors duration-[120ms] shadow-md"
         >
           {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
         </button>
@@ -228,7 +228,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
       {/* ── MAIN CONTENT AREA — CSS padding-left transition ── */}
       <div
         style={{
-          paddingLeft: collapsed ? "4.5rem" : "15rem",
+          paddingLeft: collapsed ? "5.5rem" : "16.5rem",
           transition: "padding-left 220ms ease"
         }}
         className="hidden xl:block"

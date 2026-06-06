@@ -730,7 +730,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                           className={`w-full flex items-start gap-3 rounded-xl border p-3 text-left text-xs transition ${
                             isDone
                               ? "border-cyan-500/10 bg-cyan-950/5 text-slate-500"
-                              : "border-[#1c1c22] bg-[#08080a] text-slate-300 hover:border-[#252530]"
+                              : "border-white/[0.05] bg-white/[0.03] text-slate-300 hover:bg-white/[0.06] hover:border-white/[0.1]"
                           }`}
                         >
                           <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${
@@ -747,7 +747,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                   </div>
                 </div>
 
-                <div className="shrink-0 flex flex-col justify-between items-end gap-3 self-stretch min-w-[170px] bg-black/40 border border-white/5 p-4 rounded-2xl">
+                <div className="shrink-0 flex flex-col justify-between items-end gap-3 self-stretch min-w-[170px] bg-white/[0.02] border border-white/[0.06] backdrop-blur-md p-4 rounded-2xl">
                   <div className="text-right">
                     <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Estimated Duration</span>
                     <span className="text-sm font-bold text-white mt-1 block">{currentMilestone?.estimated_duration_weeks || 1} weeks</span>
@@ -925,13 +925,13 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                           {activeMilestone.why_it_matters || "No description set."}
                         </p>
 
-                        <div className="mt-4 flex gap-1 rounded-xl bg-[#08080b] border border-[#141417] p-1">
+                        <div className="mt-4 flex gap-1 rounded-xl bg-white/[0.02] border border-white/[0.05] p-1">
                           {(["tasks", "deliverables", "resources"] as MilestoneTab[]).map(tab => (
                             <button
                               key={tab}
                               onClick={() => setMilestoneTab(tab)}
                               className={`flex-1 rounded-lg py-1.5 text-[10px] font-bold uppercase tracking-wider transition ${
-                                milestoneTab === tab ? "bg-[#141418] text-white" : "text-slate-500 hover:text-slate-300"
+                                milestoneTab === tab ? "bg-white/[0.08] text-white border border-white/[0.08]" : "text-slate-400 hover:text-white"
                               }`}
                             >
                               {tab}
@@ -942,7 +942,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                         <div className="mt-4 space-y-2 max-h-[180px] overflow-y-auto pr-1">
                           {milestoneTab === "tasks" && (
                             activeMilestone.project_tasks?.map((t, idx) => (
-                              <div key={idx} className="flex items-start gap-2 text-xs text-slate-300 border border-[#121216] bg-[#070709] p-2.5 rounded-lg">
+                              <div key={idx} className="flex items-start gap-2 text-xs text-slate-300 border border-white/[0.05] bg-white/[0.02] p-2.5 rounded-lg">
                                 <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0" />
                                 <span>{t}</span>
                               </div>
@@ -950,7 +950,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                           )}
                           {milestoneTab === "deliverables" && (
                             activeMilestone.deliverables?.map((d, idx) => (
-                              <div key={idx} className="flex items-start gap-2 text-xs text-slate-300 border border-[#121216] bg-[#070709] p-2.5 rounded-lg">
+                              <div key={idx} className="flex items-start gap-2 text-xs text-slate-300 border border-white/[0.05] bg-white/[0.02] p-2.5 rounded-lg">
                                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
                                 <span>{d}</span>
                               </div>
@@ -964,7 +964,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                                   href={res.url}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="flex items-center justify-between gap-3 border border-[#121216] bg-[#070709] hover:bg-cyan-950/5 hover:border-cyan-400/20 p-2.5 rounded-lg text-xs transition group"
+                                  className="flex items-center justify-between gap-3 border border-white/[0.05] bg-white/[0.02] hover:bg-cyan-950/5 hover:border-cyan-400/20 p-2.5 rounded-lg text-xs transition group"
                                 >
                                   <div className="truncate min-w-0">
                                     <p className="font-semibold text-slate-300 group-hover:text-cyan-300 truncate">{res.label}</p>
@@ -980,7 +980,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                         </div>
 
                         {activeMilestone.notes && (
-                          <div className="mt-4 p-3.5 rounded-xl border border-white/5 bg-black/10 text-xs">
+                          <div className="mt-4 p-3.5 rounded-xl border border-white/[0.06] bg-white/[0.02] text-xs">
                             <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">Milestone Concept Notes</span>
                             <p className="text-slate-300 leading-relaxed">{activeMilestone.notes}</p>
                           </div>
@@ -1039,7 +1039,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                     return (
                       <div
                         key={`${res.url}-${idx}`}
-                        className="group flex flex-col justify-between border border-[#141417] hover:border-cyan-400/20 bg-[#08080a] p-4 rounded-2xl transition-colors duration-[120ms]"
+                        className="group flex flex-col justify-between border border-white/[0.06] hover:border-cyan-400/20 bg-white/[0.02] hover:bg-white/[0.04] p-4 rounded-2xl transition-all duration-[120ms]"
                       >
                         <div>
                           <div className="flex items-start justify-between gap-3 mb-2">
@@ -1075,7 +1075,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                               className={`rounded px-2 py-0.5 text-[9px] font-bold uppercase border transition ${
                                 isBookmarked 
                                   ? "border-cyan-400/30 bg-cyan-400/10 text-cyan-300"
-                                  : "border-[#1e1e24] bg-black/40 text-slate-500 hover:text-slate-300"
+                                  : "border-white/[0.05] bg-white/[0.02] text-slate-400 hover:text-slate-300"
                               }`}
                             >
                               Bookmark
@@ -1085,7 +1085,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                               className={`rounded px-2 py-0.5 text-[9px] font-bold uppercase border transition ${
                                 isCompleted
                                   ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
-                                  : "border-[#1e1e24] bg-black/40 text-slate-500 hover:text-slate-300"
+                                  : "border-white/[0.05] bg-white/[0.02] text-slate-400 hover:text-slate-300"
                               }`}
                             >
                               Completed
@@ -1209,11 +1209,11 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
               setIsVersionDrawerOpen(false);
               setCompareVersionId(null);
             }}
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-[2px]"
+            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
           />
           {/* Drawer */}
           <div
-            className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#09090b] border-l border-[#202028] p-6 shadow-2xl flex flex-col justify-between"
+            className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#09090b]/90 border-l border-white/10 p-6 shadow-2xl flex flex-col justify-between backdrop-blur-xl"
             style={{ transform: "translateX(0)", transition: "transform 220ms ease" }}
           >
               <div className="flex flex-col flex-1 min-h-0">
@@ -1378,7 +1378,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
 
       {/* Export Success Modal */}
       {exportSuccessOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/85 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
           <div className="liquid-panel w-full max-w-sm rounded-[24px] p-6 text-center bg-[#09090b] border border-cyan-500/20 relative">
             <button
               type="button"
