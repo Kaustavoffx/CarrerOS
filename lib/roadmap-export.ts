@@ -516,13 +516,15 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   }
 
   // Visual Utility functions
-  function drawDustSpot(x: number, y: number, radius: number, hexColor: string, maxOpacity: number) {
+  function drawAtmosphericCloud(x: number, y: number, radius: number, hexColor: string, maxOpacity: number) {
     doc.setFillColor(hexColor);
-    const steps = 25;
+    const steps = 40;
     for (let i = steps; i > 0; i--) {
-      const r = radius * (i / steps);
       const t = i / steps;
-      const opacity = maxOpacity * Math.pow(t, 2);
+      const r = radius * t;
+      const opacity = maxOpacity * Math.pow(1 - t, 2.5); // very smooth exponential decay
+      if (opacity <= 0.0005) continue;
+      
       doc.saveGraphicsState();
       const gState = new (doc as unknown as JsPdfExtended).GState({ opacity });
       doc.setGState(gState);
@@ -549,49 +551,51 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     doc.setFillColor("#04070D");
     doc.rect(0, 0, pageWidth, pageHeight, "F");
 
-    // Vertical atmospheric gradient
-    const gradientHeight = pageHeight * 0.65;
-    const steps = 40;
-    const stepHeight = gradientHeight / steps;
+    // Vertical atmospheric gradient top-down
+    const gradientHeight = 450;
+    const gradSteps = 60;
     doc.setFillColor("#00D8FF");
-    for (let i = 0; i < steps; i++) {
-      const t = i / steps;
-      const opacity = 0.14 * (1 - t);
-      doc.saveGraphicsState();
-      const gState = new (doc as unknown as JsPdfExtended).GState({ opacity });
-      doc.setGState(gState);
-      doc.rect(0, i * stepHeight, pageWidth, stepHeight + 0.5, "F");
-      doc.restoreGraphicsState();
+    for (let i = 0; i < gradSteps; i++) {
+      const t = i / gradSteps;
+      const opacity = 0.08 * Math.pow(1 - t, 2.5);
+      if (opacity > 0.001) {
+        doc.saveGraphicsState();
+        const gState = new (doc as unknown as JsPdfExtended).GState({ opacity });
+        doc.setGState(gState);
+        doc.rect(0, i * (gradientHeight / gradSteps), pageWidth, (gradientHeight / gradSteps) + 0.5, "F");
+        doc.restoreGraphicsState();
+      }
     }
 
     if (pageNum > 1) {
       drawWatermark();
     }
 
-    // Page-specific dust layout
+    // Page-specific atmospheric light clouds
     if (pageNum === 1) {
-      drawDustSpot(0, 0, 200, "#00D8FF", 0.08); // Cyan
-      drawDustSpot(pageWidth, 0, 220, "#3B82F6", 0.06); // Blue
-      drawDustSpot(0, pageHeight * 0.85, 180, "#4F46E5", 0.06); // Indigo
+      drawAtmosphericCloud(0, pageHeight * 0.2, 350, "#00D8FF", 0.05);     // Deep Cyan Cloud
+      drawAtmosphericCloud(pageWidth, 0, 400, "#3B82F6", 0.04);          // Electric Blue Cloud
+      drawAtmosphericCloud(0, pageHeight * 0.8, 300, "#4F46E5", 0.04);   // Subtle Indigo Cloud
+      drawAtmosphericCloud(pageWidth * 0.3, pageHeight * 0.5, 250, "#0D9488", 0.03); // Faint Teal Cloud
     } else if (pageNum === 2) {
-      drawDustSpot(pageWidth, 0, 190, "#0D9488", 0.07); // Teal
-      drawDustSpot(0, pageHeight * 0.4, 160, "#00D8FF", 0.05); // Cyan
-      drawDustSpot(pageWidth, pageHeight, 200, "#4F46E5", 0.06); // Indigo
+      drawAtmosphericCloud(pageWidth, 0, 350, "#0D9488", 0.04);          // Faint Teal Cloud
+      drawAtmosphericCloud(0, pageHeight * 0.4, 250, "#00D8FF", 0.03);   // Deep Cyan Cloud
+      drawAtmosphericCloud(pageWidth, pageHeight, 350, "#4F46E5", 0.03); // Subtle Indigo Cloud
     } else if (pageNum === 3) {
-      drawDustSpot(0, 0, 210, "#3B82F6", 0.07); // Blue
-      drawDustSpot(pageWidth, pageHeight * 0.3, 170, "#00D8FF", 0.05); // Cyan
-      drawDustSpot(0, pageHeight, 180, "#4F46E5", 0.06); // Indigo
+      drawAtmosphericCloud(0, 0, 380, "#3B82F6", 0.05);                  // Electric Blue Cloud
+      drawAtmosphericCloud(pageWidth, pageHeight * 0.3, 300, "#00D8FF", 0.04); // Deep Cyan Cloud
+      drawAtmosphericCloud(0, pageHeight, 320, "#4F46E5", 0.03);         // Subtle Indigo Cloud
     } else if (pageNum === 4) {
-      drawDustSpot(pageWidth, 0, 200, "#00D8FF", 0.07); // Cyan
-      drawDustSpot(0, pageHeight * 0.7, 160, "#0D9488", 0.06); // Teal
-      drawDustSpot(pageWidth, pageHeight, 190, "#3B82F6", 0.05); // Blue
+      drawAtmosphericCloud(pageWidth, 0, 360, "#00D8FF", 0.05);          // Deep Cyan Cloud
+      drawAtmosphericCloud(0, pageHeight * 0.7, 300, "#0D9488", 0.04);   // Faint Teal Cloud
+      drawAtmosphericCloud(pageWidth, pageHeight, 320, "#3B82F6", 0.03); // Electric Blue Cloud
     } else if (pageNum === 5) {
-      drawDustSpot(0, 0, 190, "#4F46E5", 0.06); // Indigo
-      drawDustSpot(pageWidth, pageHeight * 0.5, 210, "#3B82F6", 0.07); // Blue
-      drawDustSpot(0, pageHeight, 180, "#00D8FF", 0.06); // Cyan
+      drawAtmosphericCloud(0, 0, 320, "#4F46E5", 0.04);                  // Subtle Indigo Cloud
+      drawAtmosphericCloud(pageWidth, pageHeight * 0.5, 380, "#3B82F6", 0.05); // Electric Blue Cloud
+      drawAtmosphericCloud(0, pageHeight, 300, "#00D8FF", 0.04);         // Deep Cyan Cloud
     } else {
-      drawDustSpot(0, 0, 200, "#00D8FF", 0.07); // Cyan
-      drawDustSpot(pageWidth, pageHeight * 0.8, 180, "#4F46E5", 0.06); // Indigo
+      drawAtmosphericCloud(0, 0, 350, "#00D8FF", 0.04);                  // Deep Cyan Cloud
+      drawAtmosphericCloud(pageWidth, pageHeight * 0.8, 300, "#4F46E5", 0.03); // Subtle Indigo Cloud
     }
   }
 
@@ -611,7 +615,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     const rx = options?.rx ?? 24;
     const ry = options?.ry ?? 24;
 
-    // 1. Soft environmental glow behind card
+    // 1. Soft environmental glow behind card (if glowColor is provided)
     if (options?.glowColor) {
       doc.saveGraphicsState();
       const glowColor = options.glowColor;
@@ -626,11 +630,23 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
       doc.restoreGraphicsState();
     }
 
-    // 2. Deep black base
+    // 2. Soft black drop shadow under every card for visual depth
+    doc.saveGraphicsState();
+    doc.setFillColor("#000000");
+    const shadowOpacity = 0.25;
+    for (let i = 4; i > 0; i--) {
+      const offset = i * 2;
+      const gState = new (doc as unknown as JsPdfExtended).GState({ opacity: shadowOpacity / i });
+      doc.setGState(gState);
+      doc.roundedRect(x - offset + 1, yVal + offset + 1, width + offset * 2, height + offset * 2, rx + offset, ry + offset, "F");
+    }
+    doc.restoreGraphicsState();
+
+    // 3. Deep black base
     doc.setFillColor("#090C12");
     doc.roundedRect(x, yVal, width, height, rx, ry, "F");
 
-    // 3. Internal highlight (subtle 3% opacity white fill)
+    // 4. Internal highlight (subtle 3% opacity white fill)
     doc.saveGraphicsState();
     const highlightGState = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.03 });
     doc.setGState(highlightGState);
@@ -638,14 +654,25 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     doc.roundedRect(x + 1, yVal + 1, width - 2, height - 2, rx - 1, ry - 1, "F");
     doc.restoreGraphicsState();
 
-    // 4. Subtle 5% opacity white border
+    // 5. Subtle 8% opacity white border
     doc.saveGraphicsState();
-    const borderGState = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.05 });
+    const borderGState = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.08 });
     doc.setGState(borderGState);
     doc.setDrawColor("#FFFFFF");
-    doc.setLineWidth(1);
+    doc.setLineWidth(1.2);
     doc.roundedRect(x, yVal, width, height, rx, ry, "D");
     doc.restoreGraphicsState();
+
+    // 6. Colored border highlight (edge lighting) if glowColor exists
+    if (options?.glowColor) {
+      doc.saveGraphicsState();
+      const edgeGState = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.15 });
+      doc.setGState(edgeGState);
+      doc.setDrawColor(options.glowColor);
+      doc.setLineWidth(1.2);
+      doc.roundedRect(x, yVal, width, height, rx, ry, "D");
+      doc.restoreGraphicsState();
+    }
 
     ledger.pushBox(doc.getNumberOfPages(), x, yVal, x + width, yVal + height, `Card: [x=${x.toFixed(1)}, y=${yVal.toFixed(1)}, w=${width.toFixed(1)}, h=${height.toFixed(1)}]`);
   }
@@ -771,6 +798,63 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     return badgeWidth;
   }
 
+  function getPremiumIntelCardHeight(width: number, title: string, val: string, desc: string) {
+    const paddingX = 22;
+    const paddingY = 22;
+    const contentW = width - paddingX * 2;
+    
+    doc.saveGraphicsState();
+    doc.setFont("CMGeom", "normal");
+    
+    doc.setFontSize(12);
+    const titleLines = wrapText(title.toUpperCase(), contentW, doc);
+    
+    doc.setFontSize(11);
+    const valLines = val ? wrapText(val, contentW, doc) : [];
+    
+    doc.setFontSize(9.5);
+    const descLines = wrapText(desc, contentW, doc);
+    
+    doc.restoreGraphicsState();
+
+    let h = paddingY;
+    h += titleLines.length * 12 * 1.5;
+    h += 18; // Spacing after title
+    if (val) {
+      h += valLines.length * 11 * 1.5;
+      h += 8; // Spacing after val
+    }
+    h += descLines.length * 9.5 * 1.5;
+    h += paddingY;
+    
+    return h;
+  }
+
+  function getRoadmapSummaryCardHeight(width: number, title: string, desc: string) {
+    const paddingX = 16;
+    const paddingY = 16;
+    const contentW = width - paddingX * 2;
+    
+    doc.saveGraphicsState();
+    doc.setFont("CMGeom", "normal");
+    
+    doc.setFontSize(8.5);
+    const titleLines = wrapText(title.toUpperCase(), contentW, doc);
+    
+    doc.setFontSize(8);
+    const descLines = wrapText(desc, contentW, doc);
+    
+    doc.restoreGraphicsState();
+    
+    let h = paddingY;
+    h += titleLines.length * 8.5 * 1.5;
+    h += 12; // Spacing after title
+    h += descLines.length * 8 * 1.5;
+    h += paddingY;
+    
+    return h;
+  }
+
   function drawDashboardMetricCard(x: number, yVal: number, width: number, height: number, label: string, value: string, color: string) {
     drawLiquidGlassCard(x, yVal, width, height, {
       glowColor: color,
@@ -778,14 +862,6 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
       rx: 16,
       ry: 16
     });
-    
-    doc.saveGraphicsState();
-    const glowLineGState = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.5 });
-    doc.setGState(glowLineGState);
-    doc.setDrawColor(color);
-    doc.setLineWidth(1.5);
-    doc.line(x + 16, yVal + 1.5, x + width - 16, yVal + 1.5);
-    doc.restoreGraphicsState();
     
     doc.setFont("CMGeom", "normal");
     doc.setFontSize(8);
@@ -798,6 +874,10 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   }
 
   function drawPremiumIntelCard(x: number, yVal: number, width: number, height: number, title: string, val: string, desc: string, glowColor: string) {
+    const paddingX = 22;
+    const paddingY = 22;
+    const contentW = width - paddingX * 2;
+    
     drawLiquidGlassCard(x, yVal, width, height, {
       glowColor,
       glowOpacity: 0.04,
@@ -805,18 +885,19 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
       ry: 16
     });
 
-    doc.setFont("CMGeom", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(glowColor);
-    drawText(title.toUpperCase(), x + 12, yVal + 16);
+    let curY = yVal + paddingY;
 
-    doc.setFontSize(12);
-    doc.setTextColor("#FFFFFF");
-    drawText(val, x + 12, yVal + 32);
+    // Title: 12pt
+    const titleEndY = drawText(title.toUpperCase(), x + paddingX, curY + 12, { maxWidth: contentW, fontSize: 12, fontColor: glowColor });
+    curY = titleEndY + 18; // 18px spacing between title and body/val
 
-    doc.setFontSize(8);
-    doc.setTextColor("#94A3B8");
-    drawWrappedText(desc, x + 12, yVal + 44, width - 24, 8);
+    if (val) {
+      const valEndY = drawText(val, x + paddingX, curY + 11, { maxWidth: contentW, fontSize: 11, fontColor: "#FFFFFF" });
+      curY = valEndY + 8; // spacing after val
+    }
+
+    // Body: 9.5pt, 1.5x line-height
+    drawWrappedText(desc, x + paddingX, curY + 9.5, contentW, 9.5, { fontColor: "#94A3B8", lineSpacing: 1.5 });
   }
 
   function drawCompetencyMeter(x: number, yVal: number, width: number, label: string, progress: number, color = "#00D8FF") {
@@ -969,14 +1050,6 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     
     doc.setTextColor("#00D8FF");
     doc.text(pageIdText, pageWidth - margins.right, 31, { align: "right" });
-    
-    // Header line
-    doc.setDrawColor("#FFFFFF");
-    doc.setLineWidth(0.4);
-    doc.line(margins.left, 36, pageWidth - margins.right, 36);
-    
-    // Footer line
-    doc.line(margins.left, pageHeight - 36, pageWidth - margins.right, pageHeight - 36);
     
     // Footer Left
     doc.setTextColor("#64748b");
@@ -1161,14 +1234,27 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   const firstRoadmap = safeRoadmaps[0];
   if (firstRoadmap) {
     const gridCardW = (contentWidth - 12) / 2;
-    const gridCardH = 75;
 
     // Row 1
+    const h1_1 = getPremiumIntelCardHeight(
+      gridCardW, 
+      "Market Demand", 
+      `${firstRoadmap.career_demand_score}/100 Demand`, 
+      "Strong demand signal indicating continuous job openings and hiring pipeline velocity across major regions."
+    );
+    const h1_2 = getPremiumIntelCardHeight(
+      gridCardW, 
+      "Salary Outlook", 
+      firstRoadmap.salary_range || "Competitive Base", 
+      "Estimated benchmark salary range representing starting compensation brackets for verified positions."
+    );
+    const row1H = Math.max(h1_1, h1_2, 85);
+
     drawPremiumIntelCard(
       margins.left, 
       y, 
       gridCardW, 
-      gridCardH, 
+      row1H, 
       "Market Demand", 
       `${firstRoadmap.career_demand_score}/100 Demand`, 
       "Strong demand signal indicating continuous job openings and hiring pipeline velocity across major regions.",
@@ -1179,21 +1265,35 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
       margins.left + gridCardW + 12, 
       y, 
       gridCardW, 
-      gridCardH, 
+      row1H, 
       "Salary Outlook", 
       firstRoadmap.salary_range || "Competitive Base", 
       "Estimated benchmark salary range representing starting compensation brackets for verified positions.",
       "#10B981"
     );
 
-    y += gridCardH + 12;
+    y += row1H + 12;
 
     // Row 2
+    const h2_1 = getPremiumIntelCardHeight(
+      gridCardW, 
+      "Automation Risk", 
+      firstRoadmap.automation_risk || "Low Risk", 
+      "Low susceptibility to automated displacement due to cognitive complexity, problem-solving, and creative design roles."
+    );
+    const h2_2 = getPremiumIntelCardHeight(
+      gridCardW, 
+      "Industry Growth", 
+      firstRoadmap.market_outlook || "Accelerating Growth", 
+      "Robust YoY expansion and expansion of supporting digital services creating constant demand for skilled engineering professionals."
+    );
+    const row2H = Math.max(h2_1, h2_2, 85);
+
     drawPremiumIntelCard(
       margins.left, 
       y, 
       gridCardW, 
-      gridCardH, 
+      row2H, 
       "Automation Risk", 
       firstRoadmap.automation_risk || "Low Risk", 
       "Low susceptibility to automated displacement due to cognitive complexity, problem-solving, and creative design roles.",
@@ -1204,14 +1304,14 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
       margins.left + gridCardW + 12, 
       y, 
       gridCardW, 
-      gridCardH, 
+      row2H, 
       "Industry Growth", 
       firstRoadmap.market_outlook || "Accelerating Growth", 
       "Robust YoY expansion and expansion of supporting digital services creating constant demand for skilled engineering professionals.",
       "#8B5CF6"
     );
 
-    y += gridCardH + 24;
+    y += row2H + 24;
   }
 
   // 3-column Roadmap Summary
@@ -1223,12 +1323,16 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     "Recruiter-ready resume, deployed portfolio portal, comprehensive behavioral stories bank, and 10+ pipeline leads."
   ];
 
+  const summaryHeights = summaryTitleList.map((title, idx) => 
+    getRoadmapSummaryCardHeight(summaryColW, title, summaryTextList[idx])
+  );
+  const maxSummaryH = Math.max(...summaryHeights, 80);
+
   summaryTitleList.forEach((sTitle, idx) => {
     const cardX = margins.left + idx * (summaryColW + 8);
-    const cardH = 80;
     
     // Draw card with distinct light blue reflection
-    drawLiquidGlassCard(cardX, y, summaryColW, cardH, {
+    drawLiquidGlassCard(cardX, y, summaryColW, maxSummaryH, {
       glowColor: "#3B82F6",
       glowOpacity: 0.03,
       rx: 16,
@@ -1242,10 +1346,10 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
     doc.setFontSize(8);
     doc.setTextColor("#94A3B8");
-    drawWrappedText(summaryTextList[idx], cardX + 12, y + 28, summaryColW - 24, 8);
+    drawWrappedText(summaryTextList[idx], cardX + 12, y + 28, summaryColW - 24, 8, { lineSpacing: 1.5 });
   });
 
-  y += 80 + 24;
+  y += maxSummaryH + 24;
 
   // Domain Competency Breakdown (2x2 skill bars)
   doc.setFont("CMGeom", "normal");
