@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { LazyMotion, MotionConfig, domAnimation } from "framer-motion";
 import { AppAtmosphere } from "@/components/app-atmosphere";
+import { CareerOSBackground } from "@/components/careeros-background";
 import { AuthProvider } from "@/components/auth-provider";
 import { geom } from "@/lib/fonts";
 import "./globals.css";
@@ -29,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark scroll-smooth">
       <body className={`${geom.variable} text-white antialiased`}>
-        <div className="careeros-background" />
+        <CareerOSBackground />
         <MotionConfig reducedMotion="user">
           <LazyMotion features={domAnimation}>
             <AuthProvider>

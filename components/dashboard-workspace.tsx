@@ -13,7 +13,7 @@ import { generateId } from "@/lib/id";
 import { updateWorkspace } from "@/lib/app-data";
 import type {
   NoteRecord, ProgressRecord, UserProfileRecord,
-  WorkspaceSnapshotRecord
+  WorkspaceSnapshotRecord, RoadmapMilestoneRecord
 } from "@/lib/supabase/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -24,14 +24,6 @@ type DashboardWorkspaceProps = {
 };
 
 type KanbanColumn = "upcoming" | "inprogress" | "completed";
-
-type MilestoneStatus = "completed" | "active" | "upcoming";
-
-function getMilestoneStatus(idx: number, completedCount: number, total: number): MilestoneStatus {
-  if (idx < completedCount) return "completed";
-  if (idx === Math.min(completedCount, total - 1)) return "active";
-  return "upcoming";
-}
 
 function formatUtcDate(dateStr: string) {
   if (!dateStr) return "";
@@ -119,34 +111,89 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
   const [progressValue, setProgressValue] = useState(60);
   const [progressNote, setProgressNote] = useState("");
 
-  // Load and sync checked tasks with LocalStorage (shared with Roadmaps page)
+  // Load and sync checked tasks with LocalStorage & Database
   const [checkedTasks, setCheckedTasks] = useState<Record<string, boolean>>({});
-  const [isLoaded, setIsLoaded] = useState(false);
+
+  // ── Derived active roadmap properties ────────────────────────────────────
+  const roadmaps = workspace?.roadmaps ?? [];
+  const activeRoadmap = roadmaps[0] ?? null;
+  const allMilestones = Array.isArray(activeRoadmap?.milestones) ? activeRoadmap.milestones : [];
+
+  const derivedCompletedCount = activeRoadmap ? Math.floor((activeRoadmap.progress / 100) * allMilestones.length) : 0;
+  
+  const getMilestoneColumn = (m: RoadmapMilestoneRecord, idx: number): KanbanColumn => {
+    if (m.status === "completed" || m.status === "inprogress" || m.status === "upcoming") {
+      return m.status;
+    }
+    // Fallback to sequential
+    if (idx < derivedCompletedCount) return "completed";
+    if (idx === Math.min(derivedCompletedCount, allMilestones.length - 1)) return "inprogress";
+    return "upcoming";
+  };
+
+  const completedCount = activeRoadmap
+    ? allMilestones.filter((m, idx) => getMilestoneColumn(m, idx) === "completed").length
+    : 0;
+
+  // Active milestone (first uncompleted milestone)
+  const currentMilestoneIdx = allMilestones.length > 0
+    ? allMilestones.findIndex((m, idx) => getMilestoneColumn(m, idx) !== "completed")
+    : -1;
+  const currentMilestone = currentMilestoneIdx >= 0 ? allMilestones[currentMilestoneIdx] : null;
+
+  // Current Sprint Progress
+  const currentMilestoneTasks = currentMilestone?.project_tasks ?? [];
+  const currentMilestoneDeliverables = currentMilestone?.deliverables ?? [];
+  const totalSprintItems = currentMilestoneTasks.length + currentMilestoneDeliverables.length;
+
+  const completedSprintItems =
+    currentMilestoneTasks.filter((_, i) => checkedTasks[`${currentMilestone?.title}::t::${i}`]).length +
+    currentMilestoneDeliverables.filter((_, i) => checkedTasks[`${currentMilestone?.title}::d::${i}`]).length;
 
   useEffect(() => {
     if (profile?.id) {
+      const loadedChecked: Record<string, boolean> = {};
+      
+      // 1. Load from active roadmap milestones stored in the database
+      if (activeRoadmap && Array.isArray(activeRoadmap.milestones)) {
+        activeRoadmap.milestones.forEach(m => {
+          const msTasks = m.project_tasks ?? [];
+          const msDels = m.deliverables ?? [];
+          if (Array.isArray(m.completed_tasks)) {
+            msTasks.forEach((t, i) => {
+              if (m.completed_tasks!.includes(t)) {
+                loadedChecked[`${m.title}::t::${i}`] = true;
+              }
+            });
+          }
+          if (Array.isArray(m.completed_deliverables)) {
+            msDels.forEach((d, i) => {
+              if (m.completed_deliverables!.includes(d)) {
+                loadedChecked[`${m.title}::d::${i}`] = true;
+              }
+            });
+          }
+        });
+      }
+
+      // 2. Merge with localStorage for backwards compatibility
       try {
         const saved = localStorage.getItem(`careeros::roadmap_checked_tasks::${profile.id}`);
         if (saved) {
-          setCheckedTasks(JSON.parse(saved));
+          const parsed = JSON.parse(saved);
+          Object.keys(parsed).forEach(key => {
+            if (parsed[key]) {
+              loadedChecked[key] = true;
+            }
+          });
         }
       } catch (e) {
         console.error("Failed loading checked tasks:", e);
-      } finally {
-        setIsLoaded(true);
       }
-    }
-  }, [profile?.id]);
 
-  useEffect(() => {
-    if (isLoaded && profile?.id) {
-      try {
-        localStorage.setItem(`careeros::roadmap_checked_tasks::${profile.id}`, JSON.stringify(checkedTasks));
-      } catch (e) {
-        console.error("Failed saving checked tasks:", e);
-      }
+      setCheckedTasks(loadedChecked);
     }
-  }, [checkedTasks, profile?.id, isLoaded]);
+  }, [activeRoadmap, profile?.id]);
 
   const supabase = getSupabaseBrowserClient();
 
@@ -175,24 +222,6 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
     }
   }
 
-  // ── Derived active roadmap properties ────────────────────────────────────
-  const roadmaps = workspace?.roadmaps ?? [];
-  const activeRoadmap = roadmaps[0] ?? null;
-  const allMilestones = Array.isArray(activeRoadmap?.milestones) ? activeRoadmap.milestones : [];
-  const completedCount = activeRoadmap ? Math.floor((activeRoadmap.progress / 100) * allMilestones.length) : 0;
-
-  // Active milestone (first uncompleted milestone)
-  const currentMilestoneIdx = allMilestones.length > 0 ? Math.min(completedCount, allMilestones.length - 1) : -1;
-  const currentMilestone = currentMilestoneIdx >= 0 ? allMilestones[currentMilestoneIdx] : null;
-
-  // Current Sprint Progress
-  const currentMilestoneTasks = currentMilestone?.project_tasks ?? [];
-  const currentMilestoneDeliverables = currentMilestone?.deliverables ?? [];
-  const totalSprintItems = currentMilestoneTasks.length + currentMilestoneDeliverables.length;
-
-  const completedSprintItems =
-    currentMilestoneTasks.filter((_, i) => checkedTasks[`${currentMilestone?.title}::t::${i}`]).length +
-    currentMilestoneDeliverables.filter((_, i) => checkedTasks[`${currentMilestone?.title}::d::${i}`]).length;
 
   const sprintProgress = totalSprintItems > 0 ? Math.round((completedSprintItems / totalSprintItems) * 100) : 0;
 
@@ -267,55 +296,199 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
   // ── Drag & Drop Kanban Milestone handlers ───────────────────────────────
   async function handleMilestoneStatusUpdate(milestoneTitle: string, col: KanbanColumn) {
     if (!activeRoadmap || !workspace) return;
-    const idx = allMilestones.findIndex(m => m.title === milestoneTitle);
-    if (idx === -1) return;
-
-    let nextProgress = activeRoadmap.progress;
-    if (col === "completed") {
-      nextProgress = Math.min(100, Math.round(((idx + 1) / allMilestones.length) * 100));
-    } else if (col === "inprogress") {
-      nextProgress = Math.min(100, Math.round((idx / allMilestones.length) * 100));
-    } else if (col === "upcoming") {
-      nextProgress = Math.min(100, Math.round((Math.max(0, idx - 1) / allMilestones.length) * 100));
-    }
-
-    if (nextProgress !== activeRoadmap.progress) {
-      const updatedRoadmap = {
-        ...activeRoadmap,
-        progress: nextProgress
-      };
-      const updatedRoadmaps = [updatedRoadmap, ...roadmaps.slice(1)];
-      await persistWorkspaceChange({ roadmaps: updatedRoadmaps });
-      showToast(`Milestone status updated. Overall progress is now ${nextProgress}%.`);
-      if (col === "completed") {
-        setShowCelebration(true);
-        setTimeout(() => setShowCelebration(false), 4000);
+    
+    const updatedMilestones = allMilestones.map((m, idx) => {
+      if (m.title === milestoneTitle) {
+        const msTasks = m.project_tasks ?? [];
+        const msDels = m.deliverables ?? [];
+        
+        let completedTasks = Array.isArray(m.completed_tasks) ? [...m.completed_tasks] : [];
+        let completedDels = Array.isArray(m.completed_deliverables) ? [...m.completed_deliverables] : [];
+        
+        if (col === "completed") {
+          completedTasks = [...msTasks];
+          completedDels = [...msDels];
+        } else if (col === "upcoming") {
+          completedTasks = [];
+          completedDels = [];
+        }
+        
+        return {
+          ...m,
+          status: col,
+          completed_tasks: completedTasks,
+          completed_deliverables: completedDels
+        };
       }
+      // If other milestones don't have a status yet, set their current derived status
+      if (!m.status) {
+        const derivedCol = getMilestoneColumn(m, idx);
+        return { ...m, status: derivedCol };
+      }
+      return m;
+    });
+
+    const nextCompletedCount = updatedMilestones.filter(m => m.status === "completed").length;
+    const nextProgress = Math.min(100, Math.round((nextCompletedCount / allMilestones.length) * 100));
+
+    const updatedRoadmap = {
+      ...activeRoadmap,
+      progress: nextProgress,
+      milestones: updatedMilestones
+    };
+    
+    const updatedRoadmaps = [updatedRoadmap, ...roadmaps.slice(1)];
+    
+    // Update local React checked state
+    setCheckedTasks(prev => {
+      const nextChecked = { ...prev };
+      updatedMilestones.forEach(m => {
+        if (m.title === milestoneTitle) {
+          const msTasks = m.project_tasks ?? [];
+          const msDels = m.deliverables ?? [];
+          msTasks.forEach((_, i) => {
+            nextChecked[`${m.title}::t::${i}`] = col === "completed";
+          });
+          msDels.forEach((_, i) => {
+            nextChecked[`${m.title}::d::${i}`] = col === "completed";
+          });
+        }
+      });
+      if (profile?.id) {
+        try {
+          localStorage.setItem(`careeros::roadmap_checked_tasks::${profile.id}`, JSON.stringify(nextChecked));
+        } catch {}
+      }
+      return nextChecked;
+    });
+
+    // Update workspace state
+    setWorkspace(prev => prev ? { ...prev, roadmaps: updatedRoadmaps } : null);
+
+    try {
+      if (supabase && profile?.id) {
+        await updateWorkspace(supabase, profile.id, { roadmaps: updatedRoadmaps });
+        showToast(`Milestone moved to ${col === "inprogress" ? "In Progress" : col === "completed" ? "Completed" : "Todo"}.`);
+        if (col === "completed") {
+          setShowCelebration(true);
+          setTimeout(() => setShowCelebration(false), 4000);
+        }
+      } else {
+        showToast("Saved locally.");
+      }
+    } catch {
+      showToast("Cloud sync failed. Saved to memory.");
     }
   }
 
   // ── Today's Mission Checklist state handler ─────────────────────────────
-  function toggleTaskState(key: string) {
+  async function toggleTaskState(key: string) {
+    if (!activeRoadmap || !workspace) return;
+    
+    const parts = key.split("::");
+    if (parts.length < 3) return;
+    const mTitle = parts[0];
+    const type = parts[1]; // "t" or "d"
+    const idx = parseInt(parts[2]);
+    
+    const updatedMilestones = allMilestones.map(m => {
+      if (m.title === mTitle) {
+        const msTasks = m.project_tasks ?? [];
+        const msDels = m.deliverables ?? [];
+        
+        let completedTasks = Array.isArray(m.completed_tasks) ? [...m.completed_tasks] : [];
+        let completedDels = Array.isArray(m.completed_deliverables) ? [...m.completed_deliverables] : [];
+        
+        if (type === "t") {
+          const taskTitle = msTasks[idx];
+          if (taskTitle) {
+            if (completedTasks.includes(taskTitle)) {
+              completedTasks = completedTasks.filter(t => t !== taskTitle);
+            } else {
+              completedTasks.push(taskTitle);
+            }
+          }
+        } else if (type === "d") {
+          const delTitle = msDels[idx];
+          if (delTitle) {
+            if (completedDels.includes(delTitle)) {
+              completedDels = completedDels.filter(d => d !== delTitle);
+            } else {
+              completedDels.push(delTitle);
+            }
+          }
+        }
+        
+        // Auto transition status to completed if all items are checked
+        const totalItems = msTasks.length + msDels.length;
+        const completedItems = completedTasks.length + completedDels.length;
+        const nextStatus: KanbanColumn | undefined = completedItems === totalItems ? "completed" : m.status === "completed" ? "inprogress" : m.status;
+        
+        return {
+          ...m,
+          completed_tasks: completedTasks,
+          completed_deliverables: completedDels,
+          status: nextStatus
+        };
+      }
+      return m;
+    });
+
+    const nextCompletedCount = updatedMilestones.filter((m, idx) => {
+      const status = m.status || (idx < derivedCompletedCount ? "completed" : "upcoming");
+      return status === "completed";
+    }).length;
+    
+    const nextProgress = Math.min(100, Math.round((nextCompletedCount / allMilestones.length) * 100));
+
+    const updatedRoadmap = {
+      ...activeRoadmap,
+      progress: nextProgress,
+      milestones: updatedMilestones
+    };
+    
+    const updatedRoadmaps = [updatedRoadmap, ...roadmaps.slice(1)];
+
+    // Optimistic UI updates
+    setWorkspace(prev => prev ? { ...prev, roadmaps: updatedRoadmaps } : null);
+    
     setCheckedTasks(prev => {
       const checking = !prev[key];
-      const updated = { ...prev, [key]: checking };
-      if (checking && currentMilestone) {
-        const currentMilestoneTasks = currentMilestone.project_tasks ?? [];
-        const currentMilestoneDeliverables = currentMilestone.deliverables ?? [];
-        const totalSprintItems = currentMilestoneTasks.length + currentMilestoneDeliverables.length;
-
+      const nextChecked = { ...prev, [key]: checking };
+      
+      // Auto celebrate on 100% sprint progress
+      if (checking && currentMilestone && mTitle === currentMilestone.title) {
+        const msTasks = currentMilestone.project_tasks ?? [];
+        const msDels = currentMilestone.deliverables ?? [];
+        const totalSprintItems = msTasks.length + msDels.length;
         const completedSprintItems =
-          currentMilestoneTasks.filter((_, i) => updated[`${currentMilestone.title}::t::${i}`]).length +
-          currentMilestoneDeliverables.filter((_, i) => updated[`${currentMilestone.title}::d::${i}`]).length;
+          msTasks.filter((_, i) => nextChecked[`${currentMilestone.title}::t::${i}`]).length +
+          msDels.filter((_, i) => nextChecked[`${currentMilestone.title}::d::${i}`]).length;
 
-        const newProgress = totalSprintItems > 0 ? Math.round((completedSprintItems / totalSprintItems) * 100) : 0;
-        if (newProgress === 100) {
+        if (totalSprintItems > 0 && completedSprintItems === totalSprintItems) {
           setShowCelebration(true);
           setTimeout(() => setShowCelebration(false), 4000);
         }
       }
-      return updated;
+      
+      if (profile?.id) {
+        try {
+          localStorage.setItem(`careeros::roadmap_checked_tasks::${profile.id}`, JSON.stringify(nextChecked));
+        } catch {}
+      }
+      return nextChecked;
     });
+
+    try {
+      if (supabase && profile?.id) {
+        await updateWorkspace(supabase, profile.id, { roadmaps: updatedRoadmaps });
+        showToast("Progress synchronized.");
+      } else {
+        showToast("Saved locally.");
+      }
+    } catch {
+      showToast("Cloud sync failed. Saved to memory.");
+    }
   }
 
   // ── Real Activity timeline events parser ─────────────────────────────────
@@ -598,8 +771,8 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
               const meta = COLUMN_META[col];
 
               const cards = allMilestones.map((m, idx) => {
-                const status = getMilestoneStatus(idx, completedCount, allMilestones.length);
-                const colMap: KanbanColumn = status === "completed" ? "completed" : status === "active" ? "inprogress" : "upcoming";
+                const status = getMilestoneColumn(m, idx);
+                const colMap: KanbanColumn = status === "completed" ? "completed" : status === "inprogress" ? "inprogress" : "upcoming";
 
                 const msTasks = m.project_tasks ?? [];
                 const msDels = m.deliverables ?? [];
@@ -627,16 +800,22 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                     const title = e.dataTransfer.getData("milestoneTitle");
                     if (title) void handleMilestoneStatusUpdate(title, col);
                   }}
-                  className="min-h-[200px] rounded-[20px] border border-[#141417] bg-[#07070a] p-4 flex flex-col"
+                  className="min-h-[200px] p-4 flex flex-col"
+                  style={{
+                    background: "rgba(8, 12, 20, 0.38)",
+                    backdropFilter: "blur(14px)",
+                    border: "1px solid rgba(255, 255, 255, 0.06)",
+                    borderRadius: "28px",
+                  }}
                 >
                   <div className="mb-3.5 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className={`h-2 w-2 rounded-full ${col === "upcoming" ? "bg-slate-400" : col === "inprogress" ? "bg-amber-400" : "bg-emerald-400"}`} />
-                      <span className={`text-xs font-semibold uppercase tracking-widest ${meta.accent}`}>{meta.label}</span>
-                    </div>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${meta.bg} ${meta.accent}`}>
-                      {cards.length}
-                    </span>
+                     <div className="flex items-center gap-2">
+                       <span className={`h-2 w-2 rounded-full ${col === "upcoming" ? "bg-slate-400" : col === "inprogress" ? "bg-amber-400" : "bg-emerald-400"}`} />
+                       <span className={`text-xs font-semibold uppercase tracking-widest ${meta.accent}`}>{meta.label}</span>
+                     </div>
+                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${meta.bg} ${meta.accent}`}>
+                       {cards.length}
+                     </span>
                   </div>
 
                   <div className="space-y-3 flex-1">
@@ -651,12 +830,19 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                           draggable
                           onDragStart={e => e.dataTransfer.setData("milestoneTitle", card.title)}
                         >
-                          <div className="cursor-grab active:cursor-grabbing rounded-xl border border-[#1a1a1f] bg-[#0a0a0d] p-4 select-none group transition-colors duration-[120ms] hover:border-[#252530]">
+                          <div 
+                            className="cursor-grab active:cursor-grabbing rounded-xl select-none group transition-all duration-300 hover:-translate-y-[2px]"
+                            style={{
+                              background: "rgba(255, 255, 255, 0.025)",
+                              border: "1px solid rgba(255, 255, 255, 0.05)",
+                              padding: "1rem",
+                            }}
+                          >
                             <h4 className="text-xs sm:text-sm font-semibold text-white group-hover:text-cyan-300 transition-colors duration-[120ms] line-clamp-2 leading-snug">{card.title}</h4>
 
                             <div className="mt-3 flex items-center justify-between text-[10px] text-slate-500 font-semibold">
                               <div className="flex gap-1.5">
-                                <span className="rounded bg-[#0d0d10] border border-[#202028] px-1.5 py-0.5 text-slate-400">{card.effort}</span>
+                                <span className="rounded border border-white/[0.05] bg-white/[0.02] px-1.5 py-0.5 text-slate-400">{card.effort}</span>
                                 <span className={`rounded px-1.5 py-0.5 border ${card.priority === "High"
                                     ? "border-rose-500/20 bg-rose-500/10 text-rose-300"
                                     : card.priority === "Medium"
@@ -674,6 +860,46 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                                 <div className="h-full bg-cyan-400" style={{ width: `${card.progress}%` }} />
                               </div>
                             )}
+
+                            {/* Mobile action triggers to move columns */}
+                            <div className="flex md:hidden gap-1.5 mt-3 border-t border-white/[0.05] pt-2.5">
+                              {card.column !== "upcoming" && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void handleMilestoneStatusUpdate(card.title, "upcoming");
+                                  }}
+                                  className="text-[9px] font-bold text-slate-400 hover:text-white border border-white/5 bg-white/[0.02] px-2 py-1 rounded"
+                                >
+                                  Todo
+                                </button>
+                              )}
+                              {card.column !== "inprogress" && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void handleMilestoneStatusUpdate(card.title, "inprogress");
+                                  }}
+                                  className="text-[9px] font-bold text-amber-400 hover:text-amber-300 border border-amber-500/10 bg-amber-500/5 px-2 py-1 rounded"
+                                >
+                                  In Progress
+                                </button>
+                              )}
+                              {card.column !== "completed" && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void handleMilestoneStatusUpdate(card.title, "completed");
+                                  }}
+                                  className="text-[9px] font-bold text-emerald-400 hover:text-emerald-300 border border-emerald-500/10 bg-emerald-500/5 px-2 py-1 rounded"
+                                >
+                                  Complete
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       ))

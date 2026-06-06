@@ -30,6 +30,9 @@ export type RoadmapMilestoneRecord = {
   deliverables: string[];
   expected_outcomes: string[];
   notes?: string;
+  status?: "upcoming" | "inprogress" | "completed";
+  completed_tasks?: string[];
+  completed_deliverables?: string[];
 };
 
 export type UserProfileRecord = {

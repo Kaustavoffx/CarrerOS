@@ -41,34 +41,6 @@ main {
   z-index: 1;
 }
 
-.careeros-background {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background-color: #020305;
-}
-
-.careeros-background::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: url("/background.png");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-
-  backface-visibility: hidden;
-  transform: translate3d(0, 0, 0);
-  transition: transform 0.3s ease;
-}
-
-@media (max-width: 767px) {
-  .careeros-background::before {
-    transform: rotate(90deg) scale(1.35);
-  }
-}
-
 /* Premium Typography utilities using CMGeom only */
 .font-geom {
   font-family: var(--font-geom);

@@ -17,7 +17,8 @@ import { normalizeRoadmapArray, normalizeRoadmapVersionArray, updateWorkspace } 
 import { buildRoadmapExportBundle, generateRoadmapPdfBlob, type AuditBlob } from "@/lib/roadmap-export";
 import type {
   AiProviderStatusRecord, RoadmapRecord, RoadmapVersionRecord,
-  UserProfileRecord, WorkspaceSnapshotRecord, RoadmapResourceLink
+  UserProfileRecord, WorkspaceSnapshotRecord, RoadmapResourceLink,
+  RoadmapMilestoneRecord
 } from "@/lib/supabase/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -174,62 +175,35 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
   const [editWhyItMatters, setEditWhyItMatters] = useState("");
   const [editNotesText, setEditNotesText] = useState("");
 
-  // ── Load and persist checked tasks via localStorage ─────────────────────
+  // ── Load and persist checked tasks via localStorage & Database ──────────
   const [checkedTasks, setCheckedTasks] = useState<Record<string, boolean>>({});
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    if (profile?.id) {
-      try {
-        const saved = localStorage.getItem(`careeros::roadmap_checked_tasks::${profile.id}`);
-        if (saved) {
-          setCheckedTasks(JSON.parse(saved));
-        }
-      } catch (e) {
-        console.error("Failed loading checked tasks:", e);
-      } finally {
-        setIsLoaded(true);
-      }
-    }
-  }, [profile?.id]);
-
-  // Load resource status tracking on mount
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const b = localStorage.getItem("careeros::bookmarked_resources");
-        if (b) setBookmarkedResources(JSON.parse(b));
-        const c = localStorage.getItem("careeros::completed_resources");
-        if (c) setCompletedResources(JSON.parse(c));
-      } catch (e) {
-        console.error("Failed loading resources state:", e);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isLoaded && profile?.id) {
-      try {
-        localStorage.setItem(`careeros::roadmap_checked_tasks::${profile.id}`, JSON.stringify(checkedTasks));
-      } catch (e) {
-        console.error("Failed saving checked tasks:", e);
-      }
-    }
-  }, [checkedTasks, profile?.id, isLoaded]);
 
   // ── Derived variables ────────────────────────────────────────────────────
-  const supabase = getSupabaseBrowserClient();
   const safeRoadmapHistory = normalizeRoadmapVersionArray(roadmapHistory);
   const safeWorkspaceRoadmaps = normalizeRoadmapArray(workspace?.roadmaps);
-  const hasConnectedProvider = Array.isArray(aiProviders) && aiProviders.some(p => p.connected);
-  const refreshDisabled = isReplanning || (!hasConnectedProvider && limitExhausted);
-
   const activeRoadmap = safeWorkspaceRoadmaps[0] ?? null;
   const allMilestones = Array.isArray(activeRoadmap?.milestones) ? activeRoadmap!.milestones : [];
-  const completedCount = activeRoadmap ? Math.floor((activeRoadmap.progress / 100) * allMilestones.length) : 0;
+
+  const derivedCompletedCount = activeRoadmap ? Math.floor((activeRoadmap.progress / 100) * allMilestones.length) : 0;
+  
+  const getMilestoneColumn = (m: RoadmapMilestoneRecord, idx: number): MilestoneStatus => {
+    if (m.status === "completed" || m.status === "inprogress" || m.status === "upcoming") {
+      return m.status === "inprogress" ? "active" : m.status;
+    }
+    // Fallback to sequential
+    if (idx < derivedCompletedCount) return "completed";
+    if (idx === Math.min(derivedCompletedCount, allMilestones.length - 1)) return "active";
+    return "upcoming";
+  };
+
+  const completedCount = activeRoadmap
+    ? allMilestones.filter((m, idx) => getMilestoneColumn(m, idx) === "completed").length
+    : 0;
 
   // Current active milestone (the first uncompleted milestone)
-  const currentMilestoneIdx = allMilestones.length > 0 ? Math.min(completedCount, allMilestones.length - 1) : -1;
+  const currentMilestoneIdx = allMilestones.length > 0
+    ? allMilestones.findIndex((m, idx) => getMilestoneColumn(m, idx) !== "completed")
+    : -1;
   const currentMilestone = currentMilestoneIdx >= 0 ? allMilestones[currentMilestoneIdx] : null;
 
   // Selected milestone (defaults to current active milestone)
@@ -245,6 +219,70 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
     currentMilestoneDeliverables.filter((_, i) => checkedTasks[`${currentMilestone?.title}::d::${i}`]).length;
     
   const sprintProgress = totalSprintItems > 0 ? Math.round((completedSprintItems / totalSprintItems) * 100) : 0;
+
+  useEffect(() => {
+    if (profile?.id) {
+      const loadedChecked: Record<string, boolean> = {};
+      
+      // 1. Load from active roadmap milestones stored in the database
+      if (activeRoadmap && Array.isArray(activeRoadmap.milestones)) {
+        activeRoadmap.milestones.forEach(m => {
+          const msTasks = m.project_tasks ?? [];
+          const msDels = m.deliverables ?? [];
+          if (Array.isArray(m.completed_tasks)) {
+            msTasks.forEach((t, i) => {
+              if (m.completed_tasks!.includes(t)) {
+                loadedChecked[`${m.title}::t::${i}`] = true;
+              }
+            });
+          }
+          if (Array.isArray(m.completed_deliverables)) {
+            msDels.forEach((d, i) => {
+              if (m.completed_deliverables!.includes(d)) {
+                loadedChecked[`${m.title}::d::${i}`] = true;
+              }
+            });
+          }
+        });
+      }
+
+      // 2. Merge with localStorage for backwards compatibility
+      try {
+        const saved = localStorage.getItem(`careeros::roadmap_checked_tasks::${profile.id}`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          Object.keys(parsed).forEach(key => {
+            if (parsed[key]) {
+              loadedChecked[key] = true;
+            }
+          });
+        }
+      } catch (e) {
+        console.error("Failed loading checked tasks:", e);
+      }
+
+      setCheckedTasks(loadedChecked);
+    }
+  }, [activeRoadmap, profile?.id]);
+
+  // Load resource status tracking on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const b = localStorage.getItem("careeros::bookmarked_resources");
+        if (b) setBookmarkedResources(JSON.parse(b));
+        const c = localStorage.getItem("careeros::completed_resources");
+        if (c) setCompletedResources(JSON.parse(c));
+      } catch (e) {
+        console.error("Failed loading resources state:", e);
+      }
+    }
+  }, []);
+
+  // ── Derived variables ────────────────────────────────────────────────────
+  const supabase = getSupabaseBrowserClient();
+  const hasConnectedProvider = Array.isArray(aiProviders) && aiProviders.some(p => p.connected);
+  const refreshDisabled = isReplanning || (!hasConnectedProvider && limitExhausted);
 
   // Calculate Next Action CTA
   let nextActionLabel = "";
@@ -476,6 +514,158 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
     setExportSuccessOpen(true);
   }
 
+  async function toggleTaskState(key: string) {
+    if (!activeRoadmap || !workspace) return;
+    
+    const parts = key.split("::");
+    if (parts.length < 3) return;
+    const mTitle = parts[0];
+    const type = parts[1]; // "t" or "d"
+    const idx = parseInt(parts[2]);
+    
+    const updatedMilestones = allMilestones.map(m => {
+      if (m.title === mTitle) {
+        const msTasks = m.project_tasks ?? [];
+        const msDels = m.deliverables ?? [];
+        
+        let completedTasks = Array.isArray(m.completed_tasks) ? [...m.completed_tasks] : [];
+        let completedDels = Array.isArray(m.completed_deliverables) ? [...m.completed_deliverables] : [];
+        
+        if (type === "t") {
+          const taskTitle = msTasks[idx];
+          if (taskTitle) {
+            if (completedTasks.includes(taskTitle)) {
+              completedTasks = completedTasks.filter(t => t !== taskTitle);
+            } else {
+              completedTasks.push(taskTitle);
+            }
+          }
+        } else if (type === "d") {
+          const delTitle = msDels[idx];
+          if (delTitle) {
+            if (completedDels.includes(delTitle)) {
+              completedDels = completedDels.filter(d => d !== delTitle);
+            } else {
+              completedDels.push(delTitle);
+            }
+          }
+        }
+        
+        const totalItems = msTasks.length + msDels.length;
+        const completedItems = completedTasks.length + completedDels.length;
+        const nextStatus: "upcoming" | "inprogress" | "completed" | undefined = completedItems === totalItems ? "completed" : m.status === "completed" ? "inprogress" : m.status;
+        
+        return {
+          ...m,
+          completed_tasks: completedTasks,
+          completed_deliverables: completedDels,
+          status: nextStatus
+        };
+      }
+      return m;
+    });
+
+    const nextCompletedCount = updatedMilestones.filter((m, idx) => {
+      const status = m.status || (idx < derivedCompletedCount ? "completed" : "upcoming");
+      return status === "completed";
+    }).length;
+    
+    const nextProgress = Math.min(100, Math.round((nextCompletedCount / allMilestones.length) * 100));
+
+    const updatedRoadmap = {
+      ...activeRoadmap,
+      progress: nextProgress,
+      milestones: updatedMilestones
+    };
+    
+    const updatedRoadmaps = [updatedRoadmap, ...safeWorkspaceRoadmaps.slice(1)];
+
+    setWorkspace(prev => prev ? { ...prev, roadmaps: updatedRoadmaps } : null);
+    
+    setCheckedTasks(prev => {
+      const checking = !prev[key];
+      const nextChecked = { ...prev, [key]: checking };
+      
+      if (checking && currentMilestone && mTitle === currentMilestone.title) {
+        const msTasks = currentMilestone.project_tasks ?? [];
+        const msDels = currentMilestone.deliverables ?? [];
+        const totalSprintItems = msTasks.length + msDels.length;
+        const completedSprintItems =
+          msTasks.filter((_, i) => nextChecked[`${currentMilestone.title}::t::${i}`]).length +
+          msDels.filter((_, i) => nextChecked[`${currentMilestone.title}::d::${i}`]).length;
+
+        if (totalSprintItems > 0 && completedSprintItems === totalSprintItems) {
+          setShowCelebration(true);
+          setTimeout(() => setShowCelebration(false), 4000);
+        }
+      }
+      
+      if (profile?.id) {
+        try {
+          localStorage.setItem(`careeros::roadmap_checked_tasks::${profile.id}`, JSON.stringify(nextChecked));
+        } catch {}
+      }
+      return nextChecked;
+    });
+
+    await persistRoadmaps(updatedRoadmaps);
+  }
+
+  async function handleCompleteActiveMilestone() {
+    if (!workspace || !activeRoadmap || currentMilestoneIdx === -1) return;
+    
+    const updatedMilestones = allMilestones.map((m, idx) => {
+      if (idx === currentMilestoneIdx) {
+        return {
+          ...m,
+          status: "completed" as const,
+          completed_tasks: [...(m.project_tasks ?? [])],
+          completed_deliverables: [...(m.deliverables ?? [])]
+        };
+      }
+      if (!m.status) {
+        const status = getMilestoneColumn(m, idx);
+        return { ...m, status: status === "active" ? ("inprogress" as const) : (status as "completed" | "upcoming") };
+      }
+      return m;
+    });
+
+    const nextCompletedCount = updatedMilestones.filter(m => m.status === "completed").length;
+    const nextProgress = Math.min(100, Math.round((nextCompletedCount / allMilestones.length) * 100));
+    
+    const updatedRoadmap = {
+      ...activeRoadmap,
+      progress: nextProgress,
+      milestones: updatedMilestones
+    };
+    
+    const updatedRoadmaps = [updatedRoadmap, ...safeWorkspaceRoadmaps.slice(1)];
+    
+    setCheckedTasks(prev => {
+      const nextChecked = { ...prev };
+      const m = allMilestones[currentMilestoneIdx];
+      if (m) {
+        (m.project_tasks ?? []).forEach((_, i) => {
+          nextChecked[`${m.title}::t::${i}`] = true;
+        });
+        (m.deliverables ?? []).forEach((_, i) => {
+          nextChecked[`${m.title}::d::${i}`] = true;
+        });
+      }
+      if (profile?.id) {
+        try {
+          localStorage.setItem(`careeros::roadmap_checked_tasks::${profile.id}`, JSON.stringify(nextChecked));
+        } catch {}
+      }
+      return nextChecked;
+    });
+
+    await persistRoadmaps(updatedRoadmaps);
+    setShowCelebration(true);
+    setTimeout(() => setShowCelebration(false), 4000);
+    showToast(`Sprint milestone completed! Active track progress is now ${nextProgress}%.`);
+  }
+
   async function handlePdfDownload() {
     if (!safeWorkspaceRoadmaps.length) return;
     const bundle = buildRoadmapExportBundle(safeWorkspaceRoadmaps, `${profile?.goal ?? "CareerOS"} Roadmap`);
@@ -494,48 +684,6 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
       showToast("PDF export failed.");
     }
   }
-
-  function toggleTaskState(key: string) {
-    setCheckedTasks(prev => {
-      const isChecking = !prev[key];
-      const updated = { ...prev, [key]: isChecking };
-      
-      if (isChecking) {
-        // Calculate new milestone completion
-        if (currentMilestone) {
-          const currentMilestoneTasks = currentMilestone.project_tasks ?? [];
-          const currentMilestoneDeliverables = currentMilestone.deliverables ?? [];
-          const totalSprintItems = currentMilestoneTasks.length + currentMilestoneDeliverables.length;
-          
-          const completedSprintItems = 
-            currentMilestoneTasks.filter((_, i) => updated[`${currentMilestone.title}::t::${i}`]).length +
-            currentMilestoneDeliverables.filter((_, i) => updated[`${currentMilestone.title}::d::${i}`]).length;
-            
-          const newProgress = totalSprintItems > 0 ? Math.round((completedSprintItems / totalSprintItems) * 100) : 0;
-          if (newProgress === 100) {
-            setShowCelebration(true);
-            setTimeout(() => setShowCelebration(false), 4000);
-          }
-        }
-      }
-      return updated;
-    });
-  }
-
-  async function handleCompleteActiveMilestone() {
-    if (!workspace || !activeRoadmap || currentMilestoneIdx === -1) return;
-    const nextProgress = Math.min(100, Math.round(((currentMilestoneIdx + 1) / allMilestones.length) * 100));
-    const updatedRoadmap = {
-      ...activeRoadmap,
-      progress: nextProgress,
-    };
-    const updatedRoadmaps = [updatedRoadmap, ...safeWorkspaceRoadmaps.slice(1)];
-    await persistRoadmaps(updatedRoadmaps);
-    setShowCelebration(true);
-    setTimeout(() => setShowCelebration(false), 4000);
-    showToast(`Sprint milestone completed! Active track progress is now ${nextProgress}%.`);
-  }
-
   function handleCompleteNextAction() {
     if (!currentMilestone || nextActionIdx === -1) return;
     const typeKey = isNextActionDeliverable ? "d" : "t";

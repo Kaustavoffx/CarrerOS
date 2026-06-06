@@ -18,7 +18,7 @@ export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/[0.04] bg-[#050505]/90 backdrop-blur-md">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/[0.04] bg-[rgba(8,12,20,0.48)] backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 sm:px-8 lg:px-10">
         <Link href="/" className="group flex items-center gap-3">
           <Image

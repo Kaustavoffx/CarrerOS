@@ -314,7 +314,7 @@ function HeroSceneComponent() {
 
   return (
     <motion.div
-      className="relative h-[36rem] w-full overflow-hidden rounded-[24px] border border-[#141418] bg-[#050505] shadow-[0_8px_24px_rgba(0,0,0,0.25)] sm:h-[42rem] lg:h-[46rem]"
+      className="relative h-[36rem] w-full overflow-hidden rounded-[24px] border border-[#141418] bg-[#080c14] shadow-[0_8px_24px_rgba(0,0,0,0.25)] sm:h-[42rem] lg:h-[46rem]"
       initial={{ opacity: 0, scale: 0.97, y: 16 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.8, ease: "easeOut" }}
@@ -347,8 +347,8 @@ function HeroSceneComponent() {
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
       >
         <CanvasCleanup />
-        <color attach="background" args={["#050505"]} />
-        <fog attach="fog" args={["#050505", 5.5, 10]} />
+        <color attach="background" args={["#080c14"]} />
+        <fog attach="fog" args={["#080c14", 5.5, 10]} />
         
         {/* Lights Setup */}
         <ambientLight intensity={0.8} />

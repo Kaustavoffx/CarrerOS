@@ -26,7 +26,7 @@ export interface AuditBlob extends Blob {
 
 const CMGEOM_FONT_URL = new URL("../assets/fonts/CMGeom-Regular.ttf", import.meta.url).toString();
 const LOGO_IMAGE_URL = new URL("../assets/logo.png", import.meta.url).toString();
-const BACKGROUND_IMAGE_URL = new URL("../public/background.png", import.meta.url).toString();
+const BACKGROUND_IMAGE_URL = new URL("../public/background.webp", import.meta.url).toString();
 
 export interface JsPdfExtended {
   GState: new (options: { opacity: number }) => unknown;
@@ -94,7 +94,7 @@ async function loadBackgroundBase64(): Promise<string> {
   } else {
     let response: Response;
     try {
-      response = await fetch("/background.png");
+      response = await fetch("/background.webp");
     } catch {
       response = await fetch(BACKGROUND_IMAGE_URL);
     }
@@ -103,6 +103,33 @@ async function loadBackgroundBase64(): Promise<string> {
     }
     base64 = arrayBufferToBase64(await response.arrayBuffer());
   }
+
+  if (typeof window !== "undefined") {
+    try {
+      return await new Promise<string>((resolve) => {
+        const img = new Image();
+        img.src = `data:image/webp;base64,${base64}`;
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL("image/png"));
+          } else {
+            resolve(`data:image/png;base64,${base64}`);
+          }
+        };
+        img.onerror = () => {
+          resolve(`data:image/png;base64,${base64}`);
+        };
+      });
+    } catch {
+      return `data:image/png;base64,${base64}`;
+    }
+  }
+
   return `data:image/png;base64,${base64}`;
 }
 
@@ -596,7 +623,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     doc.setFillColor("#04070D");
     doc.rect(0, 0, pageWidth, pageHeight, "F");
 
-    // Draw background.png at 0.12 opacity
+    // Draw background.webp at 0.12 opacity
     doc.saveGraphicsState();
     const bgGState = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.12 });
     doc.setGState(bgGState);

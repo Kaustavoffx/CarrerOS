@@ -350,7 +350,10 @@ function normalizeMilestone(value: unknown): RoadmapMilestoneRecord {
     projects: toArray<string>(milestone.projects),
     project_tasks: toArray<string>(milestone.project_tasks),
     deliverables: toArray<string>(milestone.deliverables),
-    expected_outcomes: toArray<string>(milestone.expected_outcomes)
+    expected_outcomes: toArray<string>(milestone.expected_outcomes),
+    status: typeof milestone.status === "string" && ["upcoming", "inprogress", "completed"].includes(milestone.status) ? milestone.status : undefined,
+    completed_tasks: toArray<string>(milestone.completed_tasks),
+    completed_deliverables: toArray<string>(milestone.completed_deliverables)
   };
 }
 
