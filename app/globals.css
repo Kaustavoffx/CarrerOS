@@ -57,10 +57,6 @@ main {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  
-  /* V4 Visual Depth layer 1: background image properties */
-  opacity: 0.65;
-  filter: blur(8px) brightness(0.75) contrast(1.05) saturate(1.1);
 
   backface-visibility: hidden;
   transform: translate3d(0, 0, 0);
@@ -71,19 +67,6 @@ main {
   .careeros-background::before {
     transform: rotate(90deg) scale(1.35);
   }
-}
-
-.careeros-background::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  /* V4 Visual Depth layer 2: soft dark atmospheric overlay */
-  background: linear-gradient(
-    180deg,
-    rgba(2, 3, 5, 0.40) 0%,
-    rgba(2, 3, 5, 0.25) 50%,
-    rgba(2, 3, 5, 0.55) 100%
-  );
 }
 
 /* Premium Typography utilities using CMGeom only */
