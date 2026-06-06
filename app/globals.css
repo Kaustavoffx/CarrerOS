@@ -35,6 +35,43 @@ body {
   font-family: var(--font-geom);
 }
 
+.careeros-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -100;
+  overflow: hidden;
+
+  background: linear-gradient(
+    180deg,
+    rgba(2, 3, 5, 0.72) 0%,
+    rgba(2, 3, 5, 0.58) 30%,
+    rgba(2, 3, 5, 0.72) 100%
+  );
+}
+
+.careeros-bg::before {
+  content: "";
+  position: absolute;
+  inset: -20px;
+  background-image: url("/background.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  filter: brightness(0.38) contrast(1.12) saturate(1.15) blur(10px);
+
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+  transition: transform 0.3s ease;
+}
+
+@media (max-width: 767px) {
+  .careeros-bg::before {
+    transform: rotate(90deg) scale(1.35);
+  }
+}
+
 /* Premium Typography utilities using CMGeom only */
 .font-geom {
   font-family: var(--font-geom);
@@ -212,9 +249,9 @@ body {
 
   /* Card Type 1: Spotlight Card — 5% usage. Cyan glow. Active Mission, Sprint. */
   .card-spotlight {
-    background: linear-gradient(135deg, rgba(0,220,255,.10), rgba(0,120,255,.03));
+    background: linear-gradient(135deg, rgba(0,220,255,.065), rgba(0,120,255,.02));
     border: 1px solid rgba(0,220,255,.25);
-    box-shadow: 0 0 40px rgba(0,220,255,.10);
+    box-shadow: 0 0 40px rgba(0,220,255,.065);
     position: relative;
     overflow: hidden;
   }
@@ -235,7 +272,7 @@ body {
 
   /* Card Type 3: Insight Card — AI recommendations (legacy purple, kept for compat) */
   .card-insight {
-    background: linear-gradient(135deg, rgba(130,120,255,.10), rgba(80,60,255,.03));
+    background: linear-gradient(135deg, rgba(130,120,255,.065), rgba(80,60,255,.02));
     border: 1px solid rgba(130, 120, 255, 0.2);
     position: relative;
     overflow: hidden;
@@ -261,7 +298,7 @@ body {
 
   /* Gold: Momentum, Weekly Progress, Consistency, Execution Score */
   .card-gold {
-    background: linear-gradient(135deg, rgba(255,190,50,.10), rgba(255,140,0,.03));
+    background: linear-gradient(135deg, rgba(255,190,50,.065), rgba(255,140,0,.02));
     border: 1px solid rgba(255, 190, 50, 0.2);
     position: relative;
     overflow: hidden;
@@ -269,7 +306,7 @@ body {
 
   /* Purple: AI Mentor, Recommendations, Skill Analysis, Career Prediction */
   .card-purple {
-    background: linear-gradient(135deg, rgba(130,120,255,.12), rgba(80,60,255,.03));
+    background: linear-gradient(135deg, rgba(130,120,255,.078), rgba(80,60,255,.02));
     border: 1px solid rgba(130, 120, 255, 0.22);
     position: relative;
     overflow: hidden;
@@ -277,7 +314,7 @@ body {
 
   /* Green: Completed, Healthy Progress, Portfolio Connected */
   .card-green {
-    background: linear-gradient(135deg, rgba(0,255,180,.10), rgba(0,120,80,.03));
+    background: linear-gradient(135deg, rgba(0,255,180,.065), rgba(0,120,80,.02));
     border: 1px solid rgba(0, 220, 150, 0.2);
     position: relative;
     overflow: hidden;
@@ -285,7 +322,7 @@ body {
 
   /* Red: Skill Gaps, Missing Resume, Risk, Attention */
   .card-red {
-    background: linear-gradient(135deg, rgba(255,80,100,.08), rgba(120,0,20,.03));
+    background: linear-gradient(135deg, rgba(255,80,100,.052), rgba(120,0,20,.02));
     border: 1px solid rgba(255, 80, 100, 0.2);
     position: relative;
     overflow: hidden;
