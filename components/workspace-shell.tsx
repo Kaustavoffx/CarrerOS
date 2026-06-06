@@ -86,7 +86,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#050505] text-white overflow-x-hidden">
+    <div className="relative min-h-screen bg-transparent text-white overflow-x-hidden">
       {/* Subtle dot-grid background */}
       <div className="pointer-events-none fixed inset-0 opacity-[0.025] [background-image:radial-gradient(rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:28px_28px]" />
 
@@ -239,7 +239,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
       {/* Non-xl fallback (tablet / mobile) */}
       <div className="xl:hidden">
         {/* Top header for tablet */}
-        <header className="sticky top-0 z-20 border-b border-[#141417] bg-[#050505]/95 backdrop-blur-sm px-5 py-3.5">
+        <header className="sticky top-0 z-20 border-b border-[#141417] bg-[#020305]/75 backdrop-blur-sm px-5 py-3.5">
           <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
             <div className="flex items-center gap-2.5">
               <Image

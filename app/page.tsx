@@ -101,7 +101,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <main className="relative isolate overflow-hidden bg-[#050505] text-white">
+    <main className="relative isolate overflow-hidden bg-transparent text-white">
       {/* Background grids and glowing atmospheric canvas */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">
         <div className="absolute inset-x-0 top-0 h-[38rem] bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.07),transparent_65%)]" />

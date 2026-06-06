@@ -6,7 +6,7 @@
 
 :root {
   color-scheme: dark;
-  --background: #050505;
+  --background: #020305;
   --foreground: #f4f6fc;
   --muted: rgba(240, 244, 255, 0.65);
 
@@ -30,36 +30,28 @@ html {
 body {
   min-height: 100vh;
   overflow-x: hidden;
-  background: #050505;
+  background: #020305;
   color: var(--foreground);
   font-family: var(--font-geom);
 }
 
-.careeros-bg {
+.careeros-background {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: -100;
   overflow: hidden;
-
-  background: linear-gradient(
-    180deg,
-    rgba(2, 3, 5, 0.72) 0%,
-    rgba(2, 3, 5, 0.58) 30%,
-    rgba(2, 3, 5, 0.72) 100%
-  );
 }
 
-.careeros-bg::before {
+.careeros-background::before {
   content: "";
   position: absolute;
-  inset: -20px;
+  inset: 0;
   background-image: url("/background.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-
-  filter: brightness(0.38) contrast(1.12) saturate(1.15) blur(10px);
+  filter: brightness(0.75) contrast(1.08) saturate(1.10);
 
   backface-visibility: hidden;
   transform: translate3d(0, 0, 0);
@@ -67,9 +59,21 @@ body {
 }
 
 @media (max-width: 767px) {
-  .careeros-bg::before {
+  .careeros-background::before {
     transform: rotate(90deg) scale(1.35);
   }
+}
+
+.careeros-background::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(2, 3, 5, 0.45) 0%,
+    rgba(2, 3, 5, 0.30) 50%,
+    rgba(2, 3, 5, 0.50) 100%
+  );
 }
 
 /* Premium Typography utilities using CMGeom only */

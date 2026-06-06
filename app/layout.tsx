@@ -28,7 +28,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark scroll-smooth">
-      <body className={`${geom.variable} bg-black text-white antialiased`}>
+      <body className={`${geom.variable} text-white antialiased`}>
+        <div className="careeros-background" />
         <MotionConfig reducedMotion="user">
           <LazyMotion features={domAnimation}>
             <AuthProvider>
