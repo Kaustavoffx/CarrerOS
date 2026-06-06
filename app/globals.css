@@ -224,7 +224,7 @@ main {
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
     border-radius: 24px !important;
-    background: rgba(6, 10, 18, 0.32) !important;
+    background: rgba(6, 10, 18, 0.55) !important;
   }
 
   /* Specific enhancements for semantic variants to keep branding and context */
@@ -253,17 +253,17 @@ main {
   }
 
   .card-purple, .card-insight {
-    background: linear-gradient(135deg, rgba(130, 120, 255, 0.08), rgba(6, 10, 18, 0.32)) !important;
+    background: linear-gradient(135deg, rgba(130, 120, 255, 0.08), rgba(6, 10, 18, 0.55)) !important;
     border-color: rgba(130, 120, 255, 0.15) !important;
   }
 
   .card-green {
-    background: linear-gradient(135deg, rgba(0, 255, 180, 0.06), rgba(6, 10, 18, 0.32)) !important;
+    background: linear-gradient(135deg, rgba(0, 255, 180, 0.06), rgba(6, 10, 18, 0.55)) !important;
     border-color: rgba(0, 220, 150, 0.18) !important;
   }
 
   .card-red {
-    background: linear-gradient(135deg, rgba(255, 80, 100, 0.06), rgba(6, 10, 18, 0.32)) !important;
+    background: linear-gradient(135deg, rgba(255, 80, 100, 0.06), rgba(6, 10, 18, 0.55)) !important;
     border-color: rgba(255, 80, 100, 0.18) !important;
   }
 
@@ -295,7 +295,7 @@ main {
   }
 
   .liquid-card {
-    background: rgba(6, 10, 18, 0.32) !important;
+    background: rgba(6, 10, 18, 0.55) !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
     position: relative;
