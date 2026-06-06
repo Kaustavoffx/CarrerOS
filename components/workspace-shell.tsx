@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import type { UserProfileRecord, WorkspaceSnapshotRecord } from "@/lib/supabase/types";
 import { useAuth } from "./auth-provider";
 import {
   LogOut,
-  Sparkles,
   LayoutDashboard,
   Map,
   Users,
@@ -100,9 +100,16 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
       >
         {/* Logo row */}
         <div className={`flex items-center gap-3 px-4 py-5 border-b border-[#141417] ${collapsed ? "justify-center" : ""}`}>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#202028] bg-gradient-to-b from-[#141418] to-[#0a0a0c] text-cyan-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
-            <Sparkles className="h-4 w-4" />
-          </div>
+          <Image
+            src="/logo.png"
+            alt="CareerOS"
+            width={36}
+            height={36}
+            style={{
+              filter: "drop-shadow(0 0 8px rgba(0,216,255,.18)) drop-shadow(0 0 18px rgba(0,216,255,.08))"
+            }}
+            className="shrink-0 object-contain"
+          />
           <div
             style={{
               opacity: collapsed ? 0 : 1,
@@ -235,9 +242,16 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
         <header className="sticky top-0 z-20 border-b border-[#141417] bg-[#050505]/95 backdrop-blur-sm px-5 py-3.5">
           <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-[#202028] bg-gradient-to-b from-[#141418] to-[#0a0a0c] text-cyan-300">
-                <Sparkles className="h-3.5 w-3.5" />
-              </div>
+              <Image
+                src="/logo.png"
+                alt="CareerOS"
+                width={28}
+                height={28}
+                style={{
+                  filter: "drop-shadow(0 0 8px rgba(0,216,255,.18)) drop-shadow(0 0 18px rgba(0,216,255,.08))"
+                }}
+                className="shrink-0 object-contain"
+              />
               <span className="text-sm font-semibold text-white">CareerOS</span>
             </div>
             <div className="flex items-center gap-2">

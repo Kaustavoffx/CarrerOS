@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -102,9 +103,13 @@ export default function HomePage() {
   return (
     <main className="relative isolate overflow-hidden bg-[#050505] text-white">
       {/* Background grids and glowing atmospheric canvas */}
-      <div className="pointer-events-none absolute inset-0">
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">
         <div className="absolute inset-x-0 top-0 h-[38rem] bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.07),transparent_65%)]" />
         <div className="absolute inset-0 opacity-[0.03] [background-image:linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:64px_64px]" />
+        {/* Subtle massive logo watermark behind Hero */}
+        <div className="absolute top-[10%] w-[500px] h-[500px] opacity-[0.025]" style={{ filter: "blur(100px)" }}>
+          <Image src="/logo.png" alt="" fill className="object-contain" priority />
+        </div>
       </div>
 
       <div className="relative z-10">
@@ -650,7 +655,6 @@ export default function HomePage() {
                 color: "group-hover:text-emerald-400"
               }
             ].map(f => {
-              const Icon = f.icon;
               return (
                 <motion.div
                   key={f.title}
@@ -660,7 +664,7 @@ export default function HomePage() {
                   <div className="pointer-events-none absolute -bottom-10 -right-10 h-24 w-24 bg-white/[0.01] rounded-full group-hover:bg-cyan-400/[0.01] transition blur-xl" />
                   
                   <div className="h-10 w-10 rounded-xl bg-[#0c0c0f] border border-[#202028] flex items-center justify-center shrink-0">
-                    <Icon className={`h-4.5 w-4.5 text-slate-500 transition duration-200 ${f.color}`} />
+                    <Image src="/logo.png" alt="CareerOS" width={16} height={16} className="object-contain opacity-60 group-hover:opacity-100 transition duration-200" />
                   </div>
                   
                   <div>
@@ -678,7 +682,8 @@ export default function HomePage() {
           <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#07070a] py-20 px-8 text-center max-w-4xl mx-auto">
             <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.05),transparent_50%)] animate-pulse" />
             
-            <div className="max-w-2xl mx-auto space-y-6">
+            <div className="max-w-2xl mx-auto space-y-6 flex flex-col items-center">
+              <Image src="/logo.png" alt="CareerOS" width={48} height={48} className="object-contain opacity-80 mb-2" />
               <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
                 Stop collecting career advice.<br />Start executing.
               </h2>
@@ -698,6 +703,19 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* ═══ FOOTER SECTION ════════════════════════════════════════════ */}
+        <footer className="mx-auto max-w-7xl px-6 py-12 sm:px-8 lg:px-10 border-t border-white/[0.04] mt-12 bg-black/40">
+          <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+            <div className="flex items-center gap-3">
+              <Image src="/logo.png" alt="CareerOS" width={28} height={28} className="object-contain" />
+              <span className="text-base font-semibold tracking-wide text-white">CareerOS</span>
+            </div>
+            <p className="text-xs text-slate-500 font-medium">
+              &copy; {new Date().getFullYear()} CareerOS. All rights reserved.
+            </p>
+          </div>
+        </footer>
       </div>
     </main>
   );

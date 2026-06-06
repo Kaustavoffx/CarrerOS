@@ -8,7 +8,12 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "CareerOS | Private Career Workspace",
   description: "A Supabase-backed career workspace with auth, onboarding, persistent roadmaps, and a premium dashboard experience.",
-  metadataBase: new URL("https://careeros.local")
+  metadataBase: new URL("https://careeros.local"),
+  icons: {
+    icon: "/icons/favicon-32.png",
+    shortcut: "/icons/favicon-32.png",
+    apple: "/icons/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = {

@@ -2,8 +2,9 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
-  Send, Sparkles, User, Zap, Brain, Clipboard, Star, X,
+  Send, User, Zap, Brain, Clipboard, Star, X,
   Link2, Edit2, CheckSquare, Square
 } from "lucide-react";
 import { MagneticButton } from "./magnetic-button";
@@ -722,6 +723,15 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
         {/* CENTER COLUMN: Chat Interface */}
         <main className="flex flex-col min-h-[580px] bg-[#040405] border border-white/5 rounded-[28px] p-5 sm:p-6 shadow-2xl relative">
           
+          {/* Conversation Header: CareerOS Strategist */}
+          <div className="flex items-center gap-2.5 pb-3 mb-3 border-b border-white/5">
+            <Image src="/logo.png" alt="CareerOS" width={22} height={22} className="object-contain" />
+            <div>
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider">CareerOS Strategist</h3>
+              <p className="text-[9px] text-slate-500 font-semibold">Connected to active roadmap execution queue</p>
+            </div>
+          </div>
+          
           {/* MENTOR HEADER - Advisor Pillars */}
           <div className="relative z-10 border-b border-white/5 pb-4 mb-5">
             <div className="flex flex-wrap gap-1 rounded-full border border-white/5 bg-[#0a0a0c] p-1 justify-around max-w-[550px] mx-auto shadow-inner">
@@ -758,7 +768,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
               <article className="card-spotlight rounded-[24px] p-5 mb-5 relative overflow-hidden">
                 <div className="absolute top-0 right-0 h-32 w-48 bg-cyan-400/5 rounded-full blur-3xl pointer-events-none" />
                 <div className="relative z-10 flex items-start gap-3.5">
-                  <Sparkles className="h-5 w-5 text-cyan-400 shrink-0 mt-0.5 animate-pulse" />
+                  <Image src="/logo.png" alt="Strategist" width={18} height={18} className="shrink-0 mt-0.5" />
                   <div className="space-y-1.5 flex-1 text-xs">
                     <span className="text-cyan-300 font-extrabold uppercase tracking-widest text-[9px]">Live Strategist Insights</span>
                     <ul className="space-y-1 text-slate-200 font-semibold list-disc list-inside">
@@ -808,7 +818,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
                             ? "border-cyan-400/20 bg-cyan-950/40 text-cyan-300 shadow-[0_0_8px_rgba(34,211,238,0.1)]" 
                             : "border-white/5 bg-[#141417] text-slate-300"
                         }`}>
-                          {isMentor ? <Sparkles className="h-4.5 w-4.5" /> : <User className="h-4.5 w-4.5" />}
+                          {isMentor ? <Image src="/logo.png" alt="Strategist" width={18} height={18} className="object-contain" /> : <User className="h-4.5 w-4.5" />}
                         </span>
                       </div>
 
@@ -871,7 +881,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
               {isTyping && (
                 <div className="flex gap-3.5 max-w-[85%] mr-auto items-center animate-pulse">
                   <span className="h-8.5 w-8.5 rounded-full flex items-center justify-center border border-cyan-400/20 bg-cyan-950/40 text-cyan-300 shrink-0 text-xs">
-                    <Sparkles className="h-4.5 w-4.5 text-cyan-400 animate-spin-slow" />
+                    <Image src="/logo.png" alt="Thinking" width={18} height={18} className="object-contain" />
                   </span>
                   <div className="rounded-[20px] px-4.5 py-3 text-xs text-slate-400 border border-white/5 bg-[#08080a]">
                     AI Strategist is thinking...

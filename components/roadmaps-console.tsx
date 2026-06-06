@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion"; // Kept only for Confetti celebration animation
 import {
   Download, Printer, RefreshCw, Clock3,
@@ -161,6 +162,8 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
   const [isVersionDrawerOpen, setIsVersionDrawerOpen] = useState(false);
   const [compareVersionId, setCompareVersionId] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [exportSuccessOpen, setExportSuccessOpen] = useState(false);
+  const [exportedFilename, setExportedFilename] = useState("");
 
   // V4 Resource Status & Milestone Edit States
   const [bookmarkedResources, setBookmarkedResources] = useState<Record<string, boolean>>({});
@@ -446,21 +449,25 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
   function handleJsonExport() {
     if (!safeWorkspaceRoadmaps.length) return;
     const bundle = buildRoadmapExportBundle(safeWorkspaceRoadmaps, `${profile?.goal ?? "CareerOS"} Roadmap`);
+    const fn = bundle.pdf.filename.replace(/\.pdf$/, ".json");
     downloadTextFile(
-      `${(profile?.goal ?? "careeros-roadmap").toLowerCase().replace(/[^a-z0-9]+/g, "-")}-roadmap.json`,
+      fn,
       bundle.json, "application/json;charset=utf-8"
     );
-    showToast("JSON export downloaded.");
+    setExportedFilename(fn);
+    setExportSuccessOpen(true);
   }
 
   function handleMarkdownExport() {
     if (!safeWorkspaceRoadmaps.length) return;
     const bundle = buildRoadmapExportBundle(safeWorkspaceRoadmaps, `${profile?.goal ?? "CareerOS"} Roadmap`);
+    const fn = `${(profile?.goal ?? "careeros-roadmap").toLowerCase().replace(/[^a-z0-9]+/g, "-")}-roadmap.md`;
     downloadTextFile(
-      `${(profile?.goal ?? "careeros-roadmap").toLowerCase().replace(/[^a-z0-9]+/g, "-")}-roadmap.md`,
+      fn,
       bundle.markdown, "text/markdown;charset=utf-8"
     );
-    showToast("Markdown export downloaded.");
+    setExportedFilename(fn);
+    setExportSuccessOpen(true);
   }
 
   async function handlePdfDownload() {
@@ -470,7 +477,12 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
     bundle.pdf.report.readinessScore = profile?.readiness_score;
     try {
       const result = await downloadPdfFile(bundle.pdf.filename, bundle.pdf.report);
-      showToast(result.valid ? "PDF downloaded." : "Roadmap exported as PDF successfully.");
+      if (result.valid) {
+        setExportedFilename(bundle.pdf.filename);
+        setExportSuccessOpen(true);
+      } else {
+        showToast("Roadmap exported as PDF with warnings.");
+      }
     } catch (error) {
       console.error("PDF download failure:", error);
       showToast("PDF export failed.");
@@ -561,12 +573,9 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
 
         <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-400" />
-              </span>
-              <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Workspace Roadmap</p>
+            <div className="flex flex-wrap items-center gap-2.5 mb-2">
+              <Image src="/logo.png" alt="CareerOS" width={18} height={18} className="object-contain" />
+              <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Navigation Engine</p>
               
               {activeRoadmap && (
                 <>
@@ -584,9 +593,18 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
               )}
             </div>
 
-            <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight leading-tight">
-              {activeRoadmap?.title ?? "No active roadmap"}
-            </h1>
+            <div className="flex items-center gap-3">
+              <Image src="/logo.png" alt="CareerOS" width={24} height={24} className="object-contain shrink-0" />
+              <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight leading-tight">
+                CareerOS Roadmap Engine
+              </h1>
+            </div>
+            
+            {activeRoadmap && (
+              <p className="mt-2 text-xs font-semibold text-slate-400">
+                Active Track: <strong className="text-white">{activeRoadmap.title}</strong>
+              </p>
+            )}
             
             <p className="mt-1 text-xs sm:text-sm text-slate-400 max-w-2xl leading-relaxed">
               Target Career Goal: <span className="text-white font-semibold">{profile?.goal || "SDE I"}</span> &middot; {activeRoadmap?.summary || "Create your career track roadmap to initiate execution guides."}
@@ -1346,6 +1364,48 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                 className="tactile-btn tactile-btn-primary flex-1 rounded-xl py-2.5 text-xs font-semibold text-black"
               >
                 Confirm Restore
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Export Success Modal */}
+      {exportSuccessOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/85 backdrop-blur-sm">
+          <div className="liquid-panel w-full max-w-sm rounded-[24px] p-6 text-center bg-[#09090b] border border-cyan-500/20 relative">
+            <button
+              type="button"
+              onClick={() => setExportSuccessOpen(false)}
+              className="absolute top-5 right-5 rounded-full p-2 text-slate-500 hover:text-white hover:bg-white/5 transition"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="flex flex-col items-center gap-4 py-4">
+              <div className="relative flex items-center justify-center">
+                <div className="absolute h-14 w-14 bg-emerald-500/10 rounded-full animate-pulse" />
+                <div className="h-10 w-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 relative z-10">
+                  <Check className="h-6 w-6 stroke-[3]" />
+                </div>
+              </div>
+              <Image src="/logo.png" alt="CareerOS" width={32} height={32} className="object-contain" />
+              <div>
+                <h3 className="text-base font-bold text-white uppercase tracking-wider">Export Successful</h3>
+                <p className="mt-1 text-xs text-slate-400 leading-relaxed">
+                  Your data package has been compiled and downloaded successfully.
+                </p>
+                {exportedFilename && (
+                  <p className="mt-2 text-[10px] font-mono text-cyan-400 bg-cyan-950/20 border border-cyan-500/10 px-2.5 py-1 rounded-lg">
+                    {exportedFilename}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setExportSuccessOpen(false)}
+                className="tactile-btn tactile-btn-primary w-full py-2.5 rounded-xl text-xs font-bold text-black mt-2"
+              >
+                Dismiss
               </button>
             </div>
           </div>

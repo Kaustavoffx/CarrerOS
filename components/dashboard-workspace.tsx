@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion"; // Kept only for Confetti celebration animation
 import {
   ArrowRight, Sparkles, Trash2, Check, X, PlusCircle,
@@ -87,6 +88,8 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [activityLimit, setActivityLimit] = useState(5);
+  const [exportSuccessOpen, setExportSuccessOpen] = useState(false);
+  const exportedFilename = "careeros-snapshot.pdf";
 
   // Opportunities Drawer: Notes and search state
   const [noteTitle, setNoteTitle] = useState("");
@@ -331,6 +334,26 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
   const allActivities = getTimelineActivity();
   const activityFeedList = allActivities.slice(0, activityLimit);
 
+  if (!workspace) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <div className="relative flex items-center justify-center">
+          <div className="absolute h-16 w-16 bg-cyan-500/10 rounded-full animate-ping pointer-events-none" />
+          <Image
+            src="/logo.png"
+            alt="CareerOS"
+            width={48}
+            height={48}
+            className="object-contain animate-pulse relative z-10"
+          />
+        </div>
+        <p className="text-xs text-slate-500 font-semibold uppercase tracking-widest animate-pulse">
+          Initializing Mission Control...
+        </p>
+      </div>
+    );
+  }
+
    return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {showCelebration && <Confetti />}
@@ -348,12 +371,9 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
         <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-4">
             <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-400" />
-                </span>
-                <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Mission Workspace</p>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <Image src="/logo.png" alt="CareerOS" width={18} height={18} className="object-contain" />
+                <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Mission Control</p>
                 {activeRoadmap && (
                   <span className="rounded-full border border-[#202028] bg-[#0d0d10] px-2 py-0.5 text-[10px] text-slate-400">
                     Roadmap v{activeRoadmap.roadmap_version}
@@ -386,6 +406,30 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
           </div>
         </div>
       </section>
+
+      {/* Empty State: No active roadmap track */}
+      {!activeRoadmap && (
+        <section className="flex flex-col items-center gap-4 rounded-[28px] border border-dashed border-[#202028] py-20 text-center bg-[#070709]/40 relative overflow-hidden">
+          <div className="absolute inset-0 opacity-[0.02] flex items-center justify-center pointer-events-none">
+            <Image src="/logo.png" alt="" width={150} height={150} className="object-contain" />
+          </div>
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[#202028] bg-[#0d0d10] relative z-10">
+            <Image src="/logo.png" alt="CareerOS" width={32} height={32} className="object-contain" />
+          </div>
+          <div className="relative z-10">
+            <h3 className="text-base font-bold text-slate-300">No active roadmap track</h3>
+            <p className="mt-1.5 text-xs text-slate-500 max-w-sm leading-relaxed mx-auto">
+              Initialize your execution parameters on the Roadmaps tab to sync your workspace.
+            </p>
+          </div>
+          <Link
+            href="/roadmaps"
+            className="tactile-btn tactile-btn-primary mt-2 inline-flex items-center gap-2 rounded-full px-6 py-3 text-xs font-bold text-black relative z-10"
+          >
+            Generate Career Roadmap &rarr;
+          </Link>
+        </section>
+      )}
 
       {/* ── QUICK ACTIONS ROW (Action Cards) ──────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -959,6 +1003,47 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                   <button type="button" onClick={handleAddProgress} className="tactile-btn tactile-btn-primary rounded-xl px-5 py-2 text-xs font-semibold text-black">Log Progress</button>
                 </div>
               </div>
+          </div>
+        </div>
+      )}
+      {/* Export Success Modal */}
+      {exportSuccessOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/85 backdrop-blur-sm">
+          <div className="liquid-panel w-full max-w-sm rounded-[24px] p-6 text-center bg-[#09090b] border border-cyan-500/20 relative">
+            <button
+              type="button"
+              onClick={() => setExportSuccessOpen(false)}
+              className="absolute top-5 right-5 rounded-full p-2 text-slate-500 hover:text-white hover:bg-white/5 transition"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="flex flex-col items-center gap-4 py-4">
+              <div className="relative flex items-center justify-center">
+                <div className="absolute h-14 w-14 bg-emerald-500/10 rounded-full animate-pulse" />
+                <div className="h-10 w-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 relative z-10">
+                  <Check className="h-6 w-6 stroke-[3]" />
+                </div>
+              </div>
+              <Image src="/logo.png" alt="CareerOS" width={32} height={32} className="object-contain" />
+              <div>
+                <h3 className="text-base font-bold text-white uppercase tracking-wider">Export Successful</h3>
+                <p className="mt-1 text-xs text-slate-400 leading-relaxed">
+                  Your data package has been compiled and downloaded successfully.
+                </p>
+                {exportedFilename && (
+                  <p className="mt-2 text-[10px] font-mono text-cyan-400 bg-cyan-950/20 border border-cyan-500/10 px-2.5 py-1 rounded-lg">
+                    {exportedFilename}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setExportSuccessOpen(false)}
+                className="tactile-btn tactile-btn-primary w-full py-2.5 rounded-xl text-xs font-bold text-black mt-2"
+              >
+                Dismiss
+              </button>
+            </div>
           </div>
         </div>
       )}

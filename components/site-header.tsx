@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, Sparkles, X } from "lucide-react";
+import Image from "next/image";
+import { Menu, X } from "lucide-react";
 import { memo, useState } from "react";
 
 const navigation = [
@@ -20,9 +21,13 @@ export function SiteHeader() {
     <header className="fixed inset-x-0 top-0 z-50 border-b border-white/[0.04] bg-[#050505]/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 sm:px-8 lg:px-10">
         <Link href="/" className="group flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#202028] bg-[#0a0a0c] text-cyan-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_8px_20px_rgba(0,0,0,0.6)] transition duration-300 group-hover:border-cyan-400/40">
-            <Sparkles className="h-5 w-5 text-cyan-300" />
-          </span>
+          <Image
+            src="/logo.png"
+            alt="CareerOS"
+            width={32}
+            height={32}
+            className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 object-contain"
+          />
           <span className="flex flex-col leading-none">
             <span className="text-lg font-medium tracking-[0.08em] text-white">CareerOS</span>
             <span className="caption text-slate-500">Private career workspace</span>

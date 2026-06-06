@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import type { AiProviderStatusRecord, UserProfileRecord, WorkspaceSnapshotRecord, ExperienceLevel } from "@/lib/supabase/types";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { updateProfile } from "@/lib/app-data";
 import { MagneticButton } from "./magnetic-button";
 import {
-  Download, Check, User, Key, Sliders, AlertTriangle, ChevronDown, ChevronUp
+  Download, Check, User, X, Sliders, AlertTriangle, ChevronDown, ChevronUp
 } from "lucide-react";
 
 type SettingsDashboardProps = {
@@ -54,6 +55,8 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
   const [executingDanger, setExecutingDanger] = useState(false);
 
   const [toastMessage, setToastMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [exportSuccessOpen, setExportSuccessOpen] = useState(false);
+  const [exportedFilename, setExportedFilename] = useState("");
 
   const showToast = (text: string, type: "success" | "error" = "success") => {
     setToastMessage({ text, type });
@@ -166,7 +169,8 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
 
   const triggerExport = (msg: string) => {
     setTimeout(() => {
-      showToast(msg);
+      setExportedFilename(msg);
+      setExportSuccessOpen(true);
     }, 1500);
   };
 
@@ -259,8 +263,8 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
         
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-4 border-b border-cyan-400/20 pb-3">
-            <Key className="h-4.5 w-4.5 text-cyan-400" />
-            <h3 className="text-sm font-bold text-cyan-400 uppercase tracking-wider">AI Providers Configuration</h3>
+            <Image src="/logo.png" alt="System" width={20} height={20} className="object-contain shrink-0" />
+            <h3 className="text-sm font-bold text-cyan-400 uppercase tracking-wider">System Configuration</h3>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -593,6 +597,48 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
           </div>
         )}
       </section>
+
+      {/* Export Success Modal */}
+      {exportSuccessOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/85 backdrop-blur-sm">
+          <div className="liquid-panel w-full max-w-sm rounded-[24px] p-6 text-center bg-[#09090b] border border-cyan-500/20 relative">
+            <button
+              type="button"
+              onClick={() => setExportSuccessOpen(false)}
+              className="absolute top-5 right-5 rounded-full p-2 text-slate-500 hover:text-white hover:bg-white/5 transition"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="flex flex-col items-center gap-4 py-4">
+              <div className="relative flex items-center justify-center">
+                <div className="absolute h-14 w-14 bg-emerald-500/10 rounded-full animate-pulse" />
+                <div className="h-10 w-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 relative z-10">
+                  <Check className="h-6 w-6 stroke-[3]" />
+                </div>
+              </div>
+              <Image src="/logo.png" alt="CareerOS" width={32} height={32} className="object-contain" />
+              <div>
+                <h3 className="text-base font-bold text-white uppercase tracking-wider">Export Successful</h3>
+                <p className="mt-1 text-xs text-slate-400 leading-relaxed">
+                  Your system configuration package has been compiled and downloaded.
+                </p>
+                {exportedFilename && (
+                  <p className="mt-2 text-[10px] font-mono text-cyan-400 bg-cyan-950/20 border border-cyan-500/10 px-2.5 py-1 rounded-lg">
+                    {exportedFilename}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setExportSuccessOpen(false)}
+                className="tactile-btn tactile-btn-primary w-full py-2.5 rounded-xl text-xs font-bold text-black mt-2"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
