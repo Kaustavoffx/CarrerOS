@@ -33,6 +33,7 @@ body {
   background: transparent;
   color: var(--foreground);
   font-family: var(--font-geom);
+  isolation: isolate;
 }
 
 main {
@@ -253,10 +254,10 @@ main {
       rgba(8, 12, 20, 0.22),
       rgba(8, 12, 20, 0.35)
     ) !important;
-    backdrop-filter: blur(40px) !important;
+    backdrop-filter: blur(16px) !important;
     border: 1px solid rgba(0, 216, 255, 0.10) !important;
     border-radius: 32px !important;
-    box-shadow: 0 20px 80px rgba(0, 0, 0, 0.5) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
     position: relative;
     overflow: hidden;
   }
@@ -264,9 +265,9 @@ main {
   /* ── CARD SYSTEM V4 — LIQUID GLASS MIGRATION ──────────────────────────── */
 
   .card-data, .liquid-card, .card-spotlight, .card-action, .card-insight, .card-gold, .card-purple, .card-green, .card-red, .card-danger {
-    backdrop-filter: blur(32px) saturate(160%) !important;
+    backdrop-filter: blur(14px) saturate(130%) !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
     border-radius: 24px !important;
     background: rgba(6, 10, 18, 0.32) !important;
   }
@@ -274,7 +275,7 @@ main {
   /* Specific enhancements for semantic variants to keep branding and context */
   .card-spotlight {
     border-color: rgba(0, 216, 255, 0.25) !important;
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35), 0 0 25px rgba(0, 216, 255, 0.08) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), 0 0 25px rgba(0, 216, 255, 0.08) !important;
   }
   .card-spotlight::before {
     content: "";
@@ -288,6 +289,8 @@ main {
   .card-action {
     border-left: 2.5px solid rgba(0, 216, 255, 0.5) !important;
     transition: border-color 150ms ease, background-color 150ms ease !important;
+    will-change: transform;
+    transform: translateZ(0);
   }
   .card-action:hover {
     background: rgba(10, 20, 35, 0.45) !important;
@@ -312,7 +315,7 @@ main {
   .card-danger {
     background: rgba(45, 10, 15, 0.35) !important;
     border-color: rgba(255, 70, 85, 0.15) !important;
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
   }
 
   /* Skeleton Loading — GPU keyframe only */
@@ -339,7 +342,7 @@ main {
   .liquid-card {
     background: rgba(6, 10, 18, 0.32) !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
     position: relative;
     overflow: hidden;
     transition: opacity var(--dur-hover) ease;
@@ -357,12 +360,14 @@ main {
   /* Physical Tactile Liquid Buttons — transform + opacity only */
   .tactile-btn {
     background: rgba(255, 255, 255, 0.04) !important;
-    backdrop-filter: blur(16px) !important;
+    backdrop-filter: blur(10px) !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
     color: #ffffff !important;
     transition: transform var(--dur-btn) ease, background-color var(--dur-btn) ease, border-color var(--dur-btn) ease !important;
     cursor: pointer;
+    will-change: transform;
+    transform: translateZ(0);
   }
   
   .tactile-btn:hover {
@@ -389,6 +394,8 @@ main {
     font-weight: 755 !important;
     text-shadow: 0 1px 2px rgba(255, 255, 255, 0.2);
     transition: transform var(--dur-btn) ease, opacity var(--dur-btn) ease !important;
+    will-change: transform;
+    transform: translateZ(0);
   }
 
   .tactile-btn-primary:hover {
@@ -409,7 +416,7 @@ main {
   /* Carved Dark Liquid Input Fields */
   .carved-input {
     background: rgba(4, 8, 14, 0.45) !important;
-    backdrop-filter: blur(12px) !important;
+    backdrop-filter: blur(10px) !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
     box-shadow: 
       inset 0 2px 4px rgba(0, 0, 0, 0.35),
@@ -422,7 +429,7 @@ main {
   /* V4 Floating Sidebar classes */
   .sidebar-glass {
     background: rgba(4, 8, 14, 0.38) !important;
-    backdrop-filter: blur(40px) !important;
+    backdrop-filter: blur(16px) !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
   }
@@ -441,20 +448,20 @@ main {
   /* V4 Messages classes */
   .chat-message-assistant {
     background: rgba(0, 216, 255, 0.08) !important;
-    backdrop-filter: blur(16px) !important;
+    backdrop-filter: blur(10px) !important;
     border: 1px solid rgba(0, 216, 255, 0.15) !important;
   }
 
   .chat-message-user {
     background: rgba(255, 255, 255, 0.05) !important;
-    backdrop-filter: blur(16px) !important;
+    backdrop-filter: blur(10px) !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
   }
 
   /* V4 Input dock */
   .mentor-input-dock {
     background: rgba(4, 8, 14, 0.38) !important;
-    backdrop-filter: blur(24px) !important;
+    backdrop-filter: blur(12px) !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35) !important;
   }
@@ -462,9 +469,9 @@ main {
   /* V4 Mission card cyan -> blue glow */
   .card-mission {
     background: rgba(6, 10, 18, 0.32) !important;
-    backdrop-filter: blur(32px) saturate(160%) !important;
+    backdrop-filter: blur(14px) saturate(140%) !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
     border-radius: 24px !important;
     position: relative;
     overflow: hidden;
@@ -485,6 +492,12 @@ main {
 
   .carved-input:focus {
     border-color: rgba(34, 211, 238, 0.6);
+  }
+
+  /* GPU Stacking utility for floating/interactive links */
+  .sidebar-link {
+    will-change: transform;
+    transform: translateZ(0);
   }
 
   /* Compact Loading Spinner */

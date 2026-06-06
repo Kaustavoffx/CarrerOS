@@ -53,7 +53,7 @@ export function SiteHeader() {
  
         <button
           type="button"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[#141417] bg-[#0a0a0c] text-white transition duration-300 hover:border-cyan-300/30 hover:bg-cyan-400/10 lg:hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_8px_20px_rgba(0,0,0,0.8)]"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[#141417] bg-[#0a0a0c] text-white transition duration-300 hover:border-cyan-300/30 hover:bg-cyan-400/10 lg:hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_8px_24px_rgba(0,0,0,0.25)]"
           aria-label="Toggle menu"
           onClick={() => setMenuOpen((value) => !value)}
         >
@@ -61,7 +61,7 @@ export function SiteHeader() {
         </button>
       </div>
       {menuOpen ? (
-        <div className="mx-6 mb-4 rounded-3xl border border-[#141417] bg-[#0c0c0e] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_24px_80px_rgba(0,0,0,0.95)] lg:hidden">
+        <div className="mx-6 mb-4 rounded-3xl border border-[#141417] bg-[#0c0c0e] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_8px_24px_rgba(0,0,0,0.25)] lg:hidden">
           <div className="flex flex-col gap-2">
             {navigation.map((item) => (
               <Link

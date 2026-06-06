@@ -154,7 +154,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                 key={item.href}
                 href={item.href}
                 title={collapsed ? item.label : undefined}
-                className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-[120ms] ${
+                className={`group sidebar-link relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors duration-[120ms] ${
                   collapsed ? "justify-center" : ""
                 } ${
                   active
@@ -276,7 +276,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
             <Link
               key={item.href}
               href={item.href}
-              className={`relative flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-medium transition-colors duration-[120ms] ${
+              className={`sidebar-link relative flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-medium transition-colors duration-[120ms] ${
                 active ? "text-cyan-300" : "text-slate-500 hover:text-slate-300"
               }`}
             >

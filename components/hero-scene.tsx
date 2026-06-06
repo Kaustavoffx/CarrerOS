@@ -314,7 +314,7 @@ function HeroSceneComponent() {
 
   return (
     <motion.div
-      className="relative h-[36rem] w-full overflow-hidden rounded-[24px] border border-[#141418] bg-[#050505] shadow-[0_30px_100px_rgba(0,0,0,0.55)] sm:h-[42rem] lg:h-[46rem]"
+      className="relative h-[36rem] w-full overflow-hidden rounded-[24px] border border-[#141418] bg-[#050505] shadow-[0_8px_24px_rgba(0,0,0,0.25)] sm:h-[42rem] lg:h-[46rem]"
       initial={{ opacity: 0, scale: 0.97, y: 16 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.8, ease: "easeOut" }}

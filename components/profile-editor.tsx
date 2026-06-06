@@ -45,7 +45,7 @@ export function ProfileEditor({ userId, profile }: ProfileEditorProps) {
   }
 
   return (
-    <div className="liquid-panel space-y-6 rounded-[24px] p-6 shadow-[0_24px_90px_rgba(0,0,0,0.45)]">
+    <div className="liquid-panel space-y-6 rounded-[24px] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.25)]">
       <div className="relative z-10">
         <p className="caption text-cyan-200">Profile</p>
         <h2 className="mt-2 heading-dashboard text-white">Keep your identity, goal, and readiness score in sync.</h2>

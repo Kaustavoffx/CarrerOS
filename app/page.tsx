@@ -153,7 +153,7 @@ export default function HomePage() {
 
           {/* Right Hero: Stateful Interactive Preview Mockup */}
           <div className="mt-12 lg:mt-0 lg:col-span-6 flex items-center justify-center">
-            <div className="relative w-full max-w-md rounded-3xl border border-white/10 bg-[#09090b]/90 p-5 sm:p-6 shadow-[0_30px_90px_rgba(0,0,0,0.85)] backdrop-blur-md transition duration-300 hover:border-cyan-500/20 group">
+            <div className="relative w-full max-w-md rounded-3xl border border-white/10 bg-[#09090b]/90 p-5 sm:p-6 shadow-[0_8px_24px_rgba(0,0,0,0.25)] backdrop-blur-md transition duration-300 hover:border-cyan-500/20 group">
               <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 bg-cyan-400/5 rounded-full blur-2xl" />
 
               {/* Goal & Readiness indicator */}
@@ -372,7 +372,7 @@ export default function HomePage() {
             </div>
 
             {/* Right side: Mockup interactive screen wrapper */}
-            <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-[#070709] overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.85)]">
+            <div className="lg:col-span-7 rounded-2xl border border-white/10 bg-[#070709] overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.25)]">
               {/* Browser bar */}
               <div className="flex items-center justify-between border-b border-white/[0.05] bg-[#0b0b0e] px-4 py-2.5">
                 <div className="flex gap-1.5">
@@ -656,10 +656,9 @@ export default function HomePage() {
               }
             ].map(f => {
               return (
-                <motion.div
+                <div
                   key={f.title}
-                  whileHover={{ y: -4, boxShadow: "0 10px 30px rgba(0,0,0,0.85)" }}
-                  className="group rounded-2xl border border-[#141417] hover:border-cyan-400/20 bg-[#07070a]/60 p-6 transition duration-200 flex items-start gap-4 relative overflow-hidden"
+                  className="group rounded-2xl border border-[#141417] hover:border-cyan-400/20 bg-[#07070a]/60 p-6 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,0,0,0.25)] flex items-start gap-4 relative overflow-hidden"
                 >
                   <div className="pointer-events-none absolute -bottom-10 -right-10 h-24 w-24 bg-white/[0.01] rounded-full group-hover:bg-cyan-400/[0.01] transition blur-xl" />
                   
@@ -671,7 +670,7 @@ export default function HomePage() {
                     <h3 className="text-xs sm:text-sm font-bold text-white">{f.title}</h3>
                     <p className="mt-1.5 text-xs text-slate-400 leading-relaxed">{f.desc}</p>
                   </div>
-                </motion.div>
+                </div>
               );
             })}
           </div>

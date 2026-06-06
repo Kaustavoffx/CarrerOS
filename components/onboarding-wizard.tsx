@@ -981,7 +981,7 @@ export function OnboardingWizard({ userId, email, displayName }: OnboardingWizar
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 8 }}
                             transition={{ duration: 0.2 }}
-                            className="absolute z-50 w-full mt-2 rounded-2xl border border-[#141418] bg-[#0c0c0e] p-2 shadow-[0_30px_90px_rgba(0,0,0,0.95)] max-h-60 overflow-y-auto"
+                            className="absolute z-50 w-full mt-2 rounded-2xl border border-[#141418] bg-[#0c0c0e] p-2 shadow-[0_8px_24px_rgba(0,0,0,0.25)] max-h-60 overflow-y-auto"
                           >
                             {educationOptions.map((option) => (
                               <li key={option}>
