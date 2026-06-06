@@ -5,8 +5,11 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   Send, User, Zap, Brain, Clipboard, Star, X,
-  Link2, Edit2, CheckSquare, Square
+  Link2, Edit2, CheckSquare, Square, Lock, FileText,
+  MessageSquare, Terminal, Target
 } from "lucide-react";
+
+const MENTOR_LOCKED = true;
 import { MagneticButton } from "./magnetic-button";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { generateId } from "@/lib/id";
@@ -647,6 +650,128 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
       </section>
     </div>
   );
+
+  const [lockVisible, setLockVisible] = useState(false);
+  useEffect(() => {
+    if (MENTOR_LOCKED) {
+      setLockVisible(true);
+    }
+  }, []);
+
+  if (MENTOR_LOCKED) {
+    return (
+      <div
+        className={`min-h-[75vh] flex flex-col items-center justify-center text-slate-200 max-w-7xl mx-auto relative px-4 sm:px-6 py-12 text-center transition-opacity duration-700 ease-out ${
+          lockVisible ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        {/* Glow backdrop effect */}
+        <div className="absolute inset-x-0 top-0 -z-10 h-96 bg-[radial-gradient(circle_at_50%_20%,rgba(34,211,238,0.08),transparent_50%)] pointer-events-none" />
+
+        {/* Status Badge */}
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-cyan-500/25 bg-cyan-500/5 text-cyan-300 text-[10px] font-extrabold tracking-widest uppercase mb-6 shadow-[0_0_15px_rgba(0,216,255,0.05)]">
+          <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+          Private Beta
+        </div>
+
+        {/* Large Logo Icon with glow */}
+        <div className="relative flex items-center justify-center w-24 h-24 rounded-[28px] bg-white/[0.02] border border-white/[0.06] shadow-[0_8px_32px_rgba(0,0,0,0.35)] mb-6 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none" />
+          <Image src="/logo.png" alt="CareerOS Logo" width={52} height={52} className="object-contain" />
+        </div>
+
+        {/* Headings */}
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight leading-none mb-3 font-geom">
+          AI Mentor Workspace
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-400 font-medium max-w-2xl leading-relaxed mb-8">
+          Advanced career intelligence systems are currently undergoing internal testing and calibration.
+        </p>
+
+        {/* Main Message Block */}
+        <div className="p-6 sm:p-8 rounded-[28px] border border-white/5 bg-[#060a12]/45 backdrop-blur-md max-w-2xl shadow-xl relative overflow-hidden mb-8">
+          <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent" />
+          <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-semibold">
+            CareerOS Mentor is being refined to deliver personalized career strategy, execution coaching, roadmap intelligence, resume analysis, and interview preparation.
+          </p>
+          <p className="text-[11px] sm:text-xs text-slate-400 leading-relaxed font-medium mt-4">
+            The system is currently locked while testing and optimization are in progress.
+          </p>
+        </div>
+
+        {/* Lock Indicator */}
+        <div className="flex flex-col items-center gap-1.5 bg-rose-500/5 border border-rose-500/10 rounded-2xl px-6 py-4.5 max-w-md shadow-lg relative overflow-hidden mb-12">
+          <div className="flex items-center gap-2 text-rose-300 text-xs font-extrabold uppercase tracking-wider">
+            <Lock className="h-3.5 w-3.5 text-rose-400 shrink-0" />
+            Access Restricted
+          </div>
+          <p className="text-[11px] text-slate-400 font-semibold leading-none">
+            Available in a future CareerOS update
+          </p>
+        </div>
+
+        {/* Feature Preview Header */}
+        <div className="w-full max-w-5xl border-t border-white/5 pt-10 mb-6 text-left">
+          <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+            Module Showcase
+          </h3>
+          <p className="text-xs text-slate-400">
+            Features currently in active calibration cycle.
+          </p>
+        </div>
+
+        {/* Feature Preview Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 w-full max-w-5xl mb-12">
+          {[
+            {
+              title: "Career Coach",
+              desc: "Personalized strategic guidance and daily action plans to accelerate goal achievement.",
+              icon: Brain,
+            },
+            {
+              title: "Resume Intelligence",
+              desc: "Deep scan analysis and semantic keyword suggestions to pass recruiter filters.",
+              icon: FileText,
+            },
+            {
+              title: "Interview Simulator",
+              desc: "Interactive mock interview drills with structured STAR format feedback.",
+              icon: MessageSquare,
+            },
+            {
+              title: "Project Advisor",
+              desc: "Custom technical specs and caching system templates for your target stack.",
+              icon: Terminal,
+            },
+            {
+              title: "Skill Gap Analysis",
+              desc: "Identify critical deficiencies in your skillset compared to current market needs.",
+              icon: Target,
+            },
+          ].map((item, idx) => {
+            const IconComp = item.icon;
+            return (
+              <div
+                key={idx}
+                className="p-5 rounded-2xl border border-white/5 bg-[#060a12]/45 backdrop-blur-md opacity-60 flex flex-col items-center text-center relative overflow-hidden transition-all duration-300 group hover:opacity-80"
+              >
+                <div className="h-10 w-10 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center mb-3">
+                  <IconComp className="h-4.5 w-4.5 text-slate-400" />
+                </div>
+                <h4 className="text-xs font-bold text-white mb-1.5">{item.title}</h4>
+                <p className="text-[10px] text-slate-400 leading-normal font-medium">{item.desc}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Footer Note */}
+        <footer className="text-[10px] text-slate-500 font-bold uppercase tracking-widest pt-6 border-t border-white/5 w-full max-w-5xl">
+          Currently in internal testing • CareerOS Labs
+        </footer>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen text-slate-200 max-w-[1440px] mx-auto relative px-4 sm:px-6">
