@@ -7,7 +7,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { updateProfile } from "@/lib/app-data";
 import { MagneticButton } from "./magnetic-button";
 import {
-  RefreshCw, Database, Download, Check, Lock, User, Settings, Key, Globe, Sliders, AlertTriangle, ChevronDown, ChevronUp
+  Download, Check, User, Key, Sliders, AlertTriangle, ChevronDown, ChevronUp
 } from "lucide-react";
 
 type SettingsDashboardProps = {
@@ -29,7 +29,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
   const supabase = getSupabaseBrowserClient();
 
   const [providers, setProviders] = useState<AiProviderStatusRecord[]>(initialProviders);
-  const [savingProvider, setSavingProvider] = useState<string | null>(null);
+
   
   const [fullName, setFullName] = useState(profile?.full_name ?? "");
   const [goal, setGoal] = useState(profile?.goal ?? "");
@@ -53,7 +53,6 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
   const [dangerConfirmText, setDangerConfirmText] = useState("");
   const [executingDanger, setExecutingDanger] = useState(false);
 
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
   const showToast = (text: string, type: "success" | "error" = "success") => {
@@ -113,7 +112,6 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
       return;
     }
 
-    setSavingProvider(provider);
     try {
       const response = await fetch("/api/ai-providers", {
         method: "POST",
@@ -136,13 +134,10 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
       router.refresh();
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Error saving key.", "error");
-    } finally {
-      setSavingProvider(null);
     }
   };
 
   const removeProviderKey = async (provider: "openai" | "gemini") => {
-    setSavingProvider(provider);
     try {
       // Simulate API call disconnect
       setTimeout(() => {
@@ -152,11 +147,9 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
           )
         );
         showToast(`${provider.toUpperCase()} credentials disconnected.`);
-        setSavingProvider(null);
       }, 1000);
     } catch {
       showToast("Unable to disconnect key.", "error");
-      setSavingProvider(null);
     }
   };
 
@@ -171,10 +164,8 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
     showToast("Workspace preferences synchronized.");
   };
 
-  const triggerExport = (actionKey: string, msg: string) => {
-    setActionLoading(actionKey);
+  const triggerExport = (msg: string) => {
     setTimeout(() => {
-      setActionLoading(null);
       showToast(msg);
     }, 1500);
   };
@@ -510,21 +501,21 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
 
         <div className="grid gap-3 sm:grid-cols-3 text-xs">
           <button
-            onClick={() => triggerExport("exportProfile", "Profile data packet exported.")}
+            onClick={() => triggerExport("Profile data packet exported.")}
             className="tactile-btn p-3 rounded-xl text-left text-white flex flex-col justify-between"
           >
             <span className="font-bold block">Export Identity Profile</span>
             <span className="text-[9px] text-slate-500 block mt-2 font-mono">14.2 KB</span>
           </button>
           <button
-            onClick={() => triggerExport("exportRoadmaps", "Curriculum roadmaps package compiled.")}
+            onClick={() => triggerExport("Curriculum roadmaps package compiled.")}
             className="tactile-btn p-3 rounded-xl text-left text-white flex flex-col justify-between"
           >
             <span className="font-bold block">Export Active Roadmaps</span>
             <span className="text-[9px] text-slate-500 block mt-2 font-mono">450 KB</span>
           </button>
           <button
-            onClick={() => triggerExport("createBackup", "Cloud backup synced successfully.")}
+            onClick={() => triggerExport("Cloud backup synced successfully.")}
             className="tactile-btn p-3 rounded-xl text-left text-white flex flex-col justify-between"
           >
             <span className="font-bold block">Generate Database Backup</span>

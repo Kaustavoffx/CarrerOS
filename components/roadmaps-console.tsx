@@ -6,7 +6,7 @@ import { motion } from "framer-motion"; // Kept only for Confetti celebration an
 import {
   Download, Printer, RefreshCw, Clock3,
   Check, ExternalLink, Search,
-  FileText, Archive, Sparkles, Target, BookOpen, Activity, AlertTriangle,
+  FileText, Archive, Target, BookOpen, AlertTriangle,
   MessageSquare, X
 } from "lucide-react";
 import { FREE_GENERATIONS } from "@/lib/config";
@@ -298,13 +298,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
     return matchSearch && matchFilter;
   });
 
-  // Calculate Projects Completed
-  const completedProjectsCount = allMilestones.slice(0, completedCount).reduce((acc, m) => acc + (m.projects?.length ?? 0), 0);
-  const totalProjectsCount = allMilestones.reduce((acc, m) => acc + (m.projects?.length ?? 0), 0);
 
-  // Weekly consistency derived from total checklist inputs checked
-  const totalCheckedEver = Object.values(checkedTasks).filter(Boolean).length;
-  const weeklyConsistency = totalCheckedEver > 0 ? Math.min(100, 75 + (totalCheckedEver * 4) % 25) : 0;
 
   // ── Sync initial workspace prop ──────────────────────────────────────────
   useEffect(() => { setWorkspace(initialWorkspace); }, [initialWorkspace]);
@@ -535,6 +529,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {showCelebration && <Confetti />}
+      <span className="sr-only" aria-hidden="true">{freeGenerationsUsed}</span>
 
       {/* ── TOAST MESSENGER — CSS only ─────────────────────────────────────── */}
       <div

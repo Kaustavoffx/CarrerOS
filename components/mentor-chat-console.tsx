@@ -3,8 +3,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Send, Sparkles, User, Award, Zap, Brain, Clipboard, Flame, Star, X,
-  ChevronRight, Link2, Check, Edit2, Plus, FileText, CheckSquare, Square
+  Send, Sparkles, User, Zap, Brain, Clipboard, Star, X,
+  Link2, Edit2, CheckSquare, Square
 } from "lucide-react";
 import { MagneticButton } from "./magnetic-button";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -82,7 +82,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
   
   // Mentor strategic state variables
   const [mentorMode, setMentorMode] = useState<MentorMode>("coach");
@@ -132,8 +132,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
   }, [workspace, activeThreadId, isTyping]);
 
   function showToast(msg: string) {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    console.log(msg);
   }
 
   // ─── Real Data Fetching/Parsing Calculations ────────────────────────────────
@@ -141,13 +140,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
   const allMilestones = activeRoadmap ? (Array.isArray(activeRoadmap.milestones) ? activeRoadmap.milestones : []) : [];
   const completedCount = activeRoadmap ? Math.floor((activeRoadmap.progress / 100) * allMilestones.length) : 0;
   const remainingCount = allMilestones.length - completedCount;
-  const nextMilestone = allMilestones[completedCount]?.title ?? "None";
-  const completedProjectsCount = activeRoadmap
-    ? allMilestones.slice(0, completedCount).reduce((sum, m) => sum + (Array.isArray(m.projects) ? m.projects.length : 0), 0)
-    : 0;
-  const remainingWeeks = activeRoadmap
-    ? allMilestones.slice(completedCount).reduce((sum, m) => sum + m.estimated_duration_weeks, 0)
-    : 0;
+
 
   const activeThread = workspace?.ai_chats.find((t) => t.id === activeThreadId) || null;
   const readiness = profile?.readiness_score ?? 0;
@@ -157,7 +150,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
     ? allMilestones[completedCount].title 
     : (profile?.skills?.[0] ?? "Core Strategy");
 
-  const interviewReadiness = readiness > 80 ? "High" : readiness > 50 ? "Moderate" : "Low";
+
 
   // Dynamic priorities tasks
   const activeMilestoneObj = allMilestones[completedCount] || null;
@@ -396,9 +389,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
     showToast("Added to pinned insights panel.");
   };
 
-  const convertToRoadmapTask = () => {
-    showToast("Converted recommendation to roadmap milestone draft!");
-  };
+
 
   const togglePinMessage = (msgId: string) => {
     setPinnedMessageId(pinnedMessageId === msgId ? null : msgId);

@@ -449,23 +449,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
   const colorsPalette = ["#0cc6d8", "#0bb0c0", "#099aa8", "#088490", "#066e78", "#055860", "#044248", "#032c30"];
 
-  // Precompute aggregated projects & readiness checkpoints for checklist
-  const aggregatedProjects: string[] = [];
-  safeRoadmaps.forEach((rm) => {
-    getSafeArray<RoadmapMilestoneRecord>(rm.milestones).forEach((mile) => {
-      getSafeArray<string>(mile.projects).forEach((proj) => {
-        if (proj && !aggregatedProjects.includes(proj)) {
-          aggregatedProjects.push(proj);
-        }
-      });
-      getSafeArray<string>(mile.deliverables).forEach((deliv) => {
-        if (deliv && !aggregatedProjects.includes(deliv)) {
-          aggregatedProjects.push(deliv);
-        }
-      });
-    });
-  });
-  const uniqueProjects = Array.from(new Set(aggregatedProjects)).slice(0, 8);
+
 
   const domainLabel = safeRoadmaps[0]?.career_domain || "Tech/Business";
   const goalText = careerGoal.toLowerCase();
@@ -847,28 +831,6 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     drawProgressBar(x, yVal + 6, width, 4, progress, color, "#141B26");
   }
 
-  function getTextHeight(text: string, maxWidth: number, fontSize: number, lineSpacing = 1.25) {
-    doc.setFontSize(fontSize);
-    const lines = wrapText(text, maxWidth, doc);
-    return lines.length * fontSize * lineSpacing;
-  }
-
-  function getTextLayout(text: string, maxWidth: number, baseFontSize: number, lineSpacing = 1.15) {
-    let fontSize = baseFontSize;
-    doc.setFontSize(fontSize);
-    let textWidth = doc.getTextWidth(text);
-    const minFontSize = Math.max(7, baseFontSize * 0.7);
-    
-    while (textWidth > maxWidth && fontSize > minFontSize) {
-      fontSize -= 0.5;
-      doc.setFontSize(fontSize);
-      textWidth = doc.getTextWidth(text);
-    }
-    
-    const lines = wrapText(text, maxWidth, doc);
-    const height = lines.length * fontSize * lineSpacing;
-    return { lines, fontSize, height };
-  }
 
   function drawText(
     text: string, 
@@ -1343,8 +1305,13 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
       Done: "#10B981",
       Planned: "#3B82F6",
       Warning: "#F59E0B"
-    };
-    const sColor = statusColors[sprint.status] || "#00D8FF";
+    } as const;
+
+    type SprintStatus = keyof typeof statusColors;
+
+    const sColor = (sprint.status in statusColors)
+      ? statusColors[sprint.status as SprintStatus]
+      : "#00D8FF";
     drawBadge(sprint.status.toUpperCase(), margins.left + 210, y + 24, sColor, "#e0f7fa", 7.5);
 
     drawText("COMPLETION PROGRESS", margins.left + 310, y + 15, { fontSize: 8, fontColor: "#64748b" });
@@ -1371,10 +1338,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
     let skillsText = "Design, backend components, and database structures.";
     let capstoneProj = "Portfolio deployment & API integration modules.";
-    
-    const allMilestonesText = sprint.milestones.map(m => ((m.title || "") + " " + (m.why_it_matters || "")).toLowerCase()).join(" ");
-    
-    if (isSde) {
+      if (isSde) {
       if (sIndex === 0) {
         skillsText = "Algorithms, Git Workflow, Basic Syntax Variables";
         capstoneProj = "Terminal CLI utilities & mock sorting visualizers.";
@@ -1393,7 +1357,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
           skillsText = skillsText.substring(0, 57) + "...";
         }
       }
-      const allProjects = sprint.milestones.flatMap(m => getSafeArray(m.projects)).filter(Boolean);
+      const allProjects = sprint.milestones.flatMap(m => getSafeArray<string>(m.projects)).filter(Boolean);
       if (allProjects.length > 0) {
         capstoneProj = `${allProjects.slice(0, 2).join(", ")}`;
         if (capstoneProj.length > 65) {
@@ -1458,7 +1422,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
       // Draw timeline node circle
       doc.saveGraphicsState();
-      const nodeGlow = new (doc).GState({ opacity: 0.15 });
+      const nodeGlow = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.15 });
       doc.setGState(nodeGlow);
       doc.setFillColor(mColor);
       doc.circle(timelineX, nodeY, 8, "F");
@@ -1483,7 +1447,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
       // Details
       const whyMatters = milestone.why_it_matters || "Validates core domain capability.";
-      const deliverables = getSafeArray(milestone.deliverables).slice(0, 1).join(", ");
+      const deliverables = getSafeArray<string>(milestone.deliverables).slice(0, 1).join(", ");
       const descText = `Focus: ${whyMatters}\nDeliverable: ${deliverables || "Completed milestones"}`;
 
       doc.setFontSize(8);
@@ -1496,7 +1460,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     // Draw vertical timeline line
     if (sprint.milestones.length > 0) {
       doc.saveGraphicsState();
-      const lineGState = new (doc).GState({ opacity: 0.15 });
+      const lineGState = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.15 });
       doc.setGState(lineGState);
       doc.setDrawColor("#00D8FF");
       doc.setLineWidth(1.2);
@@ -1514,7 +1478,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
     y += 12;
 
-    const resourceLinks = sprint.milestones.flatMap(m => getSafeArray(m.resource_links));
+    const resourceLinks = sprint.milestones.flatMap(m => getSafeArray<RoadmapResourceLink>(m.resource_links));
     const uniqueResources = Array.from(new Map(resourceLinks.map(r => [r.url, r])).values()).slice(0, 2);
 
     const resCardW = (contentWidth - 12) / 2;
@@ -1566,7 +1530,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
     y += 12;
 
-    const sprintOutcomes = Array.from(new Set(sprint.milestones.flatMap(m => getSafeArray(m.expected_outcomes)))).slice(0, 2);
+    const sprintOutcomes = Array.from(new Set(sprint.milestones.flatMap(m => getSafeArray<string>(m.expected_outcomes)))).slice(0, 2);
     if (sprintOutcomes.length > 0) {
       sprintOutcomes.forEach((outcome) => {
         doc.setFont("CMGeom", "normal");

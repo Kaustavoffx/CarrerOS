@@ -4,9 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion"; // Kept only for Confetti celebration animation
 import {
-  ArrowRight, Sparkles, Trash2, Check, TrendingUp, X, PlusCircle,
-  Search, Flame, Activity, BookOpen, MessageSquare, MapPin,
-  DollarSign, Bookmark, AlertTriangle, Archive
+  ArrowRight, Sparkles, Trash2, Check, X, PlusCircle,
+  Search, Flame, Activity, BookOpen, AlertTriangle
 } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { generateId } from "@/lib/id";
@@ -39,65 +38,7 @@ const COLUMN_META: Record<KanbanColumn, { label: string; accent: string; bg: str
   completed:  { label: "Completed",   accent: "text-emerald-300",bg: "bg-emerald-500/10" },
 };
 
-// ─── SVG Progress Ring ────────────────────────────────────────────────────────
 
-function ProgressRing({
-  value,
-  max = 100,
-  size = 140,
-  strokeWidth = 10,
-  color = "#22d3ee",
-  trackColor = "#141418",
-  label,
-  sublabel,
-}: {
-  value: number;
-  max?: number;
-  size?: number;
-  strokeWidth?: number;
-  color?: string;
-  trackColor?: string;
-  label?: string;
-  sublabel?: string;
-}) {
-  const [animated, setAnimated] = useState(0);
-  const r = (size - strokeWidth * 2) / 2;
-  const circumference = 2 * Math.PI * r;
-  const pct = Math.min(value / max, 1);
-
-  useEffect(() => {
-    const t = setTimeout(() => setAnimated(pct), 100);
-    return () => clearTimeout(t);
-  }, [pct]);
-
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="shrink-0">
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={trackColor} strokeWidth={strokeWidth} />
-      <circle
-        cx={size / 2} cy={size / 2} r={r}
-        fill="none"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeDasharray={`${animated * circumference} ${circumference}`}
-        strokeDashoffset={circumference * 0.25}
-        style={{ transition: "stroke-dasharray 1.2s cubic-bezier(0.16,1,0.3,1)" }}
-      />
-      {label !== undefined && (
-        <>
-          <text x={size / 2} y={size / 2 - 4} textAnchor="middle" fontSize="18" fontWeight="800" fill="#ffffff">
-            {label}
-          </text>
-          {sublabel && (
-            <text x={size / 2} y={size / 2 + 14} textAnchor="middle" fontSize="9" fill="#64748b" letterSpacing="0.08em" fontWeight="bold">
-              {sublabel.toUpperCase()}
-            </text>
-          )}
-        </>
-      )}
-    </svg>
-  );
-}
 
 // ─── Microinteraction Confetti ────────────────────────────────────────────────
 
@@ -152,7 +93,6 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
   const [noteContent, setNoteContent] = useState("");
   const [noteTag, setNoteTag] = useState("Strategy");
   const [noteSearch, setNoteSearch] = useState("");
-  const [savedJobs, setSavedJobs] = useState<string[]>([]);
 
   // Logs form
   const [progressLabel, setProgressLabel] = useState("");
@@ -204,7 +144,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
       } else {
         showToast("Saved locally.");
       }
-    } catch (err) {
+    } catch {
       showToast("Cloud sync failed. Saved to memory.");
     }
   }

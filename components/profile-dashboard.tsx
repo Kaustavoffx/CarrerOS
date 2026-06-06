@@ -5,9 +5,8 @@ import { useRouter } from "next/navigation";
 import type { UserProfileRecord, WorkspaceSnapshotRecord, ExperienceLevel } from "@/lib/supabase/types";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { updateProfile } from "@/lib/app-data";
-import { MagneticButton } from "./magnetic-button";
 import {
-  Shield, RefreshCw, Database, Download, Activity, ShieldCheck, Lock, User,
+  Shield, Download, Activity, User,
   Compass, Link as LinkIcon, Globe, FileText, Settings, Trash2, Plus, Share2, Check
 } from "lucide-react";
 
@@ -35,7 +34,7 @@ type ProfileDashboardProps = {
   workspace: WorkspaceSnapshotRecord | null;
 };
 
-export function ProfileDashboard({ userId, profile, workspace }: ProfileDashboardProps) {
+export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
   const router = useRouter();
   const supabase = getSupabaseBrowserClient();
   const summaryAutosaveTimer = useRef<NodeJS.Timeout | null>(null);
@@ -67,7 +66,6 @@ export function ProfileDashboard({ userId, profile, workspace }: ProfileDashboar
   const [newSkillInput, setNewSkillInput] = useState("");
   const [savingSkills, setSavingSkills] = useState(false);
 
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
   const showToast = (text: string, type: "success" | "error" = "success") => {
@@ -217,10 +215,8 @@ export function ProfileDashboard({ userId, profile, workspace }: ProfileDashboar
     }
   };
 
-  const triggerExport = (actionKey: string, msg: string) => {
-    setActionLoading(actionKey);
+  const triggerExport = (msg: string) => {
     setTimeout(() => {
-      setActionLoading(null);
       showToast(msg);
     }, 1500);
   };
@@ -582,7 +578,7 @@ export function ProfileDashboard({ userId, profile, workspace }: ProfileDashboar
         </div>
 
         <button
-          onClick={() => triggerExport("deleteAccount", "Permanent account deletion requested.")}
+          onClick={() => triggerExport("Permanent account deletion requested.")}
           className="tactile-btn border-rose-500/25 hover:bg-rose-500/10 text-rose-300 font-bold px-4 py-2 rounded-xl text-xs"
         >
           Delete Operator Identity
@@ -594,7 +590,7 @@ export function ProfileDashboard({ userId, profile, workspace }: ProfileDashboar
         <span className="text-slate-500 font-medium font-mono">Operator ID: {userId}</span>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => triggerExport("downloadData", "Personal identity data packet downloaded.")}
+            onClick={() => triggerExport("Personal identity data packet downloaded.")}
             className="text-cyan-400 hover:underline inline-flex items-center gap-1"
           >
             <Download className="h-3.5 w-3.5" />

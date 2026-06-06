@@ -4,8 +4,8 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 // Framer Motion removed — CSS-only animations for 120fps performance
 import {
-  Sparkles, Brain, Briefcase, Award, CheckSquare, Square, RefreshCw, User, Target,
-  Layers, ArrowRight, History, Plus, Trash2, Globe, FileText, TrendingUp, AlertCircle
+  Sparkles, Brain, Briefcase, Award, CheckSquare, Square, RefreshCw, User,
+  ArrowRight, History, Plus, Trash2, TrendingUp, AlertCircle
 } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { updateProfile } from "@/lib/app-data";
@@ -23,7 +23,7 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
   // State controls
   const [checkedRecs, setCheckedRecs] = useState<Record<string, boolean>>({});
   const [isSyncing, setIsSyncing] = useState(false);
-  const [lastUpdatedTime, setLastUpdatedTime] = useState("Just now");
+
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Skill editor state
@@ -52,7 +52,6 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
     setIsSyncing(true);
     setTimeout(() => {
       setIsSyncing(false);
-      setLastUpdatedTime("Just now");
       if (typeof window !== "undefined") {
         setResumeUrl(localStorage.getItem("profile_resume_url"));
         setPortfolioUrl(localStorage.getItem("profile_portfolio_url"));
