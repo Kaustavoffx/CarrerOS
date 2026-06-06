@@ -33,10 +33,27 @@ function getMilestoneStatus(idx: number, completedCount: number, total: number):
   return "upcoming";
 }
 
+function formatUtcDate(dateStr: string) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${months[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
+}
+
+function formatUtcTime(dateStr: string) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  const hours = d.getUTCHours().toString().padStart(2, "0");
+  const minutes = d.getUTCMinutes().toString().padStart(2, "0");
+  return `${hours}:${minutes} UTC`;
+}
+
 const COLUMN_META: Record<KanbanColumn, { label: string; accent: string; bg: string }> = {
-  upcoming:   { label: "Upcoming",    accent: "text-slate-400",  bg: "bg-slate-500/10" },
-  inprogress: { label: "In Progress", accent: "text-amber-300",  bg: "bg-amber-500/10" },
-  completed:  { label: "Completed",   accent: "text-emerald-300",bg: "bg-emerald-500/10" },
+  upcoming: { label: "Upcoming", accent: "text-slate-400", bg: "bg-slate-500/10" },
+  inprogress: { label: "In Progress", accent: "text-amber-300", bg: "bg-amber-500/10" },
+  completed: { label: "Completed", accent: "text-emerald-300", bg: "bg-emerald-500/10" },
 };
 
 
@@ -103,27 +120,33 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
   const [progressNote, setProgressNote] = useState("");
 
   // Load and sync checked tasks with LocalStorage (shared with Roadmaps page)
-  const [checkedTasks, setCheckedTasks] = useState<Record<string, boolean>>(() => {
-    if (typeof window !== "undefined" && profile?.id) {
-      try {
-        const saved = localStorage.getItem(`careeros::roadmap_checked_tasks::${profile.id}`);
-        if (saved) return JSON.parse(saved);
-      } catch (e) {
-        console.error("Failed loading checked tasks:", e);
-      }
-    }
-    return {};
-  });
+  const [checkedTasks, setCheckedTasks] = useState<Record<string, boolean>>({});
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     if (profile?.id) {
+      try {
+        const saved = localStorage.getItem(`careeros::roadmap_checked_tasks::${profile.id}`);
+        if (saved) {
+          setCheckedTasks(JSON.parse(saved));
+        }
+      } catch (e) {
+        console.error("Failed loading checked tasks:", e);
+      } finally {
+        setIsLoaded(true);
+      }
+    }
+  }, [profile?.id]);
+
+  useEffect(() => {
+    if (isLoaded && profile?.id) {
       try {
         localStorage.setItem(`careeros::roadmap_checked_tasks::${profile.id}`, JSON.stringify(checkedTasks));
       } catch (e) {
         console.error("Failed saving checked tasks:", e);
       }
     }
-  }, [checkedTasks, profile?.id]);
+  }, [checkedTasks, profile?.id, isLoaded]);
 
   const supabase = getSupabaseBrowserClient();
 
@@ -166,11 +189,11 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
   const currentMilestoneTasks = currentMilestone?.project_tasks ?? [];
   const currentMilestoneDeliverables = currentMilestone?.deliverables ?? [];
   const totalSprintItems = currentMilestoneTasks.length + currentMilestoneDeliverables.length;
-  
-  const completedSprintItems = 
+
+  const completedSprintItems =
     currentMilestoneTasks.filter((_, i) => checkedTasks[`${currentMilestone?.title}::t::${i}`]).length +
     currentMilestoneDeliverables.filter((_, i) => checkedTasks[`${currentMilestone?.title}::d::${i}`]).length;
-    
+
   const sprintProgress = totalSprintItems > 0 ? Math.round((completedSprintItems / totalSprintItems) * 100) : 0;
 
   // Time Required Estimation
@@ -188,9 +211,9 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
   const weeklyConsistency = totalCheckedEver > 0 ? Math.min(100, 75 + (totalCheckedEver * 4) % 25) : 0;
 
   // Applications Count logged in logs
-  const applicationsCount = workspace?.progress?.filter(p => 
-    p.label.toLowerCase().includes("apply") || 
-    p.label.toLowerCase().includes("application") || 
+  const applicationsCount = workspace?.progress?.filter(p =>
+    p.label.toLowerCase().includes("apply") ||
+    p.label.toLowerCase().includes("application") ||
     p.label.toLowerCase().includes("job")
   ).length ?? 0;
 
@@ -280,11 +303,11 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
         const currentMilestoneTasks = currentMilestone.project_tasks ?? [];
         const currentMilestoneDeliverables = currentMilestone.deliverables ?? [];
         const totalSprintItems = currentMilestoneTasks.length + currentMilestoneDeliverables.length;
-        
-        const completedSprintItems = 
+
+        const completedSprintItems =
           currentMilestoneTasks.filter((_, i) => updated[`${currentMilestone.title}::t::${i}`]).length +
           currentMilestoneDeliverables.filter((_, i) => updated[`${currentMilestone.title}::d::${i}`]).length;
-          
+
         const newProgress = totalSprintItems > 0 ? Math.round((completedSprintItems / totalSprintItems) * 100) : 0;
         if (newProgress === 100) {
           setShowCelebration(true);
@@ -301,7 +324,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
     if (activeRoadmap) {
       list.push({
         label: `Active roadmap created: "${activeRoadmap.title}"`,
-        time: activeRoadmap.generated_at ? new Date(activeRoadmap.generated_at).toLocaleDateString() : "Recently",
+        time: activeRoadmap.generated_at ? formatUtcDate(activeRoadmap.generated_at) : "Recently",
         type: "roadmap"
       });
     }
@@ -324,7 +347,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
     if (profile?.updated_at) {
       list.push({
         label: "Career Profile settings updated",
-        time: new Date(profile.updated_at).toLocaleDateString(),
+        time: formatUtcDate(profile.updated_at),
         type: "profile"
       });
     }
@@ -354,7 +377,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
     );
   }
 
-   return (
+  return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {showCelebration && <Confetti />}
 
@@ -398,7 +421,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
           <div className="flex items-center gap-2.5">
             <button
               onClick={() => setIsDrawerOpen(true)}
-              className="tactile-btn bg-cyan-400 hover:bg-cyan-300 font-extrabold text-black px-5 py-2.5 rounded-full text-xs transition inline-flex items-center gap-1.5 shadow-[0_0_15px_rgba(34,211,238,0.2)]"
+              className="tactile-btn bg-cyan-400 hover:bg-cyan-300 font-extrabold text-white px-5 py-2.5 rounded-full text-xs transition inline-flex items-center gap-1.5 shadow-[0_0_15px_rgba(34,211,238,0.2)]"
             >
               View Notes Archives
               <ArrowRight className="h-3.5 w-3.5 stroke-[2.5]" />
@@ -468,7 +491,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
         <section id="todays-mission-section" className="scroll-mt-6">
           <div className="card-spotlight relative overflow-hidden rounded-[24px] p-6 sm:p-8">
             <div className="pointer-events-none absolute top-0 right-0 h-40 w-64 bg-cyan-400/5 rounded-full blur-3xl animate-pulse" />
-            
+
             <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-3">
@@ -478,7 +501,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                     Active Sprint Milestone
                   </span>
                 </div>
-                
+
                 <h3 className="text-lg sm:text-xl font-bold text-white leading-snug">
                   {currentMilestone.title}
                 </h3>
@@ -495,15 +518,13 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                       <button
                         key={key}
                         onClick={() => toggleTaskState(key)}
-                        className={`w-full flex items-start gap-2.5 rounded-xl border p-3 text-left text-xs transition ${
-                          isDone
+                        className={`w-full flex items-start gap-2.5 rounded-xl border p-3 text-left text-xs transition ${isDone
                             ? "border-cyan-500/10 bg-cyan-950/5 text-slate-500"
                             : "border-[#1c1c22] bg-[#070709]/80 text-slate-300 hover:border-[#252530]"
-                        }`}
+                          }`}
                       >
-                        <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${
-                          isDone ? "border-cyan-400 bg-cyan-400 text-black" : "border-slate-700"
-                        }`}>
+                        <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${isDone ? "border-cyan-400 bg-cyan-400 text-black" : "border-slate-700"
+                          }`}>
                           {isDone && <Check className="h-2.5 w-2.5 stroke-[3]" />}
                         </span>
                         <span className={isDone ? "line-through opacity-60" : ""}>{t}</span>
@@ -541,7 +562,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                   <span className="text-sm font-bold text-white mt-1 block">{timeRequiredString} left</span>
                   <span className="text-[10px] text-slate-400 mt-1 block">{currentMilestoneTasks.length - completedSprintItems} tasks remaining</span>
                 </div>
-                
+
                 <div className="w-full text-right mt-4">
                   <div className="flex justify-between items-center text-[10px] font-semibold text-slate-400 mb-1">
                     <span>Sprint Progress</span>
@@ -575,15 +596,15 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
           <div className="grid gap-4 md:grid-cols-3">
             {(["upcoming", "inprogress", "completed"] as KanbanColumn[]).map(col => {
               const meta = COLUMN_META[col];
-              
+
               const cards = allMilestones.map((m, idx) => {
                 const status = getMilestoneStatus(idx, completedCount, allMilestones.length);
                 const colMap: KanbanColumn = status === "completed" ? "completed" : status === "active" ? "inprogress" : "upcoming";
-                
+
                 const msTasks = m.project_tasks ?? [];
                 const msDels = m.deliverables ?? [];
                 const msTotal = msTasks.length + msDels.length;
-                const msCompleted = 
+                const msCompleted =
                   msTasks.filter((_, i) => checkedTasks[`${m.title}::t::${i}`]).length +
                   msDels.filter((_, i) => checkedTasks[`${m.title}::d::${i}`]).length;
                 const msProgress = msTotal > 0 ? Math.round((msCompleted / msTotal) * 100) : (status === "completed" ? 100 : 0);
@@ -632,17 +653,16 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                         >
                           <div className="cursor-grab active:cursor-grabbing rounded-xl border border-[#1a1a1f] bg-[#0a0a0d] p-4 select-none group transition-colors duration-[120ms] hover:border-[#252530]">
                             <h4 className="text-xs sm:text-sm font-semibold text-white group-hover:text-cyan-300 transition-colors duration-[120ms] line-clamp-2 leading-snug">{card.title}</h4>
-                            
+
                             <div className="mt-3 flex items-center justify-between text-[10px] text-slate-500 font-semibold">
                               <div className="flex gap-1.5">
                                 <span className="rounded bg-[#0d0d10] border border-[#202028] px-1.5 py-0.5 text-slate-400">{card.effort}</span>
-                                <span className={`rounded px-1.5 py-0.5 border ${
-                                  card.priority === "High"
+                                <span className={`rounded px-1.5 py-0.5 border ${card.priority === "High"
                                     ? "border-rose-500/20 bg-rose-500/10 text-rose-300"
                                     : card.priority === "Medium"
-                                    ? "border-amber-500/20 bg-amber-500/10 text-amber-300"
-                                    : "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
-                                }`}>{card.priority}</span>
+                                      ? "border-amber-500/20 bg-amber-500/10 text-amber-300"
+                                      : "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+                                  }`}>{card.priority}</span>
                               </div>
                               <span className={card.progress === 100 ? "text-emerald-400" : "text-cyan-300"}>
                                 {card.progress}%
@@ -700,7 +720,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
         {/* SECTION 5: AI MENTOR CARD (Purple gradient — AI semantic card) */}
         <div className="card-purple rounded-[24px] p-6 flex flex-col justify-between relative overflow-hidden">
           <div className="pointer-events-none absolute -bottom-16 -right-16 h-44 w-44 bg-indigo-400/5 rounded-full blur-2xl" />
-          
+
           <div className="relative z-10 space-y-4">
             <div className="flex items-center gap-2.5">
               <Sparkles className="h-4 w-4 text-cyan-400" />
@@ -712,7 +732,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
               <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Latest recommendation</span>
               <p className="text-xs sm:text-sm text-slate-200 mt-1.5 leading-relaxed font-medium">
                 {workspace?.ai_chats?.[0]?.messages?.slice(-1)?.[0]?.content || (
-                  currentMilestone 
+                  currentMilestone
                     ? `Prioritize completing tasks in your active "${currentMilestone.title}" milestone to establish your frontend engineering foundations.`
                     : "No advisor recommendation logged. Start conversations inside the Mentor module."
                 )}
@@ -729,7 +749,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
               <div className="bg-black/20 border border-white/5 p-3 rounded-lg">
                 <span className="text-[9px] text-indigo-300 font-bold uppercase tracking-wider block">Generated timestamp</span>
                 <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                  {workspace?.ai_chats?.[0]?.updated_at ? new Date(workspace.ai_chats[0].updated_at).toLocaleTimeString() : "Just now"}
+                  {workspace?.ai_chats?.[0]?.updated_at ? formatUtcTime(workspace.ai_chats[0].updated_at) : "Just now"}
                 </p>
               </div>
             </div>
@@ -810,9 +830,8 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
               <div className="absolute left-[15px] top-3 bottom-3 w-px bg-gradient-to-b from-white/10 via-white/5 to-transparent" />
               {activityFeedList.map((act, idx) => (
                 <div key={idx} className="relative flex items-start gap-4 pl-0.5">
-                  <div className={`relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#202028] bg-[#0d0d10] text-xs ${
-                    act.type === "milestone" ? "text-emerald-400" : act.type === "roadmap" ? "text-cyan-400" : "text-slate-400"
-                  }`}>
+                  <div className={`relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#202028] bg-[#0d0d10] text-xs ${act.type === "milestone" ? "text-emerald-400" : act.type === "roadmap" ? "text-cyan-400" : "text-slate-400"
+                    }`}>
                     {act.type === "milestone" ? <Check className="h-3 w-3 stroke-[2.5]" /> : <Activity className="h-3 w-3" />}
                   </div>
                   <div className="pt-0.5">
@@ -853,81 +872,81 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
             className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#09090b] border-l border-[#202028] p-6 shadow-2xl flex flex-col justify-between"
             style={{ transform: "translateX(0)", transition: "transform 220ms ease" }}
           >
-              <div className="flex flex-col flex-1 min-h-0">
-                <div className="flex items-center justify-between border-b border-[#202028] pb-4 mb-4">
-                  <div>
-                    <h3 className="text-base font-bold text-white">Strategy Notes & Archives</h3>
-                    <p className="text-[10px] text-slate-500 mt-0.5">Workspace notes and execution strategies</p>
-                  </div>
-                  <button
-                    onClick={() => setIsDrawerOpen(false)}
-                    className="h-8 w-8 rounded-full border border-[#202028] hover:border-cyan-400/25 flex items-center justify-center transition text-slate-400 hover:text-white"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+            <div className="flex flex-col flex-1 min-h-0">
+              <div className="flex items-center justify-between border-b border-[#202028] pb-4 mb-4">
+                <div>
+                  <h3 className="text-base font-bold text-white">Strategy Notes & Archives</h3>
+                  <p className="text-[10px] text-slate-500 mt-0.5">Workspace notes and execution strategies</p>
                 </div>
-
-                <div className="space-y-6 overflow-y-auto flex-1 pr-1.5 pb-4">
-                  {/* Strategy Notes Panel */}
-                  <div>
-                    <div className="flex items-center justify-between mb-3.5">
-                      <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">All Active Notes</span>
-                      <button
-                        onClick={() => setNoteModalOpen(true)}
-                        className="text-[10px] text-cyan-400 hover:text-cyan-300 transition inline-flex items-center gap-1 font-bold uppercase tracking-wider"
-                      >
-                        <PlusCircle className="h-3 w-3" />
-                        New Note
-                      </button>
-                    </div>
-
-                    <div className="mb-3">
-                      <div className="relative">
-                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-500" />
-                        <input
-                          value={noteSearch}
-                          onChange={e => setNoteSearch(e.target.value)}
-                          placeholder="Search notes..."
-                          className="carved-input w-full rounded-lg py-1.5 pl-8 pr-3 text-xs text-white"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      {filteredNotes.length > 0 ? (
-                        filteredNotes.map(note => (
-                          <div key={note.id} className="border border-[#141417] bg-[#07070a] p-3 rounded-lg relative group">
-                            <div className="flex items-center justify-between mb-1.5">
-                              <span className="bg-[#082f49] border border-cyan-500/20 px-1.5 py-0.2 rounded text-[8px] font-bold text-cyan-300 uppercase">
-                                {note.tag}
-                              </span>
-                              <button
-                                onClick={() => void handleDeleteNote(note.id)}
-                                className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-[#15151b] text-slate-500 hover:text-rose-400 transition"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </button>
-                            </div>
-                            <h5 className="text-xs font-semibold text-white leading-snug">{note.title}</h5>
-                            <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">{note.content}</p>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-[10px] text-slate-500 text-center py-6">No strategy notes found.</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-[#202028] pt-4 flex gap-2">
                 <button
                   onClick={() => setIsDrawerOpen(false)}
-                  className="tactile-btn border border-[#202028] hover:border-slate-500 w-full rounded-xl py-2.5 text-xs text-slate-300 font-semibold transition"
+                  className="h-8 w-8 rounded-full border border-[#202028] hover:border-cyan-400/25 flex items-center justify-center transition text-slate-400 hover:text-white"
                 >
-                  Close Drawer
+                  <X className="h-4 w-4" />
                 </button>
               </div>
+
+              <div className="space-y-6 overflow-y-auto flex-1 pr-1.5 pb-4">
+                {/* Strategy Notes Panel */}
+                <div>
+                  <div className="flex items-center justify-between mb-3.5">
+                    <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">All Active Notes</span>
+                    <button
+                      onClick={() => setNoteModalOpen(true)}
+                      className="text-[10px] text-cyan-400 hover:text-cyan-300 transition inline-flex items-center gap-1 font-bold uppercase tracking-wider"
+                    >
+                      <PlusCircle className="h-3 w-3" />
+                      New Note
+                    </button>
+                  </div>
+
+                  <div className="mb-3">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-500" />
+                      <input
+                        value={noteSearch}
+                        onChange={e => setNoteSearch(e.target.value)}
+                        placeholder="Search notes..."
+                        className="carved-input w-full rounded-lg py-1.5 pl-8 pr-3 text-xs text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    {filteredNotes.length > 0 ? (
+                      filteredNotes.map(note => (
+                        <div key={note.id} className="border border-[#141417] bg-[#07070a] p-3 rounded-lg relative group">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="bg-[#082f49] border border-cyan-500/20 px-1.5 py-0.2 rounded text-[8px] font-bold text-cyan-300 uppercase">
+                              {note.tag}
+                            </span>
+                            <button
+                              onClick={() => void handleDeleteNote(note.id)}
+                              className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-[#15151b] text-slate-500 hover:text-rose-400 transition"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                          <h5 className="text-xs font-semibold text-white leading-snug">{note.title}</h5>
+                          <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">{note.content}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-[10px] text-slate-500 text-center py-6">No strategy notes found.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-[#202028] pt-4 flex gap-2">
+              <button
+                onClick={() => setIsDrawerOpen(false)}
+                className="tactile-btn border border-[#202028] hover:border-slate-500 w-full rounded-xl py-2.5 text-xs text-slate-300 font-semibold transition"
+              >
+                Close Drawer
+              </button>
+            </div>
           </div>
         </>
       )}
@@ -939,34 +958,34 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
             className="liquid-panel w-full max-w-lg rounded-[24px] p-6 relative bg-[#09090b]"
             style={{ animation: "none" }}
           >
-              <button type="button" onClick={() => setNoteModalOpen(false)} className="absolute top-5 right-5 rounded-full p-2 text-slate-500 hover:text-white hover:bg-white/5 transition">
-                <X className="h-4 w-4" />
-              </button>
-              <h3 className="text-base font-bold text-white mb-5 relative z-10">Pin New Strategy Note</h3>
-              <div className="space-y-4 relative z-10">
-                <label className="block space-y-1.5">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Title</span>
-                  <input value={noteTitle} onChange={(e) => setNoteTitle(e.target.value)} placeholder="e.g. Portfolio positioning narrative" className="carved-input w-full rounded-xl px-4 py-2.5 text-sm text-white" />
-                </label>
-                <label className="block space-y-1.5">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Content</span>
-                  <textarea value={noteContent} onChange={(e) => setNoteContent(e.target.value)} rows={4} placeholder="Strategy actions, milestones, observations..." className="carved-input w-full rounded-xl px-4 py-2.5 text-sm text-white resize-none" />
-                </label>
-                <div>
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-2">Tag</span>
-                  <div className="flex flex-wrap gap-2">
-                    {["Strategy", "Portfolio", "Technical", "Career"].map((tag) => (
-                      <button key={tag} type="button" onClick={() => setNoteTag(tag)} className={`rounded-full px-4 py-1.5 text-xs font-semibold border transition ${noteTag === tag ? "border-cyan-400 bg-cyan-400/10 text-cyan-300" : "border-[#202028] bg-[#0c0c0e] text-slate-400"}`}>
-                        {tag}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex justify-end gap-3 pt-2">
-                  <button type="button" onClick={() => setNoteModalOpen(false)} className="tactile-btn rounded-xl px-4 py-2 text-xs font-semibold text-slate-400">Cancel</button>
-                  <button type="button" onClick={handleCreateNote} className="tactile-btn tactile-btn-primary rounded-xl px-5 py-2 text-xs font-semibold text-black">Pin Note</button>
+            <button type="button" onClick={() => setNoteModalOpen(false)} className="absolute top-5 right-5 rounded-full p-2 text-slate-500 hover:text-white hover:bg-white/5 transition">
+              <X className="h-4 w-4" />
+            </button>
+            <h3 className="text-base font-bold text-white mb-5 relative z-10">Pin New Strategy Note</h3>
+            <div className="space-y-4 relative z-10">
+              <label className="block space-y-1.5">
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Title</span>
+                <input value={noteTitle} onChange={(e) => setNoteTitle(e.target.value)} placeholder="e.g. Portfolio positioning narrative" className="carved-input w-full rounded-xl px-4 py-2.5 text-sm text-white" />
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Content</span>
+                <textarea value={noteContent} onChange={(e) => setNoteContent(e.target.value)} rows={4} placeholder="Strategy actions, milestones, observations..." className="carved-input w-full rounded-xl px-4 py-2.5 text-sm text-white resize-none" />
+              </label>
+              <div>
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-2">Tag</span>
+                <div className="flex flex-wrap gap-2">
+                  {["Strategy", "Portfolio", "Technical", "Career"].map((tag) => (
+                    <button key={tag} type="button" onClick={() => setNoteTag(tag)} className={`rounded-full px-4 py-1.5 text-xs font-semibold border transition ${noteTag === tag ? "border-cyan-400 bg-cyan-400/10 text-cyan-300" : "border-[#202028] bg-[#0c0c0e] text-slate-400"}`}>
+                      {tag}
+                    </button>
+                  ))}
                 </div>
               </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setNoteModalOpen(false)} className="tactile-btn rounded-xl px-4 py-2 text-xs font-semibold text-slate-400">Cancel</button>
+                <button type="button" onClick={handleCreateNote} className="tactile-btn tactile-btn-primary rounded-xl px-5 py-2 text-xs font-semibold text-black">Pin Note</button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -978,31 +997,31 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
             className="liquid-panel w-full max-w-lg rounded-[24px] p-6 relative bg-[#09090b]"
             style={{ animation: "none" }}
           >
-              <button type="button" onClick={() => setProgressModalOpen(false)} className="absolute top-5 right-5 rounded-full p-2 text-slate-500 hover:text-white hover:bg-white/5 transition">
-                <X className="h-4 w-4" />
-              </button>
-              <h3 className="text-base font-bold text-white mb-5 relative z-10">Log Career Momentum</h3>
-              <div className="space-y-4 relative z-10">
-                <label className="block space-y-1.5">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Metric Label</span>
-                  <input value={progressLabel} onChange={(e) => setProgressLabel(e.target.value)} placeholder="e.g. Portfolio Readiness, AWS Certificate..." className="carved-input w-full rounded-xl px-4 py-2.5 text-sm text-white" />
-                </label>
-                <label className="block space-y-1.5">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Value ({progressValue}%)</span>
-                  <div className="flex gap-4 items-center">
-                    <input type="range" min={10} max={100} value={progressValue} onChange={(e) => setProgressValue(Number(e.target.value))} className="w-full accent-cyan-400 cursor-pointer" />
-                    <span className="font-semibold text-sm text-cyan-300 shrink-0 w-10 text-right">{progressValue}%</span>
-                  </div>
-                </label>
-                <label className="block space-y-1.5">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Context Note</span>
-                  <textarea value={progressNote} onChange={(e) => setProgressNote(e.target.value)} rows={3} placeholder="Observations, blockers, wins..." className="carved-input w-full rounded-xl px-4 py-2.5 text-sm text-white resize-none" />
-                </label>
-                <div className="flex justify-end gap-3 pt-2">
-                  <button type="button" onClick={() => setProgressModalOpen(false)} className="tactile-btn rounded-xl px-4 py-2 text-xs font-semibold text-slate-400">Cancel</button>
-                  <button type="button" onClick={handleAddProgress} className="tactile-btn tactile-btn-primary rounded-xl px-5 py-2 text-xs font-semibold text-black">Log Progress</button>
+            <button type="button" onClick={() => setProgressModalOpen(false)} className="absolute top-5 right-5 rounded-full p-2 text-slate-500 hover:text-white hover:bg-white/5 transition">
+              <X className="h-4 w-4" />
+            </button>
+            <h3 className="text-base font-bold text-white mb-5 relative z-10">Log Career Momentum</h3>
+            <div className="space-y-4 relative z-10">
+              <label className="block space-y-1.5">
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Metric Label</span>
+                <input value={progressLabel} onChange={(e) => setProgressLabel(e.target.value)} placeholder="e.g. Portfolio Readiness, AWS Certificate..." className="carved-input w-full rounded-xl px-4 py-2.5 text-sm text-white" />
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Value ({progressValue}%)</span>
+                <div className="flex gap-4 items-center">
+                  <input type="range" min={10} max={100} value={progressValue} onChange={(e) => setProgressValue(Number(e.target.value))} className="w-full accent-cyan-400 cursor-pointer" />
+                  <span className="font-semibold text-sm text-cyan-300 shrink-0 w-10 text-right">{progressValue}%</span>
                 </div>
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Context Note</span>
+                <textarea value={progressNote} onChange={(e) => setProgressNote(e.target.value)} rows={3} placeholder="Observations, blockers, wins..." className="carved-input w-full rounded-xl px-4 py-2.5 text-sm text-white resize-none" />
+              </label>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setProgressModalOpen(false)} className="tactile-btn rounded-xl px-4 py-2 text-xs font-semibold text-slate-400">Cancel</button>
+                <button type="button" onClick={handleAddProgress} className="tactile-btn tactile-btn-primary rounded-xl px-5 py-2 text-xs font-semibold text-black">Log Progress</button>
               </div>
+            </div>
           </div>
         </div>
       )}

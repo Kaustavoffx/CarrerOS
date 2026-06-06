@@ -41,6 +41,8 @@ body {
   pointer-events: none;
   z-index: -100;
   overflow: hidden;
+  opacity: 1 !important;
+  filter: none !important;
 }
 
 .careeros-background::before {

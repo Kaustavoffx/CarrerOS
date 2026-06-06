@@ -175,17 +175,23 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
   const [editNotesText, setEditNotesText] = useState("");
 
   // ── Load and persist checked tasks via localStorage ─────────────────────
-  const [checkedTasks, setCheckedTasks] = useState<Record<string, boolean>>(() => {
-    if (typeof window !== "undefined" && profile?.id) {
+  const [checkedTasks, setCheckedTasks] = useState<Record<string, boolean>>({});
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    if (profile?.id) {
       try {
         const saved = localStorage.getItem(`careeros::roadmap_checked_tasks::${profile.id}`);
-        if (saved) return JSON.parse(saved);
+        if (saved) {
+          setCheckedTasks(JSON.parse(saved));
+        }
       } catch (e) {
         console.error("Failed loading checked tasks:", e);
+      } finally {
+        setIsLoaded(true);
       }
     }
-    return {};
-  });
+  }, [profile?.id]);
 
   // Load resource status tracking on mount
   useEffect(() => {
@@ -202,14 +208,14 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
   }, []);
 
   useEffect(() => {
-    if (profile?.id) {
+    if (isLoaded && profile?.id) {
       try {
         localStorage.setItem(`careeros::roadmap_checked_tasks::${profile.id}`, JSON.stringify(checkedTasks));
       } catch (e) {
         console.error("Failed saving checked tasks:", e);
       }
     }
-  }, [checkedTasks, profile?.id]);
+  }, [checkedTasks, profile?.id, isLoaded]);
 
   // ── Derived variables ────────────────────────────────────────────────────
   const supabase = getSupabaseBrowserClient();

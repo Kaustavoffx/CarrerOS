@@ -16,6 +16,12 @@ type CareerTwinDashboardProps = {
   workspace: WorkspaceSnapshotRecord | null;
 };
 
+function formatUtcShortDate(d: Date) {
+  if (!d || isNaN(d.getTime())) return "";
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${months[d.getUTCMonth()]} ${d.getUTCDate()}`;
+}
+
 export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardProps) {
   const router = useRouter();
   const supabase = getSupabaseBrowserClient();
@@ -591,7 +597,7 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
                     <span className="absolute -left-[20px] top-1.5 h-2 w-2 rounded-full bg-cyan-400 border border-black group-hover:scale-125 transition" />
                     <div className="flex justify-between items-baseline text-[9px]">
                       <span className="text-cyan-300 font-extrabold uppercase tracking-wider">{ev.type}</span>
-                      <span className="text-slate-500">{ev.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
+                      <span className="text-slate-500">{formatUtcShortDate(ev.date)}</span>
                     </div>
                     <h4 className="text-xs font-bold text-white mt-0.5 leading-snug">{ev.title}</h4>
                     {ev.desc && <p className="text-[10px] text-slate-400 mt-1 leading-normal leading-relaxed">{ev.desc}</p>}
