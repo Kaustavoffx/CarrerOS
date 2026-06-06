@@ -24,25 +24,28 @@
 
 html {
   scroll-behavior: smooth;
-  background: var(--background);
+  background: transparent;
 }
 
 body {
   min-height: 100vh;
   overflow-x: hidden;
-  background: #020305;
+  background: transparent;
   color: var(--foreground);
   font-family: var(--font-geom);
+}
+
+main {
+  position: relative;
+  z-index: 1;
 }
 
 .careeros-background {
   position: fixed;
   inset: 0;
+  z-index: -1;
   pointer-events: none;
-  z-index: -100;
-  overflow: hidden;
-  opacity: 1 !important;
-  filter: none !important;
+  background-color: #020305;
 }
 
 .careeros-background::before {
