@@ -41,18 +41,18 @@ export function GitHubIcon({ className }: { className?: string }) {
 
 export function AuthProviders({ onProviderSelect, loading = false, activeProvider = null }: AuthProvidersProps) {
   return (
-    <div className="mt-8 flex flex-col gap-3">
+    <div className="mt-6 flex flex-col gap-3">
       <MagneticButton
         type="button"
         onClick={() => onProviderSelect("google")}
         disabled={loading}
         aria-label="Continue with Google"
-        className="inline-flex w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition-all duration-200 hover:bg-slate-50 hover:-translate-y-0.5 active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 disabled:pointer-events-none disabled:opacity-50 cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.15)] will-change-transform transform-gpu"
+        className="flex w-full h-[52px] items-center justify-start gap-3 rounded-[14px] border border-white/10 bg-[#0c0c0e] px-[18px] text-sm font-semibold text-white transition-all duration-200 hover:bg-[#121216] hover:-translate-y-0.5 active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 disabled:pointer-events-none disabled:opacity-50 cursor-pointer shadow-md will-change-transform transform-gpu"
       >
         {activeProvider === "google" ? (
-          <span className="h-4.5 w-4.5 animate-spin rounded-full border-2 border-slate-900 border-t-transparent" aria-hidden="true" />
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" aria-hidden="true" />
         ) : (
-          <GoogleIcon className="h-4.5 w-4.5 shrink-0" />
+          <GoogleIcon className="h-5 w-5 shrink-0" />
         )}
         <span>{activeProvider === "google" ? "Authenticating..." : "Continue with Google"}</span>
       </MagneticButton>
@@ -62,12 +62,12 @@ export function AuthProviders({ onProviderSelect, loading = false, activeProvide
         onClick={() => onProviderSelect("github")}
         disabled={loading}
         aria-label="Continue with GitHub"
-        className="inline-flex w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-slate-800 hover:-translate-y-0.5 active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 disabled:pointer-events-none disabled:opacity-50 cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.30)] will-change-transform transform-gpu"
+        className="flex w-full h-[52px] items-center justify-start gap-3 rounded-[14px] border border-white/10 bg-[#0c0c0e] px-[18px] text-sm font-semibold text-white transition-all duration-200 hover:bg-[#121216] hover:-translate-y-0.5 active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 disabled:pointer-events-none disabled:opacity-50 cursor-pointer shadow-md will-change-transform transform-gpu"
       >
         {activeProvider === "github" ? (
-          <span className="h-4.5 w-4.5 animate-spin rounded-full border-2 border-white border-t-transparent" aria-hidden="true" />
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" aria-hidden="true" />
         ) : (
-          <GitHubIcon className="h-4.5 w-4.5 shrink-0" />
+          <GitHubIcon className="h-5 w-5 shrink-0" />
         )}
         <span>{activeProvider === "github" ? "Authenticating..." : "Continue with GitHub"}</span>
       </MagneticButton>
