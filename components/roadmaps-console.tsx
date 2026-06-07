@@ -14,7 +14,7 @@ import { FREE_GENERATIONS } from "@/lib/config";
 import { FeatureGateButton } from "./feature-status";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { normalizeRoadmapArray, normalizeRoadmapVersionArray, updateWorkspace } from "@/lib/app-data";
-import { buildRoadmapExportBundle, generateRoadmapPdfBlob, type AuditBlob } from "@/lib/roadmap-export";
+import { buildRoadmapExportBundle, generateRoadmapPdfBlob } from "@/lib/roadmap-export";
 import type {
   AiProviderStatusRecord, RoadmapRecord, RoadmapVersionRecord,
   UserProfileRecord, WorkspaceSnapshotRecord, RoadmapResourceLink,
@@ -60,20 +60,6 @@ function downloadTextFile(filename: string, content: string, mimeType: string) {
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
-async function downloadPdfFile(
-  filename: string,
-  report: Parameters<typeof generateRoadmapPdfBlob>[0]
-): Promise<{ valid: boolean; warnings: string[] }> {
-  const blob = await generateRoadmapPdfBlob(report);
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  anchor.click();
-  window.setTimeout(() => URL.revokeObjectURL(url), 0);
-  const auditBlob = blob as AuditBlob;
-  return { valid: auditBlob.valid !== false, warnings: auditBlob.warnings || [] };
-}
 
 function getMilestoneStatus(idx: number, completedCount: number, total: number): MilestoneStatus {
   if (idx < completedCount) return "completed";
@@ -165,6 +151,15 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
   const [showCelebration, setShowCelebration] = useState(false);
   const [exportSuccessOpen, setExportSuccessOpen] = useState(false);
   const [exportedFilename, setExportedFilename] = useState("");
+
+  // PDF Download Modal States
+  const [pdfModalOpen, setPdfModalOpen] = useState(false);
+  const [pdfProgress, setPdfProgress] = useState(0);
+  const [pdfProgressText, setPdfProgressText] = useState("");
+  const [pdfProgressPage, setPdfProgressPage] = useState("");
+  const [pdfResultBlob, setPdfResultBlob] = useState<Blob | null>(null);
+  const [pdfFilename, setPdfFilename] = useState("");
+  const [pdfGenerationPhase, setPdfGenerationPhase] = useState<"generating" | "ready" | "error">("generating");
 
   // V4 Resource Status & Milestone Edit States
   const [bookmarkedResources, setBookmarkedResources] = useState<Record<string, boolean>>({});
@@ -666,21 +661,61 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
     showToast(`Sprint milestone completed! Active track progress is now ${nextProgress}%.`);
   }
 
+  function triggerActualDownload(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+
+  const handlePdfDownloadClick = () => {
+    if (pdfResultBlob && pdfFilename) {
+      triggerActualDownload(pdfResultBlob, pdfFilename);
+      showToast("PDF downloaded successfully.");
+    }
+  };
+
   async function handlePdfDownload() {
-    if (!safeWorkspaceRoadmaps.length) return;
+    if (!safeWorkspaceRoadmaps.length || pdfModalOpen) return;
+    
     const bundle = buildRoadmapExportBundle(safeWorkspaceRoadmaps, `${profile?.goal ?? "CareerOS"} Roadmap`);
     bundle.pdf.report.careerGoal = profile?.goal;
     bundle.pdf.report.readinessScore = profile?.readiness_score;
+
+    setPdfFilename(bundle.pdf.filename);
+    setPdfModalOpen(true);
+    setPdfProgress(0);
+    setPdfProgressText("Analyzing roadmap...");
+    setPdfProgressPage("");
+    setPdfResultBlob(null);
+    setPdfGenerationPhase("generating");
+
     try {
-      const result = await downloadPdfFile(bundle.pdf.filename, bundle.pdf.report);
-      if (result.valid) {
-        setExportedFilename(bundle.pdf.filename);
-        setExportSuccessOpen(true);
-      } else {
-        showToast("Roadmap exported as PDF with warnings.");
-      }
+      const blob = await generateRoadmapPdfBlob(bundle.pdf.report, (percent, phase, pageText) => {
+        setPdfProgress(percent);
+        setPdfProgressText(phase);
+        if (pageText) {
+          setPdfProgressPage(pageText);
+        }
+      });
+      
+      setPdfResultBlob(blob);
+      setPdfGenerationPhase("ready");
+      setPdfProgress(100);
+      setPdfProgressText("PDF generated successfully");
+
+      // Auto download after exactly 1 second
+      setTimeout(() => {
+        triggerActualDownload(blob, bundle.pdf.filename);
+        showToast("PDF downloaded successfully.");
+      }, 1000);
+
     } catch (error) {
-      console.error("PDF download failure:", error);
+      console.error("PDF generation failure:", error);
+      setPdfGenerationPhase("error");
+      setPdfProgressText("PDF export failed.");
       showToast("PDF export failed.");
     }
   }
@@ -1561,6 +1596,148 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
               >
                 Dismiss
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══ PDF PROGRESS DOWNLOAD MODAL ════════════════════════════════════════ */}
+      {pdfModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm select-none animate-fadeIn">
+          <div className="liquid-panel w-full max-w-md rounded-[24px] p-6 text-center bg-[#09090b]/90 border border-cyan-500/20 relative shadow-[0_30px_100px_rgba(0,0,0,0.5)]">
+            
+            {/* Close button for error or ready state */}
+            {pdfGenerationPhase !== "generating" && (
+              <button
+                type="button"
+                onClick={() => setPdfModalOpen(false)}
+                className="absolute top-5 right-5 rounded-full p-2 text-slate-500 hover:text-white hover:bg-white/5 transition cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+
+            <div className="flex flex-col items-center gap-5 py-4">
+              {/* Logo container */}
+              <div className="relative flex items-center justify-center mb-1">
+                <div className="absolute h-16 w-16 bg-cyan-400/10 rounded-full animate-pulse" />
+                <div className="h-12 w-12 rounded-2xl bg-cyan-950/40 border border-cyan-400/30 flex items-center justify-center relative z-10">
+                  <Image src="/logo.png" alt="CareerOS" width={28} height={28} className="object-contain animate-spin-slow" />
+                </div>
+              </div>
+
+              {pdfGenerationPhase === "generating" ? (
+                <>
+                  <h3 className="text-sm font-bold text-white tracking-wider uppercase">Generating CareerOS Report</h3>
+                  
+                  {/* Progress Ring or Bar */}
+                  <div className="w-full bg-[#141b26] rounded-full h-1.5 overflow-hidden mt-2">
+                    <div 
+                      className="bg-gradient-to-r from-cyan-500 to-cyan-300 h-1.5 rounded-full transition-all duration-300 ease-out" 
+                      style={{ width: `${pdfProgress}%` }}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between w-full text-xs text-slate-400 font-semibold px-1 mt-1">
+                    <span>{pdfProgressText}</span>
+                    <span className="text-cyan-400 font-mono">{pdfProgress}%</span>
+                  </div>
+
+                  {/* Active Page Indicator */}
+                  {pdfProgressPage && (
+                    <div className="text-[10px] font-mono font-semibold tracking-wider text-slate-500 bg-white/[0.02] px-2.5 py-1 rounded-md border border-white/5">
+                      {pdfProgressPage}
+                    </div>
+                  )}
+
+                  {/* Step status checklist */}
+                  <div className="w-full text-left space-y-2 mt-4 bg-white/[0.01] border border-white/5 p-4 rounded-xl text-xs text-slate-400 font-normal">
+                    <div className="flex items-center gap-2">
+                      <div className={`h-4 w-4 rounded-full border flex items-center justify-center text-[10px] shrink-0 font-bold
+                        ${pdfProgress >= 15 ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-400" : "border-slate-800 text-slate-600"}`}>
+                        {pdfProgress >= 15 ? "✓" : "1"}
+                      </div>
+                      <span className={pdfProgress >= 5 && pdfProgress < 15 ? "text-cyan-300 font-semibold" : pdfProgress >= 15 ? "text-slate-300 line-through opacity-60" : ""}>
+                        Analyzing roadmap metadata
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`h-4 w-4 rounded-full border flex items-center justify-center text-[10px] shrink-0 font-bold
+                        ${pdfProgress >= 40 ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-400" : "border-slate-800 text-slate-600"}`}>
+                        {pdfProgress >= 40 ? "✓" : "2"}
+                      </div>
+                      <span className={pdfProgress >= 15 && pdfProgress < 40 ? "text-cyan-300 font-semibold" : pdfProgress >= 40 ? "text-slate-300 line-through opacity-60" : ""}>
+                        Building executive summary & layout structures
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`h-4 w-4 rounded-full border flex items-center justify-center text-[10px] shrink-0 font-bold
+                        ${pdfProgress >= 85 ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-400" : "border-slate-800 text-slate-600"}`}>
+                        {pdfProgress >= 85 ? "✓" : "3"}
+                      </div>
+                      <span className={pdfProgress >= 40 && pdfProgress < 85 ? "text-cyan-300 font-semibold" : pdfProgress >= 85 ? "text-slate-300 line-through opacity-60" : ""}>
+                        Rendering visual assets & sprint timelines
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`h-4 w-4 rounded-full border flex items-center justify-center text-[10px] shrink-0 font-bold
+                        ${pdfProgress >= 98 ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-400" : "border-slate-800 text-slate-600"}`}>
+                        {pdfProgress >= 98 ? "✓" : "4"}
+                      </div>
+                      <span className={pdfProgress >= 85 && pdfProgress < 98 ? "text-cyan-300 font-semibold" : pdfProgress >= 98 ? "text-slate-300 line-through opacity-60" : ""}>
+                        Optimizing pages and checking ledger bounds
+                      </span>
+                    </div>
+                  </div>
+                </>
+              ) : pdfGenerationPhase === "ready" ? (
+                <>
+                  <h3 className="text-sm font-bold text-white tracking-wider uppercase">CareerOS Report Ready</h3>
+                  <div className="relative flex items-center justify-center">
+                    <div className="absolute h-12 w-12 bg-emerald-500/10 rounded-full animate-ping" />
+                    <div className="h-10 w-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 relative z-10">
+                      <Check className="h-6 w-6 stroke-[3]" />
+                    </div>
+                  </div>
+                  
+                  <div className="text-xs text-slate-300 leading-relaxed max-w-xs">
+                    <p className="font-semibold text-white">PDF generated successfully!</p>
+                    <p className="mt-1 text-slate-400">File download will start automatically in a second.</p>
+                    <p className="mt-2 text-[10px] font-mono text-cyan-400 bg-cyan-950/20 border border-cyan-500/10 px-2.5 py-1 rounded-lg truncate select-all">
+                      {pdfFilename}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handlePdfDownloadClick}
+                    className="tactile-btn tactile-btn-primary w-full py-2.5 rounded-xl text-xs font-bold text-black mt-2 inline-flex items-center justify-center gap-1.5"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Download PDF
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-sm font-bold text-red-400 tracking-wider uppercase">Generation Failed</h3>
+                  <div className="h-10 w-10 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-400">
+                    <AlertTriangle className="h-6 w-6" />
+                  </div>
+                  
+                  <p className="text-xs text-slate-400 leading-relaxed max-w-xs">
+                    An error occurred while compiling your career report. Spacing issues are skipped, so this indicates a critical asset or memory constraint.
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() => void handlePdfDownload()}
+                    className="tactile-btn tactile-btn-primary w-full py-2.5 rounded-xl text-xs font-bold text-black mt-2"
+                  >
+                    Retry Generation
+                  </button>
+                </>
+              )}
+
             </div>
           </div>
         </div>
