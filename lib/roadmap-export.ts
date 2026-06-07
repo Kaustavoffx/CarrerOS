@@ -533,7 +533,7 @@ export class LayoutLedger {
           
           const intersects = (a.x1 < b.x2 - 0.5 && a.x2 > b.x1 + 0.5 && a.y1 < b.y2 - 0.5 && a.y2 > b.y1 + 0.5);
           if (intersects) {
-            errors.push(`Overlapping text detected between '${a.label}' and '${b.label}' on page ${a.page}`);
+            errors.push(`Overlapping text detected between '${a.label}' [x1=${a.x1.toFixed(2)}, y1=${a.y1.toFixed(2)}, x2=${a.x2.toFixed(2)}, y2=${a.y2.toFixed(2)}] and '${b.label}' [x1=${b.x1.toFixed(2)}, y1=${b.y1.toFixed(2)}, x2=${b.x2.toFixed(2)}, y2=${b.y2.toFixed(2)}] on page ${a.page}`);
           }
         }
       }
@@ -861,26 +861,26 @@ export class LayoutLedger {
     const titleHeight = 24 * 1.2;
     const subtitleLinesCount = wrapText(subtitle, contentWidth, doc).length;
     const subtitleHeight = subtitleLinesCount * 11 * 1.35;
-    const totalHeaderHeight = 9 + labelHeight + 18 + titleHeight + 12 + subtitleHeight + 20;
+    const totalHeaderHeight = 9 + labelHeight + 12 + titleHeight + 6 + subtitleHeight + 15;
     
     ensureSpace(totalHeaderHeight);
 
     // 1. Small cyan label
-    const labelEndY = drawText(label.toUpperCase(), margins.left, y + 9, { fontSize: 9, fontColor: "#00D8FF" });
+    const labelEndY = drawText(label.toUpperCase(), margins.left, y, { fontSize: 9, fontColor: "#00D8FF" });
     
     // 2. Large title
-    const titleEndY = drawText(title, margins.left, labelEndY + 18, { fontSize: 24, fontColor: "#FFFFFF" });
+    const titleEndY = drawText(title, margins.left, labelEndY + 12, { fontSize: 24, fontColor: "#FFFFFF", maxWidth: contentWidth });
     
     // 3. Supporting text
-    const subtitleEndY = drawText(subtitle, margins.left, titleEndY + 12, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
+    const subtitleEndY = drawText(subtitle, margins.left, titleEndY + 6, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: contentWidth });
 
-    y = subtitleEndY + 20;
+    y = subtitleEndY + 15;
   }
 
   function drawText(
     text: string, 
     x: number, 
-    yVal: number, 
+    yTop: number, 
     options?: { 
       align?: "left" | "right" | "center"; 
       fontSize?: number; 
@@ -889,13 +889,14 @@ export class LayoutLedger {
       maxWidth?: number;
     }
   ): number {
+    if (!text) return yTop;
     const currentFontSize = options?.fontSize || doc.getFontSize();
     doc.setFontSize(currentFontSize);
     
-    // Boundary check/correction: Ensure text baseline is pushed down if it violates top margins
-    let adjustedYVal = yVal;
-    if (adjustedYVal - currentFontSize < margins.top) {
-      adjustedYVal = margins.top + currentFontSize;
+    // Boundary check/correction: Ensure text top respects top margins
+    let adjustedYTop = yTop;
+    if (adjustedYTop < margins.top) {
+      adjustedYTop = margins.top;
     }
     
     doc.saveGraphicsState();
@@ -923,10 +924,10 @@ export class LayoutLedger {
     }
     
     const textWidth = doc.getTextWidth(text);
-    let returnY = adjustedYVal;
+    let returnY = adjustedYTop;
 
     // Apply backing layer if text is rendered over bright background nebula region
-    const isBrightBackgroundNebula = (adjustedYVal > 180 && adjustedYVal < 450 && x > 180);
+    const isBrightBackgroundNebula = (adjustedYTop > 180 && adjustedYTop < 450 && x > 180);
     if (isBrightBackgroundNebula) {
       doc.saveGraphicsState();
       const backGState = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.25 });
@@ -940,18 +941,16 @@ export class LayoutLedger {
       } else if (options?.align === "center") {
         rx = x - textW / 2 - 4;
       }
-      doc.roundedRect(rx, adjustedYVal - currentFontSize - 1, textW + 8, textH + 2, 3, 3, "F");
+      doc.roundedRect(rx, adjustedYTop - 1, textW + 8, textH + 2, 3, 3, "F");
       doc.restoreGraphicsState();
     }
 
     if (textWidth > targetMaxWidth) {
       const wrappedLines = wrapText(text, targetMaxWidth, doc);
       const lSpacing = 1.35; // follow centralized typography rules
-      let curY = adjustedYVal;
       wrappedLines.forEach((line, idx) => {
-        if (idx > 0) {
-          curY += currentFontSize * lSpacing;
-        }
+        const lineTop = adjustedYTop + idx * currentFontSize * lSpacing;
+        const lineBaseline = lineTop + currentFontSize;
         
         doc.setFontSize(currentFontSize);
         const lineW = doc.getTextWidth(line);
@@ -961,13 +960,13 @@ export class LayoutLedger {
         } else if (options?.align === "center") {
           lx = x - lineW / 2;
         }
-        const ly1 = curY - currentFontSize;
-        const ly2 = curY;
+        const ly1 = lineTop;
+        const ly2 = lineTop + currentFontSize;
         
-        doc.text(line, lx, curY); // Note: we draw at lx since align is handled manually here
+        doc.text(line, lx, lineBaseline);
         ledger.pushBox(doc.getNumberOfPages(), lx, ly1, lx + lineW, ly2, `Text: ${line.substring(0, 15)}`);
+        returnY = ly2;
       });
-      returnY = curY;
     } else {
       let x1 = x;
       if (options?.align === "right") {
@@ -976,13 +975,12 @@ export class LayoutLedger {
         x1 = x - textWidth / 2;
       }
 
-      const y1 = adjustedYVal - currentFontSize;
-      const x2 = x1 + textWidth;
-      const y2 = adjustedYVal;
+      const y1 = adjustedYTop;
+      const y2 = adjustedYTop + currentFontSize;
 
-      doc.text(text, x1, adjustedYVal); // Note: we draw at x1 since align is handled manually
-      ledger.pushBox(doc.getNumberOfPages(), x1, y1, x2, y2, `Text: ${text.substring(0, 15)}`);
-      returnY = adjustedYVal;
+      doc.text(text, x1, adjustedYTop + currentFontSize);
+      ledger.pushBox(doc.getNumberOfPages(), x1, y1, x1 + textWidth, y2, `Text: ${text.substring(0, 15)}`);
+      returnY = y2;
     }
 
     doc.restoreGraphicsState();
@@ -1120,21 +1118,27 @@ export class LayoutLedger {
   const topLogoSize = 24;
   doc.addImage(circularLogoBase64, "PNG", centerX - topLogoSize / 2, 60, topLogoSize, topLogoSize);
 
-  // Center: SDE I / Goal title (54pt)
+  // Center: SDE I / Goal title (dynamic sizing to prevent overlap)
   const hugeTitleText = careerGoal;
-  const titleEndY = drawText(hugeTitleText, centerX, 220, { align: "center", fontSize: 54, fontColor: "#FFFFFF", maxWidth: contentWidth });
+  let titleFontSize = 54;
+  if (careerGoal.length > 35) {
+    titleFontSize = 28;
+  } else if (careerGoal.length > 20) {
+    titleFontSize = 38;
+  }
+  const titleEndY = drawText(hugeTitleText, centerX, 220, { align: "center", fontSize: titleFontSize, fontColor: "#FFFFFF", maxWidth: contentWidth });
 
   // Center: Subtitle (16pt Subheading)
-  const subtitleY = titleEndY + 20;
-  drawText("Career Execution Plan", centerX, subtitleY, { align: "center", fontSize: 16, fontColor: "#00D8FF", maxWidth: contentWidth });
+  const subtitleEndY = drawText("Career Execution Plan", centerX, titleEndY + 15, { align: "center", fontSize: 16, fontColor: "#00D8FF", maxWidth: contentWidth });
 
   // Center: Large Hero Logo
   const heroLogoSize = 120;
-  const heroLogoY = subtitleY + 30;
+  const heroLogoY = subtitleEndY + 25;
   doc.addImage(circularLogoBase64, "PNG", centerX - heroLogoSize / 2, heroLogoY, heroLogoSize, heroLogoSize);
 
   // Center: Readiness Score Ring
-  const ringCenterY = heroLogoY + heroLogoSize + 70;
+  const ringYTop = heroLogoY + heroLogoSize + 30;
+  const ringCenterY = ringYTop + 45;
   drawReadinessRing(centerX, ringCenterY, 45, readinessScore);
 
   // Bottom row split composition (horizontal typographic grid)
@@ -1156,9 +1160,9 @@ export class LayoutLedger {
   coverMetadata.forEach((meta, idx) => {
     const colX = margins.left + idx * colW;
     // Draw label
-    drawText(meta.label, colX, bottomMetaY, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
+    const labelBottom = drawText(meta.label, colX, bottomMetaY, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
     // Draw value
-    drawText(meta.val, colX, bottomMetaY + 16, { fontSize: 11, fontColor: "#FFFFFF" });
+    drawText(meta.val, colX, labelBottom + 4, { fontSize: 11, fontColor: "#FFFFFF" });
   });
 
   totalContentHeight += (y - margins.top);
@@ -1189,11 +1193,11 @@ export class LayoutLedger {
   metricsList.forEach((metric, idx) => {
     const colX = margins.left + idx * (metricCardW + 12);
     drawLiquidGlassCard(colX, y, metricCardW, metricCardH, { rx: 12, ry: 12 });
-    drawText(metric.label.toUpperCase(), colX + 12, y + 16, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45, maxWidth: metricCardW - 24 });
-    drawText(metric.val, colX + 12, y + 36, { fontSize: 24, fontColor: "#00D8FF", maxWidth: metricCardW - 24 });
+    const labelBottom = drawText(metric.label.toUpperCase(), colX + 12, y + 10, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45, maxWidth: metricCardW - 24 });
+    drawText(metric.val, colX + 12, labelBottom + 4, { fontSize: 24, fontColor: "#00D8FF", maxWidth: metricCardW - 24 });
   });
 
-  y += 28;
+  y += metricCardH + 20;
 
   // 2x2 grid of Market Dynamics (Typographic, No Cards, Grid Flow Engine)
   const firstRoadmap = safeRoadmaps[0];
@@ -1204,34 +1208,20 @@ export class LayoutLedger {
     leftCol: { title: string; val: string; desc: string },
     rightCol: { title: string; val: string; desc: string }
   ) {
-    const leftTitleLines = wrapText(leftCol.title.toUpperCase(), colWidth, doc);
-    const leftValLines = wrapText(leftCol.val, colWidth, doc);
-    const leftDescLines = wrapText(leftCol.desc, colWidth, doc);
-    const leftHeight = (leftTitleLines.length * 9 * 1.25) + 8 + (leftValLines.length * 16 * 1.25) + 12 + (leftDescLines.length * 11 * 1.35);
-
-    const rightTitleLines = wrapText(rightCol.title.toUpperCase(), colWidth, doc);
-    const rightValLines = wrapText(rightCol.val, colWidth, doc);
-    const rightDescLines = wrapText(rightCol.desc, colWidth, doc);
-    const rightHeight = (rightTitleLines.length * 9 * 1.25) + 8 + (rightValLines.length * 16 * 1.25) + 12 + (rightDescLines.length * 11 * 1.35);
-
-    const rowHeight = Math.max(leftHeight, rightHeight);
-
-    ensureSpace(rowHeight);
+    ensureSpace(110);
 
     const leftX = margins.left;
     const rightX = leftX + colWidth + colGap;
 
-    let curY = y;
-    curY = drawText(leftCol.title.toUpperCase(), leftX, curY, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45, maxWidth: colWidth });
-    curY = drawText(leftCol.val, leftX, curY + 8, { fontSize: 16, fontColor: "#00D8FF", maxWidth: colWidth });
-    drawText(leftCol.desc, leftX, curY + 12, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: colWidth });
+    const titleABottom = drawText(leftCol.title.toUpperCase(), leftX, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45, maxWidth: colWidth });
+    const valABottom = drawText(leftCol.val, leftX, titleABottom + 4, { fontSize: 16, fontColor: "#00D8FF", maxWidth: colWidth });
+    const descABottom = drawText(leftCol.desc, leftX, valABottom + 6, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: colWidth });
 
-    curY = y;
-    curY = drawText(rightCol.title.toUpperCase(), rightX, curY, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45, maxWidth: colWidth });
-    curY = drawText(rightCol.val, rightX, curY + 8, { fontSize: 16, fontColor: "#00D8FF", maxWidth: colWidth });
-    drawText(rightCol.desc, rightX, curY + 12, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: colWidth });
+    const titleBBottom = drawText(rightCol.title.toUpperCase(), rightX, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45, maxWidth: colWidth });
+    const valBBottom = drawText(rightCol.val, rightX, titleBBottom + 4, { fontSize: 16, fontColor: "#00D8FF", maxWidth: colWidth });
+    const descBBottom = drawText(rightCol.desc, rightX, valBBottom + 6, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: colWidth });
 
-    y += rowHeight;
+    y = Math.max(descABottom, descBBottom) + 20;
   }
 
   if (firstRoadmap) {
@@ -1240,7 +1230,7 @@ export class LayoutLedger {
 
     const row1_Left = {
       title: "Market Demand",
-      val: `${firstRoadmap.career_demand_score}/100 Demand`,
+      val: firstRoadmap.career_demand_score ? `${firstRoadmap.career_demand_score}/100 Demand` : "85/100 Demand",
       desc: "Strong demand signal indicating continuous job openings and hiring pipeline velocity across major regions."
     };
     const row1_Right = {
@@ -1260,11 +1250,10 @@ export class LayoutLedger {
     };
 
     drawTwoColumnRow(colW, colGap, row1_Left, row1_Right);
-    y += 28;
     drawTwoColumnRow(colW, colGap, row2_Left, row2_Right);
   }
 
-  y += 28;
+  y += 10;
 
   // 3-column Roadmap Summary (Typographic, No Cards)
   const summaryColW = (contentWidth - 24) / 3;
@@ -1277,35 +1266,27 @@ export class LayoutLedger {
   let maxSummaryHeight = 0;
   summaryList.forEach((sItem) => {
     const wrappedLines = wrapText(sItem.text, summaryColW, doc);
-    const colHeight = (1 * 9 * 1.25) + 8 + (wrappedLines.length * 11 * 1.35);
+    const colHeight = 9 + 6 + (wrappedLines.length * 11 * 1.35);
     maxSummaryHeight = Math.max(maxSummaryHeight, colHeight);
   });
 
-  ensureSpace(maxSummaryHeight);
+  ensureSpace(maxSummaryHeight + 20);
 
+  const colBottoms: number[] = [];
   summaryList.forEach((sItem, idx) => {
     const colX = margins.left + idx * (summaryColW + 12);
-    const titleEndY = drawText(sItem.title, colX, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45, maxWidth: summaryColW });
-    const wrappedLines = wrapText(sItem.text, summaryColW, doc);
-    let txtY = titleEndY + 8;
-    wrappedLines.forEach((line) => {
-      drawText(line, colX, txtY, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: summaryColW });
-      txtY += 11 * 1.35;
-    });
+    const titleBottom = drawText(sItem.title, colX, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45, maxWidth: summaryColW });
+    const textBottom = drawText(sItem.text, colX, titleBottom + 6, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: summaryColW });
+    colBottoms.push(textBottom);
   });
 
-  y += maxSummaryHeight + 28;
+  y = Math.max(...colBottoms) + 25;
 
   // Domain Competency Breakdown (Typographic, No Cards)
-  ensureSpace(16 + 20 + 90);
+  ensureSpace(110);
 
-  doc.setFont("CMGeom", "normal");
-  doc.setFontSize(16);
-  doc.setTextColor("#FFFFFF");
-  doc.text("Domain Competency Breakdown", margins.left, y);
-  ledger.pushBox(doc.getNumberOfPages(), margins.left, y - 16, margins.left + doc.getTextWidth("Domain Competency Breakdown"), y, "CompetencyHeader");
-
-  y += 20;
+  const competencyHeaderBottom = drawText("Domain Competency Breakdown", margins.left, y, { fontSize: 16, fontColor: "#FFFFFF" });
+  y = competencyHeaderBottom + 12;
 
   const competencyW = (contentWidth - 36) / 2;
   const comps = [
@@ -1319,23 +1300,23 @@ export class LayoutLedger {
     const colIdx = idx % 2;
     const rowIdx = Math.floor(idx / 2);
     const colX = margins.left + colIdx * (competencyW + 36);
-    const rowY = y + rowIdx * 45;
+    const rowY = y + rowIdx * 40;
 
-    drawText(comp.label, colX, rowY, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: competencyW - 35 });
+    const labelBottom = drawText(comp.label, colX, rowY, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: competencyW - 35 });
     drawText(`${comp.progress}%`, colX + competencyW, rowY, { align: "right", fontSize: 11, fontColor: "#00D8FF", maxWidth: 30 });
 
     // Progress Bar Track
     doc.setFillColor("#141B26");
-    doc.roundedRect(colX, rowY + 6, competencyW, 3, 1.5, 1.5, "F");
-    ledger.pushBox(doc.getNumberOfPages(), colX, rowY + 6, colX + competencyW, rowY + 9, "ProgressBarTrack");
+    doc.roundedRect(colX, labelBottom + 5, competencyW, 3, 1.5, 1.5, "F");
+    ledger.pushBox(doc.getNumberOfPages(), colX, labelBottom + 5, colX + competencyW, labelBottom + 8, "ProgressBarTrack");
     
     // Progress Bar Fill
     doc.setFillColor("#00D8FF");
-    doc.roundedRect(colX, rowY + 6, (competencyW * comp.progress) / 100, 3, 1.5, 1.5, "F");
-    ledger.pushBox(doc.getNumberOfPages(), colX, rowY + 6, colX + (competencyW * comp.progress) / 100, rowY + 9, "ProgressBarFill");
+    doc.roundedRect(colX, labelBottom + 5, (competencyW * comp.progress) / 100, 3, 1.5, 1.5, "F");
+    ledger.pushBox(doc.getNumberOfPages(), colX, labelBottom + 5, colX + (competencyW * comp.progress) / 100, labelBottom + 8, "ProgressBarFill");
   });
 
-  y += 2 * 45 + 28;
+  y += 2 * 40 + 20;
 
   totalContentHeight += (y - margins.top);
 
@@ -1357,35 +1338,33 @@ export class LayoutLedger {
     y = margins.top + 15; // Reset starting vertical spacing to 75px
 
     // 1. Chapter Heading (Editorial design)
-    doc.setFont("CMGeom", "normal");
-    doc.setFontSize(60);
-    doc.setTextColor("#00D8FF");
     const chapterNum = String(sIndex + 1).padStart(2, "0");
-    doc.text(chapterNum, margins.left, y + 45);
+    const chapterBottom = drawText(chapterNum, margins.left, y, { fontSize: 60, fontColor: "#00D8FF" });
 
-    // Shift SPRINT PLAN to y + 10 (70px) to satisfy vertical margin checks (>=60px)
-    const labelEndY = drawText("SPRINT PLAN", margins.left + 75, y + 10, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
+    // SPRINT PLAN label top-aligned
+    const labelBottom = drawText("SPRINT PLAN", margins.left + 75, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
 
     const displayTitle = sprint.title.replace(/^Sprint \d+:\s*/i, "");
-    const titleEndY = drawText(displayTitle, margins.left + 75, labelEndY + 12, { fontSize: 20, fontColor: "#FFFFFF", maxWidth: contentWidth - 75 });
+    const titleBottom = drawText(displayTitle, margins.left + 75, labelBottom + 4, { fontSize: 20, fontColor: "#FFFFFF", maxWidth: contentWidth - 75 });
 
-    y = Math.max(y + 50, titleEndY + 20);
+    y = Math.max(titleBottom, chapterBottom) + 20;
 
     // 2. Mission Statement (Premium liquid panel, borderless)
     const summaryLines = wrapText(sprint.summary, contentWidth - 32, doc);
     const summaryHeight = summaryLines.length * 11 * 1.35;
     const missionH = summaryHeight + 20; // 10pt padding top & bottom
 
-    ensureSpace(missionH);
+    ensureSpace(missionH + 10);
     drawLiquidGlassCard(margins.left, y, contentWidth, missionH, { rx: 12, ry: 12 });
-    drawText(sprint.summary, margins.left + 16, y + 14, { maxWidth: contentWidth - 32, fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
-    y += missionH + 16;
+    drawText(sprint.summary, margins.left + 16, y + 10, { maxWidth: contentWidth - 32, fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
+    
+    y = y + missionH + 15;
 
     // 3. Timeline & Commitment (Metadata row, borderless)
-    ensureSpace(20);
+    ensureSpace(15);
     const commitmentText = `DURATION: ${sprint.weeks} WEEKS   ·   COMMITMENT: ${sprint.hours} HRS/WK   ·   STATUS: ${sprint.status.toUpperCase()}   ·   PROGRESS: ${sprint.progress}%`;
-    drawText(commitmentText, margins.left, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
-    y += 20;
+    const commitmentBottom = drawText(commitmentText, margins.left, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
+    y = commitmentBottom + 15;
 
     // Prepare skills and capstone text
     let skillsText = "Design, backend components, and database structures.";
@@ -1420,61 +1399,49 @@ export class LayoutLedger {
 
     // 4. Key Skills & Capstone Projects (2 columns, borderless)
     const halfColW = (contentWidth - 24) / 2;
-    const wrappedSkills = wrapText(skillsText, halfColW, doc);
-    const wrappedProj = wrapText(capstoneProj, halfColW, doc);
-    const skillsHeight = 16 + (wrappedSkills.length * 16);
-    const projHeight = 16 + (wrappedProj.length * 16);
+    const skillsLines = wrapText(skillsText, halfColW, doc).length;
+    const projLines = wrapText(capstoneProj, halfColW, doc).length;
+    const skillsHeight = 9 + 6 + (skillsLines * 11 * 1.35);
+    const projHeight = 9 + 6 + (projLines * 11 * 1.35);
     const colMaxH = Math.max(skillsHeight, projHeight);
 
-    ensureSpace(colMaxH);
+    ensureSpace(colMaxH + 15);
     
-    drawText("CORE TECHNICAL SKILLS", margins.left, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
-    let skillsY = y + 16;
-    wrappedSkills.forEach((line) => {
-      drawText(line, margins.left, skillsY, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: halfColW });
-      skillsY += 16;
-    });
+    const leftHeaderBottom = drawText("CORE TECHNICAL SKILLS", margins.left, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
+    const leftBodyBottom = drawText(skillsText, margins.left, leftHeaderBottom + 6, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: halfColW });
 
-    drawText("CAPSTONE PROJECTS", centerX + 12, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
-    let projY = y + 16;
-    wrappedProj.forEach((line) => {
-      drawText(line, centerX + 12, projY, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: halfColW });
-      projY += 16;
-    });
+    const rightHeaderBottom = drawText("CAPSTONE PROJECTS", centerX + 12, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
+    const rightBodyBottom = drawText(capstoneProj, centerX + 12, rightHeaderBottom + 6, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: halfColW });
 
-    y += colMaxH + 28;
+    y = Math.max(leftBodyBottom, rightBodyBottom) + 20;
 
     // 5. Milestones timeline (Vertical premium roadmap rail, borderless nodes)
-    ensureSpace(18 + 45);
-    doc.setFont("CMGeom", "normal");
-    doc.setFontSize(16);
-    doc.setTextColor("#FFFFFF");
-    doc.text("CORE SPRINT MILESTONES & PROJECTS", margins.left, y);
-    y += 18;
+    ensureSpace(30);
+    const milestoneHeaderBottom = drawText("CORE SPRINT MILESTONES & PROJECTS", margins.left, y, { fontSize: 16, fontColor: "#FFFFFF" });
+    y = milestoneHeaderBottom + 12;
 
     const timelineX = margins.left + 12;
     const contentX = margins.left + 32;
-    const contentW = contentWidth - 32;
 
     sprint.milestones.forEach((milestone, mIdx) => {
       const mNum = `M${String(mIdx + 1).padStart(2, "0")}`;
       const titleText = `${mNum}  ·  ${milestone.title}`;
       
-      const colA_Width = contentW - 110;
-      const colB_Width = 90;
-      const colB_X = pageWidth - margins.right - colB_Width;
+      const colA_Width = 360; // Safe width to prevent horizontal overlap
+      const colB_Width = 80;
+      const colB_X = pageWidth - margins.right; // right-aligned
       
-      const titleLines = wrapText(titleText, colA_Width, doc);
       const whyMatters = milestone.why_it_matters || "Validates core domain capability.";
       const deliverables = getSafeArray<string>(milestone.deliverables).slice(0, 1).join(", ") || "Completed milestones";
       const descText = `Focus: ${whyMatters}\nDeliverable: ${deliverables}`;
-      const descLines = wrapText(descText, colA_Width, doc);
       
-      const colA_Height = (titleLines.length * 11 * 1.35) + 8 + (descLines.length * 11 * 1.35);
+      const titleLines = wrapText(titleText, colA_Width, doc).length;
+      const descLines = wrapText(descText, colA_Width, doc).length;
+      const colA_Height = (titleLines * 11 * 1.35) + 4 + (descLines * 11 * 1.35);
       
       const metaText = `${milestone.estimated_duration_weeks} Wk · ${milestone.difficulty_level.toUpperCase()}`;
-      const metaLines = wrapText(metaText, colB_Width, doc);
-      const colB_Height = metaLines.length * 9 * 1.25;
+      const metaLines = wrapText(metaText, colB_Width, doc).length;
+      const colB_Height = metaLines * 9 * 1.35;
       
       const milestoneHeight = Math.max(colA_Height, colB_Height);
       
@@ -1483,13 +1450,13 @@ export class LayoutLedger {
       const milestoneStartY = y;
       
       // Column A Content
-      const colAY = drawText(titleText, contentX, milestoneStartY, { fontSize: 11, fontColor: "#FFFFFF", maxWidth: colA_Width });
-      drawText(descText, contentX, colAY + 8, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: colA_Width });
+      const titleBottom = drawText(titleText, contentX, milestoneStartY, { fontSize: 11, fontColor: "#FFFFFF", maxWidth: colA_Width });
+      drawText(descText, contentX, titleBottom + 4, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: colA_Width });
       
       // Column B Metadata
       drawText(metaText, colB_X, milestoneStartY, { fontSize: 9, fontColor: "#00D8FF", align: "right", maxWidth: colB_Width });
       
-      const nodeY = milestoneStartY + 9;
+      const nodeY = milestoneStartY + 5.5; // aligned to vertical center of 11pt font first line
       
       const curPage = doc.getNumberOfPages();
       if (!pageTimelineNodes[curPage]) {
@@ -1510,15 +1477,12 @@ export class LayoutLedger {
       y = milestoneStartY + milestoneHeight + 16;
     });
 
-    y += 12;
+    y += 4;
 
     // 6. Recommended Learning Resources Table (Auto-Table Renderer)
-    ensureSpace(16 + 20 + 36);
-    doc.setFont("CMGeom", "normal");
-    doc.setFontSize(16);
-    doc.setTextColor("#FFFFFF");
-    doc.text("RECOMMENDED LEARNING RESOURCES", margins.left, y);
-    y += 18;
+    ensureSpace(35);
+    const resourcesHeaderBottom = drawText("RECOMMENDED LEARNING RESOURCES", margins.left, y, { fontSize: 16, fontColor: "#FFFFFF" });
+    y = resourcesHeaderBottom + 12;
 
     const resourceLinks = sprint.milestones.flatMap(m => getSafeArray<RoadmapResourceLink>(m.resource_links));
     const uniqueResources = Array.from(new Map(resourceLinks.map(r => [r.url, r])).values()).slice(0, 2);
@@ -1545,10 +1509,10 @@ export class LayoutLedger {
       doc.setGState(lineG);
       doc.setDrawColor("#FFFFFF");
       doc.setLineWidth(0.5);
-      doc.line(margins.left, y + 4, pageWidth - margins.right, y + 4);
+      doc.line(margins.left, y + 11, pageWidth - margins.right, y + 11);
       doc.restoreGraphicsState();
 
-      y += 16;
+      y += 18;
 
       uniqueResources.forEach((res) => {
         ensureSpace(18);
@@ -1573,36 +1537,29 @@ export class LayoutLedger {
       y += 18;
     }
 
-    y += 12;
+    y += 10;
 
     // 7. Expected Outcomes Checklist
-    ensureSpace(16 + 20 + 20);
-    doc.setFont("CMGeom", "normal");
-    doc.setFontSize(16);
-    doc.setTextColor("#FFFFFF");
-    doc.text("EXPECTED SPRINT OUTCOMES", margins.left, y);
-    y += 18;
+    ensureSpace(35);
+    const outcomesHeaderBottom = drawText("EXPECTED SPRINT OUTCOMES", margins.left, y, { fontSize: 16, fontColor: "#FFFFFF" });
+    y = outcomesHeaderBottom + 12;
 
     const sprintOutcomes = Array.from(new Set(sprint.milestones.flatMap(m => getSafeArray<string>(m.expected_outcomes)))).slice(0, 2);
     if (sprintOutcomes.length > 0) {
       sprintOutcomes.forEach((outcome) => {
         const lines = wrapText(outcome, contentWidth - 14, doc);
         const linesHeight = lines.length * 11 * 1.35;
-        ensureSpace(linesHeight + 4);
+        ensureSpace(linesHeight + 8);
         
-        doc.setFontSize(11);
-        doc.setTextColor("#00D8FF");
-        doc.text("□", margins.left, y);
-        y = drawText(outcome, margins.left + 14, y, { maxWidth: contentWidth - 14, fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
-        y += 12;
+        drawText("□", margins.left, y + 1, { fontSize: 11, fontColor: "#00D8FF" });
+        const outcomeBottom = drawText(outcome, margins.left + 14, y, { maxWidth: contentWidth - 14, fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
+        y = outcomeBottom + 8;
       });
     } else {
       ensureSpace(18);
-      doc.setFontSize(11);
-      doc.setTextColor("#00D8FF");
-      doc.text("□", margins.left, y);
-      drawText("Successful validation of sprint completion requirements and criteria.", margins.left + 14, y, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: contentWidth - 14 });
-      y += 18;
+      drawText("□", margins.left, y + 1, { fontSize: 11, fontColor: "#00D8FF" });
+      const outcomeBottom = drawText("Successful validation of sprint completion requirements and criteria.", margins.left + 14, y, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: contentWidth - 14 });
+      y = outcomeBottom + 8;
     }
 
     totalContentHeight += (y - margins.top);
@@ -1622,27 +1579,19 @@ export class LayoutLedger {
   drawSectionHeader("EXECUTION PLAN", "Executive Readiness Report", "Final verification of system capabilities and profile assets.");
 
   // Readiness Index (Large Typography, High Authority)
-  ensureSpace(50);
-  drawText("READINESS INDEX", margins.left, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
+  ensureSpace(75);
+  const readinessLabelBottom = drawText("READINESS INDEX", margins.left, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
 
-  doc.setFontSize(54);
-  doc.setTextColor("#00D8FF");
-  doc.text(`${readinessScore}%`, margins.left, y + 48);
+  const scoreBottom = drawText(`${readinessScore}%`, margins.left, readinessLabelBottom + 4, { fontSize: 54, fontColor: "#00D8FF" });
+  // Draw the status label vertically aligned to the center of the giant score
+  drawText("STATUS: VERIFIED READY FOR PIPELINE", margins.left + 140, readinessLabelBottom + 20, { fontSize: 16, fontColor: "#00D8FF" });
 
-  doc.setFontSize(16);
-  doc.setTextColor("#00D8FF");
-  doc.text("STATUS: VERIFIED READY FOR PIPELINE", margins.left + 140, y + 36);
-
-  y += 68;
+  y = scoreBottom + 20;
 
   // Capability Matrix
-  ensureSpace(16 + 20 + 20);
-  doc.setFont("CMGeom", "normal");
-  doc.setFontSize(16);
-  doc.setTextColor("#FFFFFF");
-  doc.text("CAPABILITY MATRIX", margins.left, y);
-
-  y += 20;
+  ensureSpace(35);
+  const matrixHeaderBottom = drawText("CAPABILITY MATRIX", margins.left, y, { fontSize: 16, fontColor: "#FFFFFF" });
+  y = matrixHeaderBottom + 15;
 
   const checkCardW = (contentWidth - 24) / 2;
   const dashboardItems = [
@@ -1658,66 +1607,66 @@ export class LayoutLedger {
 
   // Render Matrix items row-by-row to ensure safe spaces
   for (let i = 0; i < dashboardItems.length; i += 2) {
-    ensureSpace(45);
-    
-    // Left item
     const itemA = dashboardItems[i];
     const colXA = margins.left;
-    doc.setFont("CMGeom", "normal");
-    doc.setFontSize(11);
-    doc.setTextColor("#FFFFFF");
-    doc.text(itemA.label.toUpperCase(), colXA, y);
-    doc.setTextColor("#00D8FF");
-    doc.text(`${itemA.progress}%`, colXA + checkCardW, y, { align: "right" });
-    drawText(itemA.desc, colXA, y + 12, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45, maxWidth: checkCardW });
+    const labelABottom = wrapText(itemA.label.toUpperCase(), checkCardW, doc).length;
+    const descALines = wrapText(itemA.desc, checkCardW, doc).length;
+    const colAHeight = (labelABottom * 11 * 1.35) + 3 + (descALines * 9 * 1.35) + 8;
+
+    let colBHeight = 0;
+    let descBLines = 0;
+    if (i + 1 < dashboardItems.length) {
+      const itemB = dashboardItems[i + 1];
+      const labelBBottom = wrapText(itemB.label.toUpperCase(), checkCardW, doc).length;
+      descBLines = wrapText(itemB.desc, checkCardW, doc).length;
+      colBHeight = (labelBBottom * 11 * 1.35) + 3 + (descBLines * 9 * 1.35) + 8;
+    }
+
+    const rowHeight = Math.max(colAHeight, colBHeight);
+    ensureSpace(rowHeight + 15);
+
+    // Left item
+    const titleABottom = drawText(itemA.label.toUpperCase(), colXA, y, { fontSize: 11, fontColor: "#FFFFFF" });
+    drawText(`${itemA.progress}%`, colXA + checkCardW, y, { align: "right", fontSize: 11, fontColor: "#00D8FF", maxWidth: 40 });
+    const descABottom = drawText(itemA.desc, colXA, titleABottom + 3, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45, maxWidth: checkCardW });
     
     doc.setFillColor("#141B26");
-    doc.roundedRect(colXA, y + 18, checkCardW, 2, 1, 1, "F");
+    doc.roundedRect(colXA, descABottom + 4, checkCardW, 2, 1, 1, "F");
     doc.setFillColor("#00D8FF");
-    doc.roundedRect(colXA, y + 18, (checkCardW * itemA.progress) / 100, 2, 1, 1, "F");
+    doc.roundedRect(colXA, descABottom + 4, (checkCardW * itemA.progress) / 100, 2, 1, 1, "F");
 
     // Right item
     if (i + 1 < dashboardItems.length) {
       const itemB = dashboardItems[i + 1];
       const colXB = margins.left + checkCardW + 24;
-      doc.setFont("CMGeom", "normal");
-      doc.setFontSize(11);
-      doc.setTextColor("#FFFFFF");
-      doc.text(itemB.label.toUpperCase(), colXB, y);
-      doc.setTextColor("#00D8FF");
-      doc.text(`${itemB.progress}%`, colXB + checkCardW, y, { align: "right" });
-      drawText(itemB.desc, colXB, y + 12, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45, maxWidth: checkCardW });
+      const titleBBottom = drawText(itemB.label.toUpperCase(), colXB, y, { fontSize: 11, fontColor: "#FFFFFF" });
+      drawText(`${itemB.progress}%`, colXB + checkCardW, y, { align: "right", fontSize: 11, fontColor: "#00D8FF", maxWidth: 40 });
+      const descBBottom = drawText(itemB.desc, colXB, titleBBottom + 3, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45, maxWidth: checkCardW });
       
       doc.setFillColor("#141B26");
-      doc.roundedRect(colXB, y + 18, checkCardW, 2, 1, 1, "F");
+      doc.roundedRect(colXB, descBBottom + 4, checkCardW, 2, 1, 1, "F");
       doc.setFillColor("#00D8FF");
-      doc.roundedRect(colXB, y + 18, (checkCardW * itemB.progress) / 100, 2, 1, 1, "F");
+      doc.roundedRect(colXB, descBBottom + 4, (checkCardW * itemB.progress) / 100, 2, 1, 1, "F");
     }
 
-    y += 45;
+    y = y + rowHeight + 10;
   }
 
   y += 10;
 
   // Recruiter Checklist
-  ensureSpace(16 + 20 + 20);
-  doc.setFont("CMGeom", "normal");
-  doc.setFontSize(16);
-  doc.setTextColor("#FFFFFF");
-  doc.text("RECRUITER CHECKLIST", margins.left, y);
-
-  y += 18;
+  ensureSpace(35);
+  const checklistHeaderBottom = drawText("RECRUITER CHECKLIST", margins.left, y, { fontSize: 16, fontColor: "#FFFFFF" });
+  y = checklistHeaderBottom + 12;
 
   readinessPoints.forEach((point) => {
     const lines = wrapText(point, contentWidth - 14, doc);
     const height = lines.length * 11 * 1.35;
-    ensureSpace(height + 6);
+    ensureSpace(height + 8);
     
-    doc.setFontSize(11);
-    doc.setTextColor("#00D8FF");
-    doc.text("□", margins.left, y);
-    y = drawText(point, margins.left + 14, y, { maxWidth: contentWidth - 14, fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
-    y += 12;
+    drawText("□", margins.left, y + 1, { fontSize: 11, fontColor: "#00D8FF" });
+    const pointBottom = drawText(point, margins.left + 14, y, { maxWidth: contentWidth - 14, fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
+    y = pointBottom + 8;
   });
 
   y += 10;
@@ -1727,39 +1676,27 @@ export class LayoutLedger {
   const strengthText = `Candidate demonstrates robust technical and architectural proficiency in ${domainLabel}. Key strengths include verified capability in core system architecture, practical deployment of portfolio applications, and algorithmic complexity resolution.`;
   const recommendationText = `Proceed directly to active applications in target market pipelines. Focus on presenting capstone projects and leveraging verified system design competencies during technical rounds. Maintain active git commit frequency.`;
   
-  const wrappedStr = wrapText(strengthText, summaryW, doc);
-  const wrappedRec = wrapText(recommendationText, summaryW, doc);
-  const strH = wrappedStr.length * 11 * 1.35;
-  const recH = wrappedRec.length * 11 * 1.35;
-  const rowH = Math.max(strH, recH) + 16;
+  const strLines = wrapText(strengthText, summaryW, doc).length;
+  const recLines = wrapText(recommendationText, summaryW, doc).length;
+  const strH = 9 + 6 + (strLines * 11 * 1.35);
+  const recH = 9 + 6 + (recLines * 11 * 1.35);
+  const rowH = Math.max(strH, recH);
 
-  ensureSpace(rowH);
+  ensureSpace(rowH + 20);
 
-  drawText("STRENGTH SUMMARY", margins.left, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
-  let strY = y + 16;
-  wrappedStr.forEach((line) => {
-    drawText(line, margins.left, strY, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: summaryW });
-    strY += 11 * 1.35;
-  });
+  const strHeaderBottom = drawText("STRENGTH SUMMARY", margins.left, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
+  const strBodyBottom = drawText(strengthText, margins.left, strHeaderBottom + 6, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: summaryW });
 
-  drawText("CAREEROS RECOMMENDATION", centerX + 12, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
-  let recY = y + 16;
-  wrappedRec.forEach((line) => {
-    drawText(line, centerX + 12, recY, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: summaryW });
-    recY += 11 * 1.35;
-  });
+  const recHeaderBottom = drawText("CAREEROS RECOMMENDATION", centerX + 12, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
+  const recBodyBottom = drawText(recommendationText, centerX + 12, recHeaderBottom + 6, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: summaryW });
 
-  y = Math.max(strY, recY) + 20;
+  y = Math.max(strBodyBottom, recBodyBottom) + 20;
 
   ensureSpace(35);
-  drawText("FINAL VERDICT", margins.left, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
+  const verdictHeaderBottom = drawText("FINAL VERDICT", margins.left, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
+  const verdictBottom = drawText("VERIFIED READY — RECOMMENDED FOR IMMEDIATE HIRE PIPELINE", margins.left, verdictHeaderBottom + 4, { fontSize: 14, fontColor: "#00D8FF" });
 
-  doc.setFontSize(14);
-  doc.setTextColor("#00D8FF");
-  doc.setFont("CMGeom", "normal");
-  doc.text("VERIFIED READY — RECOMMENDED FOR IMMEDIATE HIRE PIPELINE", margins.left, y + 20);
-
-  y += 35;
+  y = verdictBottom + 20;
 
   // ==========================================
   // APPLY LAYOUT FRAME DRAWINGS & LINE RAILS
