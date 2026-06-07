@@ -513,17 +513,6 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   const ledger = new LayoutLedger();
 
   // Typography Tokens
-  const fontSizes = {
-    title: 54,
-    pageHeading: 24,
-    section: 16,
-    cardTitle: 11,
-    body: 11,
-    meta: 9,
-    caption: 9
-  };
-
-  const colorsPalette = ["#00D8FF"];
 
 
 
@@ -592,23 +581,6 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   }
 
   // Visual Utility functions
-  function drawAtmosphericCloud(x: number, y: number, radius: number, hexColor: string, maxOpacity: number) {
-    doc.setFillColor(hexColor);
-    const steps = 120;
-    const safeMaxOpacity = Math.min(0.12, maxOpacity);
-    for (let i = steps; i > 0; i--) {
-      const t = i / steps;
-      const r = radius * t;
-      const opacity = safeMaxOpacity * Math.pow(1 - t, 3.5); // extremely soft falloff
-      if (opacity <= 0.0001) continue;
-      
-      doc.saveGraphicsState();
-      const gState = new (doc as unknown as JsPdfExtended).GState({ opacity });
-      doc.setGState(gState);
-      doc.circle(x, y, r, "F");
-      doc.restoreGraphicsState();
-    }
-  }
 
   function drawWatermark() {
     doc.saveGraphicsState();
@@ -621,7 +593,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     doc.restoreGraphicsState();
   }
 
-  function drawSubtlePageBackground(pageNum: number) {
+  function drawSubtlePageBackground() {
     // Draw background.webp at 1.0 opacity covering the entire page (full bleed)
     doc.addImage(backgroundBase64, "PNG", 0, 0, pageWidth, pageHeight);
 
@@ -714,162 +686,11 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     y += 56;
   }
 
-  function drawProgressBar(
-    x: number, 
-    yVal: number, 
-    width: number, 
-    height: number, 
-    progress: number, 
-    activeColor = "#00D8FF", 
-    trackColor = "#1E293B"
-  ) {
-    doc.setFillColor(trackColor);
-    doc.roundedRect(x, yVal, width, height, height / 2, height / 2, "F");
-    
-    if (progress > 0) {
-      const fillWidth = Math.max(height, (width * Math.min(100, progress)) / 100);
-      doc.setFillColor(activeColor);
-      doc.roundedRect(x, yVal, fillWidth, height, height / 2, height / 2, "F");
-    }
 
-    ledger.pushBox(doc.getNumberOfPages(), x, yVal, x + width, yVal + height, "ProgressBar");
-  }
 
-  function drawBadge(text: string, x: number, yVal: number, bgColor: string, textColor = "#e0f7fa", fontSize = 7.5) {
-    doc.setFontSize(fontSize);
-    const textWidth = doc.getTextWidth(text);
-    const paddingX = 5;
-    const paddingY = 2.5;
-    const badgeWidth = textWidth + paddingX * 2;
-    const badgeHeight = fontSize + paddingY * 2;
-    
-    doc.saveGraphicsState();
-    const badgeBgOpacity = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.15 });
-    doc.setGState(badgeBgOpacity);
-    doc.setFillColor(bgColor);
-    doc.roundedRect(x, yVal - fontSize - paddingY + 1, badgeWidth, badgeHeight, 6, 6, "F");
-    doc.restoreGraphicsState();
-    
-    doc.setTextColor(bgColor);
-    doc.text(text, x + paddingX, yVal - 0.5);
-    
-    ledger.pushBox(doc.getNumberOfPages(), x, yVal - fontSize - paddingY + 1, x + badgeWidth, yVal - fontSize - paddingY + 1 + badgeHeight, `Badge: ${text}`);
-    return badgeWidth;
-  }
 
-  function getPremiumIntelCardHeight(width: number, title: string, val: string, desc: string) {
-    const paddingX = 22;
-    const paddingY = 22;
-    const contentW = width - paddingX * 2;
-    
-    doc.saveGraphicsState();
-    doc.setFont("CMGeom", "normal");
-    
-    doc.setFontSize(12);
-    const titleLines = wrapText(title.toUpperCase(), contentW, doc);
-    
-    doc.setFontSize(11);
-    const valLines = val ? wrapText(val, contentW, doc) : [];
-    
-    doc.setFontSize(9.5);
-    const descLines = wrapText(desc, contentW, doc);
-    
-    doc.restoreGraphicsState();
 
-    let h = paddingY;
-    h += titleLines.length * 12 * 1.5;
-    h += 18; // Spacing after title
-    if (val) {
-      h += valLines.length * 11 * 1.5;
-      h += 8; // Spacing after val
-    }
-    h += descLines.length * 9.5 * 1.5;
-    h += paddingY;
-    
-    return h;
-  }
 
-  function getRoadmapSummaryCardHeight(width: number, title: string, desc: string) {
-    const paddingX = 16;
-    const paddingY = 16;
-    const contentW = width - paddingX * 2;
-    
-    doc.saveGraphicsState();
-    doc.setFont("CMGeom", "normal");
-    
-    doc.setFontSize(8.5);
-    const titleLines = wrapText(title.toUpperCase(), contentW, doc);
-    
-    doc.setFontSize(8);
-    const descLines = wrapText(desc, contentW, doc);
-    
-    doc.restoreGraphicsState();
-    
-    let h = paddingY;
-    h += titleLines.length * 8.5 * 1.5;
-    h += 12; // Spacing after title
-    h += descLines.length * 8 * 1.5;
-    h += paddingY;
-    
-    return h;
-  }
-
-  function drawDashboardMetricCard(x: number, yVal: number, width: number, height: number, label: string, value: string, color: string) {
-    drawLiquidGlassCard(x, yVal, width, height, {
-      glowColor: color,
-      glowOpacity: 0.05,
-      rx: 12,
-      ry: 12
-    });
-    
-    doc.setFont("CMGeom", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor("#64748b");
-    drawText(label.toUpperCase(), x + 12, yVal + 16);
-    
-    doc.setFontSize(18);
-    doc.setTextColor("#FFFFFF");
-    drawText(value, x + 12, yVal + 36);
-  }
-
-  function drawPremiumIntelCard(x: number, yVal: number, width: number, height: number, title: string, val: string, desc: string, glowColor: string) {
-    const paddingX = 22;
-    const paddingY = 22;
-    const contentW = width - paddingX * 2;
-    
-    drawLiquidGlassCard(x, yVal, width, height, {
-      glowColor,
-      glowOpacity: 0.04,
-      rx: 20,
-      ry: 20
-    });
-
-    let curY = yVal + paddingY;
-
-    // Title: 12pt
-    const titleEndY = drawText(title.toUpperCase(), x + paddingX, curY + 12, { maxWidth: contentW, fontSize: 12, fontColor: glowColor });
-    curY = titleEndY + 18; // 18px spacing between title and body/val
-
-    if (val) {
-      const valEndY = drawText(val, x + paddingX, curY + 11, { maxWidth: contentW, fontSize: 11, fontColor: "#FFFFFF" });
-      curY = valEndY + 8; // spacing after val
-    }
-
-    // Body: 9.5pt, 1.5x line-height
-    drawWrappedText(desc, x + paddingX, curY + 9.5, contentW, 9.5, { fontColor: "#94A3B8", lineSpacing: 1.5 });
-  }
-
-  function drawCompetencyMeter(x: number, yVal: number, width: number, label: string, progress: number, color = "#00D8FF") {
-    doc.setFont("CMGeom", "normal");
-    doc.setFontSize(8.5);
-    doc.setTextColor("#94A3B8");
-    drawText(label, x + 4, yVal);
-    
-    doc.setTextColor("#FFFFFF");
-    drawText(`${progress}%`, x + width - 28, yVal, { align: "right" });
-
-    drawProgressBar(x, yVal + 6, width, 4, progress, color, "#141B26");
-  }
 
 
   function drawText(
@@ -970,29 +791,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     return returnY;
   }
 
-  function drawWrappedText(
-    text: string, 
-    x: number, 
-    yVal: number, 
-    maxWidth: number, 
-    fontSize: number, 
-    options?: { fontColor?: string; opacity?: number; lineSpacing?: number; align?: "left" | "right" | "center" }
-  ) {
-    doc.setFont("CMGeom", "normal");
-    doc.setFontSize(fontSize);
-    
-    const lSpacing = options?.lineSpacing || 1.25;
-    const safeText = text || "";
-    const wrappedLines = wrapText(safeText, maxWidth, doc);
-    
-    let curY = yVal;
-    wrappedLines.forEach((line: string) => {
-      const nextY = drawText(line, x, curY, { align: options?.align, fontSize, fontColor: options?.fontColor, opacity: options?.opacity, maxWidth });
-      curY = nextY + fontSize * lSpacing;
-    });
 
-    return curY - yVal;
-  }
 
   function drawPageFrame(pageNum: number, totalPagesCount: number) {
     if (pageNum === 1) return; // Skip cover page frame!
@@ -1114,7 +913,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   // ==========================================
   // PAGE 1: PREMIUM COVER PAGE
   // ==========================================
-  drawSubtlePageBackground(1);
+  drawSubtlePageBackground();
 
   // Top: CareerOS Logo (centered & elegant)
   const topLogoSize = 24;
@@ -1167,7 +966,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   // PAGE 2: EXECUTIVE MARKET BRIEF
   // ==========================================
   doc.addPage();
-  drawSubtlePageBackground(2);
+  drawSubtlePageBackground();
   y = margins.top;
 
   drawSectionHeader("CAREER SNAPSHOT", "Executive Market Brief", "Strategic analysis generated from current career objective.");
@@ -1230,7 +1029,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     sections.forEach((sect) => {
       const isLeft = sect.col === "left";
       const curX = isLeft ? leftX : rightX;
-      let curY = isLeft ? leftY : rightY;
+      const curY = isLeft ? leftY : rightY;
 
       drawText(sect.title.toUpperCase(), curX, curY, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
       drawText(sect.val, curX, curY + 18, { fontSize: 16, fontColor: "#00D8FF" });
@@ -1263,7 +1062,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   let maxSummaryEndY = y;
   summaryList.forEach((sItem, idx) => {
     const colX = margins.left + idx * (summaryColW + 12);
-    let curY = y;
+    const curY = y;
 
     drawText(sItem.title, colX, curY, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
 
@@ -1315,13 +1114,9 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
   totalContentHeight += (y - margins.top);
 
-  // ==========================================
-  // PAGES 3 TO 5: DEDICATED SPRINT PAGES
-  // ==========================================
   sprintsData.forEach((sprint, sIndex) => {
-    const pageNum = 3 + sIndex;
     doc.addPage();
-    drawSubtlePageBackground(pageNum);
+    drawSubtlePageBackground();
     y = margins.top;
 
     // 1. Chapter Heading (Editorial design)
@@ -1559,8 +1354,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   // PAGE 6: EXECUTIVE READINESS REPORT
   // ==========================================
   doc.addPage();
-  const checklistPageNum = 3 + sprintsData.length;
-  drawSubtlePageBackground(checklistPageNum);
+  drawSubtlePageBackground();
   y = margins.top;
 
   drawSectionHeader("EXECUTION PLAN", "Executive Readiness Report", "Final verification of system capabilities and profile assets.");
