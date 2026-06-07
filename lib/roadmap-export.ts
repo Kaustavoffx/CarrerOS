@@ -213,10 +213,22 @@ function formatMilestonesMarkdown(roadmap: RoadmapRecord) {
     .join("\n\n");
 }
 
-export function wrapText(text: string, maxWidth: number, doc?: unknown): string[] {
+export function wrapText(text: string, maxWidth: number, doc?: unknown, fontSize?: number): string[] {
   if (!text) return [];
-  const safeDoc = doc as { getTextWidth?: (t: string) => number } | null | undefined;
+  const safeDoc = doc as { 
+    getTextWidth?: (t: string) => number;
+    getFontSize?: () => number;
+    setFontSize?: (s: number) => void;
+  } | null | undefined;
   
+  let originalFontSize: number | undefined;
+  if (safeDoc && typeof safeDoc.getFontSize === "function" && typeof safeDoc.setFontSize === "function") {
+    originalFontSize = safeDoc.getFontSize();
+    if (typeof fontSize === "number") {
+      safeDoc.setFontSize(fontSize);
+    }
+  }
+
   const getWidth = (t: string): number => {
     if (safeDoc && typeof safeDoc.getTextWidth === "function") {
       return safeDoc.getTextWidth(t);
@@ -224,14 +236,12 @@ export function wrapText(text: string, maxWidth: number, doc?: unknown): string[
     return t.length * 5.5;
   };
 
-  if (getWidth(text) <= maxWidth) {
-    return [text];
-  }
+  const wrapParagraph = (paragraph: string): string[] => {
+    if (getWidth(paragraph) <= maxWidth) {
+      return [paragraph];
+    }
 
-  const lines: string[] = [];
-  const paragraphs = text.split("\n");
-
-  for (const paragraph of paragraphs) {
+    const lines: string[] = [];
     const words = paragraph.split(" ");
     let currentLine = "";
 
@@ -282,13 +292,38 @@ export function wrapText(text: string, maxWidth: number, doc?: unknown): string[
     if (currentLine) {
       lines.push(currentLine);
     }
+
+    return lines;
+  };
+
+  const paragraphs = text.split("\n");
+  const allLines: string[] = [];
+  for (const p of paragraphs) {
+    allLines.push(...wrapParagraph(p));
   }
 
-  return lines;
+  if (safeDoc && typeof safeDoc.setFontSize === "function" && typeof originalFontSize === "number") {
+    safeDoc.setFontSize(originalFontSize);
+  }
+
+  return allLines;
 }
 
-export function formatAndWrapUrl(url: string, maxWidth: number, doc?: unknown, maxLines = 2): string[] {
-  const safeDoc = doc as { getTextWidth?: (t: string) => number } | null | undefined;
+export function formatAndWrapUrl(url: string, maxWidth: number, doc?: unknown, maxLines = 2, fontSize?: number): string[] {
+  const safeDoc = doc as { 
+    getTextWidth?: (t: string) => number;
+    getFontSize?: () => number;
+    setFontSize?: (s: number) => void;
+  } | null | undefined;
+  
+  let originalFontSize: number | undefined;
+  if (safeDoc && typeof safeDoc.getFontSize === "function" && typeof safeDoc.setFontSize === "function") {
+    originalFontSize = safeDoc.getFontSize();
+    if (typeof fontSize === "number") {
+      safeDoc.setFontSize(fontSize);
+    }
+  }
+
   const getWidth = (t: string): number => {
     if (safeDoc && typeof safeDoc.getTextWidth === "function") {
       return safeDoc.getTextWidth(t);
@@ -350,6 +385,11 @@ export function formatAndWrapUrl(url: string, maxWidth: number, doc?: unknown, m
       lines[maxLines - 1] = "...";
     }
   }
+
+  if (safeDoc && typeof safeDoc.setFontSize === "function" && typeof originalFontSize === "number") {
+    safeDoc.setFontSize(originalFontSize);
+  }
+
   return lines;
 }
 
@@ -800,7 +840,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     let returnY = yVal;
 
     if (textWidth > targetMaxWidth) {
-      const wrappedLines = wrapText(text, targetMaxWidth, doc);
+      const wrappedLines = wrapText(text, targetMaxWidth, doc, currentFontSize);
       const lSpacing = 1.15;
       let curY = yVal;
       wrappedLines.forEach((line, idx) => {
@@ -1045,9 +1085,9 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   // 2x2 grid of Market Dynamics (Typographic, No Cards)
   const firstRoadmap = safeRoadmaps[0];
   if (firstRoadmap) {
-    const colW = (contentWidth - 24) / 2;
+    const colW = (contentWidth - 30) / 2;
     const leftX = margins.left;
-    const rightX = centerX + 12;
+    const rightX = centerX + 15;
 
     const sections = [
       {
@@ -1087,7 +1127,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
       const titleEndY = drawText(sect.title.toUpperCase(), curX, startY, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
       const valEndY = drawText(sect.val, curX, titleEndY + 8, { fontSize: 16, fontColor: "#00D8FF" });
 
-      const wrappedDesc = wrapText(sect.desc, colW, doc);
+      const wrappedDesc = wrapText(sect.desc, colW, doc, 11);
       let descY = valEndY + 12;
       wrappedDesc.forEach((line) => {
         drawText(line, curX, descY, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
@@ -1105,7 +1145,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   }
 
   // 3-column Roadmap Summary (Typographic, No Cards)
-  const summaryColW = (contentWidth - 24) / 3;
+  const summaryColW = (contentWidth - 40) / 3;
   const summaryList = [
     { title: "WHAT YOU'LL LEARN", text: "Language syntaxes, algorithmic complexity (DSA), system frameworks, client-server databases, and REST APIs." },
     { title: "WHAT YOU'LL BUILD", text: "3 complete capstone applications featuring fully responsive UI components, live database layers, and Git codebases." },
@@ -1114,11 +1154,11 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
   let maxSummaryEndY = y;
   summaryList.forEach((sItem, idx) => {
-    const colX = margins.left + idx * (summaryColW + 12);
+    const colX = margins.left + idx * (summaryColW + 20);
 
     const titleEndY = drawText(sItem.title, colX, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
 
-    const wrappedLines = wrapText(sItem.text, summaryColW, doc);
+    const wrappedLines = wrapText(sItem.text, summaryColW, doc, 11);
     let txtY = titleEndY + 8;
     wrappedLines.forEach((line) => {
       drawText(line, colX, txtY, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
@@ -1186,7 +1226,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     y = Math.max(y + 50, titleEndY + 20);
 
     // 2. Mission Statement (Premium liquid panel, borderless)
-    const summaryLines = wrapText(sprint.summary, contentWidth - 32, doc);
+    const summaryLines = wrapText(sprint.summary, contentWidth - 32, doc, 11);
     const summaryHeight = summaryLines.length * 11 * 1.35;
     const missionH = summaryHeight + 20; // 10pt padding top & bottom
 
@@ -1231,21 +1271,21 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     }
 
     // 4. Key Skills & Capstone Projects (2 columns, borderless)
-    const halfColW = (contentWidth - 24) / 2;
+    const halfColW = (contentWidth - 30) / 2;
     
     drawText("CORE TECHNICAL SKILLS", margins.left, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
-    const wrappedSkills = wrapText(skillsText, halfColW, doc);
+    const wrappedSkills = wrapText(skillsText, halfColW, doc, 11);
     let skillsY = y + 16;
     wrappedSkills.forEach((line) => {
       drawText(line, margins.left, skillsY, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
       skillsY += 16;
     });
 
-    drawText("CAPSTONE PROJECTS", centerX + 12, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
-    const wrappedProj = wrapText(capstoneProj, halfColW, doc);
+    drawText("CAPSTONE PROJECTS", centerX + 15, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
+    const wrappedProj = wrapText(capstoneProj, halfColW, doc, 11);
     let projY = y + 16;
     wrappedProj.forEach((line) => {
-      drawText(line, centerX + 12, projY, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
+      drawText(line, centerX + 15, projY, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
       projY += 16;
     });
 
@@ -1295,7 +1335,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
       const deliverables = getSafeArray<string>(milestone.deliverables).slice(0, 1).join(", ") || "Completed milestones";
       const descText = `Focus: ${whyMatters}  ·  Deliverable: ${deliverables}`;
       
-      const wrappedDesc = wrapText(descText, contentW, doc);
+      const wrappedDesc = wrapText(descText, contentW, doc, 11);
       let curDescY = titleEndY + 12;
       wrappedDesc.forEach((line) => {
         drawText(line, contentX, curDescY, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
@@ -1358,15 +1398,15 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
         doc.setFontSize(11);
         
         doc.setTextColor("#FFFFFF");
-        const wrappedName = wrapText(res.label, colNameW - 10, doc)[0] || "";
+        const wrappedName = wrapText(res.label, colNameW - 10, doc, 11)[0] || "";
         doc.text(wrappedName, nameX, y);
 
         drawText(res.provider, typeX, y, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
 
-        const wrappedUrl = formatAndWrapUrl(res.url, colLinkW - 10, doc, 1)[0] || "";
+        const wrappedUrl = formatAndWrapUrl(res.url, colLinkW - 10, doc, 1, 11)[0] || "";
         drawText(wrappedUrl, linkX, y, { fontSize: 11, fontColor: "#00D8FF" });
 
-        const wrappedPurpose = wrapText(res.label || "Study resource", colPurposeW, doc)[0] || "";
+        const wrappedPurpose = wrapText(res.label || "Study resource", colPurposeW, doc, 11)[0] || "";
         drawText(wrappedPurpose, purposeX, y, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
 
         y += 18;
@@ -1436,7 +1476,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
   y += 20;
 
-  const checkCardW = (contentWidth - 24) / 2;
+  const checkCardW = (contentWidth - 30) / 2;
   const dashboardItems = [
     { label: "Resume Portfolio", desc: "ATS keyword matching & technology stack optimization.", progress: 95 },
     { label: "Design Portfolio", desc: "Case studies web architecture frames & deployed links.", progress: 90 },
@@ -1451,7 +1491,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   dashboardItems.forEach((item, idx) => {
     const colIdx = idx % 2;
     const rowIdx = Math.floor(idx / 2);
-    const colX = margins.left + colIdx * (checkCardW + 24);
+    const colX = margins.left + colIdx * (checkCardW + 30);
     const itemY = y + rowIdx * 45;
 
     doc.setFont("CMGeom", "normal");
@@ -1462,7 +1502,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     doc.setTextColor("#00D8FF");
     doc.text(`${item.progress}%`, colX + checkCardW, itemY, { align: "right" });
 
-    drawText(item.desc, colX, itemY + 12, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
+    drawText(item.desc, colX, itemY + 12, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45, maxWidth: checkCardW });
 
     // Thin Progress Line
     doc.setFillColor("#141B26");
@@ -1492,25 +1532,25 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   y += 10;
 
   // Strength Summary, CareerOS Recommendation, Final Verdict
-  const summaryW = (contentWidth - 24) / 2;
+  const summaryW = (contentWidth - 30) / 2;
 
   drawText("STRENGTH SUMMARY", margins.left, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
   
   const strengthText = `Candidate demonstrates robust technical and architectural proficiency in ${domainLabel}. Key strengths include verified capability in core system architecture, practical deployment of portfolio applications, and algorithmic complexity resolution.`;
-  const wrappedStr = wrapText(strengthText, summaryW, doc);
+  const wrappedStr = wrapText(strengthText, summaryW, doc, 11);
   let strY = y + 16;
   wrappedStr.forEach((line) => {
     drawText(line, margins.left, strY, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
     strY += 16;
   });
 
-  drawText("CAREEROS RECOMMENDATION", centerX + 12, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
+  drawText("CAREEROS RECOMMENDATION", centerX + 15, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
 
   const recommendationText = `Proceed directly to active applications in target market pipelines. Focus on presenting capstone projects and leveraging verified system design competencies during technical rounds. Maintain active git commit frequency.`;
-  const wrappedRec = wrapText(recommendationText, summaryW, doc);
+  const wrappedRec = wrapText(recommendationText, summaryW, doc, 11);
   let recY = y + 16;
   wrappedRec.forEach((line) => {
-    drawText(line, centerX + 12, recY, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
+    drawText(line, centerX + 15, recY, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
     recY += 16;
   });
 
