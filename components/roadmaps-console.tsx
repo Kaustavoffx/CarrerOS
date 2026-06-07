@@ -715,7 +715,8 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
     } catch (error) {
       console.error("PDF generation failure:", error);
       setPdfGenerationPhase("error");
-      setPdfProgressText("PDF export failed.");
+      const errMsg = error instanceof Error ? error.message : "PDF export failed.";
+      setPdfProgressText(errMsg);
       showToast("PDF export failed.");
     }
   }
@@ -1628,10 +1629,11 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
 
               {pdfGenerationPhase === "generating" ? (
                 <>
-                  <h3 className="text-sm font-bold text-white tracking-wider uppercase">Generating CareerOS Report</h3>
+                  <h3 className="text-sm font-bold text-white tracking-wider uppercase text-cyan-400">Generating Career Execution Plan</h3>
+                  <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">Please wait while CareerOS prepares your personalized report.</p>
                   
                   {/* Progress Ring or Bar */}
-                  <div className="w-full bg-[#141b26] rounded-full h-1.5 overflow-hidden mt-2">
+                  <div className="w-full bg-[#141b26] rounded-full h-1.5 overflow-hidden mt-3">
                     <div 
                       className="bg-gradient-to-r from-cyan-500 to-cyan-300 h-1.5 rounded-full transition-all duration-300 ease-out" 
                       style={{ width: `${pdfProgress}%` }}
@@ -1658,7 +1660,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                         {pdfProgress >= 15 ? "✓" : "1"}
                       </div>
                       <span className={pdfProgress >= 5 && pdfProgress < 15 ? "text-cyan-300 font-semibold" : pdfProgress >= 15 ? "text-slate-300 line-through opacity-60" : ""}>
-                        Analyzing roadmap metadata
+                        Collecting roadmap data
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1667,7 +1669,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                         {pdfProgress >= 40 ? "✓" : "2"}
                       </div>
                       <span className={pdfProgress >= 15 && pdfProgress < 40 ? "text-cyan-300 font-semibold" : pdfProgress >= 40 ? "text-slate-300 line-through opacity-60" : ""}>
-                        Building executive summary & layout structures
+                        Building report pages
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1676,7 +1678,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                         {pdfProgress >= 85 ? "✓" : "3"}
                       </div>
                       <span className={pdfProgress >= 40 && pdfProgress < 85 ? "text-cyan-300 font-semibold" : pdfProgress >= 85 ? "text-slate-300 line-through opacity-60" : ""}>
-                        Rendering visual assets & sprint timelines
+                        Optimizing layout
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1685,14 +1687,14 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                         {pdfProgress >= 98 ? "✓" : "4"}
                       </div>
                       <span className={pdfProgress >= 85 && pdfProgress < 98 ? "text-cyan-300 font-semibold" : pdfProgress >= 98 ? "text-slate-300 line-through opacity-60" : ""}>
-                        Optimizing pages and checking ledger bounds
+                        Preparing download
                       </span>
                     </div>
                   </div>
                 </>
               ) : pdfGenerationPhase === "ready" ? (
                 <>
-                  <h3 className="text-sm font-bold text-white tracking-wider uppercase">CareerOS Report Ready</h3>
+                  <h3 className="text-sm font-bold text-white tracking-wider uppercase">Download Ready</h3>
                   <div className="relative flex items-center justify-center">
                     <div className="absolute h-12 w-12 bg-emerald-500/10 rounded-full animate-ping" />
                     <div className="h-10 w-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 relative z-10">
@@ -1724,9 +1726,16 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                     <AlertTriangle className="h-6 w-6" />
                   </div>
                   
-                  <p className="text-xs text-slate-400 leading-relaxed max-w-xs">
-                    An error occurred while compiling your career report. Spacing issues are skipped, so this indicates a critical asset or memory constraint.
-                  </p>
+                  <div className="text-xs text-slate-400 leading-relaxed max-w-xs">
+                    {pdfProgressText.includes("LAYOUT FAILURE") ? (
+                      <div className="bg-red-950/20 border border-red-500/15 p-3 rounded-lg text-left font-mono text-[10px] text-red-300 overflow-x-auto max-h-[160px]">
+                        <p className="font-bold uppercase text-[11px] mb-1">Layout Validation Error:</p>
+                        {pdfProgressText}
+                      </div>
+                    ) : (
+                      <p>An error occurred while compiling your career report. Spacing issues are skipped, so this indicates a critical asset or memory constraint.</p>
+                    )}
+                  </div>
 
                   <button
                     type="button"
