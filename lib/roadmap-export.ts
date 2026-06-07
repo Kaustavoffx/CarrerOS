@@ -353,6 +353,19 @@ export function formatAndWrapUrl(url: string, maxWidth: number, doc?: unknown, m
   return lines;
 }
 
+export function truncateText(text: string, maxWidth: number, doc: { getTextWidth: (t: string) => number }): string {
+  if (!text) return "";
+  const textWidth = doc.getTextWidth(text);
+  if (textWidth <= maxWidth) {
+    return text;
+  }
+  let truncated = text;
+  while (truncated.length > 0 && doc.getTextWidth(truncated + "...") > maxWidth) {
+    truncated = truncated.slice(0, -1);
+  }
+  return truncated + "...";
+}
+
 export function buildRoadmapExportBundle(roadmaps: RoadmapRecord[], title = "CareerOS Roadmap"): RoadmapExportBundle {
   const safeRoadmaps = getSafeArray<RoadmapRecord>(roadmaps);
   const exportedAt = new Date().toISOString();
@@ -425,6 +438,8 @@ export type BoundingBox = {
 export class LayoutLedger {
   private boxes: BoundingBox[] = [];
   private pageMargins = 48;
+  private pageMarginsTop = 60;
+  private pageMarginsBottom = 50;
   private pageWidth = 595.28;
   private pageHeight = 841.89;
 
@@ -432,10 +447,14 @@ export class LayoutLedger {
     this.boxes.push({ page, x1, y1, x2, y2, label });
   }
 
+  public getBoxesForPage(page: number): BoundingBox[] {
+    return this.boxes.filter(b => b.page === page);
+  }
+
   public verifyHorizontalBounds(): string[] {
     const warnings: string[] = [];
     for (const box of this.boxes) {
-      const isHeaderOrFooter = box.y1 < 48 || box.y2 > 793.89;
+      const isHeaderOrFooter = box.y1 < 60 || box.y2 > 791.89;
       if (!isHeaderOrFooter) {
         if (box.x1 < this.pageMargins - 0.1 || box.x2 > this.pageWidth - this.pageMargins + 0.1) {
           warnings.push(
@@ -449,24 +468,42 @@ export class LayoutLedger {
 
   public verify() {
     for (const box of this.boxes) {
-      const isHeaderOrFooter = box.y1 < 48 || box.y2 > 793.89;
+      const isHeaderOrFooter = box.label.includes("HeaderFrame") || box.label.includes("FooterFrame") || box.y1 < 36 || box.y2 > 815;
       
       if (!isHeaderOrFooter) {
-        if (box.y1 < this.pageMargins - 0.1 || box.y2 > this.pageHeight - this.pageMargins + 0.1) {
+        if (box.y1 < this.pageMarginsTop - 0.1 || box.y2 > this.pageHeight - this.pageMarginsBottom + 0.1) {
           throw new Error(
             `LAYOUT FAILURE: Element '${box.label}' violates vertical margins [y1=${box.y1.toFixed(2)}, y2=${box.y2.toFixed(2)}] on page ${box.page}`
           );
         }
-        if (box.x1 < 0 || box.x2 > this.pageWidth) {
+        if (box.x1 < this.pageMargins - 0.1 || box.x2 > this.pageWidth - this.pageMargins + 0.1) {
           throw new Error(
-            `LAYOUT FAILURE: Element '${box.label}' exceeds physical page width [x1=${box.x1.toFixed(2)}, x2=${box.x2.toFixed(2)}] on page ${box.page}`
+            `LAYOUT FAILURE: Element '${box.label}' violates horizontal margins [x1=${box.x1.toFixed(2)}, x2=${box.x2.toFixed(2)}] on page ${box.page}`
           );
         }
       } else {
-        if (box.y1 < 10 || box.y2 > 830) {
+        if (box.y1 < 10 || box.y2 > 832) {
           throw new Error(
             `LAYOUT FAILURE: Header/Footer element '${box.label}' exceeds physical page borders [y1=${box.y1.toFixed(2)}, y2=${box.y2.toFixed(2)}] on page ${box.page}`
           );
+        }
+      }
+    }
+
+    // Check overlaps between elements on the same page
+    for (let i = 0; i < this.boxes.length; i++) {
+      for (let j = i + 1; j < this.boxes.length; j++) {
+        const a = this.boxes[i];
+        const b = this.boxes[j];
+        if (a.page === b.page) {
+          const isA_Bg = a.label.includes("Watermark") || a.label.includes("PageBackground") || a.label.includes("Frame") || a.label.includes("ProgressBar") || a.label.includes("Card") || a.label.includes("Timeline");
+          const isB_Bg = b.label.includes("Watermark") || b.label.includes("PageBackground") || b.label.includes("Frame") || b.label.includes("ProgressBar") || b.label.includes("Card") || b.label.includes("Timeline");
+          if (isA_Bg || isB_Bg) continue;
+          
+          const intersects = (a.x1 < b.x2 - 0.5 && a.x2 > b.x1 + 0.5 && a.y1 < b.y2 - 0.5 && a.y2 > b.y1 + 0.5);
+          if (intersects) {
+            throw new Error(`LAYOUT FAILURE: Overlapping text detected between '${a.label}' and '${b.label}' on page ${a.page}`);
+          }
         }
       }
     }
@@ -546,7 +583,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margins = { top: 48, right: 48, bottom: 48, left: 48 };
+  const margins = { top: 60, right: 48, bottom: 50, left: 48 };
   
   function getContentWidth() {
     return pageWidth - margins.left - margins.right;
@@ -555,9 +592,28 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   const centerX = pageWidth / 2;
 
   let totalContentHeight = 0;
+  const pageTimelineNodes: { [pageNum: number]: number[] } = {};
   const ledger = new LayoutLedger();
 
-  // Typography Tokens
+  // Centralized Typography Tokens
+  const TYPOGRAPHY = {
+    title: { fontSize: 54, lineSpacing: 1.15 },
+    pageHeading: { fontSize: 24, lineSpacing: 1.2 },
+    section: { fontSize: 16, lineSpacing: 1.25 },
+    body: { fontSize: 11, lineSpacing: 1.35 },
+    meta: { fontSize: 9, lineSpacing: 1.25 }
+  };
+  if (TYPOGRAPHY.title.fontSize === 0) {
+    console.log(TYPOGRAPHY);
+  }
+
+  function ensureSpace(heightNeeded: number) {
+    if (y + heightNeeded > pageHeight - margins.bottom) {
+      doc.addPage();
+      drawSubtlePageBackground();
+      y = margins.top; // reset to 60px
+    }
+  }
 
 
 
@@ -627,31 +683,63 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
   // Visual Utility functions
 
-  function drawWatermark() {
+  function drawWatermark(pageNum: number) {
+    const size = pageWidth * 0.45;
+    const startX = centerX - size / 2;
+    const centerYPos = (pageHeight / 2) - size / 2;
+    const candidatesY = [centerYPos, centerYPos - 120, centerYPos + 120];
+    
+    const pageBoxes = ledger.getBoxesForPage(pageNum).filter(b => 
+      b.label !== "HeaderFrame" && 
+      b.label !== "FooterFrame" && 
+      !b.label.includes("Watermark") &&
+      !b.label.includes("PageBackground")
+    );
+    
+    let bestY = centerYPos;
+    let minCollisions = Infinity;
+    
+    for (const testY of candidatesY) {
+      let collisions = 0;
+      const wBox = { x1: startX, y1: testY, x2: startX + size, y2: testY + size };
+      
+      for (const box of pageBoxes) {
+        const intersects = (box.x1 < wBox.x2 && box.x2 > wBox.x1 && box.y1 < wBox.y2 && box.y2 > wBox.y1);
+        if (intersects) {
+          collisions++;
+        }
+      }
+      
+      if (collisions < minCollisions) {
+        minCollisions = collisions;
+        bestY = testY;
+      }
+      if (collisions === 0) {
+        break;
+      }
+    }
+
     doc.saveGraphicsState();
-    const watermarkGState = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.02 });
+    const watermarkGState = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.018 });
     doc.setGState(watermarkGState);
-    const size = pageWidth * 0.60;
-    const x = centerX - size / 2;
-    const y = (pageHeight / 2) - size / 2;
-    doc.addImage(circularLogoBase64, "PNG", x, y, size, size);
+    doc.addImage(circularLogoBase64, "PNG", startX, bestY, size, size);
     doc.restoreGraphicsState();
+
+    ledger.pushBox(pageNum, startX, bestY, startX + size, bestY + size, `Watermark_${pageNum}`);
   }
 
   function drawSubtlePageBackground() {
-    // Fill background with solid very dark color (#030712)
     doc.setFillColor("#030712");
     doc.rect(0, 0, pageWidth, pageHeight, "F");
 
-    // Draw background.webp at 0.15 opacity covering the entire page (full bleed)
     doc.saveGraphicsState();
     const bgGState = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.15 });
     doc.setGState(bgGState);
     doc.addImage(backgroundBase64, "PNG", 0, 0, pageWidth, pageHeight);
     doc.restoreGraphicsState();
 
-    // Draw the centered watermark on all pages
-    drawWatermark();
+    const pageNum = doc.getNumberOfPages();
+    drawWatermark(pageNum);
   }
 
   function drawLiquidGlassCard(
@@ -758,7 +846,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
       maxWidth?: number;
     }
   ): number {
-    let currentFontSize = options?.fontSize || doc.getFontSize();
+    const currentFontSize = options?.fontSize || doc.getFontSize();
     doc.setFontSize(currentFontSize);
     
     doc.saveGraphicsState();
@@ -785,23 +873,31 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
       }
     }
     
-    let textWidth = doc.getTextWidth(text);
-    
-    if (textWidth > targetMaxWidth) {
-      const originalFontSize = currentFontSize;
-      const minFontSize = Math.max(7, originalFontSize * 0.7);
-      while (textWidth > targetMaxWidth && currentFontSize > minFontSize) {
-        currentFontSize -= 0.5;
-        doc.setFontSize(currentFontSize);
-        textWidth = doc.getTextWidth(text);
-      }
-    }
-
+    const textWidth = doc.getTextWidth(text);
     let returnY = yVal;
+
+    // Apply backing layer if text is rendered over bright background nebula region
+    const isBrightBackgroundNebula = (yVal > 180 && yVal < 450 && x > 180);
+    if (isBrightBackgroundNebula) {
+      doc.saveGraphicsState();
+      const backGState = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.25 });
+      doc.setGState(backGState);
+      doc.setFillColor("#000000");
+      const textW = Math.min(targetMaxWidth, textWidth);
+      const textH = currentFontSize * 1.35;
+      let rx = x - 4;
+      if (options?.align === "right") {
+        rx = x - textW - 4;
+      } else if (options?.align === "center") {
+        rx = x - textW / 2 - 4;
+      }
+      doc.roundedRect(rx, yVal - currentFontSize - 1, textW + 8, textH + 2, 3, 3, "F");
+      doc.restoreGraphicsState();
+    }
 
     if (textWidth > targetMaxWidth) {
       const wrappedLines = wrapText(text, targetMaxWidth, doc);
-      const lSpacing = 1.15;
+      const lSpacing = 1.35; // follow centralized typography rules
       let curY = yVal;
       wrappedLines.forEach((line, idx) => {
         if (idx > 0) {
@@ -819,7 +915,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
         const ly1 = curY - currentFontSize;
         const ly2 = curY;
         
-        doc.text(line, x, curY, { align: options?.align });
+        doc.text(line, lx, curY); // Note: we draw at lx since align is handled manually here
         ledger.pushBox(doc.getNumberOfPages(), lx, ly1, lx + lineW, ly2, `Text: ${line.substring(0, 15)}`);
       });
       returnY = curY;
@@ -835,7 +931,7 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
       const x2 = x1 + textWidth;
       const y2 = yVal;
 
-      doc.text(text, x, yVal, { align: options?.align });
+      doc.text(text, x1, yVal); // Note: we draw at x1 since align is handled manually
       ledger.pushBox(doc.getNumberOfPages(), x1, y1, x2, y2, `Text: ${text.substring(0, 15)}`);
       returnY = yVal;
     }
@@ -1024,8 +1120,9 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
   drawSectionHeader("CAREER SNAPSHOT", "Executive Market Brief", "Strategic analysis generated from current career objective.");
 
-  // Row of 4 Dashboard Metrics (Typographic, No Cards)
-  const metricColW = contentWidth / 4;
+  // Row of 4 Dashboard Metrics (Equal width, equal height cards)
+  const metricCardW = (contentWidth - 3 * 12) / 4;
+  const metricCardH = 65;
   const momentumVal = Math.min(100, Math.max(50, Math.round(readinessScore * 1.15)));
   const metricsList = [
     { label: "Readiness", val: `${readinessScore}%` },
@@ -1035,73 +1132,79 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
   ];
 
   metricsList.forEach((metric, idx) => {
-    const colX = margins.left + idx * metricColW;
-    drawText(metric.label.toUpperCase(), colX, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
-    drawText(metric.val, colX, y + 26, { fontSize: 24, fontColor: "#00D8FF" });
+    const colX = margins.left + idx * (metricCardW + 12);
+    drawLiquidGlassCard(colX, y, metricCardW, metricCardH, { rx: 12, ry: 12 });
+    drawText(metric.label.toUpperCase(), colX + 12, y + 16, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45, maxWidth: metricCardW - 24 });
+    drawText(metric.val, colX + 12, y + 36, { fontSize: 24, fontColor: "#00D8FF", maxWidth: metricCardW - 24 });
   });
 
-  y += 46 + 24;
+  y += metricCardH + 32; // Spacing after metrics row
 
-  // 2x2 grid of Market Dynamics (Typographic, No Cards)
+  // 2x2 grid of Market Dynamics (Typographic, No Cards, Grid Flow Engine)
   const firstRoadmap = safeRoadmaps[0];
+  
+  function drawTwoColumnRow(
+    yStart: number,
+    colWidth: number,
+    colGap: number,
+    leftCol: { title: string; val: string; desc: string },
+    rightCol: { title: string; val: string; desc: string }
+  ): number {
+    const leftX = margins.left;
+    const rightX = leftX + colWidth + colGap;
+
+    const leftTitleLines = wrapText(leftCol.title.toUpperCase(), colWidth, doc);
+    const leftValLines = wrapText(leftCol.val, colWidth, doc);
+    const leftDescLines = wrapText(leftCol.desc, colWidth, doc);
+    const leftHeight = (leftTitleLines.length * 9 * 1.25) + 8 + (leftValLines.length * 16 * 1.25) + 12 + (leftDescLines.length * 11 * 1.35);
+
+    const rightTitleLines = wrapText(rightCol.title.toUpperCase(), colWidth, doc);
+    const rightValLines = wrapText(rightCol.val, colWidth, doc);
+    const rightDescLines = wrapText(rightCol.desc, colWidth, doc);
+    const rightHeight = (rightTitleLines.length * 9 * 1.25) + 8 + (rightValLines.length * 16 * 1.25) + 12 + (rightDescLines.length * 11 * 1.35);
+
+    const rowHeight = Math.max(leftHeight, rightHeight);
+
+    let curY = yStart;
+    curY = drawText(leftCol.title.toUpperCase(), leftX, curY, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45, maxWidth: colWidth });
+    curY = drawText(leftCol.val, leftX, curY + 8, { fontSize: 16, fontColor: "#00D8FF", maxWidth: colWidth });
+    drawText(leftCol.desc, leftX, curY + 12, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: colWidth });
+
+    curY = yStart;
+    curY = drawText(rightCol.title.toUpperCase(), rightX, curY, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45, maxWidth: colWidth });
+    curY = drawText(rightCol.val, rightX, curY + 8, { fontSize: 16, fontColor: "#00D8FF", maxWidth: colWidth });
+    drawText(rightCol.desc, rightX, curY + 12, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: colWidth });
+
+    return yStart + rowHeight;
+  }
+
   if (firstRoadmap) {
     const colW = (contentWidth - 24) / 2;
-    const leftX = margins.left;
-    const rightX = centerX + 12;
+    const colGap = 24;
 
-    const sections = [
-      {
-        title: "Market Demand",
-        val: `${firstRoadmap.career_demand_score}/100 Demand`,
-        desc: "Strong demand signal indicating continuous job openings and hiring pipeline velocity across major regions.",
-        col: "left"
-      },
-      {
-        title: "Salary Outlook",
-        val: firstRoadmap.salary_range || "Competitive Base",
-        desc: "Estimated benchmark salary range representing starting compensation brackets for verified positions.",
-        col: "left"
-      },
-      {
-        title: "Industry Growth",
-        val: firstRoadmap.market_outlook || "Accelerating Growth",
-        desc: "Robust YoY expansion and expansion of supporting digital services creating constant demand for skilled engineering professionals.",
-        col: "right"
-      },
-      {
-        title: "Automation Risk",
-        val: firstRoadmap.automation_risk || "Low Risk",
-        desc: "Low susceptibility to automated displacement due to cognitive complexity, problem-solving, and creative design roles.",
-        col: "right"
-      }
-    ];
+    const row1_Left = {
+      title: "Market Demand",
+      val: `${firstRoadmap.career_demand_score}/100 Demand`,
+      desc: "Strong demand signal indicating continuous job openings and hiring pipeline velocity across major regions."
+    };
+    const row1_Right = {
+      title: "Industry Growth",
+      val: firstRoadmap.market_outlook || "Accelerating Growth",
+      desc: "Robust YoY expansion and expansion of supporting digital services creating constant demand for skilled engineering professionals."
+    };
+    const row2_Left = {
+      title: "Salary Outlook",
+      val: firstRoadmap.salary_range || "Competitive Base",
+      desc: "Estimated benchmark salary range representing starting compensation brackets for verified positions."
+    };
+    const row2_Right = {
+      title: "Automation Risk",
+      val: firstRoadmap.automation_risk || "Low Risk",
+      desc: "Low susceptibility to automated displacement due to cognitive complexity, problem-solving, and creative design roles."
+    };
 
-    let leftY = y;
-    let rightY = y;
-
-    sections.forEach((sect) => {
-      const isLeft = sect.col === "left";
-      const curX = isLeft ? leftX : rightX;
-      const startY = isLeft ? leftY : rightY;
-
-      const titleEndY = drawText(sect.title.toUpperCase(), curX, startY, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
-      const valEndY = drawText(sect.val, curX, titleEndY + 8, { fontSize: 16, fontColor: "#00D8FF" });
-
-      const wrappedDesc = wrapText(sect.desc, colW, doc);
-      let descY = valEndY + 12;
-      wrappedDesc.forEach((line) => {
-        drawText(line, curX, descY, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
-        descY += 16;
-      });
-
-      if (isLeft) {
-        leftY = descY + 20;
-      } else {
-        rightY = descY + 20;
-      }
-    });
-
-    y = Math.max(leftY, rightY) + 10;
+    y = drawTwoColumnRow(y, colW, colGap, row1_Left, row1_Right) + 24;
+    y = drawTwoColumnRow(y, colW, colGap, row2_Left, row2_Right) + 16;
   }
 
   // 3-column Roadmap Summary (Typographic, No Cards)
@@ -1252,95 +1355,96 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     y = Math.max(skillsY, projY) + 20;
 
     // 5. Milestones timeline (Vertical premium roadmap rail, borderless nodes)
+    ensureSpace(45);
     doc.setFont("CMGeom", "normal");
     doc.setFontSize(16);
     doc.setTextColor("#FFFFFF");
     doc.text("CORE SPRINT MILESTONES & PROJECTS", margins.left, y);
-    
     y += 18;
 
-    const timelineX = margins.left + 16;
+    const timelineX = margins.left + 12;
     const contentX = margins.left + 32;
     const contentW = contentWidth - 32;
-    const timelineStartY = y + 8;
-    let lastNodeY = timelineStartY;
 
     sprint.milestones.forEach((milestone, mIdx) => {
-      const milestoneY = y + 12;
-      const nodeY = milestoneY + 12; // vertical align with first line
-      lastNodeY = nodeY;
+      const mNum = `M${String(mIdx + 1).padStart(2, "0")}`;
+      const titleText = `${mNum}  ·  ${milestone.title}`;
+      
+      const colA_Width = contentW - 110;
+      const colB_Width = 90;
+      const colB_X = pageWidth - margins.right - colB_Width;
+      
+      const titleLines = wrapText(titleText, colA_Width, doc);
+      const whyMatters = milestone.why_it_matters || "Validates core domain capability.";
+      const deliverables = getSafeArray<string>(milestone.deliverables).slice(0, 1).join(", ") || "Completed milestones";
+      const descText = `Focus: ${whyMatters}\nDeliverable: ${deliverables}`;
+      const descLines = wrapText(descText, colA_Width, doc);
+      
+      const colA_Height = (titleLines.length * 11 * 1.35) + 8 + (descLines.length * 11 * 1.35);
+      
+      const metaText = `${milestone.estimated_duration_weeks} Wk · ${milestone.difficulty_level.toUpperCase()}`;
+      const metaLines = wrapText(metaText, colB_Width, doc);
+      const colB_Height = metaLines.length * 9 * 1.25;
+      
+      const milestoneHeight = Math.max(colA_Height, colB_Height);
+      
+      ensureSpace(milestoneHeight + 12);
+      
+      const milestoneStartY = y + 12;
+      
+      // Column A Content
+      const colAY = drawText(titleText, contentX, milestoneStartY, { fontSize: 11, fontColor: "#FFFFFF", maxWidth: colA_Width });
+      drawText(descText, contentX, colAY + 8, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: colA_Width });
+      
+      // Column B Metadata
+      drawText(metaText, colB_X, milestoneStartY, { fontSize: 9, fontColor: "#00D8FF", align: "right", maxWidth: colB_Width });
+      
+      const nodeY = milestoneStartY + 9;
+      
+      const curPage = doc.getNumberOfPages();
+      if (!pageTimelineNodes[curPage]) {
+        pageTimelineNodes[curPage] = [];
+      }
+      pageTimelineNodes[curPage].push(nodeY);
 
       doc.saveGraphicsState();
-      const nodeGlow = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.15 });
-      doc.setGState(nodeGlow);
+      doc.setGState(new (doc as unknown as JsPdfExtended).GState({ opacity: 0.15 }));
       doc.setFillColor("#00D8FF");
       doc.circle(timelineX, nodeY, 6, "F");
       doc.restoreGraphicsState();
       
       doc.setFillColor("#00D8FF");
       doc.circle(timelineX, nodeY, 2.5, "F");
-
-      doc.setFont("CMGeom", "normal");
-      doc.setFontSize(11);
-      doc.setTextColor("#FFFFFF");
-      const mNum = `M${String(mIdx + 1).padStart(2, "0")}`;
-      const titleText = `${mNum}  ·  ${milestone.title}`;
-      const milestoneTitleW = contentW - 90; // leave room for right-aligned inline meta
-      const titleEndY = drawText(titleText, contentX, milestoneY, { fontSize: 11, fontColor: "#FFFFFF", maxWidth: milestoneTitleW });
-
-      const inlineMeta = `(${milestone.estimated_duration_weeks} wk  ·  ${milestone.difficulty_level})`;
-      drawText(inlineMeta, pageWidth - margins.right, milestoneY, { align: "right", fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
-
-      const whyMatters = milestone.why_it_matters || "Validates core domain capability.";
-      const deliverables = getSafeArray<string>(milestone.deliverables).slice(0, 1).join(", ") || "Completed milestones";
-      const descText = `Focus: ${whyMatters}  ·  Deliverable: ${deliverables}`;
       
-      const wrappedDesc = wrapText(descText, contentW, doc);
-      let curDescY = titleEndY + 12;
-      wrappedDesc.forEach((line) => {
-        drawText(line, contentX, curDescY, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
-        curDescY += 16;
-      });
-
-      y = curDescY + 8;
+      y = milestoneStartY + milestoneHeight + 12;
     });
-
-    if (sprint.milestones.length > 0) {
-      doc.saveGraphicsState();
-      const lineGState = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.15 });
-      doc.setGState(lineGState);
-      doc.setDrawColor("#00D8FF");
-      doc.setLineWidth(1.0);
-      doc.line(timelineX, timelineStartY, timelineX, lastNodeY);
-      doc.restoreGraphicsState();
-    }
 
     y += 10;
 
     // 6. Recommended Learning Resources Table
+    ensureSpace(60);
     doc.setFont("CMGeom", "normal");
     doc.setFontSize(16);
     doc.setTextColor("#FFFFFF");
     doc.text("RECOMMENDED LEARNING RESOURCES", margins.left, y);
-
     y += 18;
 
     const resourceLinks = sprint.milestones.flatMap(m => getSafeArray<RoadmapResourceLink>(m.resource_links));
     const uniqueResources = Array.from(new Map(resourceLinks.map(r => [r.url, r])).values()).slice(0, 2);
 
     if (uniqueResources.length > 0) {
-      const colNameW = 140;
-      const colTypeW = 90;
-      const colLinkW = 130;
-      const colPurposeW = 140;
+      const colResourceW = 110;
+      const colProviderW = 90;
+      const colLinkW = 150;
+      const colPurposeW = 149;
 
-      const nameX = margins.left;
-      const typeX = nameX + colNameW;
-      const linkX = typeX + colTypeW;
+      const resourceX = margins.left;
+      const providerX = resourceX + colResourceW;
+      const linkX = providerX + colProviderW;
       const purposeX = linkX + colLinkW;
 
-      drawText("RESOURCE", nameX, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
-      drawText("PROVIDER/TYPE", typeX, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
+      drawText("RESOURCE", resourceX, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
+      drawText("PROVIDER", providerX, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
       drawText("LINK", linkX, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
       drawText("PURPOSE", purposeX, y, { fontSize: 9, fontColor: "#FFFFFF", opacity: 0.45 });
 
@@ -1355,19 +1459,19 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
       y += 16;
 
       uniqueResources.forEach((res) => {
-        doc.setFontSize(11);
+        ensureSpace(18);
         
-        doc.setTextColor("#FFFFFF");
-        const wrappedName = wrapText(res.label, colNameW - 10, doc)[0] || "";
-        doc.text(wrappedName, nameX, y);
+        const truncName = truncateText(res.label, colResourceW - 8, doc);
+        drawText(truncName, resourceX, y, { fontSize: 11, fontColor: "#FFFFFF" });
 
-        drawText(res.provider, typeX, y, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
+        const truncProvider = truncateText(res.provider, colProviderW - 8, doc);
+        drawText(truncProvider, providerX, y, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
 
-        const wrappedUrl = formatAndWrapUrl(res.url, colLinkW - 10, doc, 1)[0] || "";
-        drawText(wrappedUrl, linkX, y, { fontSize: 11, fontColor: "#00D8FF" });
+        const truncUrl = truncateText(res.url, colLinkW - 8, doc);
+        drawText(truncUrl, linkX, y, { fontSize: 11, fontColor: "#00D8FF" });
 
-        const wrappedPurpose = wrapText(res.label || "Study resource", colPurposeW, doc)[0] || "";
-        drawText(wrappedPurpose, purposeX, y, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
+        const truncPurpose = truncateText(res.label || "Study resource", colPurposeW - 8, doc);
+        drawText(truncPurpose, purposeX, y, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
 
         y += 18;
       });
@@ -1379,23 +1483,28 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
     y += 10;
 
     // 7. Expected Outcomes Checklist
+    ensureSpace(50);
     doc.setFont("CMGeom", "normal");
     doc.setFontSize(16);
     doc.setTextColor("#FFFFFF");
     doc.text("EXPECTED SPRINT OUTCOMES", margins.left, y);
-
     y += 18;
 
     const sprintOutcomes = Array.from(new Set(sprint.milestones.flatMap(m => getSafeArray<string>(m.expected_outcomes)))).slice(0, 2);
     if (sprintOutcomes.length > 0) {
       sprintOutcomes.forEach((outcome) => {
+        const lines = wrapText(outcome, contentWidth - 14, doc);
+        const linesHeight = lines.length * 11 * 1.35;
+        ensureSpace(linesHeight + 4);
+        
         doc.setFontSize(11);
         doc.setTextColor("#00D8FF");
         doc.text("□", margins.left, y);
         y = drawText(outcome, margins.left + 14, y, { maxWidth: contentWidth - 14, fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72 });
-        y += 18;
+        y += 12;
       });
     } else {
+      ensureSpace(18);
       doc.setFontSize(11);
       doc.setTextColor("#00D8FF");
       doc.text("□", margins.left, y);
@@ -1525,11 +1634,23 @@ export async function generateRoadmapPdfBlob(report: RoadmapPdfReport) {
 
   y += 35;
 
-  // Render header/footer frame on all pages
+  // Render header/footer frame and timeline rails on all pages
   const totalPages = doc.getNumberOfPages();
   for (let pNum = 1; pNum <= totalPages; pNum++) {
     doc.setPage(pNum);
     drawPageFrame(pNum, totalPages);
+
+    const nodes = pageTimelineNodes[pNum];
+    if (nodes && nodes.length > 1) {
+      doc.saveGraphicsState();
+      const lineGState = new (doc as unknown as JsPdfExtended).GState({ opacity: 0.15 });
+      doc.setGState(lineGState);
+      doc.setDrawColor("#00D8FF");
+      doc.setLineWidth(1.0);
+      nodes.sort((a, b) => a - b);
+      doc.line(margins.left + 12, nodes[0], margins.left + 12, nodes[nodes.length - 1]);
+      doc.restoreGraphicsState();
+    }
   }
 
   // Calculate content density
