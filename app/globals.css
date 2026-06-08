@@ -207,20 +207,24 @@ main {
 @layer components {
   .liquid-panel {
     background: rgba(8, 12, 20, 0.38) !important;
-    backdrop-filter: blur(16px) !important;
+    backdrop-filter: blur(12px) !important;
     border: 1px solid rgba(255, 255, 255, 0.04) !important;
     border-radius: 12px !important;
     position: relative;
     overflow: hidden;
+    will-change: backdrop-filter, transform;
+    transform: translateZ(0);
   }
 
   /* ── CARD SYSTEM V4 — LIQUID GLASS MIGRATION ──────────────────────────── */
 
   .card-data, .liquid-card, .card-spotlight, .card-action, .card-insight, .card-gold, .card-purple, .card-green, .card-red, .card-danger, .card-mission {
-    backdrop-filter: blur(16px) !important;
+    backdrop-filter: blur(12px) !important;
     border: 1px solid rgba(255, 255, 255, 0.04) !important;
     border-radius: 12px !important;
     background: rgba(8, 12, 20, 0.38) !important;
+    will-change: backdrop-filter, transform;
+    transform: translateZ(0);
   }
 
   /* Specific enhancements for semantic variants to keep branding and context */
@@ -378,8 +382,10 @@ main {
   /* V4 Floating Sidebar classes */
   .sidebar-glass {
     background: rgba(8, 12, 20, 0.38) !important;
-    backdrop-filter: blur(16px) !important;
+    backdrop-filter: blur(12px) !important;
     border: 1px solid rgba(255, 255, 255, 0.04) !important;
+    will-change: backdrop-filter, transform;
+    transform: translateZ(0);
   }
 
   .sidebar-active-item {
@@ -416,11 +422,13 @@ main {
   /* V4 Mission card cyan -> blue glow */
   .card-mission {
     background: rgba(8, 12, 20, 0.38) !important;
-    backdrop-filter: blur(16px) !important;
+    backdrop-filter: blur(12px) !important;
     border: 1px solid rgba(255, 255, 255, 0.04) !important;
     border-radius: 12px !important;
     position: relative;
     overflow: hidden;
+    will-change: backdrop-filter, transform;
+    transform: translateZ(0);
   }
   .card-mission::before {
     content: "";

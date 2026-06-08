@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion"; // Kept only for Confetti celebration animation
@@ -175,14 +175,14 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
   const [checkedTasks, setCheckedTasks] = useState<Record<string, boolean>>({});
 
   // ── Derived variables ────────────────────────────────────────────────────
-  const safeRoadmapHistory = normalizeRoadmapVersionArray(roadmapHistory);
-  const safeWorkspaceRoadmaps = normalizeRoadmapArray(workspace?.roadmaps);
-  const activeRoadmap = safeWorkspaceRoadmaps[0] ?? null;
-  const allMilestones = Array.isArray(activeRoadmap?.milestones) ? activeRoadmap!.milestones : [];
+  const safeRoadmapHistory = useMemo(() => normalizeRoadmapVersionArray(roadmapHistory), [roadmapHistory]);
+  const safeWorkspaceRoadmaps = useMemo(() => normalizeRoadmapArray(workspace?.roadmaps), [workspace?.roadmaps]);
+  const activeRoadmap = useMemo(() => safeWorkspaceRoadmaps[0] ?? null, [safeWorkspaceRoadmaps]);
+  const allMilestones = useMemo(() => (Array.isArray(activeRoadmap?.milestones) ? activeRoadmap!.milestones : []), [activeRoadmap]);
 
-  const derivedCompletedCount = activeRoadmap ? Math.floor((activeRoadmap.progress / 100) * allMilestones.length) : 0;
+  const derivedCompletedCount = useMemo(() => (activeRoadmap ? Math.floor((activeRoadmap.progress / 100) * allMilestones.length) : 0), [activeRoadmap, allMilestones]);
   
-  const getMilestoneColumn = (m: RoadmapMilestoneRecord, idx: number): MilestoneStatus => {
+  const getMilestoneColumn = useCallback((m: RoadmapMilestoneRecord, idx: number): MilestoneStatus => {
     if (m.status === "completed" || m.status === "inprogress" || m.status === "upcoming") {
       return m.status === "inprogress" ? "active" : m.status;
     }
@@ -190,37 +190,38 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
     if (idx < derivedCompletedCount) return "completed";
     if (idx === Math.min(derivedCompletedCount, allMilestones.length - 1)) return "active";
     return "upcoming";
-  };
+  }, [derivedCompletedCount, allMilestones]);
 
-  const completedCount = activeRoadmap
+  const completedCount = useMemo(() => (activeRoadmap
     ? allMilestones.filter((m, idx) => getMilestoneColumn(m, idx) === "completed").length
-    : 0;
+    : 0), [activeRoadmap, allMilestones, getMilestoneColumn]);
 
   // Current active milestone (the first uncompleted milestone)
-  const currentMilestoneIdx = allMilestones.length > 0
+  const currentMilestoneIdx = useMemo(() => (allMilestones.length > 0
     ? allMilestones.findIndex((m, idx) => getMilestoneColumn(m, idx) !== "completed")
-    : -1;
-  const currentMilestone = currentMilestoneIdx >= 0 ? allMilestones[currentMilestoneIdx] : null;
+    : -1), [allMilestones, getMilestoneColumn]);
+  const currentMilestone = useMemo(() => (currentMilestoneIdx >= 0 ? allMilestones[currentMilestoneIdx] : null), [allMilestones, currentMilestoneIdx]);
 
   // Selected milestone (defaults to current active milestone)
-  const activeMilestone = allMilestones.find(m => m.title === (selectedMilestoneTitle || currentMilestone?.title)) ?? currentMilestone;
+  const activeMilestone = useMemo(() => (allMilestones.find(m => m.title === (selectedMilestoneTitle || currentMilestone?.title)) ?? currentMilestone), [allMilestones, selectedMilestoneTitle, currentMilestone]);
 
   // Calculate current sprint list & progress
-  const currentMilestoneTasks = currentMilestone?.project_tasks ?? [];
-  const currentMilestoneDeliverables = currentMilestone?.deliverables ?? [];
-  const totalSprintItems = currentMilestoneTasks.length + currentMilestoneDeliverables.length;
+  const currentMilestoneTasks = useMemo(() => (currentMilestone?.project_tasks ?? []), [currentMilestone]);
+  const currentMilestoneDeliverables = useMemo(() => (currentMilestone?.deliverables ?? []), [currentMilestone]);
+  const totalSprintItems = useMemo(() => (currentMilestoneTasks.length + currentMilestoneDeliverables.length), [currentMilestoneTasks, currentMilestoneDeliverables]);
   
-  const completedSprintItems = 
+  const completedSprintItems = useMemo(() => (
     currentMilestoneTasks.filter((_, i) => checkedTasks[`${currentMilestone?.title}::t::${i}`]).length +
-    currentMilestoneDeliverables.filter((_, i) => checkedTasks[`${currentMilestone?.title}::d::${i}`]).length;
+    currentMilestoneDeliverables.filter((_, i) => checkedTasks[`${currentMilestone?.title}::d::${i}`]).length
+  ), [currentMilestone, currentMilestoneTasks, currentMilestoneDeliverables, checkedTasks]);
     
-  const sprintProgress = totalSprintItems > 0 ? Math.round((completedSprintItems / totalSprintItems) * 100) : 0;
+  const sprintProgress = useMemo(() => (totalSprintItems > 0 ? Math.round((completedSprintItems / totalSprintItems) * 100) : 0), [completedSprintItems, totalSprintItems]);
 
   useEffect(() => {
     if (currentMilestone) {
       setExpandedMilestones(prev => ({ ...prev, [currentMilestone.title]: true }));
     }
-  }, [currentMilestone?.title]);
+  }, [currentMilestone]);
 
   useEffect(() => {
     if (profile?.id) {
@@ -263,7 +264,12 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
         console.error("Failed loading checked tasks:", e);
       }
 
-      setCheckedTasks(loadedChecked);
+      // Safeguard to only trigger state update if checklist values actually differ
+      setCheckedTasks(prev => {
+        const hasChanged = Object.keys(loadedChecked).length !== Object.keys(prev).length ||
+          Object.keys(loadedChecked).some(k => loadedChecked[k] !== prev[k]);
+        return hasChanged ? loadedChecked : prev;
+      });
     }
   }, [activeRoadmap, profile?.id]);
 
@@ -317,7 +323,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
   }
 
   // Deduplicate and gather all resources with their parent milestone context
-  const allResources: ResourceWithMilestone[] = Array.from(
+  const allResources: ResourceWithMilestone[] = useMemo(() => Array.from(
     new Map(
       safeWorkspaceRoadmaps.flatMap(r =>
         (Array.isArray(r.resource_links) ? r.resource_links : []).concat(
@@ -331,7 +337,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
         )
       ).map(res => [res.url, res])
     ).values()
-  );
+  ), [safeWorkspaceRoadmaps]);
 
   const getResourceStats = (res: ResourceWithMilestone) => {
     const type = getResourceType(res.label, res.provider);

@@ -311,9 +311,27 @@ function CanvasCleanup() {
 
 function HeroSceneComponent() {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [inViewport, setInViewport] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setInViewport(entry.isIntersecting);
+      },
+      { threshold: 0.05 }
+    );
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   return (
     <motion.div
+      ref={containerRef}
       className="relative h-[36rem] w-full overflow-hidden rounded-[24px] border border-[#141418] bg-[#080c14] shadow-[0_8px_24px_rgba(0,0,0,0.25)] sm:h-[42rem] lg:h-[46rem]"
       initial={{ opacity: 0, scale: 0.97, y: 16 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -340,27 +358,33 @@ function HeroSceneComponent() {
       </div>
 
       {/* R3F Canvas Container */}
-      <Canvas
-        camera={{ position: [0, 0, 5.0], fov: 45 }}
-        frameloop="demand"
-        dpr={[1, 1.15]}
-        gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-      >
-        <CanvasCleanup />
-        <color attach="background" args={["#080c14"]} />
-        <fog attach="fog" args={["#080c14", 5.5, 10]} />
-        
-        {/* Lights Setup */}
-        <ambientLight intensity={0.8} />
-        <directionalLight position={[3, 5, 4]} intensity={1.2} color="#ffffff" />
-        <pointLight position={[0, 4, 3]} intensity={1.5} color="#22d3ee" distance={8} />
+      {inViewport ? (
+        <Canvas
+          camera={{ position: [0, 0, 5.0], fov: 45 }}
+          frameloop="always"
+          dpr={[1, 1.15]}
+          gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+        >
+          <CanvasCleanup />
+          <color attach="background" args={["#080c14"]} />
+          <fog attach="fog" args={["#080c14", 5.5, 10]} />
+          
+          {/* Lights Setup */}
+          <ambientLight intensity={0.8} />
+          <directionalLight position={[3, 5, 4]} intensity={1.2} color="#ffffff" />
+          <pointLight position={[0, 4, 3]} intensity={1.5} color="#22d3ee" distance={8} />
 
-        <GalaxyGroup
-          hoveredNode={hoveredNode}
-          setHoveredNode={setHoveredNode}
-          invalidate={() => {}}
-        />
-      </Canvas>
+          <GalaxyGroup
+            hoveredNode={hoveredNode}
+            setHoveredNode={setHoveredNode}
+            invalidate={() => {}}
+          />
+        </Canvas>
+      ) : (
+        <div className="w-full h-full bg-[#080c14] flex items-center justify-center text-xs text-slate-500">
+          Scene paused (out of viewport)
+        </div>
+      )}
     </motion.div>
   );
 }
