@@ -109,19 +109,25 @@ export function AuthForm({ mode }: AuthFormProps) {
         <div className="liquid-panel rounded-[24px] p-5 sm:p-6 shadow-[0_30px_100px_rgba(0,0,0,0.45)] relative border border-white/10 bg-[#080c14]/48 backdrop-blur-md">
 
           {/* Brand Lockup */}
-          <div className="flex items-center gap-2 relative z-10 mb-4">
-            <Image
-              src="/logo.png"
-              alt="CareerOS Logo"
-              width={24}
-              height={24}
-              priority
-              className="h-6 w-6 object-contain"
-            />
-            <div className="flex flex-col">
-              <span className="text-base font-bold tracking-wider text-white leading-none">CareerOS</span>
-              <span className="text-[10px] text-slate-500 font-semibold leading-none mt-0.5">Private Career Workspace</span>
+          <div className="flex items-center justify-between w-full relative z-10 mb-4">
+            <div className="flex items-center gap-2">
+              <Image
+                src="/logo.png"
+                alt="CareerOS Logo"
+                width={24}
+                height={24}
+                priority
+                className="h-6 w-6 object-contain"
+              />
+              <div className="flex flex-col">
+                <span className="text-base font-bold tracking-wider text-white leading-none">CareerOS</span>
+                <span className="text-[10px] text-slate-500 font-semibold leading-none mt-0.5">Private Career Workspace</span>
+              </div>
             </div>
+            <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider bg-emerald-950/40 border border-emerald-500/20 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+              <Shield className="h-3 w-3" />
+              AES-256
+            </span>
           </div>
 
           <div className="mt-4 text-center relative z-10 py-2">
@@ -186,19 +192,25 @@ export function AuthForm({ mode }: AuthFormProps) {
       <div className="liquid-panel rounded-[24px] p-5 sm:p-6 shadow-[0_30px_100px_rgba(0,0,0,0.45)] relative border border-white/10 bg-[#080c14]/48 backdrop-blur-md">
 
         {/* Brand Lockup */}
-        <div className="flex items-center gap-2 relative z-10 mb-4">
-          <Image
-            src="/logo.png"
-            alt="CareerOS Logo"
-            width={24}
-            height={24}
-            priority
-            className="h-6 w-6 object-contain"
-          />
-          <div className="flex flex-col">
-            <span className="text-base font-bold tracking-wider text-white leading-none">CareerOS</span>
-            <span className="text-[10px] text-slate-500 font-semibold leading-none mt-0.5">Private Career Workspace</span>
+        <div className="flex items-center justify-between w-full relative z-10 mb-4">
+          <div className="flex items-center gap-2">
+            <Image
+              src="/logo.png"
+              alt="CareerOS Logo"
+              width={24}
+              height={24}
+              priority
+              className="h-6 w-6 object-contain"
+            />
+            <div className="flex flex-col">
+              <span className="text-base font-bold tracking-wider text-white leading-none">CareerOS</span>
+              <span className="text-[10px] text-slate-500 font-semibold leading-none mt-0.5">Private Career Workspace</span>
+            </div>
           </div>
+          <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider bg-emerald-950/40 border border-emerald-500/20 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+            <Shield className="h-3 w-3" />
+            AES-256
+          </span>
         </div>
 
         {/* Header copy */}

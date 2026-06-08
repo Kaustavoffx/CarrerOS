@@ -13,7 +13,7 @@ function CareerOSBackgroundComponent() {
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
-          filter: "brightness(0.85) contrast(1.0) saturate(1.0)",
+          filter: "brightness(0.95) contrast(1.0) saturate(1.0)",
         }}
       />
       {/* Atmospheric overlay linear gradient */}
@@ -22,9 +22,9 @@ function CareerOSBackgroundComponent() {
         style={{
           backgroundImage: `linear-gradient(
             180deg,
-            rgba(2, 3, 5, 0.35) 0%,
-            rgba(2, 3, 5, 0.20) 50%,
-            rgba(2, 3, 5, 0.45) 100%
+            rgba(2, 3, 5, 0.08) 0%,
+            rgba(2, 3, 5, 0.04) 50%,
+            rgba(2, 3, 5, 0.09) 100%
           )`,
         }}
       />

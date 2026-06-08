@@ -41,18 +41,18 @@ export function GitHubIcon({ className }: { className?: string }) {
 
 export function AuthProviders({ onProviderSelect, loading = false, activeProvider = null }: AuthProvidersProps) {
   return (
-    <div className="mt-6 flex flex-col gap-3">
+    <div className="mt-4 flex flex-col gap-2.5">
       <MagneticButton
         type="button"
         onClick={() => onProviderSelect("google")}
         disabled={loading}
         aria-label="Continue with Google"
-        className="flex w-full h-[52px] items-center justify-start gap-3 rounded-[14px] border border-white/10 bg-[#0c0c0e] px-[18px] text-sm font-semibold text-white transition-all duration-200 hover:bg-[#121216] hover:-translate-y-0.5 active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 disabled:pointer-events-none disabled:opacity-50 cursor-pointer shadow-md will-change-transform transform-gpu"
+        className="flex w-full h-[46px] items-center justify-center gap-3 rounded-xl border border-[#e3e3e3] bg-[#ffffff] px-[18px] text-xs font-bold text-[#1f1f1f] transition-all duration-150 hover:bg-[#f2f2f2] hover:-translate-y-0.5 active:translate-y-0 focus:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer shadow-sm transform-gpu"
       >
         {activeProvider === "google" ? (
-          <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" aria-hidden="true" />
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#1f1f1f] border-t-transparent" aria-hidden="true" />
         ) : (
-          <GoogleIcon className="h-5 w-5 shrink-0" />
+          <GoogleIcon className="h-4 w-4 shrink-0" />
         )}
         <span>{activeProvider === "google" ? "Authenticating..." : "Continue with Google"}</span>
       </MagneticButton>
@@ -62,12 +62,12 @@ export function AuthProviders({ onProviderSelect, loading = false, activeProvide
         onClick={() => onProviderSelect("github")}
         disabled={loading}
         aria-label="Continue with GitHub"
-        className="flex w-full h-[52px] items-center justify-start gap-3 rounded-[14px] border border-white/10 bg-[#0c0c0e] px-[18px] text-sm font-semibold text-white transition-all duration-200 hover:bg-[#121216] hover:-translate-y-0.5 active:translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 disabled:pointer-events-none disabled:opacity-50 cursor-pointer shadow-md will-change-transform transform-gpu"
+        className="flex w-full h-[46px] items-center justify-center gap-3 rounded-xl border border-[#30363d] bg-[#24292f] px-[18px] text-xs font-bold text-[#ffffff] transition-all duration-150 hover:bg-[#2f363d] hover:-translate-y-0.5 active:translate-y-0 focus:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer shadow-sm transform-gpu"
       >
         {activeProvider === "github" ? (
-          <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" aria-hidden="true" />
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" aria-hidden="true" />
         ) : (
-          <GitHubIcon className="h-5 w-5 shrink-0" />
+          <GitHubIcon className="h-4 w-4 shrink-0" />
         )}
         <span>{activeProvider === "github" ? "Authenticating..." : "Continue with GitHub"}</span>
       </MagneticButton>

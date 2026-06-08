@@ -8,7 +8,7 @@ import {
   Download, Printer, RefreshCw, Clock3,
   Check, ExternalLink, Search,
   FileText, Archive, Target, BookOpen, AlertTriangle,
-  MessageSquare, X
+  MessageSquare, X, ChevronDown, ChevronRight, Play
 } from "lucide-react";
 import { FREE_GENERATIONS } from "@/lib/config";
 import { FeatureGateButton } from "./feature-status";
@@ -169,6 +169,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
   const [editDeliverablesText, setEditDeliverablesText] = useState("");
   const [editWhyItMatters, setEditWhyItMatters] = useState("");
   const [editNotesText, setEditNotesText] = useState("");
+  const [expandedMilestones, setExpandedMilestones] = useState<Record<string, boolean>>({});
 
   // ── Load and persist checked tasks via localStorage & Database ──────────
   const [checkedTasks, setCheckedTasks] = useState<Record<string, boolean>>({});
@@ -214,6 +215,12 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
     currentMilestoneDeliverables.filter((_, i) => checkedTasks[`${currentMilestone?.title}::d::${i}`]).length;
     
   const sprintProgress = totalSprintItems > 0 ? Math.round((completedSprintItems / totalSprintItems) * 100) : 0;
+
+  useEffect(() => {
+    if (currentMilestone) {
+      setExpandedMilestones(prev => ({ ...prev, [currentMilestone.title]: true }));
+    }
+  }, [currentMilestone?.title]);
 
   useEffect(() => {
     if (profile?.id) {
@@ -961,218 +968,276 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
             </div>
           </section>
 
-          {/* ══ SECTION 3: ROADMAP JOURNEY TIMELINE RAIL ═══════════════════════ */}
-          <section className="grid gap-5 md:grid-cols-[1.5fr_3.5fr]">
-            {/* Left Col: Interactive Milestone Rail */}
-            <div className="card-data rounded-[24px] p-5 flex flex-col space-y-4">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Timeline Journey</span>
-              <h4 className="text-sm font-bold text-white leading-none">Milestone Rail</h4>
-              
-              <div className="relative border-l border-white/5 pl-4 ml-2.5 py-2 space-y-5">
+          {/* ══ SECTION 3: ROADMAP JOURNEY TIMELINE (Linear-style Planning Studio) ════ */}
+          <section className="space-y-4">
+            <div>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest font-semibold">Workspace Journey</span>
+              <h3 className="text-base font-bold text-white mt-1">Planning Studio</h3>
+            </div>
+
+            <div className="card-data rounded-xl p-4 sm:p-6 overflow-hidden">
+              {/* Table Header Row */}
+              <div className="hidden md:grid md:grid-cols-[3fr_1.2fr_1.2fr_1.2fr_1fr] gap-4 px-4 py-2.5 text-[9px] text-slate-500 font-bold uppercase tracking-wider border-b border-white/5 mb-2">
+                <span>Milestone Track Title</span>
+                <span>Status</span>
+                <span>Difficulty</span>
+                <span>Effort Target</span>
+                <span>Items Cleared</span>
+              </div>
+
+              {/* Milestones Rows */}
+              <div className="space-y-2">
                 {allMilestones.map((m, idx) => {
                   const status = getMilestoneStatus(idx, completedCount, allMilestones.length);
-                  const isCurrentSelection = activeMilestone?.title === m.title;
                   const isCurrentActiveSprint = currentMilestone?.title === m.title;
-                  const isLocked = status === "upcoming" && !isCurrentActiveSprint;
+                  
+                  const msTasks = m.project_tasks ?? [];
+                  const msDels = m.deliverables ?? [];
+                  const msTotal = msTasks.length + msDels.length;
+                  const msCompleted =
+                    msTasks.filter((_, i) => checkedTasks[`${m.title}::t::${i}`]).length +
+                    msDels.filter((_, i) => checkedTasks[`${m.title}::d::${i}`]).length;
+
+                  const isExpanded = !!expandedMilestones[m.title];
+                  const isEditing = isEditingMilestone && activeMilestone?.title === m.title;
 
                   return (
-                    <div key={m.title} className="relative">
-                      {/* Connection node indicator */}
-                      <button
-                        disabled={isLocked}
+                    <div
+                      key={m.title}
+                      className="border border-white/5 bg-white/[0.01] hover:bg-white/[0.02] rounded-lg transition overflow-hidden"
+                    >
+                      {/* Row Header Grid */}
+                      <div
                         onClick={() => {
+                          setExpandedMilestones(prev => ({ ...prev, [m.title]: !prev[m.title] }));
                           setSelectedMilestoneTitle(m.title);
-                          setMilestoneTab("tasks");
                           setIsEditingMilestone(false);
                         }}
-                        className={`absolute -left-[23px] top-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition ${
-                          isCurrentSelection
-                            ? "bg-cyan-400 border-cyan-400 text-black shadow-[0_0_10px_rgba(34,211,238,0.4)]"
-                            : status === "completed"
-                            ? "bg-cyan-950/20 border-cyan-400 text-cyan-300"
-                            : isCurrentActiveSprint
-                            ? "bg-indigo-950/20 border-indigo-400 text-indigo-300 animate-pulse"
-                            : "bg-[#050507] border-slate-700 text-slate-500"
-                        }`}
+                        className="grid grid-cols-1 md:grid-cols-[3fr_1.2fr_1.2fr_1.2fr_1fr] gap-3 md:gap-4 items-center px-4 py-3 cursor-pointer text-xs select-none"
                       >
-                        {status === "completed" ? (
-                          <Check className="h-2.5 w-2.5 stroke-[3]" />
-                        ) : (
-                          <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                        )}
-                      </button>
+                        {/* Title & Chevron */}
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="text-slate-500">
+                            {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                          </span>
+                          <span className={`font-semibold truncate text-white leading-none ${status === "completed" ? "opacity-60" : ""}`}>
+                            {m.title}
+                          </span>
+                        </div>
 
-                      <div className="pl-1">
-                        <button
-                          disabled={isLocked}
-                          onClick={() => {
-                            setSelectedMilestoneTitle(m.title);
-                            setMilestoneTab("tasks");
-                            setIsEditingMilestone(false);
-                          }}
-                          className={`text-xs font-semibold text-left transition ${
-                            isCurrentSelection
-                              ? "text-cyan-300 font-bold"
-                              : isLocked
-                              ? "text-slate-600 cursor-not-allowed"
-                              : "text-slate-300 hover:text-white"
-                          }`}
-                        >
-                          {m.title}
-                          {isLocked && <span className="ml-1 text-[9px] text-slate-600 block">(Locked)</span>}
-                        </button>
+                        {/* Status tag */}
+                        <div className="flex items-center">
+                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                            status === "completed"
+                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/25"
+                              : isCurrentActiveSprint
+                              ? "bg-cyan-500/10 text-cyan-300 border border-cyan-400/25 animate-pulse"
+                              : "bg-white/5 text-slate-400 border border-white/5"
+                          }`}>
+                            {status === "completed" ? "Completed" : isCurrentActiveSprint ? "Active Sprint" : "Backlog"}
+                          </span>
+                        </div>
+
+                        {/* Difficulty */}
+                        <div className="text-slate-400">
+                          <span className="text-[10px] bg-white/[0.02] border border-white/5 rounded px-2 py-0.5 font-bold uppercase">
+                            {m.difficulty_level || "Intermediate"}
+                          </span>
+                        </div>
+
+                        {/* Duration / Effort */}
+                        <div className="text-slate-400 font-medium font-mono text-[11px]">
+                          {m.estimated_duration_weeks || 1} {m.estimated_duration_weeks === 1 ? "week" : "weeks"}
+                        </div>
+
+                        {/* Ratio stats */}
+                        <div className="text-slate-400 font-semibold text-[10px]">
+                          {msCompleted} / {msTotal} cleared
+                        </div>
                       </div>
+
+                      {/* Expanded Accordion Area */}
+                      {isExpanded && (
+                        <div className="border-t border-white/5 px-4 py-4 space-y-4 bg-white/[0.005]">
+                          {isEditing ? (
+                            /* Inline Row Editor Form */
+                            <div className="space-y-4 text-xs">
+                              <h4 className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest">Edit Milestone Specifications</h4>
+                              <label className="block">
+                                <span className="text-slate-500 font-semibold block mb-1">Why it matters</span>
+                                <textarea
+                                  value={editWhyItMatters}
+                                  onChange={(e) => setEditWhyItMatters(e.target.value)}
+                                  className="carved-input w-full rounded-lg px-3 py-2 h-16 resize-none"
+                                />
+                              </label>
+                              <div className="grid gap-4 md:grid-cols-2">
+                                <label className="block">
+                                  <span className="text-slate-500 font-semibold block mb-1">Milestone Tasks (one per line)</span>
+                                  <textarea
+                                    value={editTasksText}
+                                    onChange={(e) => setEditTasksText(e.target.value)}
+                                    className="carved-input w-full rounded-lg px-3 py-2 h-24 font-mono text-[10.5px] leading-relaxed"
+                                  />
+                                </label>
+                                <label className="block">
+                                  <span className="text-slate-500 font-semibold block mb-1">Deliverables (one per line)</span>
+                                  <textarea
+                                    value={editDeliverablesText}
+                                    onChange={(e) => setEditDeliverablesText(e.target.value)}
+                                    className="carved-input w-full rounded-lg px-3 py-2 h-24 font-mono text-[10.5px] leading-relaxed"
+                                  />
+                                </label>
+                              </div>
+                              <label className="block">
+                                <span className="text-slate-500 font-semibold block mb-1">Study/Concept Notes</span>
+                                <textarea
+                                  value={editNotesText}
+                                  onChange={(e) => setEditNotesText(e.target.value)}
+                                  className="carved-input w-full rounded-lg px-3 py-2 h-16"
+                                  placeholder="Add concepts, definitions, or study notes..."
+                                />
+                              </label>
+
+                              <div className="flex gap-2 justify-end pt-2 border-t border-white/5">
+                                <button
+                                  type="button"
+                                  onClick={() => setIsEditingMilestone(false)}
+                                  className="tactile-btn px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-400"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={saveMilestoneDetails}
+                                  className="tactile-btn tactile-btn-primary px-4 py-1.5 text-xs font-semibold rounded-lg text-black"
+                                >
+                                  Save Specifications
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            /* Structured Read-only Info */
+                            <div className="space-y-4">
+                              <div className="flex justify-between items-start border-b border-white/5 pb-2">
+                                <p className="text-xs text-slate-400 max-w-2xl leading-relaxed">
+                                  {m.why_it_matters || "No description set for this milestone."}
+                                </p>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedMilestoneTitle(m.title);
+                                    setEditWhyItMatters(m.why_it_matters || "");
+                                    setEditTasksText((m.project_tasks || []).join("\n"));
+                                    setEditDeliverablesText((m.deliverables || []).join("\n"));
+                                    setEditNotesText(m.notes || "");
+                                    setIsEditingMilestone(true);
+                                  }}
+                                  className="text-[10px] font-bold text-cyan-400 hover:text-white uppercase tracking-wider shrink-0"
+                                >
+                                  Edit specifications
+                                </button>
+                              </div>
+
+                              {/* Nested Tasks / Deliverables side-by-side layout */}
+                              <div className="grid gap-6 md:grid-cols-2 text-xs">
+                                {/* Tasks checklist */}
+                                <div className="space-y-2">
+                                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Milestone Tasks</span>
+                                  <div className="space-y-1.5">
+                                    {msTasks.map((t, tIdx) => {
+                                      const key = `${m.title}::t::${tIdx}`;
+                                      const isDone = checkedTasks[key] ?? false;
+                                      return (
+                                        <button
+                                          key={key}
+                                          onClick={(e) => { e.stopPropagation(); void toggleTaskState(key); }}
+                                          className={`w-full flex items-start gap-2.5 rounded-lg border p-2.5 text-left transition ${isDone
+                                            ? "border-cyan-500/5 bg-cyan-950/5 text-slate-500"
+                                            : "border-white/5 bg-white/[0.01] text-slate-300 hover:bg-white/[0.02]"
+                                          }`}
+                                        >
+                                          <span className={`mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition ${isDone ? "border-cyan-400 bg-cyan-400 text-black" : "border-slate-700"}`}>
+                                            {isDone && <Check className="h-2 w-2 stroke-[3]" />}
+                                          </span>
+                                          <span className={isDone ? "line-through opacity-60" : ""}>{t}</span>
+                                        </button>
+                                      );
+                                    })}
+                                    {msTasks.length === 0 && (
+                                      <p className="text-[10px] text-slate-600">No tasks defined.</p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Deliverables checklist */}
+                                <div className="space-y-2">
+                                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Milestone Deliverables</span>
+                                  <div className="space-y-1.5">
+                                    {msDels.map((d, dIdx) => {
+                                      const key = `${m.title}::d::${dIdx}`;
+                                      const isDone = checkedTasks[key] ?? false;
+                                      return (
+                                        <button
+                                          key={key}
+                                          onClick={(e) => { e.stopPropagation(); void toggleTaskState(key); }}
+                                          className={`w-full flex items-start gap-2.5 rounded-lg border p-2.5 text-left transition ${isDone
+                                            ? "border-cyan-500/5 bg-cyan-950/5 text-slate-500"
+                                            : "border-white/5 bg-white/[0.01] text-slate-300 hover:bg-white/[0.02]"
+                                          }`}
+                                        >
+                                          <span className={`mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition ${isDone ? "border-cyan-400 bg-cyan-400 text-black" : "border-slate-700"}`}>
+                                            {isDone && <Check className="h-2 w-2 stroke-[3]" />}
+                                          </span>
+                                          <span className={isDone ? "line-through opacity-60" : ""}>{d}</span>
+                                        </button>
+                                      );
+                                    })}
+                                    {msDels.length === 0 && (
+                                      <p className="text-[10px] text-slate-600">No deliverables defined.</p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Resources nested inline */}
+                              {m.resource_links?.length > 0 && (
+                                <div className="space-y-2 border-t border-white/5 pt-3">
+                                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Recommended Learning Materials</span>
+                                  <div className="grid gap-2 sm:grid-cols-2">
+                                    {m.resource_links.map((res, rIdx) => (
+                                      <a
+                                        key={rIdx}
+                                        href={res.url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="flex items-center justify-between border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] p-2.5 rounded-lg text-xs transition group"
+                                      >
+                                        <div className="truncate min-w-0">
+                                          <p className="font-semibold text-slate-300 group-hover:text-cyan-300 truncate">{res.label}</p>
+                                          <span className="text-[10px] text-slate-500 block">{res.provider}</span>
+                                        </div>
+                                        <ExternalLink className="h-3.5 w-3.5 text-slate-500 group-hover:text-cyan-400 shrink-0" />
+                                      </a>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Concept notes */}
+                              {m.notes && (
+                                <div className="p-3 bg-white/[0.01] border border-white/5 rounded-lg text-xs">
+                                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">Concept Notes</span>
+                                  <p className="text-slate-300 leading-relaxed font-medium">{m.notes}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
-              </div>
-            </div>
-
-            {/* Right Col: Milestone Details & Inspector */}
-            <div className="card-data rounded-[24px] p-6 flex flex-col justify-between border border-[#1f1f23]">
-              <div>
-                <div className="flex justify-between items-center border-b border-white/5 pb-3">
-                  <div>
-                    <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider block">Milestone Details</span>
-                    <h3 className="text-base font-bold text-white mt-1">
-                      {activeMilestone?.title || "Select a Milestone"}
-                    </h3>
-                  </div>
-                  {activeMilestone && !isEditingMilestone && (
-                    <button
-                      onClick={startEditingMilestone}
-                      className="text-xs font-semibold text-cyan-400 hover:text-white transition"
-                    >
-                      Edit details
-                    </button>
-                  )}
-                </div>
-
-                {activeMilestone && (
-                  <div className="mt-4">
-                    {isEditingMilestone ? (
-                      <div className="space-y-4 text-xs">
-                        <label className="block">
-                          <span className="text-slate-400 font-semibold block mb-1">Why it matters</span>
-                          <textarea
-                            value={editWhyItMatters}
-                            onChange={(e) => setEditWhyItMatters(e.target.value)}
-                            className="carved-input w-full rounded-xl px-3 py-2 h-20 resize-none"
-                          />
-                        </label>
-                        <label className="block">
-                          <span className="text-slate-400 font-semibold block mb-1">Milestone Tasks (one per line)</span>
-                          <textarea
-                            value={editTasksText}
-                            onChange={(e) => setEditTasksText(e.target.value)}
-                            className="carved-input w-full rounded-xl px-3 py-2 h-24 font-mono text-[10.5px] leading-relaxed"
-                          />
-                        </label>
-                        <label className="block">
-                          <span className="text-slate-400 font-semibold block mb-1">Deliverables (one per line)</span>
-                          <textarea
-                            value={editDeliverablesText}
-                            onChange={(e) => setEditDeliverablesText(e.target.value)}
-                            className="carved-input w-full rounded-xl px-3 py-2 h-20 font-mono text-[10.5px] leading-relaxed"
-                          />
-                        </label>
-                        <label className="block">
-                          <span className="text-slate-400 font-semibold block mb-1">Study/Concept Notes</span>
-                          <textarea
-                            value={editNotesText}
-                            onChange={(e) => setEditNotesText(e.target.value)}
-                            className="carved-input w-full rounded-xl px-3 py-2 h-20"
-                            placeholder="Add concepts, definitions, or study notes..."
-                          />
-                        </label>
-
-                        <div className="flex gap-2 justify-end pt-2 border-t border-white/5">
-                          <button
-                            type="button"
-                            onClick={() => setIsEditingMilestone(false)}
-                            className="tactile-btn px-4 py-2 text-xs font-semibold rounded-xl text-slate-400"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            onClick={saveMilestoneDetails}
-                            className="tactile-btn tactile-btn-primary px-5 py-2 text-xs font-semibold rounded-xl text-black"
-                          >
-                            Save specifications
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <p className="text-xs text-slate-400 leading-relaxed">
-                          {activeMilestone.why_it_matters || "No description set."}
-                        </p>
-
-                        <div className="mt-4 flex gap-1 rounded-xl bg-white/[0.02] border border-white/[0.05] p-1">
-                          {(["tasks", "deliverables", "resources"] as MilestoneTab[]).map(tab => (
-                            <button
-                              key={tab}
-                              onClick={() => setMilestoneTab(tab)}
-                              className={`flex-1 rounded-lg py-1.5 text-[10px] font-bold uppercase tracking-wider transition ${
-                                milestoneTab === tab ? "bg-white/[0.08] text-white border border-white/[0.08]" : "text-slate-400 hover:text-white"
-                              }`}
-                            >
-                              {tab}
-                            </button>
-                          ))}
-                        </div>
-
-                        <div className="mt-4 space-y-2 max-h-[180px] overflow-y-auto pr-1">
-                          {milestoneTab === "tasks" && (
-                            activeMilestone.project_tasks?.map((t, idx) => (
-                              <div key={idx} className="flex items-start gap-2 text-xs text-slate-300 border border-white/[0.05] bg-white/[0.02] p-2.5 rounded-lg">
-                                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0" />
-                                <span>{t}</span>
-                              </div>
-                            ))
-                          )}
-                          {milestoneTab === "deliverables" && (
-                            activeMilestone.deliverables?.map((d, idx) => (
-                              <div key={idx} className="flex items-start gap-2 text-xs text-slate-300 border border-white/[0.05] bg-white/[0.02] p-2.5 rounded-lg">
-                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
-                                <span>{d}</span>
-                              </div>
-                            ))
-                          )}
-                          {milestoneTab === "resources" && (
-                            activeMilestone.resource_links?.length > 0 ? (
-                              activeMilestone.resource_links.map((res, idx) => (
-                                <a
-                                  key={idx}
-                                  href={res.url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="flex items-center justify-between gap-3 border border-white/[0.05] bg-white/[0.02] hover:bg-cyan-950/5 hover:border-cyan-400/20 p-2.5 rounded-lg text-xs transition group"
-                                >
-                                  <div className="truncate min-w-0">
-                                    <p className="font-semibold text-slate-300 group-hover:text-cyan-300 truncate">{res.label}</p>
-                                    <span className="text-[10px] text-slate-500 block">{res.provider}</span>
-                                  </div>
-                                  <ExternalLink className="h-3.5 w-3.5 text-slate-600 group-hover:text-cyan-400 shrink-0" />
-                                </a>
-                              ))
-                            ) : (
-                              <p className="text-xs text-slate-500 py-4 text-center">No resources listed.</p>
-                            )
-                          )}
-                        </div>
-
-                        {activeMilestone.notes && (
-                          <div className="mt-4 p-3.5 rounded-xl border border-white/[0.06] bg-white/[0.02] text-xs">
-                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">Milestone Concept Notes</span>
-                            <p className="text-slate-300 leading-relaxed">{activeMilestone.notes}</p>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
           </section>

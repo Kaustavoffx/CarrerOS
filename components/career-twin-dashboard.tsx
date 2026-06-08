@@ -295,66 +295,41 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
         </div>
       </section>
 
-      {/* ═══ SPOTLIGHT CARD 1: CAREER HEALTH SUMMARY ═══════════════════════ */}
-      <section>
-        <div className="card-green rounded-[24px] p-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 h-32 w-48 bg-emerald-400/5 rounded-full blur-3xl pointer-events-none" />
-          
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-4">
-              <Award className="h-4.5 w-4.5 text-emerald-400" />
-              <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Career Health Summary</p>
-            </div>
+      {/* ═══ SPOTLIGHT CARD 1: ANALYST BRIEFING & EXECUTIVE SUMMARY ═══════════ */}
+      <section className="card-data rounded-xl p-6 relative overflow-hidden">
+        <div className="flex items-center gap-2 mb-4">
+          <Brain className="h-4 w-4 text-cyan-300" />
+          <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Analyst Briefing</span>
+        </div>
 
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {/* Metric 1 */}
-              <div className="bg-white/[0.03] border border-white/[0.06] backdrop-blur-md p-4 rounded-2xl">
-                <div className="flex justify-between items-baseline mb-2">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Readiness Score</span>
-                  <span className="text-lg font-extrabold text-cyan-300">{readiness}%</span>
-                </div>
-                <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-cyan-400" style={{ width: `${readiness}%` }} />
-                </div>
-                <span className="text-[9px] text-slate-500 block mt-1.5 font-medium">Target velocity: 85%+</span>
-              </div>
+        <div className="grid gap-6 lg:grid-cols-[2.5fr_1.5fr] items-center">
+          {/* Executive Summary paragraph */}
+          <div className="space-y-2.5">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Executive Summary</h3>
+            <p className="text-xs text-slate-300 leading-relaxed max-w-2xl font-medium">
+              Capability mapping indicates a strong baseline in <span className="text-white font-semibold">{strengths.slice(0, 3).join(", ")}</span>. 
+              Target readiness is calibrated at <span className="text-cyan-300 font-semibold">{readiness}%</span> against live specifications for <span className="text-white font-semibold">{profile?.goal || "SDE I"}</span>. 
+              {risks.length > 0 && !risks[0].includes("Nominal")
+                ? ` Warning: Active execution issues identified: ${risks.join(", ")}.` 
+                : " System logs report nominal execution risks."
+              } Core portfolio parameters are verified and operational.
+            </p>
+          </div>
 
-              {/* Metric 2 */}
-              <div className="bg-white/[0.03] border border-white/[0.06] backdrop-blur-md p-4 rounded-2xl">
-                <div className="flex justify-between items-baseline mb-2">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Market Match</span>
-                  <span className="text-lg font-extrabold text-cyan-300">{marketMatch}%</span>
-                </div>
-                <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-cyan-400" style={{ width: `${marketMatch}%` }} />
-                </div>
-                <span className="text-[9px] text-slate-500 block mt-1.5 font-medium">Based on skill tags count</span>
+          {/* Confidence indicators */}
+          <div className="grid grid-cols-2 gap-4 bg-white/[0.01] border border-white/5 p-4 rounded-xl">
+            {[
+              { label: "Target Readiness", val: `${readiness}%`, rate: "90% target" },
+              { label: "Market Match", val: `${marketMatch}%`, rate: "Optimal skills" },
+              { label: "Execution Index", val: `${execution}%`, rate: "Sprint clears" },
+              { label: "Velocity Index", val: `${momentum}%`, rate: "Daily logs" }
+            ].map(ind => (
+              <div key={ind.label}>
+                <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">{ind.label}</span>
+                <span className="text-base font-bold text-white mt-1 block font-geom">{ind.val}</span>
+                <span className="text-[9px] text-slate-500 block mt-0.5">{ind.rate}</span>
               </div>
-
-              {/* Metric 3 */}
-              <div className="bg-white/[0.03] border border-white/[0.06] backdrop-blur-md p-4 rounded-2xl">
-                <div className="flex justify-between items-baseline mb-2">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Momentum</span>
-                  <span className="text-lg font-extrabold text-cyan-300">{momentum}%</span>
-                </div>
-                <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-cyan-400" style={{ width: `${momentum}%` }} />
-                </div>
-                <span className="text-[9px] text-slate-500 block mt-1.5 font-medium">Active logs & milestones consistency</span>
-              </div>
-
-              {/* Metric 4 */}
-              <div className="bg-white/[0.03] border border-white/[0.06] backdrop-blur-md p-4 rounded-2xl">
-                <div className="flex justify-between items-baseline mb-2">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Execution</span>
-                  <span className="text-lg font-extrabold text-cyan-300">{execution}%</span>
-                </div>
-                <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-cyan-400" style={{ width: `${execution}%` }} />
-                </div>
-                <span className="text-[9px] text-slate-500 block mt-1.5 font-medium">Roadmap progress tracks completed</span>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -366,19 +341,19 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
         <div className="lg:col-span-2 space-y-6">
           
           {/* Career Intelligence Report */}
-          <section className="card-data rounded-[24px] p-6">
+          <section className="card-data rounded-xl p-6">
             <div className="flex items-center gap-2 border-b border-white/5 pb-3 mb-4">
-              <Brain className="h-4.5 w-4.5 text-indigo-400" />
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider">Career Intelligence Report</h2>
+              <Brain className="h-4 w-4 text-indigo-400" />
+              <h2 className="text-xs font-bold text-white uppercase tracking-wider">Career Intelligence Report</h2>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               {/* Strengths */}
-              <div className="border border-emerald-500/10 bg-emerald-500/[0.01] p-4 rounded-2xl">
+              <div className="border border-white/5 bg-white/[0.01] p-4 rounded-xl">
                 <span className="text-[9px] text-emerald-400 font-bold uppercase tracking-widest block mb-2">Strengths</span>
                 <div className="flex flex-wrap gap-1.5">
                   {strengths.map(s => (
-                    <span key={s} className="bg-emerald-950/20 border border-emerald-500/20 rounded px-2 py-0.5 text-[10px] text-emerald-300 font-medium">
+                    <span key={s} className="bg-emerald-950/20 border border-emerald-500/10 rounded px-2 py-0.5 text-[10px] text-emerald-300 font-medium">
                       {s}
                     </span>
                   ))}
@@ -386,11 +361,11 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
               </div>
 
               {/* Weaknesses */}
-              <div className="border border-amber-500/10 bg-amber-500/[0.01] p-4 rounded-2xl">
+              <div className="border border-white/5 bg-white/[0.01] p-4 rounded-xl">
                 <span className="text-[9px] text-amber-400 font-bold uppercase tracking-widest block mb-2">Weaknesses</span>
                 <div className="flex flex-wrap gap-1.5">
                   {weaknesses.map(w => (
-                    <span key={w} className="bg-amber-950/20 border border-amber-500/20 rounded px-2 py-0.5 text-[10px] text-amber-300 font-medium">
+                    <span key={w} className="bg-amber-950/20 border border-amber-500/10 rounded px-2 py-0.5 text-[10px] text-amber-300 font-medium">
                       {w}
                     </span>
                   ))}
@@ -398,7 +373,7 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
               </div>
 
               {/* Blind Spots */}
-              <div className="border border-rose-500/10 bg-rose-500/[0.01] p-4 rounded-2xl">
+              <div className="border border-white/5 bg-white/[0.01] p-4 rounded-xl">
                 <span className="text-[9px] text-rose-400 font-bold uppercase tracking-widest block mb-2">Blind Spots</span>
                 <ul className="space-y-1 text-[11px] text-slate-300 font-medium list-inside list-disc">
                   {blindSpots.map((b, i) => (
@@ -408,7 +383,7 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
               </div>
 
               {/* Opportunities & Risks */}
-              <div className="border border-indigo-500/10 bg-indigo-500/[0.01] p-4 rounded-2xl">
+              <div className="border border-white/5 bg-white/[0.01] p-4 rounded-xl">
                 <span className="text-[9px] text-indigo-400 font-bold uppercase tracking-widest block mb-2">Opportunities</span>
                 <ul className="space-y-1 text-[11px] text-slate-300 font-medium list-inside list-disc">
                   {opportunities.map((o, i) => (
@@ -417,11 +392,11 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
                 </ul>
               </div>
 
-              <div className="border border-white/5 bg-white/[0.02] p-4 rounded-2xl sm:col-span-2">
+              <div className="border border-white/5 bg-white/[0.01] p-4 rounded-xl sm:col-span-2">
                 <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest block mb-1">Execution Risks</span>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {risks.map((r, i) => (
-                    <span key={i} className="text-xs text-rose-300 bg-rose-950/10 border border-rose-500/20 px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5">
+                    <span key={i} className="text-xs text-rose-300 bg-rose-950/10 border border-rose-500/10 px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5">
                       <AlertCircle className="h-3 w-3 text-rose-400" />
                       {r}
                     </span>
@@ -432,11 +407,11 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
           </section>
 
           {/* Skill Portfolio (Editable inventory) */}
-          <section className="card-data rounded-[24px] p-6">
+          <section className="card-data rounded-xl p-6">
             <div className="flex justify-between items-center border-b border-white/5 pb-3 mb-4">
               <div className="flex items-center gap-2">
-                <Briefcase className="h-4.5 w-4.5 text-cyan-400" />
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Skill Portfolio</h2>
+                <Briefcase className="h-4 w-4 text-cyan-400" />
+                <h2 className="text-xs font-bold text-white uppercase tracking-wider">Skill Portfolio</h2>
               </div>
               <span className="text-[10px] text-slate-500 font-semibold">{userSkills.length} Verified skills</span>
             </div>
@@ -447,13 +422,13 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
                 value={newSkillText}
                 onChange={e => setNewSkillText(e.target.value)}
                 placeholder="Add new skill target..."
-                className="carved-input flex-1 px-3.5 py-2 text-xs rounded-xl"
+                className="carved-input flex-1 px-3.5 py-2 text-xs rounded-lg animate-none"
                 disabled={isAddingSkill}
               />
               <button
                 type="submit"
                 disabled={isAddingSkill || !newSkillText.trim()}
-                className="tactile-btn tactile-btn-primary px-4 py-2 text-xs rounded-xl inline-flex items-center gap-1 text-black font-bold"
+                className="tactile-btn tactile-btn-primary px-4 py-2 text-xs rounded-lg inline-flex items-center gap-1 text-black font-bold"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Add
@@ -464,7 +439,7 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
               {userSkills.map(s => (
                 <div
                   key={s}
-                  className="bg-white/[0.03] border border-white/[0.06] hover:border-cyan-400/20 pl-3 pr-2 py-1.5 rounded-xl text-xs text-white font-medium inline-flex items-center justify-between gap-3 group transition"
+                  className="bg-white/[0.02] border border-white/5 hover:border-cyan-400/20 pl-3 pr-2 py-1.5 rounded-lg text-xs text-white font-medium inline-flex items-center justify-between gap-3 group transition"
                 >
                   <span>{s}</span>
                   <button
@@ -483,15 +458,15 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
           </section>
 
           {/* Job Matches Opportunity Board */}
-          <section className="card-data rounded-[24px] p-6">
+          <section className="card-data rounded-xl p-6">
             <div className="flex items-center gap-2 border-b border-white/5 pb-3 mb-4">
-              <TrendingUp className="h-4.5 w-4.5 text-cyan-400" />
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider">Opportunity Match Board</h2>
+              <TrendingUp className="h-4 w-4 text-cyan-400" />
+              <h2 className="text-xs font-bold text-white uppercase tracking-wider">Opportunity Match Board</h2>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
               {jobs.map(job => (
-                <div key={job.id} className="border border-white/10 bg-white/[0.02] hover:border-cyan-400/20 p-4 rounded-2xl flex flex-col justify-between transition group">
+                <div key={job.id} className="border border-white/5 bg-white/[0.01] hover:border-cyan-400/20 p-4 rounded-xl flex flex-col justify-between transition group">
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-2.5">
                       <span className="h-7 w-7 rounded bg-white/5 border border-white/10 flex items-center justify-center font-bold text-white text-xs">
@@ -526,22 +501,22 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
         <div className="space-y-6">
 
           {/* AI Recommendations Action Queue */}
-          <section className="card-purple rounded-[24px] p-5">
+          <section className="card-purple rounded-xl p-5">
             <div className="flex items-center gap-2 border-b border-indigo-400/10 pb-3 mb-4">
-              <Sparkles className="h-4.5 w-4.5 text-indigo-400" />
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider">AI Recommendations</h2>
+              <Sparkles className="h-4 w-4 text-indigo-400" />
+              <h2 className="text-xs font-bold text-white uppercase tracking-wider">AI Recommendations</h2>
             </div>
 
-            <div className="space-y-3.5">
+            <div className="space-y-3">
               {recommendationsQueue.map(rec => {
                 const isChecked = checkedRecs[rec.id] ?? false;
                 return (
                   <div
                     key={rec.id}
-                    className={`border p-3.5 rounded-2xl transition duration-200 flex items-start gap-3 relative ${
+                    className={`border p-3.5 rounded-xl transition duration-200 flex items-start gap-3 relative ${
                       isChecked
                         ? "border-cyan-500/10 bg-cyan-950/[0.02] text-slate-500"
-                        : "border-white/[0.06] bg-white/[0.03] hover:border-cyan-400/20"
+                        : "border-white/5 bg-white/[0.01] hover:border-cyan-400/20"
                     }`}
                   >
                     <button
@@ -582,10 +557,10 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
           </section>
 
           {/* Career Journey Timeline */}
-          <section className="card-data rounded-[24px] p-5">
+          <section className="card-data rounded-xl p-5">
             <div className="flex items-center gap-2 border-b border-white/5 pb-3 mb-4">
-              <History className="h-4.5 w-4.5 text-cyan-400" />
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider">Career Timeline</h2>
+              <History className="h-4 w-4 text-cyan-400" />
+              <h2 className="text-xs font-bold text-white uppercase tracking-wider">Career Timeline</h2>
             </div>
 
             {sortedEvents.length === 0 ? (

@@ -99,14 +99,14 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
         className="fixed left-4 top-4 bottom-4 z-30 hidden flex-col rounded-[24px] border border-white/5 sidebar-glass xl:flex overflow-hidden"
       >
         {/* Logo row */}
-        <div className={`flex items-center gap-3 px-4 py-5 border-b border-white/5 ${collapsed ? "justify-center" : ""}`}>
+        <div className={`flex items-center gap-3 px-4 py-4 border-b border-white/5 ${collapsed ? "justify-center" : ""}`}>
           <Image
             src="/logo.png"
             alt="CareerOS"
-            width={36}
-            height={36}
+            width={32}
+            height={32}
             style={{
-              filter: "drop-shadow(0 0 8px rgba(0,216,255,.18)) drop-shadow(0 0 18px rgba(0,216,255,.08))"
+              filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.15))"
             }}
             className="shrink-0 object-contain"
           />
@@ -154,23 +154,15 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                 key={item.href}
                 href={item.href}
                 title={collapsed ? item.label : undefined}
-                className={`group sidebar-link relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors duration-[120ms] ${
+                className={`group sidebar-link relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs transition-colors duration-[150ms] ${
                   collapsed ? "justify-center" : ""
                 } ${
                   active
-                    ? "sidebar-active-item text-white"
-                    : "text-slate-500 hover:bg-white/[0.03] hover:text-slate-300"
+                    ? "sidebar-active-item text-white font-semibold"
+                    : "text-slate-500 hover:bg-white/[0.02] hover:text-slate-300"
                 }`}
               >
-                {/* Active left-bar indicator — keep layoutId for micro-animation */}
-                {active && (
-                  <motion.span
-                    layoutId="sidebar-active-bar"
-                    className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-cyan-400"
-                    transition={{ type: "spring", stiffness: 500, damping: 40 }}
-                  />
-                )}
-                <Icon className={`h-4 w-4 shrink-0 transition-colors duration-[120ms] ${active ? "text-cyan-300" : "text-slate-500 group-hover:text-slate-300"}`} />
+                <Icon className={`h-3.5 w-3.5 shrink-0 transition-colors duration-[150ms] ${active ? "text-cyan-300" : "text-slate-500 group-hover:text-slate-300"}`} />
                 <span
                   style={{
                     opacity: collapsed ? 0 : 1,
@@ -180,13 +172,10 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                     whiteSpace: "nowrap",
                     display: "block"
                   }}
-                  className="font-medium truncate"
+                  className="truncate"
                 >
                   {item.label}
                 </span>
-                {active && !collapsed && (
-                  <span className="ml-auto h-1.5 w-1.5 rounded-full bg-cyan-400 shrink-0" />
-                )}
               </Link>
             );
           })}

@@ -14,12 +14,12 @@
   --leading-snug: 1.15;
   --leading-regular: 1.45;
 
-  /* Duration tokens — never exceed 300ms */
-  --dur-hover: 120ms;
-  --dur-btn: 150ms;
+  /* Duration tokens — strictly 150ms-220ms */
+  --dur-hover: 150ms;
+  --dur-btn: 180ms;
   --dur-dropdown: 180ms;
   --dur-drawer: 220ms;
-  --dur-modal: 250ms;
+  --dur-modal: 220ms;
 }
 
 html {
@@ -48,71 +48,75 @@ main {
 
 /* Typography System Hierarchy */
 .text-hero-display {
-  font-size: 48px;
-  line-height: 1.0;
-  letter-spacing: -0.05em;
-}
-
-@media (min-width: 768px) {
-  .text-hero-display { font-size: 72px; }
-}
-
-.text-hero {
-  font-size: 38px;
+  font-size: 72px;
   line-height: 1.05;
   letter-spacing: -0.04em;
 }
 
-@media (min-width: 768px) {
-  .text-hero { font-size: 56px; }
+@media (min-width: 1024px) {
+  .text-hero-display { font-size: 96px; }
 }
 
-.text-section {
-  font-size: 28px;
+.text-hero {
+  font-size: 32px;
   line-height: 1.1;
   letter-spacing: -0.03em;
 }
 
 @media (min-width: 768px) {
-  .text-section { font-size: 40px; }
+  .text-hero { font-size: 40px; }
 }
 
-.text-dashboard {
-  font-size: 24px;
-  line-height: 1.15;
+.text-section {
+  font-size: 18px;
+  line-height: 1.2;
   letter-spacing: -0.02em;
 }
 
 @media (min-width: 768px) {
-  .text-dashboard { font-size: 32px; }
+  .text-section { font-size: 20px; }
 }
 
-.text-card {
+.text-dashboard {
   font-size: 18px;
-  line-height: 1.25;
+  line-height: 1.2;
   letter-spacing: -0.015em;
 }
 
 @media (min-width: 768px) {
-  .text-card { font-size: 20px; }
+  .text-dashboard { font-size: 20px; }
+}
+
+.text-card {
+  font-size: 14px;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+@media (min-width: 768px) {
+  .text-card { font-size: 16px; }
 }
 
 .text-body {
-  font-size: 16px;
-  line-height: var(--leading-regular);
+  font-size: 14px;
+  line-height: 1.5;
   letter-spacing: -0.005em;
 }
 
+@media (min-width: 768px) {
+  .text-body { font-size: 15px; }
+}
+
 .text-small {
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1.4;
   letter-spacing: 0;
 }
 
 .text-caption {
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.3;
-  letter-spacing: 0.28em;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
 }
 
@@ -120,13 +124,13 @@ main {
 .heading-hero {
   font-family: var(--font-geom);
   font-weight: 500;
-  line-height: 1.0;
-  letter-spacing: -0.05em;
-  font-size: 48px;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  font-size: 72px;
 }
 
-@media (min-width: 768px) {
-  .heading-hero { font-size: 72px; }
+@media (min-width: 1024px) {
+  .heading-hero { font-size: 96px; }
 }
 
 .heading-section {
@@ -134,11 +138,11 @@ main {
   font-weight: 500;
   line-height: 1.1;
   letter-spacing: -0.03em;
-  font-size: 32px;
+  font-size: 18px;
 }
 
 @media (min-width: 768px) {
-  .heading-section { font-size: 40px; }
+  .heading-section { font-size: 20px; }
 }
 
 .heading-dashboard {
@@ -146,49 +150,47 @@ main {
   font-weight: 500;
   line-height: var(--leading-snug);
   letter-spacing: -0.02em;
-  font-size: 26px;
+  font-size: 18px;
 }
 
 @media (min-width: 768px) {
-  .heading-dashboard { font-size: 32px; }
+  .heading-dashboard { font-size: 20px; }
 }
 
 .heading-card {
   font-family: var(--font-geom);
   font-weight: 500;
   line-height: 1.25;
-  letter-spacing: -0.015em;
-  font-size: 20px;
+  letter-spacing: -0.01em;
+  font-size: 14px;
 }
 
 .body-large {
   font-family: var(--font-geom);
   font-weight: 400;
-  font-size: 16px;
+  font-size: 15px;
   line-height: var(--leading-regular);
-  letter-spacing: -0.01em;
 }
 
 .body {
   font-family: var(--font-geom);
   font-weight: 400;
-  font-size: 16px;
+  font-size: 14px;
   line-height: var(--leading-regular);
-  letter-spacing: -0.005em;
 }
 
 .small {
   font-family: var(--font-geom);
   font-weight: 400;
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1.4;
 }
 
 .caption {
   font-family: var(--font-geom);
   font-weight: 500;
-  font-size: 12px;
-  letter-spacing: 0.28em;
+  font-size: 11px;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
 }
 
@@ -204,73 +206,65 @@ main {
 /* Custom dark liquid interface container classes */
 @layer components {
   .liquid-panel {
-    background: linear-gradient(
-      180deg,
-      rgba(8, 12, 20, 0.22),
-      rgba(8, 12, 20, 0.35)
-    ) !important;
+    background: rgba(8, 12, 20, 0.38) !important;
     backdrop-filter: blur(16px) !important;
-    border: 1px solid rgba(0, 216, 255, 0.10) !important;
-    border-radius: 32px !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
+    border: 1px solid rgba(255, 255, 255, 0.04) !important;
+    border-radius: 12px !important;
     position: relative;
     overflow: hidden;
   }
 
   /* ── CARD SYSTEM V4 — LIQUID GLASS MIGRATION ──────────────────────────── */
 
-  .card-data, .liquid-card, .card-spotlight, .card-action, .card-insight, .card-gold, .card-purple, .card-green, .card-red, .card-danger {
-    backdrop-filter: blur(14px) saturate(130%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
-    border-radius: 24px !important;
-    background: rgba(6, 10, 18, 0.55) !important;
+  .card-data, .liquid-card, .card-spotlight, .card-action, .card-insight, .card-gold, .card-purple, .card-green, .card-red, .card-danger, .card-mission {
+    backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.04) !important;
+    border-radius: 12px !important;
+    background: rgba(8, 12, 20, 0.38) !important;
   }
 
   /* Specific enhancements for semantic variants to keep branding and context */
   .card-spotlight {
-    border-color: rgba(0, 216, 255, 0.25) !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), 0 0 25px rgba(0, 216, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.04) !important;
   }
   .card-spotlight::before {
     content: "";
     position: absolute;
     inset: 0;
     z-index: 0;
-    background: radial-gradient(circle at 80% 20%, rgba(0, 216, 255, 0.12), transparent 50%);
+    background: radial-gradient(circle at 80% 20%, rgba(0, 216, 255, 0.04), transparent 50%);
     pointer-events: none;
   }
 
   .card-action {
-    border-left: 2.5px solid rgba(0, 216, 255, 0.5) !important;
-    transition: border-color 150ms ease, background-color 150ms ease !important;
+    border-left: 2px solid rgba(0, 216, 255, 0.15) !important;
+    transition: border-color var(--dur-hover) ease, background-color var(--dur-hover) ease !important;
     will-change: transform;
     transform: translateZ(0);
   }
   .card-action:hover {
-    background: rgba(10, 20, 35, 0.45) !important;
-    border-left-color: rgba(0, 216, 255, 0.8) !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-left-color: rgba(0, 216, 255, 0.45) !important;
   }
 
   .card-purple, .card-insight {
-    background: linear-gradient(135deg, rgba(130, 120, 255, 0.08), rgba(6, 10, 18, 0.55)) !important;
-    border-color: rgba(130, 120, 255, 0.15) !important;
+    background: linear-gradient(135deg, rgba(130, 120, 255, 0.02), rgba(8, 12, 20, 0.38)) !important;
+    border-color: rgba(130, 120, 255, 0.08) !important;
   }
 
   .card-green {
-    background: linear-gradient(135deg, rgba(0, 255, 180, 0.06), rgba(6, 10, 18, 0.55)) !important;
-    border-color: rgba(0, 220, 150, 0.18) !important;
+    background: linear-gradient(135deg, rgba(0, 255, 180, 0.02), rgba(8, 12, 20, 0.38)) !important;
+    border-color: rgba(0, 220, 150, 0.08) !important;
   }
 
   .card-red {
-    background: linear-gradient(135deg, rgba(255, 80, 100, 0.06), rgba(6, 10, 18, 0.55)) !important;
-    border-color: rgba(255, 80, 100, 0.18) !important;
+    background: linear-gradient(135deg, rgba(255, 80, 100, 0.02), rgba(8, 12, 20, 0.38)) !important;
+    border-color: rgba(255, 80, 100, 0.08) !important;
   }
 
   .card-danger {
-    background: rgba(45, 10, 15, 0.35) !important;
-    border-color: rgba(255, 70, 85, 0.15) !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
+    background: rgba(45, 10, 15, 0.15) !important;
+    border-color: rgba(255, 70, 85, 0.08) !important;
   }
 
   /* Skeleton Loading — GPU keyframe only */
@@ -383,20 +377,18 @@ main {
 
   /* V4 Floating Sidebar classes */
   .sidebar-glass {
-    background: rgba(4, 8, 14, 0.38) !important;
+    background: rgba(8, 12, 20, 0.38) !important;
     backdrop-filter: blur(16px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.04) !important;
   }
 
   .sidebar-active-item {
-    background: linear-gradient(
-      90deg,
-      rgba(0, 216, 255, 0.16),
-      rgba(0, 216, 255, 0.04)
+    background: radial-gradient(
+      circle at center,
+      rgba(0, 216, 255, 0.06) 0%,
+      rgba(0, 216, 255, 0.01) 100%
     ) !important;
-    border: 1px solid rgba(0, 216, 255, 0.18) !important;
-    box-shadow: 0 0 20px rgba(0, 216, 255, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.02) !important;
     color: #ffffff !important;
   }
 
@@ -423,11 +415,10 @@ main {
 
   /* V4 Mission card cyan -> blue glow */
   .card-mission {
-    background: rgba(6, 10, 18, 0.32) !important;
-    backdrop-filter: blur(14px) saturate(140%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
-    border-radius: 24px !important;
+    background: rgba(8, 12, 20, 0.38) !important;
+    backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.04) !important;
+    border-radius: 12px !important;
     position: relative;
     overflow: hidden;
   }
@@ -438,8 +429,8 @@ main {
     z-index: 0;
     background: radial-gradient(
       circle at 50% 50%,
-      rgba(0, 216, 255, 0.15) 0%,
-      rgba(30, 80, 255, 0.05) 50%,
+      rgba(0, 216, 255, 0.05) 0%,
+      rgba(30, 80, 255, 0.02) 50%,
       transparent 80%
     );
     pointer-events: none;

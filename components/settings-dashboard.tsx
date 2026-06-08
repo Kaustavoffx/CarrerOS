@@ -31,7 +31,6 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
 
   const [providers, setProviders] = useState<AiProviderStatusRecord[]>(initialProviders);
 
-  
   const [fullName, setFullName] = useState(profile?.full_name ?? "");
   const [goal, setGoal] = useState(profile?.goal ?? "");
   const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>(profile?.experience_level ?? "Junior");
@@ -48,8 +47,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
   const [milestoneAlerts, setMilestoneAlerts] = useState(true);
   const [roadmapUpdates, setRoadmapUpdates] = useState(true);
 
-  // Danger zone drawer state
-  const [isDangerZoneExpanded, setIsDangerZoneExpanded] = useState(false);
+  // Danger zone modal state
   const [dangerModalAction, setDangerModalAction] = useState<"reset" | "roadmaps" | "mentor" | "account" | null>(null);
   const [dangerConfirmText, setDangerConfirmText] = useState("");
   const [executingDanger, setExecutingDanger] = useState(false);
@@ -213,14 +211,14 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
       {/* Danger Confirmation Modal */}
       {dangerModalAction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-[#0b0b0e] border border-rose-500/20 rounded-[20px] max-w-md w-full p-6 space-y-4 shadow-2xl">
+          <div className="bg-[#0b0b0e] border border-rose-500/20 rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl">
             <div className="flex items-center gap-3 text-rose-500">
               <AlertTriangle className="h-6 w-6" />
-              <h4 className="text-lg font-bold">Confirm Destructive Action</h4>
+              <h4 className="text-sm font-bold uppercase tracking-wider">Confirm Destructive Action</h4>
             </div>
 
             <p className="text-xs text-slate-400 leading-relaxed">
-              This action is permanent. Please type <span className="font-mono text-white font-bold bg-white/5 px-1.5 py-0.5 rounded">CONFIRM</span> to proceed.
+              This action is permanent and cannot be undone. Please type <span className="font-mono text-white font-bold bg-white/5 px-1.5 py-0.5 rounded">CONFIRM</span> to proceed.
             </p>
 
             <input
@@ -228,7 +226,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
               value={dangerConfirmText}
               onChange={(e) => setDangerConfirmText(e.target.value)}
               placeholder="Type CONFIRM"
-              className="carved-input w-full text-xs rounded-xl px-3 py-2 text-white"
+              className="carved-input w-full text-xs rounded-lg px-3 py-2 text-white"
             />
 
             <div className="flex gap-3 pt-2">
@@ -238,7 +236,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
                   setDangerModalAction(null);
                   setDangerConfirmText("");
                 }}
-                className="tactile-btn flex-1 min-h-[44px] rounded-xl text-xs font-bold text-slate-300"
+                className="tactile-btn flex-1 py-2 rounded-lg text-xs font-bold text-slate-300"
               >
                 Cancel
               </button>
@@ -247,7 +245,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
                 type="button"
                 onClick={executeDangerAction}
                 disabled={dangerConfirmText !== "CONFIRM" || executingDanger}
-                className="tactile-btn border-rose-500/25 bg-rose-950/20 hover:bg-rose-950/40 text-rose-300 disabled:opacity-50 flex-1 min-h-[44px] rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
+                className="tactile-btn border-rose-500/25 bg-rose-950/20 hover:bg-rose-950/40 text-rose-300 disabled:opacity-50 flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2"
               >
                 {executingDanger && <span className="loading-spinner text-[10px]" />}
                 Confirm
@@ -257,27 +255,30 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
         </div>
       )}
 
-      {/* ═══ SPOTLIGHT CARD 1: AI PROVIDER CARD ═══════════════════════════ */}
-      <section className="card-spotlight rounded-[24px] p-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 h-32 w-48 bg-cyan-400/5 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-4 border-b border-cyan-400/20 pb-3">
-            <Image src="/logo.png" alt="System" width={20} height={20} className="object-contain shrink-0" />
-            <h3 className="text-sm font-bold text-cyan-400 uppercase tracking-wider">System Configuration</h3>
+      {/* ═══ SECTION 1: SYSTEM AI PROVIDERS ═══════════════════════════════ */}
+      <section className="card-data rounded-xl p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <Image src="/logo.png" alt="System" width={16} height={16} className="object-contain shrink-0" />
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider">AI Integrations</h3>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Configure intelligence engines for curriculum roadmap generation, interview simulations, and AI coaching.
+            </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="lg:col-span-2 space-y-3">
             {providers.map((p) => {
               const isManaging = showKeyInputs[p.provider];
               return (
-                <div key={p.provider} className="bg-white/[0.03] border border-white/[0.06] hover:border-cyan-400/20 p-4 rounded-2xl transition">
-                  <div className="flex justify-between items-start mb-2">
+                <div key={p.provider} className="border border-white/[0.04] bg-white/[0.01] p-4 rounded-lg flex flex-col gap-3 transition">
+                  <div className="flex justify-between items-center">
                     <div>
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                         {p.provider === "openai" ? "OpenAI Model Suite" : "Gemini Engine"}
                       </span>
-                      <span className="text-xs text-white font-mono mt-1 block">
+                      <span className="text-[11px] text-slate-500 font-mono mt-0.5 block">
                         {maskKey(p.masked_key)}
                       </span>
                     </div>
@@ -289,34 +290,34 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
                   </div>
 
                   {isManaging && (
-                    <div className="pt-2 flex gap-2 mb-3">
+                    <div className="flex gap-2 pt-2">
                       <input
                         type="password"
                         value={providerKeys[p.provider]}
                         onChange={e => setProviderKeys(prev => ({ ...prev, [p.provider]: e.target.value }))}
-                        placeholder="Paste sk-..."
-                        className="carved-input flex-1 text-xs rounded-xl px-2.5 py-1.5"
+                        placeholder="Paste credential token..."
+                        className="carved-input flex-1 text-xs rounded-lg px-2.5 py-1.5"
                       />
                       <button
                         onClick={() => saveProviderKey(p.provider)}
-                        className="tactile-btn tactile-btn-primary px-3 py-1.5 text-[10px] rounded-xl font-bold"
+                        className="tactile-btn tactile-btn-primary px-3 py-1.5 text-[10px] rounded-lg font-bold"
                       >
                         Save
                       </button>
                     </div>
                   )}
 
-                  <div className="flex gap-2 mt-4 pt-3 border-t border-white/5">
+                  <div className="flex gap-2 pt-1">
                     <button
                       onClick={() => setShowKeyInputs(prev => ({ ...prev, [p.provider]: !isManaging }))}
-                      className="tactile-btn border border-white/5 bg-white/5 text-[10px] font-bold px-3 py-1.5 rounded-xl flex-1 text-white"
+                      className="tactile-btn border border-white/5 bg-white/5 text-[10px] font-bold px-3 py-1.5 rounded-lg flex-1 text-white text-center"
                     >
                       {p.connected ? "Update Key" : "Connect Key"}
                     </button>
                     {p.connected && (
                       <button
                         onClick={() => removeProviderKey(p.provider)}
-                        className="tactile-btn border border-rose-500/10 bg-rose-500/[0.02] text-rose-300 text-[10px] font-bold px-3 py-1.5 rounded-xl flex-1"
+                        className="tactile-btn border border-rose-500/10 bg-rose-500/[0.02] text-rose-300 text-[10px] font-bold px-3 py-1.5 rounded-lg flex-1 text-center"
                       >
                         Disconnect
                       </button>
@@ -329,47 +330,48 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
         </div>
       </section>
 
-      {/* Central 2-Column Panels */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
-        {/* Account settings */}
-        <section className="card-data rounded-[24px] p-6">
-          <div className="border-b border-white/5 pb-3 mb-4">
+      {/* ═══ SECTION 2: ACCOUNT PARAMETERS ═══════════════════════════════ */}
+      <section className="card-data rounded-xl p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="space-y-1.5">
             <div className="flex items-center gap-2">
-              <User className="h-4.5 w-4.5 text-cyan-400" />
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Account Specifications</h3>
+              <User className="h-4 w-4 text-cyan-400" />
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider">Account Settings</h3>
             </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Manage core user configurations, career target goals, and local system timezone coordinates.
+            </p>
           </div>
 
-          <div className="space-y-4 text-xs">
-            <label className="block">
-              <span className="text-slate-400 font-semibold block mb-1">Full Name</span>
-              <input
-                type="text"
-                value={fullName}
-                onChange={e => setFullName(e.target.value)}
-                className="carved-input w-full px-3 py-2 rounded-xl"
-              />
-            </label>
-
-            <label className="block">
-              <span className="text-slate-400 font-semibold block mb-1">Auth Email Address</span>
-              <input
-                type="email"
-                value={userEmail || "user@careeros.com"}
-                disabled
-                className="carved-input w-full px-3 py-2 rounded-xl opacity-50 cursor-not-allowed"
-              />
-            </label>
-
-            <div className="grid grid-cols-2 gap-3">
+          <div className="lg:col-span-2 space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2 text-xs">
               <label className="block">
-                <span className="text-slate-400 font-semibold block mb-1">Target Goal Target</span>
+                <span className="text-slate-400 font-semibold block mb-1">Full Name</span>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={e => setFullName(e.target.value)}
+                  className="carved-input w-full px-3 py-2 rounded-lg"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-slate-400 font-semibold block mb-1">Auth Email</span>
+                <input
+                  type="email"
+                  value={userEmail || ""}
+                  disabled
+                  className="carved-input w-full px-3 py-2 rounded-lg opacity-40 cursor-not-allowed"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-slate-400 font-semibold block mb-1">Career Goal</span>
                 <input
                   type="text"
                   value={goal}
                   onChange={e => setGoal(e.target.value)}
-                  className="carved-input w-full px-3 py-2 rounded-xl"
+                  className="carved-input w-full px-3 py-2 rounded-lg"
                 />
               </label>
 
@@ -378,7 +380,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
                 <select
                   value={experienceLevel}
                   onChange={e => setExperienceLevel(e.target.value as ExperienceLevel)}
-                  className="carved-input w-full px-2.5 py-2 rounded-xl"
+                  className="carved-input w-full px-2.5 py-2 rounded-lg"
                 >
                   <option value="Student">Student</option>
                   <option value="Junior">Junior</option>
@@ -387,215 +389,234 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
                   <option value="Switcher">Switcher</option>
                 </select>
               </label>
+
+              <label className="block sm:col-span-2">
+                <span className="text-slate-400 font-semibold block mb-1">Timezone Coordinates</span>
+                <input
+                  type="text"
+                  value={timezone}
+                  onChange={e => setTimezone(e.target.value)}
+                  className="carved-input w-full px-3 py-2 rounded-lg"
+                />
+              </label>
             </div>
 
-            <label className="block">
-              <span className="text-slate-400 font-semibold block mb-1">Operator Timezone</span>
-              <input
-                type="text"
-                value={timezone}
-                onChange={e => setTimezone(e.target.value)}
-                className="carved-input w-full px-3 py-2 rounded-xl"
-              />
-            </label>
-
-            <button
-              onClick={saveAccountData}
-              disabled={savingAccount}
-              className="tactile-btn tactile-btn-primary w-full py-2.5 rounded-xl text-xs font-bold mt-2 flex items-center justify-center gap-1.5"
-            >
-              {savingAccount ? <span className="loading-spinner border-slate-900" /> : <Check className="h-4 w-4" />}
-              Save Account Data
-            </button>
-          </div>
-        </section>
-
-        {/* Preferences Panel */}
-        <section className="card-data rounded-[24px] p-6">
-          <div className="border-b border-white/5 pb-3 mb-4">
-            <div className="flex items-center gap-2">
-              <Sliders className="h-4.5 w-4.5 text-cyan-400" />
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Workspace Preferences</h3>
-            </div>
-          </div>
-
-          <div className="space-y-4 text-xs">
-            <label className="block">
-              <span className="text-slate-400 font-semibold block mb-1">Theme Mode</span>
-              <select
-                value={theme}
-                onChange={e => setTheme(e.target.value)}
-                className="carved-input w-full px-2.5 py-2 rounded-xl"
+            <div className="pt-2">
+              <button
+                onClick={saveAccountData}
+                disabled={savingAccount}
+                className="tactile-btn tactile-btn-primary w-full py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5"
               >
-                <option value="dark">Dark Theme Premium (Default)</option>
-                <option value="light">Light Slate Glass</option>
-                <option value="system">System Synced</option>
-              </select>
-            </label>
-
-            {/* Simple toggle controls */}
-            <div className="space-y-3 pt-2 border-t border-white/5">
-              <label className="flex items-center justify-between cursor-pointer p-1">
-                <div>
-                  <span className="text-xs font-bold text-white block">Compact Padding Layout</span>
-                  <span className="text-[10px] text-slate-500">Reduce structural spacing dimensions</span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={compactMode}
-                  onChange={e => setCompactMode(e.target.checked)}
-                  className="w-8 h-4 bg-white/[0.05] border border-white/10 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
-                />
-              </label>
-
-              <label className="flex items-center justify-between cursor-pointer p-1">
-                <div>
-                  <span className="text-xs font-bold text-white block">Micro-Animations</span>
-                  <span className="text-[10px] text-slate-500">Enable smooth visual state shifts</span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={animationsEnabled}
-                  onChange={e => setAnimationsEnabled(e.target.checked)}
-                  className="w-8 h-4 bg-white/[0.05] border border-white/10 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
-                />
-              </label>
-
-              <label className="flex items-center justify-between cursor-pointer p-1">
-                <div>
-                  <span className="text-xs font-bold text-white block">Milestone Completion Alerts</span>
-                  <span className="text-[10px] text-slate-500">Alert triggers on sprint completions</span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={milestoneAlerts}
-                  onChange={e => setMilestoneAlerts(e.target.checked)}
-                  className="w-8 h-4 bg-white/[0.05] border border-white/10 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
-                />
-              </label>
-
-              <label className="flex items-center justify-between cursor-pointer p-1">
-                <div>
-                  <span className="text-xs font-bold text-white block">AI Re-routing alerts</span>
-                  <span className="text-[10px] text-slate-500">Proactive alternate track suggestions</span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={roadmapUpdates}
-                  onChange={e => setRoadmapUpdates(e.target.checked)}
-                  className="w-8 h-4 bg-white/[0.05] border border-white/10 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
-                />
-              </label>
+                {savingAccount ? <span className="loading-spinner border-slate-900" /> : <Check className="h-4 w-4" />}
+                Save Account Parameters
+              </button>
             </div>
-
-            <MagneticButton type="button" onClick={savePreferences} className="tactile-btn w-full py-2.5 rounded-xl text-xs font-bold mt-2">
-              Save Workspace Preferences
-            </MagneticButton>
           </div>
-        </section>
-
-      </div>
-
-      {/* Exports & Backups */}
-      <section className="card-data rounded-[24px] p-6">
-        <div className="border-b border-white/5 pb-3 mb-4 flex items-center gap-2">
-          <Download className="h-4.5 w-4.5 text-cyan-400" />
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider">Export & Portability Backups</h3>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-3 text-xs">
-          <button
-            onClick={() => triggerExport("Profile data packet exported.")}
-            className="tactile-btn p-3 rounded-xl text-left text-white flex flex-col justify-between"
-          >
-            <span className="font-bold block">Export Identity Profile</span>
-            <span className="text-[9px] text-slate-500 block mt-2 font-mono">14.2 KB</span>
-          </button>
-          <button
-            onClick={() => triggerExport("Curriculum roadmaps package compiled.")}
-            className="tactile-btn p-3 rounded-xl text-left text-white flex flex-col justify-between"
-          >
-            <span className="font-bold block">Export Active Roadmaps</span>
-            <span className="text-[9px] text-slate-500 block mt-2 font-mono">450 KB</span>
-          </button>
-          <button
-            onClick={() => triggerExport("Cloud backup synced successfully.")}
-            className="tactile-btn p-3 rounded-xl text-left text-white flex flex-col justify-between"
-          >
-            <span className="font-bold block">Generate Database Backup</span>
-            <span className="text-[9px] text-slate-500 block mt-2 font-mono">Complete Snapshot</span>
-          </button>
         </div>
       </section>
 
-      {/* ═══ COLLAPSED DANGER ZONE DRAWER (Bottom collapsed) ═══════════════ */}
-      <section className="card-danger rounded-[24px] p-4 relative overflow-hidden transition-all duration-300">
-        <button
-          onClick={() => setIsDangerZoneExpanded(!isDangerZoneExpanded)}
-          className="w-full flex items-center justify-between text-xs font-bold text-rose-400 py-1"
-        >
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4.5 w-4.5 animate-pulse" />
-            <span>Danger Zone Controls</span>
+      {/* ═══ SECTION 3: WORKSPACE PREFERENCES ════════════════════════════ */}
+      <section className="card-data rounded-xl p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <Sliders className="h-4 w-4 text-cyan-400" />
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider">Interface Config</h3>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Personalize theme values, visual performance layers, and structural notification settings.
+            </p>
           </div>
-          {isDangerZoneExpanded ? <ChevronUp className="h-4.5 w-4.5" /> : <ChevronDown className="h-4.5 w-4.5" />}
-        </button>
 
-        {isDangerZoneExpanded && (
-          <div className="mt-4 pt-4 border-t border-rose-500/10 space-y-3.5 text-xs">
-            <div className="flex justify-between items-center bg-rose-950/10 border border-rose-500/15 p-3.5 rounded-xl">
+          <div className="lg:col-span-2 space-y-4">
+            <div className="space-y-4 text-xs">
+              <label className="block">
+                <span className="text-slate-400 font-semibold block mb-1">Color Palette Profile</span>
+                <select
+                  value={theme}
+                  onChange={e => setTheme(e.target.value)}
+                  className="carved-input w-full px-2.5 py-2 rounded-lg"
+                >
+                  <option value="dark">Dark Theme Premium (Default)</option>
+                  <option value="light">Light Slate Glass</option>
+                  <option value="system">System Synced</option>
+                </select>
+              </label>
+
+              <div className="space-y-3 pt-3 border-t border-white/5">
+                <label className="flex items-center justify-between cursor-pointer p-1">
+                  <div>
+                    <span className="text-xs font-bold text-white block">Compact Density Layout</span>
+                    <span className="text-[10px] text-slate-500">Reduce spacing scale across workspace dashboard modules</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={compactMode}
+                    onChange={e => setCompactMode(e.target.checked)}
+                    className="w-8 h-4 bg-white/[0.05] border border-white/10 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between cursor-pointer p-1">
+                  <div>
+                    <span className="text-xs font-bold text-white block">Micro-Animations</span>
+                    <span className="text-[10px] text-slate-500">Render smooth UI transition micro-effects</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={animationsEnabled}
+                    onChange={e => setAnimationsEnabled(e.target.checked)}
+                    className="w-8 h-4 bg-white/[0.05] border border-white/10 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between cursor-pointer p-1">
+                  <div>
+                    <span className="text-xs font-bold text-white block">Milestone Completion Signals</span>
+                    <span className="text-[10px] text-slate-500">Display visual confirmations when finishing roadmap items</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={milestoneAlerts}
+                    onChange={e => setMilestoneAlerts(e.target.checked)}
+                    className="w-8 h-4 bg-white/[0.05] border border-white/10 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between cursor-pointer p-1">
+                  <div>
+                    <span className="text-xs font-bold text-white block">AI Path Alerts</span>
+                    <span className="text-[10px] text-slate-500">Proactively prompt notifications for dynamic path corrections</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={roadmapUpdates}
+                    onChange={e => setRoadmapUpdates(e.target.checked)}
+                    className="w-8 h-4 bg-white/[0.05] border border-white/10 rounded-full appearance-none checked:bg-cyan-400 relative transition-colors cursor-pointer before:content-[''] before:absolute before:left-0.5 before:top-0.5 before:w-3 before:h-3 before:bg-white before:rounded-full checked:before:translate-x-4 before:transition-transform"
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <MagneticButton type="button" onClick={savePreferences} className="tactile-btn w-full py-2.5 rounded-lg text-xs font-bold">
+                Save Workspace Preferences
+              </MagneticButton>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ SECTION 4: DATA PORTABILITY ═════════════════════════════════ */}
+      <section className="card-data rounded-xl p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <Download className="h-4.5 w-4.5 text-cyan-400" />
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider">Backups & Portability</h3>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Export data packets containing your profile specifications, compiled roadmaps, or database snapshots.
+            </p>
+          </div>
+
+          <div className="lg:col-span-2">
+            <div className="grid gap-3 sm:grid-cols-3 text-xs">
+              <button
+                onClick={() => triggerExport("Profile data packet exported.")}
+                className="tactile-btn p-3 rounded-lg text-left text-white flex flex-col justify-between hover:bg-white/[0.08]"
+              >
+                <span className="font-bold block text-[11px] leading-tight">Export Identity</span>
+                <span className="text-[9px] text-slate-500 block mt-2 font-mono">14.2 KB</span>
+              </button>
+              
+              <button
+                onClick={() => triggerExport("Curriculum roadmaps package compiled.")}
+                className="tactile-btn p-3 rounded-lg text-left text-white flex flex-col justify-between hover:bg-white/[0.08]"
+              >
+                <span className="font-bold block text-[11px] leading-tight">Export Roadmaps</span>
+                <span className="text-[9px] text-slate-500 block mt-2 font-mono">450 KB</span>
+              </button>
+              
+              <button
+                onClick={() => triggerExport("Cloud backup synced successfully.")}
+                className="tactile-btn p-3 rounded-lg text-left text-white flex flex-col justify-between hover:bg-white/[0.08]"
+              >
+                <span className="font-bold block text-[11px] leading-tight">Backup Snapshot</span>
+                <span className="text-[9px] text-slate-500 block mt-2 font-mono">Database JSON</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ SECTION 5: DANGER ZONE ══════════════════════════════════════ */}
+      <section className="card-danger rounded-xl p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-rose-400" />
+              <h3 className="text-xs font-bold text-rose-400 uppercase tracking-wider">Danger Zone</h3>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Destructive actions to wipe database records, reset onboarding wizards, or terminate the operator profile.
+            </p>
+          </div>
+
+          <div className="lg:col-span-2 space-y-3 text-xs">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 p-3 bg-rose-950/[0.04] border border-rose-500/10 rounded-lg">
               <div>
                 <span className="font-bold text-white block">Reset Workspace Onboarding</span>
-                <span className="text-[10px] text-slate-500 mt-0.5">Wipe goals assessments to restart setup wizard.</span>
+                <span className="text-[10px] text-slate-500">Wipe assessment diagnostics to rerun the setup wizard.</span>
               </div>
               <button
                 onClick={() => setDangerModalAction("reset")}
-                className="tactile-btn border-rose-500/25 hover:bg-rose-500/10 text-rose-300 font-bold px-3 py-1.5 rounded-xl"
+                className="tactile-btn border-rose-500/25 hover:bg-rose-500/10 text-rose-300 font-bold px-3 py-1.5 rounded-lg text-center"
               >
                 Reset Setup
               </button>
             </div>
 
-            <div className="flex justify-between items-center bg-rose-950/10 border border-rose-500/15 p-3.5 rounded-xl">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 p-3 bg-rose-950/[0.04] border border-rose-500/10 rounded-lg">
               <div>
                 <span className="font-bold text-white block">Delete All Roadmaps</span>
-                <span className="text-[10px] text-slate-500 mt-0.5">Wipe all generated paths logs.</span>
+                <span className="text-[10px] text-slate-500">Wipe all generated paths, milestones, and logs.</span>
               </div>
               <button
                 onClick={() => setDangerModalAction("roadmaps")}
-                className="tactile-btn border-rose-500/25 hover:bg-rose-500/10 text-rose-300 font-bold px-3 py-1.5 rounded-xl"
+                className="tactile-btn border-rose-500/25 hover:bg-rose-500/10 text-rose-300 font-bold px-3 py-1.5 rounded-lg text-center"
               >
                 Delete Paths
               </button>
             </div>
 
-            <div className="flex justify-between items-center bg-rose-950/10 border border-rose-500/15 p-3.5 rounded-xl">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 p-3 bg-rose-950/[0.04] border border-rose-500/10 rounded-lg">
               <div>
                 <span className="font-bold text-white block">Clear Mentor Strategy History</span>
-                <span className="text-[10px] text-slate-500 mt-0.5">Wipe chatbot conversation database logs.</span>
+                <span className="text-[10px] text-slate-500">Wipe all past chatbot and simulator logs.</span>
               </div>
               <button
                 onClick={() => setDangerModalAction("mentor")}
-                className="tactile-btn border-rose-500/25 hover:bg-rose-500/10 text-rose-300 font-bold px-3 py-1.5 rounded-xl"
+                className="tactile-btn border-rose-500/25 hover:bg-rose-500/10 text-rose-300 font-bold px-3 py-1.5 rounded-lg text-center"
               >
-                Clear History
+                Clear Chats
               </button>
             </div>
 
-            <div className="flex justify-between items-center bg-rose-950/10 border border-rose-500/15 p-3.5 rounded-xl">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 p-3 bg-rose-950/[0.04] border border-rose-500/10 rounded-lg">
               <div>
-                <span className="font-bold text-rose-300 block">Terminate Operator Identity</span>
-                <span className="text-[10px] text-slate-500 mt-0.5">Permanently wipe profile account records.</span>
+                <span className="font-bold text-rose-300 block">Terminate Operator Profile</span>
+                <span className="text-[10px] text-slate-500">Permanently terminate this profile account identity.</span>
               </div>
               <button
                 onClick={() => setDangerModalAction("account")}
-                className="tactile-btn border-rose-500/25 bg-rose-950/20 hover:bg-rose-950/40 text-rose-300 font-bold px-3 py-1.5 rounded-xl"
+                className="tactile-btn border-rose-500/25 bg-rose-950/20 hover:bg-rose-950/40 text-rose-300 font-bold px-3 py-1.5 rounded-lg text-center"
               >
-                Terminate Profile
+                Terminate Identity
               </button>
             </div>
           </div>
-        )}
+        </div>
       </section>
 
       {/* Export Success Modal */}
