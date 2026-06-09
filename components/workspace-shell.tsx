@@ -28,7 +28,7 @@ import {
   Database,
   Zap
 } from "lucide-react";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { motion, useDragControls, AnimatePresence } from "framer-motion";
 
 interface GuideContent {
@@ -220,34 +220,38 @@ type WorkspaceShellProps = {
   children: React.ReactNode;
 };
 
-// Desktop grouped spaces
-const navGroups = [
+// ── NAV_SECTIONS — Single config for ALL sidebar entries ──────────────────
+// All 3 sections — Core, Community, Account — render through SidebarNavItem.
+// Adding a route here is the ONLY place you need to touch.
+interface NavSectionConfig { title: string; items: NavItemConfig[] }
+
+const navGroups: NavSectionConfig[] = [
   {
     title: "Core Space",
     items: [
-      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      { label: "Roadmaps", href: "/roadmaps", icon: Map },
-      { label: "Career Twin", href: "/career-twin", icon: Users },
-      { label: "AI Mentor", href: "/mentor", icon: MessageSquare }
-    ]
+      { label: "Dashboard",   href: "/dashboard",   icon: LayoutDashboard },
+      { label: "Roadmaps",    href: "/roadmaps",    icon: Map             },
+      { label: "Career Twin", href: "/career-twin", icon: Users           },
+      { label: "AI Mentor",   href: "/mentor",      icon: MessageSquare   },
+    ],
   },
   {
     title: "Community Support Intelligence",
     items: [
-      { label: "Community Intel", href: "/community-intelligence", icon: Shield },
-      { label: "Support Navigator", href: "/support-navigator", icon: Compass },
-      { label: "Resource Discovery", href: "/resource-discovery", icon: Globe },
-      { label: "Gap Intelligence", href: "/community-gaps", icon: Activity },
-      { label: "Command Center", href: "/community-command-center", icon: Zap }
-    ]
+      { label: "Community Intel",    href: "/community-intelligence",  icon: Shield  },
+      { label: "Support Navigator",  href: "/support-navigator",       icon: Compass },
+      { label: "Resource Discovery", href: "/resource-discovery",      icon: Globe   },
+      { label: "Gap Intelligence",   href: "/community-gaps",          icon: Activity},
+      { label: "Command Center",     href: "/community-command-center",icon: Zap     },
+    ],
   },
   {
     title: "Account Systems",
     items: [
-      { label: "Settings", href: "/settings", icon: Settings },
-      { label: "Profile", href: "/profile", icon: UserCircle }
-    ]
-  }
+      { label: "Settings", href: "/settings", icon: Settings    },
+      { label: "Profile",  href: "/profile",  icon: UserCircle  },
+    ],
+  },
 ];
 
 const allNavItems = navGroups.flatMap((g) => g.items);
@@ -295,6 +299,112 @@ function AvatarCircle({ name }: { name: string | null }) {
     </div>
   );
 }
+
+/* ─────────────────────────────────────────────────────────────
+   SidebarNavItem — THE single shared component for every nav entry.
+   Every route in the rail renders through this. No exceptions.
+   ───────────────────────────────────────────────────────────── */
+interface NavItemConfig {
+  label: string;
+  href:  string;
+  icon:  React.ComponentType<{ className?: string }>;
+}
+
+interface SidebarNavItemProps {
+  item:          NavItemConfig;
+  active:        boolean;
+  isLoading:     boolean;
+  collapsed:     boolean;
+  isHovered:     boolean;
+  onClick:       (href: string, e: React.MouseEvent<HTMLAnchorElement>) => void;
+  onMouseEnter:  (href: string) => void;
+  onMouseLeave:  () => void;
+}
+
+const SidebarNavItem = memo(function SidebarNavItem({
+  item,
+  active,
+  isLoading,
+  collapsed,
+  isHovered,
+  onClick,
+  onMouseEnter,
+  onMouseLeave,
+}: SidebarNavItemProps) {
+  const Icon = item.icon;
+  return (
+    <Link
+      href={item.href}
+      prefetch={true}
+      onClick={(e) => onClick(item.href, e)}
+      tabIndex={0}
+      onMouseEnter={() => onMouseEnter(item.href)}
+      onMouseLeave={onMouseLeave}
+      title={collapsed ? item.label : undefined}
+      className={[
+        "sidebar-link-item lis-nav-item group",
+        "relative flex items-center gap-2.5",
+        "rounded-lg px-2.5 py-2 text-xs",
+        "focus:outline-none focus:ring-1 focus:ring-cyan-500/40",
+        collapsed ? "justify-center" : "",
+        active ? "text-white font-semibold" : "text-slate-500 hover:text-slate-300",
+        isLoading ? "shimmer-loading-item" : "",
+      ].join(" ")}
+    >
+      {/* ── Active indicator — LIS liquid cyan beam ─────────────── */}
+      {active && (
+        <motion.div
+          layoutId="active-indicator-desktop"
+          className="absolute inset-0 -z-10"
+          style={{
+            background:   "rgba(34,211,238,0.07)",
+            borderLeft:   "2px solid #22D3EE",
+            borderRadius: "0 10px 10px 0",
+            boxShadow:    "inset 0 1px 0 rgba(34,211,238,0.08), inset 0 0 12px rgba(34,211,238,0.03)",
+          }}
+          transition={{ type: "spring", stiffness: 380, damping: 30 }}
+        />
+      )}
+
+      {/* ── Hover indicator — only on non-active items ───────────── */}
+      {isHovered && !active && (
+        <motion.div
+          layoutId="hover-indicator-desktop"
+          className="absolute inset-0 -z-10"
+          style={{
+            background:   "rgba(255,255,255,0.025)",
+            borderRadius: "8px",
+          }}
+          transition={{ type: "spring", stiffness: 400, damping: 35 }}
+        />
+      )}
+
+      {/* ── Icon ─────────────────────────────────────────────────── */}
+      <div className="relative shrink-0 flex items-center justify-center">
+        <Icon
+          className={`h-3.5 w-3.5 transition-colors duration-[150ms] ${
+            active ? "text-cyan-300" : "text-slate-500 group-hover:text-slate-300"
+          }`}
+        />
+        {isLoading && (
+          <span className="absolute -top-1 -right-1 flex h-2 w-2 rounded-full bg-cyan-400 border border-slate-950 animate-pulse-dot" />
+        )}
+      </div>
+
+      {/* ── Label + loading progress bar ─────────────────────────── */}
+      {!collapsed && (
+        <div className="flex-1 flex items-center justify-between gap-2 min-w-0">
+          <span className="truncate">{item.label}</span>
+          {isLoading && (
+            <span className="h-1 w-8 rounded-full bg-cyan-950 border border-cyan-500/20 overflow-hidden relative">
+              <span className="absolute inset-y-0 left-0 bg-cyan-400 w-1/2 animate-progress-bar rounded-full" />
+            </span>
+          )}
+        </div>
+      )}
+    </Link>
+  );
+});
 
 export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
   const pathname = usePathname();
@@ -547,75 +657,19 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                   </p>
                 )}
                 <div className="space-y-0.5">
-                  {group.items.map((item) => {
-                    const active = pathname === item.href;
-                    const isLoading = transitioningTo === item.href;
-                    const Icon = item.icon;
-
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        prefetch={true}
-                        onClick={(e) => handleNavClick(item.href, e)}
-                        tabIndex={0}
-                        onMouseEnter={() => setHoveredHref(item.href)}
-                        onMouseLeave={() => setHoveredHref(null)}
-                        title={collapsed ? item.label : undefined}
-                        className={`sidebar-link-item lis-nav-item group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500/40 ${
-                          collapsed ? "justify-center" : ""
-                        } ${
-                          active
-                            ? "text-white font-semibold"
-                            : "text-slate-500 hover:text-slate-300"
-                        } ${isLoading ? "shimmer-loading-item" : ""}`}
-                      >
-                        {/* Active Indicator — LIS cyan beam */}
-                        {active && (
-                          <motion.div
-                            layoutId="active-indicator-desktop"
-                            className="absolute inset-0 -z-10"
-                            style={{
-                              background: 'rgba(34,211,238,0.07)',
-                              borderLeft: '2px solid #22D3EE',
-                              borderRadius: '0 10px 10px 0',
-                              boxShadow: 'inset 0 1px 0 rgba(34,211,238,0.08)',
-                            }}
-                            transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                          />
-                        )}
-
-                        {/* Hover Indicator Highlight */}
-                        {hoveredHref === item.href && (
-                          <motion.div
-                            layoutId="hover-indicator-desktop"
-                            className="absolute inset-0 bg-white/[0.02] rounded-lg -z-10"
-                            transition={{ type: "spring", stiffness: 400, damping: 35 }}
-                          />
-                        )}
-
-                        {/* Icon status */}
-                        <div className="relative shrink-0 flex items-center justify-center">
-                          <Icon className={`h-3.5 w-3.5 transition-colors duration-[150ms] ${active ? "text-cyan-300" : "text-slate-500 group-hover:text-slate-300"}`} />
-                          {isLoading && (
-                            <span className="absolute -top-1 -right-1 flex h-2 w-2 rounded-full bg-cyan-400 border border-slate-950 animate-pulse-dot" />
-                          )}
-                        </div>
-
-                        {/* Label */}
-                        {!collapsed && (
-                          <div className="flex-1 flex items-center justify-between gap-2 min-w-0">
-                            <span className="truncate">{item.label}</span>
-                            {isLoading && (
-                              <span className="h-1 w-8 rounded-full bg-cyan-950 border border-cyan-500/20 overflow-hidden relative">
-                                <span className="absolute inset-y-0 left-0 bg-cyan-400 w-1/2 animate-progress-bar rounded-full" />
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </Link>
-                    );
-                  })}
+                  {group.items.map((item) => (
+                    <SidebarNavItem
+                      key={item.href}
+                      item={item}
+                      active={pathname === item.href}
+                      isLoading={transitioningTo === item.href}
+                      collapsed={collapsed}
+                      isHovered={hoveredHref === item.href}
+                      onClick={handleNavClick}
+                      onMouseEnter={setHoveredHref}
+                      onMouseLeave={() => setHoveredHref(null)}
+                    />
+                  ))}
                 </div>
               </div>
             ))}
