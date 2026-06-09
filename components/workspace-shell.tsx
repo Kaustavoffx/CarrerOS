@@ -478,15 +478,12 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
 
 
 
-      {/* Subtle Dot Matrix Background */}
-      <div className="pointer-events-none fixed inset-0 opacity-[0.025] [background-image:radial-gradient(rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:28px_28px]" />
-
-      {/* ── DESKTOP SIDEBAR — GPU-accelerated via Framer Motion ── */}
+      {/* ── DESKTOP SIDEBAR — Liquid Command Rail ── */}
       <motion.aside
         animate={{ width: collapsed ? "4.5rem" : "15rem" }}
         transition={{ type: "spring", stiffness: 320, damping: 32, mass: 0.8 }}
         style={{ willChange: "width" }}
-        className="fixed left-4 top-4 bottom-4 z-30 hidden flex-col rounded-[24px] border border-white/5 sidebar-glass xl:flex overflow-hidden"
+        className="fixed left-4 top-4 bottom-4 z-30 hidden flex-col rounded-lis border-0 lis-sidebar xl:flex overflow-hidden"
       >
         <div className="flex h-full flex-col">
           {/* Logo Header */}
@@ -508,7 +505,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
 
           {/* Career score ring */}
           {!collapsed && (
-            <div className="mx-4 mt-5 flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-3">
+            <div className="mx-4 mt-5 flex items-center gap-3 rounded-lis-sm border border-white/[0.07] bg-white/[0.025] p-3" style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)' }}>
               <ScoreRing score={score} />
               <div className="min-w-0">
                 <p className="text-[10px] uppercase tracking-widest text-slate-500">Readiness</p>
@@ -520,17 +517,18 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
             </div>
           )}
 
-          {/* Linear/Arc Search Bar Panel (Ctrl+K) */}
+          {/* Liquid Search Bar (Ctrl+K) */}
           {!collapsed && (
             <button
               onClick={() => setIsCommandPaletteOpen(true)}
-              className="mx-4 mt-4 flex items-center justify-between rounded-xl border border-white/5 bg-slate-950/80 px-3 py-1.5 text-left text-slate-500 hover:text-slate-300 hover:border-white/10 transition-all"
+              className="mx-4 mt-4 flex items-center justify-between rounded-lis-xs border border-white/[0.06] px-3 py-1.5 text-left text-slate-500 hover:text-slate-300 hover:border-white/10 transition-all duration-[150ms]"
+              style={{ background: 'rgba(4,8,16,0.55)', backdropFilter: 'blur(12px)' }}
             >
               <span className="text-[11px] flex items-center gap-1.5">
                 <Search className="h-3 w-3" />
                 Quick search...
               </span>
-              <span className="text-[9px] bg-slate-900 border border-white/5 px-1.5 py-0.5 rounded text-slate-600 font-mono select-none">
+              <span className="text-[9px] px-1.5 py-0.5 rounded font-mono select-none text-slate-600" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
                 Ctrl+K
               </span>
             </button>
@@ -544,7 +542,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
             {navGroups.map((group) => (
               <div key={group.title} className="space-y-1.5">
                 {!collapsed && (
-                  <p className="text-[9px] uppercase tracking-wider text-slate-600 font-bold px-2 select-none">
+                  <p className="text-[9px] uppercase tracking-[0.16em] text-slate-600 font-bold px-2 select-none">
                     {group.title}
                   </p>
                 )}
@@ -564,7 +562,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                         onMouseEnter={() => setHoveredHref(item.href)}
                         onMouseLeave={() => setHoveredHref(null)}
                         title={collapsed ? item.label : undefined}
-                        className={`sidebar-link-item group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs transition-colors duration-[150ms] focus:outline-none focus:ring-1 focus:ring-cyan-500/40 ${
+                        className={`sidebar-link-item lis-nav-item group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500/40 ${
                           collapsed ? "justify-center" : ""
                         } ${
                           active
@@ -572,11 +570,17 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                             : "text-slate-500 hover:text-slate-300"
                         } ${isLoading ? "shimmer-loading-item" : ""}`}
                       >
-                        {/* Active Indicator Highlight */}
+                        {/* Active Indicator — LIS cyan beam */}
                         {active && (
                           <motion.div
                             layoutId="active-indicator-desktop"
-                            className="absolute inset-0 bg-cyan-500/[0.08] border-l-2 border-cyan-400 rounded-r-lg -z-10"
+                            className="absolute inset-0 -z-10"
+                            style={{
+                              background: 'rgba(34,211,238,0.07)',
+                              borderLeft: '2px solid #22D3EE',
+                              borderRadius: '0 10px 10px 0',
+                              boxShadow: 'inset 0 1px 0 rgba(34,211,238,0.08)',
+                            }}
                             transition={{ type: "spring", stiffness: 380, damping: 30 }}
                           />
                         )}
@@ -618,7 +622,10 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
           </nav>
 
           {/* Profile Footer */}
-          <div className={`m-3 mt-0 rounded-2xl border border-white/5 bg-white/[0.03] p-3 ${collapsed ? "flex justify-center" : ""}`}>
+          <div
+            className={`m-3 mt-0 rounded-lis-sm p-3 ${collapsed ? "flex justify-center" : ""}`}
+            style={{ background: 'rgba(6,10,22,0.60)', border: '1px solid rgba(255,255,255,0.07)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)' }}
+          >
             {collapsed ? (
               <AvatarCircle name={profile?.full_name ?? null} />
             ) : (
@@ -641,11 +648,12 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
           </div>
         </div>
 
-        {/* Collapse Toggle Arrow */}
+        {/* Collapse Toggle */}
         <button
           type="button"
           onClick={handleToggleCollapse}
-          className="absolute -right-3 top-20 z-40 flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-[#08080a] text-slate-400 hover:text-cyan-300 transition-colors duration-[120ms]"
+          className="absolute -right-3 top-20 z-40 flex h-6 w-6 items-center justify-center rounded-full text-slate-400 hover:text-cyan-300 transition-colors duration-[150ms]"
+          style={{ background: 'rgba(8,12,24,0.90)', border: '1px solid rgba(255,255,255,0.10)', backdropFilter: 'blur(12px)' }}
         >
           {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
         </button>
@@ -662,9 +670,10 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
           {isGuideAvailable && (
             <button
               onClick={() => setGuideOpen(true)}
-              className="absolute top-8 right-8 z-30 px-3.5 py-2 rounded-xl bg-slate-900/90 border border-white/10 hover:border-cyan-500/30 text-xs text-slate-300 hover:text-white transition flex items-center gap-1.5 font-bold shadow-md shadow-black/40 backdrop-blur-md active:scale-95"
+              className="absolute top-8 right-8 z-30 px-3.5 py-2 rounded-lis-xs text-xs text-slate-300 hover:text-white transition-all duration-[150ms] flex items-center gap-1.5 font-semibold active:scale-95 hover:border-cyan-500/25"
+              style={{ background: 'rgba(8,12,24,0.75)', border: '1px solid rgba(255,255,255,0.09)', backdropFilter: 'blur(20px)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 24px rgba(0,0,0,0.35)' }}
             >
-              <Info className="h-4 w-4 text-cyan-400" />
+              <Info className="h-3.5 w-3.5 text-cyan-400" />
               Mission Guide
             </button>
           )}
@@ -685,8 +694,11 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
 
       {/* ── MOBILE / TABLET VIEWPORTS (DEDICATED NAVIGATION SYSTEM) ── */}
       <div className="xl:hidden min-h-screen flex flex-col">
-        {/* Simple Top Header */}
-        <header className="sticky top-0 z-20 border-b border-[#141417] bg-[#020305]/75 backdrop-blur-sm px-5 py-3">
+        {/* Mobile Top Header — LIS surface */}
+        <header
+          className="sticky top-0 z-20 px-5 py-3"
+          style={{ background: 'rgba(7,10,22,0.82)', backdropFilter: 'blur(30px) saturate(180%)', borderBottom: '1px solid rgba(255,255,255,0.07)', boxShadow: 'inset 0 -1px 0 rgba(255,255,255,0.03)' }}
+        >
           <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Image
@@ -714,7 +726,8 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
           {isGuideAvailable && (
             <button
               onClick={() => setGuideOpen(true)}
-              className="absolute top-4 right-5 z-30 px-2.5 py-1.5 rounded-xl bg-slate-900 border border-white/5 text-[10px] text-slate-300 hover:text-white transition flex items-center gap-1 font-bold shadow-md shadow-black/40 backdrop-blur-md active:scale-95"
+              className="absolute top-4 right-5 z-30 px-2.5 py-1.5 rounded-lis-xs text-[10px] text-slate-300 hover:text-white transition-all duration-[150ms] flex items-center gap-1 font-semibold active:scale-95"
+              style={{ background: 'rgba(8,12,24,0.80)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.07)' }}
             >
               <Info className="h-3.5 w-3.5 text-cyan-400" />
               Guide
@@ -735,7 +748,10 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
         </main>
 
         {/* ── MOBILE BOTTOM NAVIGATION BAR ── */}
-        <nav className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950 border-t border-white/5 flex items-center justify-around h-16 px-1 pb-safe select-none">
+        <nav
+          className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around h-16 px-1 pb-safe select-none"
+          style={{ background: 'rgba(7,10,22,0.90)', backdropFilter: 'blur(30px) saturate(180%)', borderTop: '1px solid rgba(255,255,255,0.07)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}
+        >
           {mobileNavItems.map((item, idx) => {
             const active = pathname === item.href;
             const isLoading = transitioningTo === item.href;
@@ -806,8 +822,8 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                 animate={{ y: 0 }}
                 exit={{ y: "100%" }}
                 transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                style={{ willChange: "transform", touchAction: "none" }}
-                className="fixed bottom-0 left-0 right-0 z-50 bg-slate-950 border-t border-cyan-500/20 rounded-t-[28px] p-6 pb-8 shadow-2xl flex flex-col gap-4 select-none"
+                style={{ willChange: "transform", touchAction: "none", background: 'rgba(7,10,22,0.95)', backdropFilter: 'blur(40px) saturate(200%)', borderTop: '1px solid rgba(34,211,238,0.15)', boxShadow: 'inset 0 1px 0 rgba(34,211,238,0.08), 0 -20px 60px rgba(0,0,0,0.50)' }}
+                className="fixed bottom-0 left-0 right-0 z-50 rounded-t-[28px] p-6 pb-8 flex flex-col gap-4 select-none"
               >
                 {/* Drag handle pill */}
                 <div
@@ -905,11 +921,12 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
               className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
             />
             <motion.div
-              initial={{ opacity: 0, y: -20, scale: 0.95 }}
+              initial={{ opacity: 0, y: -16, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.95 }}
-              transition={{ duration: 0.18 }}
-              className="fixed inset-x-4 top-[15vh] mx-auto z-50 max-w-lg overflow-hidden rounded-2xl border border-white/10 bg-slate-950 p-4 shadow-2xl space-y-3"
+              exit={{ opacity: 0, y: -16, scale: 0.96 }}
+              transition={{ duration: 0.20, ease: [0.16,1,0.3,1] }}
+              className="fixed inset-x-4 top-[15vh] mx-auto z-50 max-w-lg overflow-hidden rounded-lis p-4 space-y-3"
+              style={{ background: 'rgba(8,12,24,0.90)', backdropFilter: 'blur(40px) saturate(200%)', border: '1px solid rgba(255,255,255,0.09)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.10), 0 40px 100px rgba(0,0,0,0.60)' }}
             >
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
@@ -923,7 +940,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                   }}
                   onKeyDown={handlePaletteKeyDown}
                   autoFocus
-                  className="w-full bg-slate-900 border border-white/10 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                  className="lis-input w-full pl-9 pr-4 text-xs placeholder-slate-500"
                 />
               </div>
 
@@ -984,13 +1001,14 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
               className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
             />
             
-            {/* Slide-over panel */}
+            {/* Slide-over panel — LIS surface */}
             <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", stiffness: 380, damping: 35 }}
-              className="fixed top-0 right-0 h-screen w-80 bg-slate-950 border-l border-white/10 z-50 shadow-2xl p-6 flex flex-col gap-5 select-none text-xs text-slate-300 overflow-hidden"
+              className="fixed top-0 right-0 h-screen w-80 z-50 p-6 flex flex-col gap-5 select-none text-xs text-slate-300 overflow-hidden"
+              style={{ background: 'rgba(7,10,22,0.96)', backdropFilter: 'blur(40px) saturate(200%)', borderLeft: '1px solid rgba(255,255,255,0.08)', boxShadow: 'inset 1px 0 0 rgba(255,255,255,0.04), -20px 0 80px rgba(0,0,0,0.50)' }}
             >
               <div className="flex justify-between items-center border-b border-white/5 pb-2.5 shrink-0">
                 <div className="flex items-center gap-2">
@@ -1015,7 +1033,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                   <p className="font-bold text-cyan-400 uppercase tracking-wider text-[9px]">AI Capabilities Used</p>
                   <div className="space-y-2 mt-1">
                     {activeGuide.aiCapabilities.map((cap, i) => (
-                      <div key={i} className="bg-indigo-950/20 border border-indigo-500/15 rounded-lg p-2.5">
+                      <div key={i} className="rounded-lis-xs p-2.5" style={{ background: 'rgba(96,165,250,0.06)', border: '1px solid rgba(96,165,250,0.15)' }}>
                         <p className="font-bold text-white text-[10px] flex items-center gap-1">
                           <Brain className="h-3.5 w-3.5 text-indigo-400" /> {cap.name}
                         </p>
@@ -1029,7 +1047,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
 
                 <div className="space-y-1.5">
                   <p className="font-bold text-cyan-400 uppercase tracking-wider text-[9px]">What data is analyzed</p>
-                  <div className="flex items-start gap-1.5 bg-slate-900 border border-white/5 p-2.5 rounded-lg text-[10px] text-slate-300">
+                  <div className="flex items-start gap-1.5 rounded-lis-xs p-2.5 text-[10px] text-slate-300" style={{ background: 'rgba(4,8,16,0.60)', border: '1px solid rgba(255,255,255,0.07)' }}>
                     <Database className="h-3.5 w-3.5 text-slate-400 shrink-0 mt-0.5" />
                     <span>{activeGuide.dataAnalyzed}</span>
                   </div>
@@ -1055,9 +1073,9 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                 </div>
               </div>
 
-              <button 
+              <button
                 onClick={() => setGuideOpen(false)}
-                className="w-full py-2 bg-gradient-to-r from-cyan-600 to-indigo-600 text-white font-semibold text-xs rounded-xl shadow-md transition active:scale-95 text-center mt-auto shrink-0"
+                className="lis-btn-primary w-full py-2 text-xs rounded-lis-xs text-center mt-auto shrink-0 active:scale-95"
               >
                 Got it
               </button>

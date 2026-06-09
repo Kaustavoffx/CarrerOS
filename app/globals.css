@@ -4,36 +4,70 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   CAREEROS LIQUID INTELLIGENCE SYSTEM (LIS) — v1.0
+   Design Language: macOS Sequoia Liquid Glass · Apple Vision Pro depth ·
+                    Linear precision · Arc Browser atmosphere
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 :root {
   color-scheme: dark;
-  --background: #020305;
-  --foreground: #f4f6fc;
-  --muted: rgba(240, 244, 255, 0.65);
 
-  --leading-tight: 1.05;
-  --leading-snug: 1.15;
+  /* ── Global canvas ──────────────────────────────────────────────────────── */
+  --background:  #030712;
+  --foreground:  #F8FAFC;
+  --muted:       rgba(148, 163, 184, 0.65);
+
+  /* ── LIS Surface System ─────────────────────────────────────────────────── */
+  --lis-bg:           rgba(8, 12, 24, 0.55);
+  --lis-border:       rgba(255, 255, 255, 0.08);
+  --lis-highlight:    rgba(255, 255, 255, 0.12);
+  --lis-shadow:       0 20px 60px rgba(0, 0, 0, 0.45);
+  --lis-radius:       24px;
+  --lis-radius-sm:    16px;
+  --lis-radius-xs:    12px;
+  --lis-blur:         blur(30px) saturate(180%);
+  --lis-blur-heavy:   blur(40px) saturate(200%);
+
+  /* ── LIS Color Tokens ───────────────────────────────────────────────────── */
+  --cos-accent:       #22D3EE;
+  --cos-accent-glow:  rgba(34, 211, 238, 0.25);
+  --cos-accent-2:     #60A5FA;
+  --cos-success:      #10B981;
+  --cos-warning:      #F59E0B;
+  --cos-danger:       #EF4444;
+  --cos-text:         #F8FAFC;
+  --cos-secondary:    #94A3B8;
+  --cos-muted:        #64748B;
+
+  /* ── Motion Tokens ──────────────────────────────────────────────────────── */
+  --dur-hover:   150ms;
+  --dur-btn:     180ms;
+  --dur-lis:     220ms;
+  --dur-drawer:  280ms;
+  --dur-modal:   260ms;
+  --ease-lis:    cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ── Line-height tokens ─────────────────────────────────────────────────── */
+  --leading-tight:   1.05;
+  --leading-snug:    1.15;
   --leading-regular: 1.45;
-
-  /* Duration tokens — strictly 150ms-220ms */
-  --dur-hover: 150ms;
-  --dur-btn: 180ms;
-  --dur-dropdown: 180ms;
-  --dur-drawer: 220ms;
-  --dur-modal: 220ms;
 }
 
 html {
   scroll-behavior: smooth;
-  background: transparent;
+  background: #030712;
 }
 
 body {
   min-height: 100vh;
   overflow-x: hidden;
-  background: transparent;
+  background: #030712;
   color: var(--foreground);
   font-family: var(--font-geom);
   isolation: isolate;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 main {
@@ -41,475 +75,703 @@ main {
   z-index: 1;
 }
 
-/* Premium Typography utilities using CMGeom only */
-.font-geom {
-  font-family: var(--font-geom);
+/* ── Text selection ─────────────────────────────────────────────────────────── */
+::selection {
+  background: rgba(34, 211, 238, 0.22);
+  color: #ffffff;
 }
 
-/* Typography System Hierarchy */
-.text-hero-display {
-  font-size: 72px;
-  line-height: 1.05;
-  letter-spacing: -0.04em;
-}
-
-@media (min-width: 1024px) {
-  .text-hero-display { font-size: 96px; }
-}
-
-.text-hero {
-  font-size: 32px;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
-}
-
-@media (min-width: 768px) {
-  .text-hero { font-size: 40px; }
-}
-
-.text-section {
-  font-size: 18px;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-}
-
-@media (min-width: 768px) {
-  .text-section { font-size: 20px; }
-}
-
-.text-dashboard {
-  font-size: 18px;
-  line-height: 1.2;
-  letter-spacing: -0.015em;
-}
-
-@media (min-width: 768px) {
-  .text-dashboard { font-size: 20px; }
-}
-
-.text-card {
-  font-size: 14px;
-  line-height: 1.35;
-  letter-spacing: -0.01em;
-}
-
-@media (min-width: 768px) {
-  .text-card { font-size: 16px; }
-}
-
-.text-body {
-  font-size: 14px;
-  line-height: 1.5;
-  letter-spacing: -0.005em;
-}
-
-@media (min-width: 768px) {
-  .text-body { font-size: 15px; }
-}
-
-.text-small {
-  font-size: 12px;
-  line-height: 1.4;
-  letter-spacing: 0;
-}
-
-.text-caption {
-  font-size: 11px;
-  line-height: 1.3;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-}
-
-/* Standard class shortcuts for strict visual rhythm */
-.heading-hero {
-  font-family: var(--font-geom);
-  font-weight: 500;
-  line-height: 1.05;
-  letter-spacing: -0.04em;
-  font-size: 72px;
-}
-
-@media (min-width: 1024px) {
-  .heading-hero { font-size: 96px; }
-}
-
-.heading-section {
-  font-family: var(--font-geom);
-  font-weight: 500;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
-  font-size: 18px;
-}
-
-@media (min-width: 768px) {
-  .heading-section { font-size: 20px; }
-}
-
-.heading-dashboard {
-  font-family: var(--font-geom);
-  font-weight: 500;
-  line-height: var(--leading-snug);
-  letter-spacing: -0.02em;
-  font-size: 18px;
-}
-
-@media (min-width: 768px) {
-  .heading-dashboard { font-size: 20px; }
-}
-
-.heading-card {
-  font-family: var(--font-geom);
-  font-weight: 500;
-  line-height: 1.25;
-  letter-spacing: -0.01em;
-  font-size: 14px;
-}
-
-.body-large {
-  font-family: var(--font-geom);
-  font-weight: 400;
-  font-size: 15px;
-  line-height: var(--leading-regular);
-}
-
-.body {
-  font-family: var(--font-geom);
-  font-weight: 400;
-  font-size: 14px;
-  line-height: var(--leading-regular);
-}
-
-.small {
-  font-family: var(--font-geom);
-  font-weight: 400;
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-.caption {
-  font-family: var(--font-geom);
-  font-weight: 500;
-  font-size: 11px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-}
-
+/* ── Global box model ───────────────────────────────────────────────────────── */
 * {
   box-sizing: border-box;
 }
 
-::selection {
-  background: rgba(34, 211, 238, 0.25);
-  color: #ffffff;
+/* ─────────────────────────────────────────────────────────────────────────────
+   TYPOGRAPHY HIERARCHY — 8px rhythm
+   ───────────────────────────────────────────────────────────────────────────── */
+.font-geom { font-family: var(--font-geom); }
+
+.text-hero-display { font-size: 72px; line-height: 1.05; letter-spacing: -0.04em; }
+@media (min-width: 1024px) { .text-hero-display { font-size: 96px; } }
+
+.text-hero    { font-size: 32px; line-height: 1.1;  letter-spacing: -0.03em; }
+@media (min-width: 768px) { .text-hero { font-size: 40px; } }
+
+.text-section { font-size: 18px; line-height: 1.2;  letter-spacing: -0.02em; }
+@media (min-width: 768px) { .text-section { font-size: 20px; } }
+
+.text-dashboard { font-size: 18px; line-height: 1.2; letter-spacing: -0.015em; }
+@media (min-width: 768px) { .text-dashboard { font-size: 20px; } }
+
+.text-card { font-size: 14px; line-height: 1.35; letter-spacing: -0.01em; }
+@media (min-width: 768px) { .text-card { font-size: 16px; } }
+
+.text-body  { font-size: 14px; line-height: 1.5; letter-spacing: -0.005em; }
+@media (min-width: 768px) { .text-body { font-size: 15px; } }
+
+.text-small   { font-size: 12px; line-height: 1.4; letter-spacing: 0; }
+.text-caption { font-size: 11px; line-height: 1.3; letter-spacing: 0.15em; text-transform: uppercase; }
+
+/* Semantic heading shorthands */
+.heading-hero {
+  font-family: var(--font-geom); font-weight: 700;
+  line-height: 1.05; letter-spacing: -0.04em; font-size: 72px;
+}
+@media (min-width: 1024px) { .heading-hero { font-size: 96px; } }
+
+.heading-section {
+  font-family: var(--font-geom); font-weight: 600;
+  line-height: 1.1; letter-spacing: -0.03em; font-size: 18px;
+}
+@media (min-width: 768px) { .heading-section { font-size: 20px; } }
+
+.heading-dashboard {
+  font-family: var(--font-geom); font-weight: 600;
+  line-height: var(--leading-snug); letter-spacing: -0.02em; font-size: 18px;
+}
+@media (min-width: 768px) { .heading-dashboard { font-size: 20px; } }
+
+.heading-card {
+  font-family: var(--font-geom); font-weight: 600;
+  line-height: 1.25; letter-spacing: -0.01em; font-size: 14px;
 }
 
-/* Custom dark liquid interface container classes */
+.body-large { font-family: var(--font-geom); font-weight: 400; font-size: 15px; line-height: var(--leading-regular); }
+.body       { font-family: var(--font-geom); font-weight: 400; font-size: 14px; line-height: var(--leading-regular); }
+.small      { font-family: var(--font-geom); font-weight: 400; font-size: 12px; line-height: 1.4; }
+.caption    { font-family: var(--font-geom); font-weight: 500; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   CAREEROS LIQUID INTELLIGENCE SYSTEM — COMPONENT LAYER
+   ───────────────────────────────────────────────────────────────────────────── */
 @layer components {
-  .liquid-panel {
-    background: rgba(8, 12, 20, 0.38) !important;
-    backdrop-filter: blur(12px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.04) !important;
-    border-radius: 12px !important;
-    position: relative;
-    overflow: hidden;
-    will-change: backdrop-filter, transform;
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     LIS SURFACE — Universal card/panel base
+     Every card, panel, widget, module inherits this.
+     ══════════════════════════════════════════════════════════════════════════ */
+  .lis-surface {
+    background:      rgba(8, 12, 24, 0.55);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    border:          1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+                     0 20px 60px rgba(0, 0, 0, 0.45);
+    border-radius:   24px;
+    position:        relative;
+    overflow:        hidden;
+    will-change:     backdrop-filter, transform;
+    transform:       translateZ(0);
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     LIS CARD — Adds interactive hover behaviour on top of lis-surface
+     ══════════════════════════════════════════════════════════════════════════ */
+  .lis-card {
+    background:      rgba(8, 12, 24, 0.55);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    border:          1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+                     0 20px 60px rgba(0, 0, 0, 0.45);
+    border-radius:   24px;
+    position:        relative;
+    overflow:        hidden;
+    will-change:     transform, border-color, box-shadow;
+    transform:       translateZ(0);
+    transition:
+      transform      220ms cubic-bezier(0.16, 1, 0.3, 1),
+      border-color   220ms cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow     220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .lis-card:hover {
+    transform:    translateY(-4px) scale(1.01) translateZ(0);
+    border-color: rgba(34, 211, 238, 0.35);
+    box-shadow:   inset 0 1px 0 rgba(255, 255, 255, 0.14),
+                  0 30px 80px rgba(34, 211, 238, 0.12);
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     LIS DUST SIGNATURE — Atmospheric corner particle effect
+     CareerOS visual identity. One per card. Never centered.
+     ══════════════════════════════════════════════════════════════════════════ */
+
+  /* Top-right origin */
+  .lis-dust-tr::before {
+    content: "";
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 220px;
+    height: 180px;
+    background: radial-gradient(
+      ellipse 200px 160px at center,
+      rgba(34, 211, 238, 0.065) 0%,
+      transparent 70%
+    );
+    filter: blur(40px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Bottom-left origin */
+  .lis-dust-bl::before {
+    content: "";
+    position: absolute;
+    bottom: -40px;
+    left: -40px;
+    width: 200px;
+    height: 170px;
+    background: radial-gradient(
+      ellipse 180px 150px at center,
+      rgba(96, 165, 250, 0.055) 0%,
+      transparent 70%
+    );
+    filter: blur(40px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     LIS PANEL — Slightly lighter surface for nested containers
+     ══════════════════════════════════════════════════════════════════════════ */
+  .lis-panel {
+    background:      rgba(6, 10, 20, 0.45);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border:          1px solid rgba(255, 255, 255, 0.06);
+    box-shadow:      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    border-radius:   16px;
+    position:        relative;
+    overflow:        hidden;
+    will-change:     backdrop-filter, transform;
+    transform:       translateZ(0);
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     LIS SIDEBAR — Liquid Command Rail
+     ══════════════════════════════════════════════════════════════════════════ */
+  .lis-sidebar {
+    background:      rgba(7, 10, 22, 0.72);
+    backdrop-filter: blur(40px) saturate(200%);
+    -webkit-backdrop-filter: blur(40px) saturate(200%);
+    border:          1px solid rgba(255, 255, 255, 0.07);
+    box-shadow:
+      4px 0 60px rgba(0, 0, 0, 0.4),
+      inset -1px 0 0 rgba(255, 255, 255, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    will-change:     backdrop-filter, transform;
+    transform:       translateZ(0);
+  }
+
+  /* Active nav item — left cyan beam */
+  .lis-nav-active {
+    background:   rgba(34, 211, 238, 0.07);
+    border-left:  2px solid #22D3EE;
+    border-radius: 0 10px 10px 0;
+  }
+
+  /* Nav item hover lift */
+  .lis-nav-item {
+    transition:
+      background-color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform        150ms cubic-bezier(0.16, 1, 0.3, 1),
+      color            150ms cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform;
     transform: translateZ(0);
   }
 
-  /* ── CARD SYSTEM V4 — LIQUID GLASS MIGRATION ──────────────────────────── */
-
-  .card-data, .liquid-card, .card-spotlight, .card-action, .card-insight, .card-gold, .card-purple, .card-green, .card-red, .card-danger, .card-mission {
-    backdrop-filter: blur(12px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.04) !important;
-    border-radius: 12px !important;
-    background: rgba(8, 12, 20, 0.38) !important;
-    will-change: backdrop-filter, transform;
-    transform: translateZ(0);
+  .lis-nav-item:hover {
+    transform: translateX(2px) translateZ(0);
   }
 
-  /* Specific enhancements for semantic variants to keep branding and context */
-  .card-spotlight {
-    border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  /* ══════════════════════════════════════════════════════════════════════════
+     LIS BUTTONS — Primary & Ghost
+     ══════════════════════════════════════════════════════════════════════════ */
+
+  /* Primary: liquid cyan */
+  .lis-btn-primary {
+    background:      linear-gradient(135deg, #22D3EE 0%, #67E8F9 100%);
+    border:          1px solid rgba(255, 255, 255, 0.25);
+    box-shadow:      0 0 28px rgba(34, 211, 238, 0.30),
+                     inset 0 1px 0 rgba(255, 255, 255, 0.30);
+    color:           #030712;
+    font-weight:     650;
+    letter-spacing:  -0.01em;
+    border-radius:   12px;
+    cursor:          pointer;
+    transition:
+      transform   180ms cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow  180ms cubic-bezier(0.16, 1, 0.3, 1),
+      opacity     180ms cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform;
+    transform:   translateZ(0);
   }
+
+  .lis-btn-primary:hover {
+    transform:  translateY(-2px) translateZ(0);
+    box-shadow: 0 0 40px rgba(34, 211, 238, 0.45),
+                inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+
+  .lis-btn-primary:active  { transform: translateY(1px) translateZ(0); opacity: 0.92; }
+  .lis-btn-primary:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; }
+
+  /* Ghost: glass */
+  .lis-btn-ghost {
+    background:      rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border:          1px solid rgba(255, 255, 255, 0.09);
+    box-shadow:      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    color:           #F8FAFC;
+    font-weight:     500;
+    border-radius:   12px;
+    cursor:          pointer;
+    transition:
+      background-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+      border-color     180ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform        180ms cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform;
+    transform:   translateZ(0);
+  }
+
+  .lis-btn-ghost:hover {
+    background:   rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform:    translateY(-1px) translateZ(0);
+  }
+
+  .lis-btn-ghost:active  { transform: translateY(0) translateZ(0); }
+  .lis-btn-ghost:focus-visible { outline: 2px solid #22D3EE; outline-offset: 2px; }
+
+  /* Danger ghost variant */
+  .lis-btn-danger {
+    background:   rgba(239, 68, 68, 0.06);
+    border-color: rgba(239, 68, 68, 0.20);
+    color:        #FCA5A5;
+  }
+  .lis-btn-danger:hover {
+    background:   rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.35);
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     LIS INPUTS — Glass carved inputs
+     ══════════════════════════════════════════════════════════════════════════ */
+  .lis-input {
+    background:      rgba(4, 8, 16, 0.50);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border:          1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:      inset 0 2px 6px rgba(0, 0, 0, 0.30),
+                     inset 0 -1px 0 rgba(255, 255, 255, 0.03);
+    border-radius:   12px;
+    color:           #F8FAFC;
+    outline:         none;
+    height:          40px;
+    padding:         0 12px;
+    font-family:     var(--font-geom);
+    font-size:       13px;
+    transition:
+      border-color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow   150ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .lis-input::placeholder { color: #475569; }
+
+  .lis-input:focus {
+    border-color: rgba(34, 211, 238, 0.55);
+    box-shadow:   inset 0 2px 6px rgba(0, 0, 0, 0.25),
+                  0 0 0 3px rgba(34, 211, 238, 0.08);
+  }
+
+  .lis-input:hover:not(:focus) {
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  /* Textarea variant */
+  .lis-textarea {
+    height: auto;
+    padding: 10px 12px;
+    resize: vertical;
+    line-height: 1.5;
+  }
+
+  /* Select variant */
+  .lis-select {
+    appearance: none;
+    cursor: pointer;
+    padding-right: 32px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     LIS DATA TABLE — Liquid Data Surfaces
+     ══════════════════════════════════════════════════════════════════════════ */
+  .lis-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .lis-table th {
+    font-size:      10px;
+    font-weight:    600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color:          #475569;
+    padding:        8px 12px;
+    border-bottom:  1px solid rgba(255, 255, 255, 0.05);
+    white-space:    nowrap;
+  }
+
+  .lis-table td {
+    font-size:  12px;
+    color:      #94A3B8;
+    padding:    10px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    transition: background-color 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .lis-table tr:hover td {
+    background: rgba(34, 211, 238, 0.03);
+    color: #CBD5E1;
+  }
+
+  .lis-table tr:last-child td { border-bottom: none; }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     LIS BADGE / STATUS CHIPS
+     ══════════════════════════════════════════════════════════════════════════ */
+  .lis-badge {
+    display:         inline-flex;
+    align-items:     center;
+    gap:             4px;
+    font-size:       9px;
+    font-weight:     700;
+    letter-spacing:  0.12em;
+    text-transform:  uppercase;
+    padding:         2px 8px;
+    border-radius:   99px;
+    border:          1px solid;
+  }
+
+  .lis-badge-cyan    { background: rgba(34,211,238,0.10); border-color: rgba(34,211,238,0.25); color: #67E8F9; }
+  .lis-badge-green   { background: rgba(16,185,129,0.10); border-color: rgba(16,185,129,0.25); color: #6EE7B7; }
+  .lis-badge-amber   { background: rgba(245,158,11,0.10); border-color: rgba(245,158,11,0.25); color: #FCD34D; }
+  .lis-badge-rose    { background: rgba(239,68,68,0.10);  border-color: rgba(239,68,68,0.25);  color: #FCA5A5; }
+  .lis-badge-indigo  { background: rgba(96,165,250,0.10); border-color: rgba(96,165,250,0.25); color: #93C5FD; }
+  .lis-badge-slate   { background: rgba(100,116,139,0.12);border-color: rgba(100,116,139,0.25);color: #94A3B8; }
+
+  /* Live pulse badge */
+  .lis-badge-live {
+    background:   rgba(16,185,129,0.10);
+    border-color: rgba(16,185,129,0.20);
+    color:        #6EE7B7;
+  }
+  .lis-badge-live::before {
+    content: "";
+    width:   6px;
+    height:  6px;
+    border-radius: 50%;
+    background: #10B981;
+    animation: lis-pulse-live 1.8s ease-in-out infinite;
+    display: inline-block;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     LIS SECTION HEADER — Mission Banner
+     Every page starts with this.
+     ══════════════════════════════════════════════════════════════════════════ */
+  .lis-mission-banner {
+    background:      linear-gradient(135deg, rgba(34,211,238,0.04) 0%, rgba(8,12,24,0) 60%);
+    border:          1px solid rgba(34, 211, 238, 0.10);
+    border-radius:   20px;
+    padding:         20px 24px;
+    position:        relative;
+    overflow:        hidden;
+  }
+
+  .lis-mission-banner::before {
+    content: "";
+    position: absolute;
+    top: -30px;
+    right: -30px;
+    width: 180px;
+    height: 140px;
+    background: radial-gradient(ellipse at center, rgba(34,211,238,0.07), transparent 70%);
+    filter: blur(30px);
+    pointer-events: none;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     LEGACY CLASSES — Mapped to LIS system for backwards compatibility
+     ══════════════════════════════════════════════════════════════════════════ */
+
+  .liquid-panel,
+  .card-data,
+  .liquid-card,
+  .card-spotlight,
+  .card-action,
+  .card-insight,
+  .card-gold,
+  .card-purple,
+  .card-green,
+  .card-red,
+  .card-danger,
+  .card-mission {
+    background:      rgba(8, 12, 24, 0.55) !important;
+    backdrop-filter: blur(30px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
+    border:          1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow:      inset 0 1px 0 rgba(255, 255, 255, 0.10),
+                     0 16px 48px rgba(0, 0, 0, 0.40) !important;
+    border-radius:   20px !important;
+    position:        relative;
+    overflow:        hidden;
+    will-change:     backdrop-filter, transform;
+    transform:       translateZ(0);
+  }
+
+  /* Legacy dust for card-spotlight */
   .card-spotlight::before {
     content: "";
     position: absolute;
-    inset: 0;
+    top: -30px;
+    right: -30px;
+    width: 180px;
+    height: 140px;
     z-index: 0;
-    background: radial-gradient(circle at 80% 20%, rgba(0, 216, 255, 0.04), transparent 50%);
+    background: radial-gradient(ellipse at center, rgba(34, 211, 238, 0.06), transparent 70%);
+    filter: blur(35px);
     pointer-events: none;
   }
 
+  /* Legacy card-action */
   .card-action {
-    border-left: 2px solid rgba(0, 216, 255, 0.15) !important;
-    transition: border-color var(--dur-hover) ease, background-color var(--dur-hover) ease !important;
-    will-change: transform;
-    transform: translateZ(0);
+    border-left:  2px solid rgba(34, 211, 238, 0.20) !important;
+    transition:   border-color var(--dur-hover) var(--ease-lis),
+                  background-color var(--dur-hover) var(--ease-lis) !important;
+    will-change:  transform;
+    transform:    translateZ(0);
   }
   .card-action:hover {
-    background: rgba(255, 255, 255, 0.02) !important;
-    border-left-color: rgba(0, 216, 255, 0.45) !important;
+    background:   rgba(34, 211, 238, 0.03) !important;
+    border-color: rgba(34, 211, 238, 0.45) !important;
   }
 
+  /* Legacy semantic color variants */
   .card-purple, .card-insight {
-    background: linear-gradient(135deg, rgba(130, 120, 255, 0.02), rgba(8, 12, 20, 0.38)) !important;
-    border-color: rgba(130, 120, 255, 0.08) !important;
+    background: linear-gradient(135deg, rgba(96,165,250,0.03), rgba(8,12,24,0.55)) !important;
+    border-color: rgba(96, 165, 250, 0.10) !important;
   }
-
   .card-green {
-    background: linear-gradient(135deg, rgba(0, 255, 180, 0.02), rgba(8, 12, 20, 0.38)) !important;
-    border-color: rgba(0, 220, 150, 0.08) !important;
+    background: linear-gradient(135deg, rgba(16,185,129,0.03), rgba(8,12,24,0.55)) !important;
+    border-color: rgba(16, 185, 129, 0.10) !important;
+  }
+  .card-red, .card-danger {
+    background: linear-gradient(135deg, rgba(239,68,68,0.04), rgba(8,12,24,0.55)) !important;
+    border-color: rgba(239, 68, 68, 0.10) !important;
   }
 
-  .card-red {
-    background: linear-gradient(135deg, rgba(255, 80, 100, 0.02), rgba(8, 12, 20, 0.38)) !important;
-    border-color: rgba(255, 80, 100, 0.08) !important;
-  }
-
-  .card-danger {
-    background: rgba(45, 10, 15, 0.15) !important;
-    border-color: rgba(255, 70, 85, 0.08) !important;
-  }
-
-  /* Skeleton Loading — GPU keyframe only */
-  .animate-skeleton {
-    background: linear-gradient(90deg, #121214 25%, #1c1c20 50%, #121214 75%);
-    background-size: 200% 100%;
-    animation: loading-pulse 1.5s infinite;
-  }
-
-  @keyframes loading-pulse {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-  }
-  
-  .liquid-panel::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.03) 0%, transparent 60%);
-    pointer-events: none;
-  }
-
-  .liquid-card {
-    background: rgba(6, 10, 18, 0.55) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
-    position: relative;
-    overflow: hidden;
-    transition: opacity var(--dur-hover) ease;
-  }
-  
-  .liquid-card::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.02) 0%, transparent 50%);
-    pointer-events: none;
-  }
-
-  /* Physical Tactile Liquid Buttons — transform + opacity only */
+  /* Legacy tactile buttons — mapped to LIS */
   .tactile-btn {
-    background: rgba(255, 255, 255, 0.04) !important;
+    background:      rgba(255, 255, 255, 0.04) !important;
     backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
-    color: #ffffff !important;
-    transition: transform var(--dur-btn) ease, background-color var(--dur-btn) ease, border-color var(--dur-btn) ease !important;
-    cursor: pointer;
-    will-change: transform;
-    transform: translateZ(0);
+    border:          1px solid rgba(255, 255, 255, 0.09) !important;
+    box-shadow:      0 4px 12px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06) !important;
+    color:           #ffffff !important;
+    transition:      transform var(--dur-btn) var(--ease-lis),
+                     background-color var(--dur-btn) var(--ease-lis),
+                     border-color var(--dur-btn) var(--ease-lis) !important;
+    cursor:          pointer;
+    will-change:     transform;
+    transform:       translateZ(0);
+    border-radius:   12px !important;
   }
-  
-  .tactile-btn:hover {
-    background: rgba(255, 255, 255, 0.08) !important;
-    border-color: rgba(255, 255, 255, 0.15) !important;
-    transform: translateY(-1px) !important;
-  }
-
-  .tactile-btn:focus-visible {
-    outline: 2px solid #22d3ee;
-    outline-offset: 2px;
-  }
-
-  .tactile-btn:active {
-    transform: translateY(1px) !important;
-    background: rgba(255, 255, 255, 0.12) !important;
-  }
+  .tactile-btn:hover  { background: rgba(255,255,255,0.07) !important; border-color: rgba(255,255,255,0.15) !important; transform: translateY(-1px) !important; }
+  .tactile-btn:active { transform: translateY(1px) !important; }
+  .tactile-btn:focus-visible { outline: 2px solid #22d3ee; outline-offset: 2px; }
 
   .tactile-btn-primary {
-    background: linear-gradient(135deg, #00D8FF, #42E8FF) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    box-shadow: 0 0 30px rgba(0, 216, 255, 0.25) !important;
-    color: #04080e !important;
-    font-weight: 755 !important;
-    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.2);
-    transition: transform var(--dur-btn) ease, opacity var(--dur-btn) ease !important;
+    background:  linear-gradient(135deg, #22D3EE, #67E8F9) !important;
+    border:      1px solid rgba(255,255,255,0.25) !important;
+    box-shadow:  0 0 28px rgba(34,211,238,0.30), inset 0 1px 0 rgba(255,255,255,0.30) !important;
+    color:       #030712 !important;
+    font-weight: 650 !important;
+    transition:  transform var(--dur-btn) var(--ease-lis), box-shadow var(--dur-btn) var(--ease-lis), opacity var(--dur-btn) var(--ease-lis) !important;
     will-change: transform;
-    transform: translateZ(0);
+    transform:   translateZ(0);
+    border-radius: 12px !important;
   }
+  .tactile-btn-primary:hover  { transform: translateY(-2px) !important; box-shadow: 0 0 40px rgba(34,211,238,0.45), inset 0 1px 0 rgba(255,255,255,0.35) !important; }
+  .tactile-btn-primary:active { transform: translateY(1px) !important; opacity: 0.9 !important; }
+  .tactile-btn-primary:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; }
 
-  .tactile-btn-primary:hover {
-    transform: translateY(-1px) !important;
-    opacity: 0.95 !important;
-    box-shadow: 0 0 35px rgba(0, 216, 255, 0.35) !important;
-  }
-
-  .tactile-btn-primary:focus-visible {
-    outline: 2px solid #ffffff;
-    outline-offset: 2px;
-  }
-
-  .tactile-btn-primary:active {
-    transform: translateY(1px) !important;
-  }
-
-  /* Carved Dark Liquid Input Fields */
+  /* Legacy carved inputs — mapped to LIS */
   .carved-input {
-    background: rgba(4, 8, 14, 0.45) !important;
-    backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 
-      inset 0 2px 4px rgba(0, 0, 0, 0.35),
-      inset 0 -1px 0 rgba(255, 255, 255, 0.03);
-    transition: border-color var(--dur-hover) ease, background-color var(--dur-hover) ease;
-    color: #ffffff;
-    outline: none;
-  }
-
-  /* V4 Floating Sidebar classes */
-  .sidebar-glass {
-    background: rgba(8, 12, 20, 0.38) !important;
+    background:      rgba(4, 8, 16, 0.50) !important;
     backdrop-filter: blur(12px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.04) !important;
-    will-change: backdrop-filter, transform;
-    transform: translateZ(0);
+    border:          1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow:      inset 0 2px 6px rgba(0,0,0,0.30), inset 0 -1px 0 rgba(255,255,255,0.03) !important;
+    border-radius:   12px !important;
+    color:           #F8FAFC;
+    outline:         none;
+    transition:      border-color 150ms var(--ease-lis), box-shadow 150ms var(--ease-lis);
+  }
+  .carved-input:focus {
+    border-color: rgba(34, 211, 238, 0.55) !important;
+    box-shadow:   inset 0 2px 6px rgba(0,0,0,0.25), 0 0 0 3px rgba(34,211,238,0.08) !important;
+  }
+  .carved-input:hover:not(:focus) { border-color: rgba(255,255,255,0.12) !important; }
+
+  /* Legacy sidebar glass — mapped to LIS */
+  .sidebar-glass {
+    background:      rgba(7, 10, 22, 0.72) !important;
+    backdrop-filter: blur(40px) saturate(200%) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(200%) !important;
+    border:          1px solid rgba(255, 255, 255, 0.07) !important;
+    box-shadow:      4px 0 60px rgba(0,0,0,0.4),
+                     inset -1px 0 0 rgba(255,255,255,0.04),
+                     inset 0 1px 0 rgba(255,255,255,0.06) !important;
+    will-change:     backdrop-filter, transform;
+    transform:       translateZ(0);
   }
 
   .sidebar-active-item {
-    background: radial-gradient(
-      circle at center,
-      rgba(0, 216, 255, 0.06) 0%,
-      rgba(0, 216, 255, 0.01) 100%
-    ) !important;
-    border: 1px solid rgba(255, 255, 255, 0.02) !important;
-    color: #ffffff !important;
+    background:  rgba(34, 211, 238, 0.07) !important;
+    border-left: 2px solid #22D3EE !important;
+    color:       #ffffff !important;
   }
 
-  /* V4 Messages classes */
+  /* Chat message surfaces */
   .chat-message-assistant {
-    background: rgba(0, 216, 255, 0.08) !important;
-    backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(0, 216, 255, 0.15) !important;
+    background:      rgba(34, 211, 238, 0.07) !important;
+    backdrop-filter: blur(12px) !important;
+    border:          1px solid rgba(34, 211, 238, 0.15) !important;
+    border-radius:   16px !important;
   }
-
   .chat-message-user {
-    background: rgba(255, 255, 255, 0.05) !important;
-    backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background:      rgba(255, 255, 255, 0.05) !important;
+    backdrop-filter: blur(12px) !important;
+    border:          1px solid rgba(255, 255, 255, 0.09) !important;
+    border-radius:   16px !important;
   }
 
-  /* V4 Input dock */
+  /* Mentor input dock */
   .mentor-input-dock {
-    background: rgba(4, 8, 14, 0.38) !important;
-    backdrop-filter: blur(12px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35) !important;
+    background:      rgba(4, 8, 16, 0.60) !important;
+    backdrop-filter: blur(20px) !important;
+    border:          1px solid rgba(255, 255, 255, 0.09) !important;
+    box-shadow:      0 8px 40px rgba(0, 0, 0, 0.40) !important;
+    border-radius:   20px !important;
   }
 
-  /* V4 Mission card cyan -> blue glow */
-  .card-mission {
-    background: rgba(8, 12, 20, 0.38) !important;
-    backdrop-filter: blur(12px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.04) !important;
-    border-radius: 12px !important;
-    position: relative;
-    overflow: hidden;
-    will-change: backdrop-filter, transform;
-    transform: translateZ(0);
-  }
-  .card-mission::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    background: radial-gradient(
-      circle at 50% 50%,
-      rgba(0, 216, 255, 0.05) 0%,
-      rgba(30, 80, 255, 0.02) 50%,
-      transparent 80%
-    );
-    pointer-events: none;
+  /* GPU link utility */
+  .sidebar-link { will-change: transform; transform: translateZ(0); }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     SKELETON & LOADING STATES
+     ══════════════════════════════════════════════════════════════════════════ */
+  .animate-skeleton {
+    background:      linear-gradient(90deg, rgba(12,16,28,1) 25%, rgba(20,24,40,1) 50%, rgba(12,16,28,1) 75%);
+    background-size: 200% 100%;
+    animation:       lis-skeleton 1.6s infinite ease-in-out;
   }
 
-  .carved-input:focus {
-    border-color: rgba(34, 211, 238, 0.6);
-  }
+  /* Toast utility */
+  .toast-base      { transition: opacity var(--dur-btn) var(--ease-lis), transform var(--dur-btn) var(--ease-lis); }
+  .toast-enter     { opacity: 1; transform: translateY(0); }
+  .toast-exit      { opacity: 0; transform: translateY(8px); pointer-events: none; }
 
-  /* GPU Stacking utility for floating/interactive links */
-  .sidebar-link {
-    will-change: transform;
-    transform: translateZ(0);
-  }
-
-  /* Compact Loading Spinner */
+  /* Loading spinner */
   .loading-spinner {
-    width: 1em;
-    height: 1em;
+    width: 1em; height: 1em;
     border: 2px solid currentColor;
     border-bottom-color: transparent;
     border-radius: 50%;
     display: inline-block;
     box-sizing: border-box;
-    animation: rotation 1s linear infinite;
-  }
-
-  @keyframes rotation {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-
-  /* CSS-only toast — replaces Framer Motion toast animation */
-  .toast-enter {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  .toast-exit {
-    opacity: 0;
-    transform: translateY(8px);
-    pointer-events: none;
-  }
-  .toast-base {
-    transition: opacity var(--dur-btn) ease, transform var(--dur-btn) ease;
+    animation: lis-spin 1s linear infinite;
   }
 }
 
-/* Custom scrollbar matching dark liquid vibe */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* ─────────────────────────────────────────────────────────────────────────────
+   KEYFRAMES
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Skeleton shimmer */
+@keyframes lis-skeleton {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
-::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.8);
+/* Sidebar shimmer loading item */
+@keyframes shimmer-item {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer-loading-item {
+  background:      linear-gradient(90deg, rgba(34,211,238,0) 0%, rgba(34,211,238,0.04) 50%, rgba(34,211,238,0) 100%);
+  background-size: 200% 100%;
+  animation:       shimmer-item 1.4s infinite linear;
 }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 99px;
+/* Spin */
+@keyframes lis-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
-}
-
+/* Slow ambient spin */
 @keyframes spin-slow {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.animate-spin-slow { animation: spin-slow 20s linear infinite; }
+
+/* Progress bar */
+@keyframes slide-progress {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.animate-progress-bar { animation: slide-progress 1.2s infinite linear; }
+
+/* Pulse dot */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.35; transform: scale(0.9); }
+  50%       { opacity: 1;    transform: scale(1.1); }
+}
+.animate-pulse-dot { animation: pulse-dot 0.8s infinite ease-in-out; }
+
+/* Pulse glow */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 4px rgba(34,211,238,0.20); }
+  50%       { box-shadow: 0 0 14px rgba(34,211,238,0.45); }
+}
+.animate-pulse-glow { animation: pulse-glow 2s infinite ease-in-out; }
+
+/* Live badge pulse */
+@keyframes lis-pulse-live {
+  0%, 100% { opacity: 0.6; transform: scale(0.9); }
+  50%       { opacity: 1;   transform: scale(1.15); }
 }
 
-.animate-spin-slow {
-  animation: spin-slow 20s linear infinite;
+/* Gentle float */
+@keyframes lis-float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-3px); }
 }
+.lis-float { animation: lis-float 3.5s ease-in-out infinite; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SCROLLBAR — Liquid Intelligence style
+   ───────────────────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track  { background: rgba(3, 7, 18, 0.95); }
+::-webkit-scrollbar-thumb  { background: rgba(255,255,255,0.10); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(34,211,238,0.25); }

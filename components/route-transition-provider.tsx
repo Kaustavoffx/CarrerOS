@@ -157,17 +157,24 @@ export function RouteTransitionProvider({ children }: { children: React.ReactNod
             className="fixed inset-0 z-[9999] flex flex-col items-center justify-center pointer-events-none"
             style={{ willChange: "opacity" }}
           >
-            {/* Subtle backdrop blur — only on desktop, avoid expensive on mobile */}
-            <div className="absolute inset-0 bg-[#020305]/80 backdrop-blur-[2px]" />
+            {/* Deep atmospheric backdrop */}
+            <div className="absolute inset-0" style={{ background: 'rgba(3,7,18,0.88)', backdropFilter: 'blur(4px)' }} />
 
-            {/* Content card */}
+            {/* LIS surface card */}
             <motion.div
-              initial={{ scale: 0.97, y: 8 }}
+              initial={{ scale: 0.96, y: 10 }}
               animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.97, y: 8 }}
+              exit={{ scale: 0.96, y: 10 }}
               transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-              className="relative flex flex-col items-center gap-5 px-8 py-8 rounded-2xl border border-white/[0.07] bg-slate-950/90 shadow-2xl"
-              style={{ willChange: "transform, opacity", minWidth: "260px" }}
+              className="relative flex flex-col items-center gap-5 px-8 py-8 rounded-lis"
+              style={{
+                willChange: "transform, opacity",
+                minWidth: "280px",
+                background: 'rgba(8,12,24,0.90)',
+                backdropFilter: 'blur(40px) saturate(200%)',
+                border: '1px solid rgba(255,255,255,0.09)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), 0 40px 100px rgba(0,0,0,0.70)',
+              }}
             >
               {/* Logo */}
               <div className="relative">
@@ -191,7 +198,7 @@ export function RouteTransitionProvider({ children }: { children: React.ReactNod
 
               {/* Destination label */}
               <div className="text-center space-y-1.5">
-                <p className="text-[10px] uppercase tracking-widest text-slate-500 select-none">
+                <p className="text-[9px] uppercase tracking-[0.18em] text-slate-500 select-none font-mono">
                   Navigating to
                 </p>
                 <p className="text-sm font-bold text-white tracking-wide select-none">
@@ -212,15 +219,15 @@ export function RouteTransitionProvider({ children }: { children: React.ReactNod
                 />
               </div>
 
-              {/* Animated progress message */}
+              {/* Animated progress message — Pulse Beacon */}
               <AnimatePresence mode="wait">
                 <motion.p
                   key={currentMessage}
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.2 }}
-                  className="text-[11px] text-cyan-400/80 font-mono tracking-wide select-none"
+                  transition={{ duration: 0.18 }}
+                  className="text-[10px] text-cyan-400/75 font-mono tracking-[0.10em] select-none"
                 >
                   {currentMessage}
                 </motion.p>
