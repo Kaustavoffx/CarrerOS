@@ -21,10 +21,178 @@ import {
   Globe,
   Search,
   Plus,
-  Brain
+  Brain,
+  Info,
+  X,
+  Database
 } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+
+interface GuideContent {
+  title: string;
+  whatItDoes: string;
+  aiCapabilities: Array<{ name: string; desc: string }>;
+  dataAnalyzed: string;
+  recommendationsGeneration: string;
+  privacyPolicy: string;
+  howToTakeAction: string[];
+}
+
+const GUIDE_DATA: Record<string, GuideContent> = {
+  "/dashboard": {
+    title: "Dashboard Guide",
+    whatItDoes: "Centralized workspace that aggregates your readiness score, career goals, active development steps, and roadmap metrics in a unified overview.",
+    aiCapabilities: [
+      { name: "Goal Analysis", desc: "Extracts key technical objectives from your profile goals to dynamically color-code skill metrics." }
+    ],
+    dataAnalyzed: "Student profile records, completed roadmap checkpoints, and user budget preferences.",
+    recommendationsGeneration: "Synthesizes data by cross-referencing your active goal string against completed learning units to estimate readiness percentages.",
+    privacyPolicy: "All metrics and goal inputs are stored securely under strict Supabase Row Level Security (RLS) policies.",
+    howToTakeAction: [
+      "Review your overall Readiness Score circle in the top right.",
+      "Browse active checklists and click on outstanding items to proceed to their modules.",
+      "Check your goal summary and adjust constraints in Settings if requirements shift."
+    ]
+  },
+  "/roadmaps": {
+    title: "Roadmaps Guide",
+    whatItDoes: "Generates custom step-by-step career tracks structured into distinct learning phases.",
+    aiCapabilities: [
+      { name: "Curriculum Synthesis", desc: "Uses generative models to construct optimized learning paths tailored to specific developer roles." },
+      { name: "Contamination Auditing", desc: "Lints roadmap contents to prevent cross-domain topic pollution and ensure SDE-I consistency." }
+    ],
+    dataAnalyzed: "Target career tracks, educational backgrounds, and current skill sets.",
+    recommendationsGeneration: "Matches developer benchmarks with your current profile context to dynamically organize phase timelines.",
+    privacyPolicy: "Roadmap details are compiled privately and visible only to your authenticated account.",
+    howToTakeAction: [
+      "Navigate through learning phases using the progressive steps menu.",
+      "Expand milestones to access target links and certification reference codes.",
+      "Click the PDF icon to export your curriculum offline."
+    ]
+  },
+  "/career-twin": {
+    title: "Career Twin Guide",
+    whatItDoes: "Simulates an AI-driven digital representation of your professional profile to evaluate market readiness.",
+    aiCapabilities: [
+      { name: "Vector Embeddings", desc: "Converts profile data into multidimensional vectors to calculate career-market similarity indices." }
+    ],
+    dataAnalyzed: "Resume skills, experience levels, target domains, and mock interview answers.",
+    recommendationsGeneration: "Computes cosine similarity between your profile embeddings and standard industry criteria models.",
+    privacyPolicy: "Vectorized coordinates are computed dynamically and never sold or shared with public trackers.",
+    howToTakeAction: [
+      "Calibrate career variables in the customization panel.",
+      "Trigger compatibility simulations to evaluate readiness indices.",
+      "Add recommended keywords to your core profile to improve similarity alignment."
+    ]
+  },
+  "/mentor": {
+    title: "AI Mentor Guide",
+    whatItDoes: "Conversational expert counselor to ask programming, scholarship, or wellness questions.",
+    aiCapabilities: [
+      { name: "Context-Aware Agentic Workflow", desc: "Maintains chat history with semantic memory parsing to deliver continuous career counseling." }
+    ],
+    dataAnalyzed: "Interactive chat history, current user profile tags, and resource databases.",
+    recommendationsGeneration: "Retrieves contextually relevant advice using retrieval-augmented logic against official career guidelines.",
+    privacyPolicy: "Chat transcripts are private, sandboxed, and stored securely under your profile ID.",
+    howToTakeAction: [
+      "Type coding questions or ask for help with scholarship criteria.",
+      "Request draft emails or cover letters tailored to specific opportunities.",
+      "Switch conversation contexts to start fresh advice loops."
+    ]
+  },
+  "/community-intelligence": {
+    title: "Community Intel Guide",
+    whatItDoes: "Centralized regional command panel detailing support density, health metrics, and strategic interventions.",
+    aiCapabilities: [
+      { name: "Pattern Detection", desc: "Identifies regional support anomalies by mapping resources against developer densities." },
+      { name: "Predictive Surge Modeling", desc: "Projects upcoming program application surges based on registration statistics." }
+    ],
+    dataAnalyzed: "Seeded directories, user geographic coordinates, and active system logs.",
+    recommendationsGeneration: "Aggregates localized support types and divides active programs by target cities to output regional indices.",
+    privacyPolicy: "Aggregates are calculated using anonymized demographic parameters with zero individual identity exposure.",
+    howToTakeAction: [
+      "Review the general accessibility index progress bar.",
+      "Track active deficiencies to locate city districts with severe program shortages.",
+      "Review Recommended Actions and check completed tasks to save deployment progress."
+    ]
+  },
+  "/support-navigator": {
+    title: "Support Navigator Guide",
+    whatItDoes: "Analyzes and ranks community resources based on eligibility and goals, creating custom execution checklists.",
+    aiCapabilities: [
+      { name: "Explainable Matching", desc: "Calculates compatibility scores and explains the reasoning behind each recommendation." }
+    ],
+    dataAnalyzed: "Opportunity eligibility rules, user goals, and obstacles.",
+    recommendationsGeneration: "Scores opportunities against profile parameters (budget, goals, obstacles) to rank matches.",
+    privacyPolicy: "Private profile parameters are matched in-memory and are never leaked externally.",
+    howToTakeAction: [
+      "Select an opportunity in the ranked sidebar to load its dashboard.",
+      "Read the AI compatibility details explaining why the match is suggested.",
+      "Track your application checkmarks in the custom Action Plan list."
+    ]
+  },
+  "/resource-discovery": {
+    title: "Resource Discovery Guide",
+    whatItDoes: "Interactive proximity search map and directory for scholarships, wellness services, and internships.",
+    aiCapabilities: [
+      { name: "Semantic Query Parsing", desc: "Translates conversational search parameters into targeted category filters." }
+    ],
+    dataAnalyzed: "Geocoding coordinates, category tags, and search keywords.",
+    recommendationsGeneration: "Queries proximity databases and matches results by city name or distance radius.",
+    privacyPolicy: "Coordinates are used solely for localized calculation and are not logged persistently.",
+    howToTakeAction: [
+      "Enter custom keywords or select a specific support sector (e.g. Wellness).",
+      "Filter listings by target city.",
+      "Read requirements and click 'Apply Externally' to visit the direct portal."
+    ]
+  },
+  "/community-gaps": {
+    title: "Gap Intelligence Guide",
+    whatItDoes: "Compiles help gap assessment reports listing districts with absolute resource shortages.",
+    aiCapabilities: [
+      { name: "Deficiency Compilation", desc: "Monitors regional databases to generate automated markdown impact reports." }
+    ],
+    dataAnalyzed: "Verified program allocations and district statistics.",
+    recommendationsGeneration: "Scans the heatmap data to compile list of city-sector pairs with zero active resources.",
+    privacyPolicy: "Aggregated regional gap metrics contain no personally identifiable records.",
+    howToTakeAction: [
+      "Review the list of active critical gaps by district.",
+      "Download the formal CSI Help Gap Report file as a markdown document.",
+      "Identify areas for target grant allocations or community volunteering."
+    ]
+  },
+  "/community-heatmap": {
+    title: "Heatmap Matrix Guide",
+    whatItDoes: "Interactive grid matrix showing resource counts across target cities and support types.",
+    aiCapabilities: [
+      { name: "Grid Density Aggregation", desc: "Summarizes multi-dimensional density records into access tiers." }
+    ],
+    dataAnalyzed: "Resource classifications mapped by city boundaries.",
+    recommendationsGeneration: "Tallies counts of verified records per city and color-codes grid cells by density levels.",
+    privacyPolicy: "Displays public program counts with no individual user profiles exposed.",
+    howToTakeAction: [
+      "Review color-coded cells: Red (Severe Shortage), Yellow (Low Density), and Blue (Optimal Access).",
+      "Hover or check cells to check raw listings counts.",
+      "Export the gap data using the action button in the matrix header."
+    ]
+  },
+  "/report-need": {
+    title: "Review Queue Guide",
+    whatItDoes: "Crowdsourced review ledger allowing users to propose new resources and vote on pending verification cases.",
+    aiCapabilities: [
+      { name: "Queue Ingestion Routing", desc: "Routes submitted proposals into review queues and feeds." }
+    ],
+    dataAnalyzed: "Proposal metadata, community votes, and submission fields.",
+    recommendationsGeneration: "Promotes entries to verified status when community votes cross the threshold (25 votes).",
+    privacyPolicy: "Submissions and voting history are transparent to maintain community trust.",
+    howToTakeAction: [
+      "Fill out the proposal form (Name, Type, City, Description) and submit.",
+      "Browse pending cases in the crowdsourced list.",
+      "Click the 'Approve' button to cast your validation vote for pending entries."
+    ]
+  }
+};
 
 type WorkspaceShellProps = {
   profile: UserProfileRecord | null;
@@ -49,7 +217,7 @@ const navGroups = [
       { label: "Community Intel", href: "/community-intelligence", icon: Shield },
       { label: "Support Navigator", href: "/support-navigator", icon: Compass },
       { label: "Resource Discovery", href: "/resource-discovery", icon: Globe },
-      { label: "Gap Intelligence", href: "/gap-intelligence", icon: Activity }
+      { label: "Gap Intelligence", href: "/community-gaps", icon: Activity }
     ]
   },
   {
@@ -133,12 +301,18 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
   const [paletteQuery, setPaletteQuery] = useState("");
   const [paletteFocusedIndex, setPaletteFocusedIndex] = useState(0);
 
+  // Global guide states
+  const [guideOpen, setGuideOpen] = useState(false);
+  const activeGuide = GUIDE_DATA[pathname];
+  const isGuideAvailable = !!activeGuide;
+
   const score = profile?.readiness_score ?? 0;
 
   // Clear all transition locks and mobile overlays on route change complete
   useEffect(() => {
     setTransitioningTo(null);
     setIsQuickActionOpen(false);
+    setGuideOpen(false);
   }, [pathname]);
 
   // Route-aware progress estimation timer triggers
@@ -527,7 +701,16 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
         }}
         className="hidden xl:block"
       >
-        <main className="mx-auto max-w-7xl px-8 py-8 pb-24">
+        <main className="mx-auto max-w-7xl px-8 py-8 pb-24 relative">
+          {isGuideAvailable && (
+            <button
+              onClick={() => setGuideOpen(true)}
+              className="absolute top-8 right-8 z-30 px-3.5 py-2 rounded-xl bg-slate-900/90 border border-white/10 hover:border-cyan-500/30 text-xs text-slate-300 hover:text-white transition flex items-center gap-1.5 font-bold shadow-md shadow-black/40 backdrop-blur-md active:scale-95"
+            >
+              <Info className="h-4 w-4 text-cyan-400" />
+              Mission Guide
+            </button>
+          )}
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}
@@ -570,7 +753,16 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
         </header>
 
         {/* Mobile main content container */}
-        <main className="flex-1 mx-auto w-full max-w-5xl px-5 py-6 pb-28">
+        <main className="flex-1 mx-auto w-full max-w-5xl px-5 py-6 pb-28 relative">
+          {isGuideAvailable && (
+            <button
+              onClick={() => setGuideOpen(true)}
+              className="absolute top-4 right-5 z-30 px-2.5 py-1.5 rounded-xl bg-slate-900 border border-white/5 text-[10px] text-slate-300 hover:text-white transition flex items-center gap-1 font-bold shadow-md shadow-black/40 backdrop-blur-md active:scale-95"
+            >
+              <Info className="h-3.5 w-3.5 text-cyan-400" />
+              Guide
+            </button>
+          )}
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}
@@ -713,7 +905,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                   </button>
 
                   <button
-                    onClick={() => handleQuickAction("/community-intelligence")}
+                    onClick={() => handleQuickAction("/report-need")}
                     className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-white/5 hover:border-cyan-500/20 text-left active:scale-98 transition-transform"
                   >
                     <span className="flex items-center gap-3">
@@ -802,6 +994,101 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                   })
                 )}
               </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── GLOBAL MISSION GUIDE DRAWER ── */}
+      <AnimatePresence>
+        {guideOpen && activeGuide && (
+          <>
+            {/* Modal backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setGuideOpen(false)}
+              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+            />
+            
+            {/* Slide-over panel */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", stiffness: 380, damping: 35 }}
+              className="fixed top-0 right-0 h-screen w-80 bg-slate-950 border-l border-white/10 z-50 shadow-2xl p-6 flex flex-col gap-5 select-none text-xs text-slate-300 overflow-hidden"
+            >
+              <div className="flex justify-between items-center border-b border-white/5 pb-2.5 shrink-0">
+                <div className="flex items-center gap-2">
+                  <Info className="h-4.5 w-4.5 text-cyan-400" />
+                  <h3 className="text-sm font-bold text-white tracking-wide">{activeGuide.title}</h3>
+                </div>
+                <button 
+                  onClick={() => setGuideOpen(false)}
+                  className="p-1 hover:bg-white/5 rounded-lg border border-white/5 text-slate-500 hover:text-white transition"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto space-y-5 pr-1 leading-relaxed scrollbar-thin">
+                <div className="space-y-1.5">
+                  <p className="font-bold text-cyan-400 uppercase tracking-wider text-[9px]">What this page does</p>
+                  <p className="text-slate-300">{activeGuide.whatItDoes}</p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <p className="font-bold text-cyan-400 uppercase tracking-wider text-[9px]">AI Capabilities Used</p>
+                  <div className="space-y-2 mt-1">
+                    {activeGuide.aiCapabilities.map((cap, i) => (
+                      <div key={i} className="bg-indigo-950/20 border border-indigo-500/15 rounded-lg p-2.5">
+                        <p className="font-bold text-white text-[10px] flex items-center gap-1">
+                          <Brain className="h-3.5 w-3.5 text-indigo-400" /> {cap.name}
+                        </p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">
+                          {cap.desc}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <p className="font-bold text-cyan-400 uppercase tracking-wider text-[9px]">What data is analyzed</p>
+                  <div className="flex items-start gap-1.5 bg-slate-900 border border-white/5 p-2.5 rounded-lg text-[10px] text-slate-300">
+                    <Database className="h-3.5 w-3.5 text-slate-400 shrink-0 mt-0.5" />
+                    <span>{activeGuide.dataAnalyzed}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <p className="font-bold text-cyan-400 uppercase tracking-wider text-[9px]">How recommendations are generated</p>
+                  <p className="text-slate-300">{activeGuide.recommendationsGeneration}</p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <p className="font-bold text-cyan-400 uppercase tracking-wider text-[9px]">Privacy Policy</p>
+                  <p className="text-slate-400 italic text-[11px]">{activeGuide.privacyPolicy}</p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <p className="font-bold text-cyan-400 uppercase tracking-wider text-[9px]">How user can take action</p>
+                  <ul className="list-disc list-inside space-y-1 text-slate-300">
+                    {activeGuide.howToTakeAction.map((action, i) => (
+                      <li key={i}>{action}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setGuideOpen(false)}
+                className="w-full py-2 bg-gradient-to-r from-cyan-600 to-indigo-600 text-white font-semibold text-xs rounded-xl shadow-md transition active:scale-95 text-center mt-auto shrink-0"
+              >
+                Got it
+              </button>
             </motion.div>
           </>
         )}

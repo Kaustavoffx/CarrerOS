@@ -1,11 +1,13 @@
 import { redirect } from "next/navigation";
 import { WorkspaceShell } from "@/components/workspace-shell";
-import { CommunityIntelligence } from "@/components/community-intelligence";
+import { CommunityHeatmapWorkspace } from "@/components/community-heatmap-workspace";
+import { CommunitySupportProvider } from "@/components/community-support-context";
+import { CommunitySupportLayout } from "@/components/community-support-layout";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { loadAppData } from "@/lib/app-data";
 
-export default async function CommunityPage() {
+export default async function CommunityHeatmapPage() {
   let profile = null;
   let workspace = null;
 
@@ -37,7 +39,11 @@ export default async function CommunityPage() {
 
   return (
     <WorkspaceShell profile={profile} workspace={workspace}>
-      <CommunityIntelligence profile={profile} workspace={workspace} />
+      <CommunitySupportProvider profile={profile} workspace={workspace}>
+        <CommunitySupportLayout activeTab="heatmap">
+          <CommunityHeatmapWorkspace />
+        </CommunitySupportLayout>
+      </CommunitySupportProvider>
     </WorkspaceShell>
   );
 }

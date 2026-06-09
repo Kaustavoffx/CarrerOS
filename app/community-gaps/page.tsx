@@ -1,11 +1,13 @@
 import { redirect } from "next/navigation";
 import { WorkspaceShell } from "@/components/workspace-shell";
-import { CommunitySupportIntelligence } from "@/components/community-support-intelligence";
+import { CommunityGapIntelligenceWorkspace } from "@/components/community-gap-intelligence-workspace";
+import { CommunitySupportProvider } from "@/components/community-support-context";
+import { CommunitySupportLayout } from "@/components/community-support-layout";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { loadAppData } from "@/lib/app-data";
 
-export default async function GapIntelligencePage() {
+export default async function CommunityGapsPage() {
   let profile = null;
   let workspace = null;
 
@@ -37,7 +39,11 @@ export default async function GapIntelligencePage() {
 
   return (
     <WorkspaceShell profile={profile} workspace={workspace}>
-      <CommunitySupportIntelligence profile={profile} workspace={workspace} />
+      <CommunitySupportProvider profile={profile} workspace={workspace}>
+        <CommunitySupportLayout activeTab="gaps">
+          <CommunityGapIntelligenceWorkspace />
+        </CommunitySupportLayout>
+      </CommunitySupportProvider>
     </WorkspaceShell>
   );
 }

@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { WorkspaceShell } from "@/components/workspace-shell";
-import { CommunityIntelligenceWorkspace } from "@/components/community-intelligence-workspace";
 import { ReportNeedWorkspace } from "@/components/report-need-workspace";
 import { CommunitySupportProvider } from "@/components/community-support-context";
 import { CommunitySupportLayout } from "@/components/community-support-layout";
@@ -8,12 +7,7 @@ import { hasSupabaseConfig } from "@/lib/supabase/config";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { loadAppData } from "@/lib/app-data";
 
-export default async function CommunityIntelligencePage(props: {
-  searchParams: Promise<{ tab?: string }>;
-}) {
-  const searchParams = await props.searchParams;
-  const tab = searchParams.tab;
-
+export default async function ReportNeedPage() {
   let profile = null;
   let workspace = null;
 
@@ -45,15 +39,11 @@ export default async function CommunityIntelligencePage(props: {
 
   return (
     <WorkspaceShell profile={profile} workspace={workspace}>
-      {tab === "review" ? (
-        <CommunitySupportProvider profile={profile} workspace={workspace}>
-          <CommunitySupportLayout activeTab="review">
-            <ReportNeedWorkspace />
-          </CommunitySupportLayout>
-        </CommunitySupportProvider>
-      ) : (
-        <CommunityIntelligenceWorkspace profile={profile} workspace={workspace} />
-      )}
+      <CommunitySupportProvider profile={profile} workspace={workspace}>
+        <CommunitySupportLayout activeTab="review">
+          <ReportNeedWorkspace />
+        </CommunitySupportLayout>
+      </CommunitySupportProvider>
     </WorkspaceShell>
   );
 }

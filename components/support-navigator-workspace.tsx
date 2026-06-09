@@ -1,0 +1,119 @@
+"use client";
+
+import React from "react";
+import { useCommunitySupport } from "./community-support-context";
+
+export function SupportNavigatorWorkspace() {
+  const {
+    selectedMatchResourceId,
+    setSelectedMatchResourceId,
+    matchScores,
+    sortedMatchingResources,
+    activeMatchResource,
+    matchActionPlanChecked,
+    setMatchActionPlanChecked
+  } = useCommunitySupport();
+
+  return (
+    <div className="rounded-2xl border border-white/5 bg-slate-900/20 p-5 space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+        <div className="md:col-span-5 space-y-3">
+          <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Ranked Compatibility Listings</p>
+          <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+            {sortedMatchingResources.map((res) => {
+              const matched = matchScores[res.id];
+              return (
+                <button
+                  key={res.id}
+                  onClick={() => setSelectedMatchResourceId(res.id)}
+                  className={`w-full text-left p-3 rounded-xl border transition-all ${
+                    selectedMatchResourceId === res.id
+                      ? "bg-cyan-500/10 border-cyan-400/30 shadow-[0_0_12px_rgba(34,211,238,0.1)]"
+                      : "bg-slate-950/30 border-white/5 hover:bg-slate-900/40"
+                  }`}
+                >
+                  <div className="flex justify-between items-center gap-2">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">{res.type}</span>
+                    <span
+                      className={`text-[10px] font-mono font-bold ${
+                        matched && matched.score >= 80 ? "text-cyan-400" : matched && matched.score >= 60 ? "text-amber-400" : "text-slate-400"
+                      }`}
+                    >
+                      {matched ? `${matched.score}% MATCH` : "0% MATCH"}
+                    </span>
+                  </div>
+                  <p className="text-xs font-bold text-white mt-1 truncate">{res.name}</p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="md:col-span-7 space-y-4 bg-slate-950/40 border border-white/5 rounded-2xl p-4">
+          {activeMatchResource ? (
+            <>
+              <div>
+                <span className="text-[9px] bg-cyan-950 text-cyan-300 font-bold px-2 py-0.5 rounded-full border border-cyan-500/20 uppercase tracking-wider">
+                  {activeMatchResource.type}
+                </span>
+                <h3 className="text-sm font-bold text-white mt-2">{activeMatchResource.name}</h3>
+                <p className="text-[10px] text-slate-500 mt-0.5">{activeMatchResource.city || "Online"} • Verified Platform</p>
+              </div>
+
+              <div className="space-y-1.5 border-t border-white/5 pt-3">
+                <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">AI Compatibility Explanation</p>
+                <p className="text-xs text-slate-300 leading-normal bg-cyan-950/15 border border-cyan-500/10 rounded-xl p-3">
+                  {matchScores[activeMatchResource.id]?.why}
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Missing Eligibility Risk Factors</p>
+                <div className="p-2.5 bg-slate-900/30 border border-white/5 rounded-xl text-xs space-y-1">
+                  {matchScores[activeMatchResource.id]?.missing.map((item, i) => (
+                    <div key={i} className="flex items-start gap-1.5 text-[10px] text-slate-300">
+                      <span className="text-amber-500 font-bold font-mono">!</span>
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1.5 border-t border-white/5 pt-3">
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Automated Application Action Plan</p>
+                <div className="space-y-2">
+                  {matchScores[activeMatchResource.id]?.checklist.map((step, index) => {
+                    const stepKey = `${activeMatchResource.id}-step-${index}`;
+                    const isChecked = matchActionPlanChecked[stepKey] || false;
+                    return (
+                      <label key={index} className="flex items-center gap-2.5 p-2 bg-slate-900/20 hover:bg-slate-900/40 rounded-lg border border-white/5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() =>
+                            setMatchActionPlanChecked((prev) => ({
+                              ...prev,
+                              [stepKey]: !isChecked
+                            }))
+                          }
+                          className="h-3.5 w-3.5 rounded border-white/10 bg-slate-950 text-cyan-500 focus:ring-cyan-500"
+                        />
+                        <span className={`text-[10px] text-slate-300 select-none ${isChecked ? "line-through opacity-50" : ""}`}>
+                          {step}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="h-full flex items-center justify-center text-center">
+              <p className="text-xs text-slate-500">Select a ranked resource to review compatibility audit analytics.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
