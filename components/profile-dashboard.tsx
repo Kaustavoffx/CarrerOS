@@ -44,15 +44,14 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
   const [fullName, setFullName] = useState(profile?.full_name ?? "");
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url ?? "");
   const [goal, setGoal] = useState(profile?.goal ?? "");
-  const [readinessScore, setReadinessScore] = useState(profile?.readiness_score ?? 0);
   const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>(profile?.experience_level ?? "Junior");
   const [timeAvailability, setTimeAvailability] = useState(profile?.time_availability ?? "");
   const [learningStyle, setLearningStyle] = useState(profile?.learning_style ?? "");
 
-  const [isEditingIdentity, setIsEditingIdentity] = useState(false);
   const [savingIdentity, setSavingIdentity] = useState(false);
 
   const [professionalSummary, setProfessionalSummary] = useState("");
+
   const [autosaveStatus, setAutosaveStatus] = useState<"idle" | "typing" | "saving" | "saved">("idle");
 
   const [githubUrl, setGithubUrl] = useState("");
@@ -81,7 +80,6 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
       setFullName(profile.full_name ?? "");
       setAvatarUrl(profile.avatar_url ?? "");
       setGoal(profile.goal ?? "");
-      setReadinessScore(profile.readiness_score ?? 0);
       setExperienceLevel(profile.experience_level ?? "Junior");
       setTimeAvailability(profile.time_availability ?? "");
       setLearningStyle(profile.learning_style ?? "");

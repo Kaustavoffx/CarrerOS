@@ -26,7 +26,16 @@ export async function POST(req: Request) {
     }
 
     const apiKey = process.env.OPENAI_API_KEY;
-    let resultPayload: Record<string, any> = {};
+    interface AgentResultPayload {
+      eligible?: boolean;
+      matchPercentage?: number;
+      notes?: string;
+      mismatches?: string[];
+      document?: string;
+      [key: string]: unknown;
+    }
+    let resultPayload: AgentResultPayload = {};
+
     const logs: string[] = [];
 
     logs.push(`[Agent init] Active agent workflow triggered: ${actionType}`);
@@ -40,7 +49,8 @@ export async function POST(req: Request) {
       if (!apiKey) {
         // Fallback rule evaluation
         logs.push("[Agent fallback] Executing native rule parsing filters...");
-        let eligible = true;
+        const eligible = true;
+
         const mismatch: string[] = [];
 
         if (resource.eligibility.gender && resource.eligibility.gender === "Female" && profile.experience_level !== "Student") {
@@ -186,7 +196,8 @@ Resource: Name: ${resource.name}, Description: ${resource.description}
           logs: logs
         });
         logs.push("[Database] Agent transaction log committed.");
-      } catch (dbErr) {
+      } catch {
+
         // Silently skip if table is missing
       }
     }
@@ -198,7 +209,9 @@ Resource: Name: ${resource.name}, Description: ${resource.description}
       payload: resultPayload,
       logs
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Agent execution failed" }, { status: 500 });
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : "Agent execution failed";
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
+
 }

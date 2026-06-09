@@ -122,7 +122,14 @@ test("normalizeRawPayloadDifficulty traverses payload and normalizes difficulty 
     ]
   };
 
-  const normalized = normalizeRawPayloadDifficulty(rawPayload) as any;
+  interface NormalizedPayload {
+    roadmaps: Array<{
+      milestones: Array<{
+        difficulty_level: string;
+      }>;
+    }>;
+  }
+  const normalized = normalizeRawPayloadDifficulty(rawPayload) as unknown as NormalizedPayload;
 
   assert.equal(normalized.roadmaps[0].milestones[0].difficulty_level, "Beginner");
   assert.equal(normalized.roadmaps[0].milestones[1].difficulty_level, "Intermediate");
@@ -283,9 +290,9 @@ test("normalizeRoadmap correctly rounds floating point demand scores", () => {
 });
 
 test("console logging during validation and persistence contains only safe metadata", () => {
-  const mockLogs: any[] = [];
-  const mockWarns: any[] = [];
-  const mockErrors: any[] = [];
+  const mockLogs: unknown[][] = [];
+  const mockWarns: unknown[][] = [];
+  const mockErrors: unknown[][] = [];
 
   const originalLog = console.log;
   const originalInfo = console.info;

@@ -8,7 +8,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { updateProfile } from "@/lib/app-data";
 import { MagneticButton } from "./magnetic-button";
 import {
-  Download, Check, User, X, Sliders, AlertTriangle, ChevronDown, ChevronUp
+  Download, Check, User, X, Sliders, AlertTriangle
 } from "lucide-react";
 
 type SettingsDashboardProps = {

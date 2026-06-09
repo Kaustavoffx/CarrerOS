@@ -21,7 +21,8 @@ export async function GET(req: Request) {
     });
 
     return NextResponse.json({ resources });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to retrieve resources" }, { status: 500 });
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : "Failed to retrieve resources";
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }

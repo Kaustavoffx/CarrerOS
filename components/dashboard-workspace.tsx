@@ -5,8 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion"; // Kept only for Confetti celebration animation
 import {
-  ArrowRight, Sparkles, Trash2, Check, X, PlusCircle,
-  Search, Flame, Activity, BookOpen, AlertTriangle
+  ArrowRight, Trash2, Check, X, PlusCircle,
+  Search, Flame, Activity, BookOpen, Compass
 } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { generateId } from "@/lib/id";
@@ -32,21 +32,6 @@ function formatUtcDate(dateStr: string) {
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   return `${months[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
 }
-
-function formatUtcTime(dateStr: string) {
-  if (!dateStr) return "";
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  const hours = d.getUTCHours().toString().padStart(2, "0");
-  const minutes = d.getUTCMinutes().toString().padStart(2, "0");
-  return `${hours}:${minutes} UTC`;
-}
-
-const COLUMN_META: Record<KanbanColumn, { label: string; accent: string; bg: string }> = {
-  upcoming: { label: "Upcoming", accent: "text-slate-400", bg: "bg-slate-500/10" },
-  inprogress: { label: "In Progress", accent: "text-amber-300", bg: "bg-amber-500/10" },
-  completed: { label: "Completed", accent: "text-emerald-300", bg: "bg-emerald-500/10" },
-};
 
 
 
@@ -231,20 +216,10 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
   const estMins = timeRequiredMin % 60;
   const timeRequiredString = estHours > 0 ? `${estHours}h ${estMins}m` : `${estMins}m`;
 
-  // Projects completed counts
-  const completedProjectsCount = allMilestones.slice(0, completedCount).reduce((acc, m) => acc + (m.projects?.length ?? 0), 0);
-  const totalProjectsCount = allMilestones.reduce((acc, m) => acc + (m.projects?.length ?? 0), 0);
-
   // Weekly consistency rate
   const totalCheckedEver = Object.values(checkedTasks).filter(Boolean).length;
   const weeklyConsistency = totalCheckedEver > 0 ? Math.min(100, 75 + (totalCheckedEver * 4) % 25) : 0;
 
-  // Applications Count logged in logs
-  const applicationsCount = workspace?.progress?.filter(p =>
-    p.label.toLowerCase().includes("apply") ||
-    p.label.toLowerCase().includes("application") ||
-    p.label.toLowerCase().includes("job")
-  ).length ?? 0;
 
   // Filtered Notes
   const notes = workspace?.notes ?? [];
@@ -294,93 +269,6 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
   }
 
   // ── Drag & Drop Kanban Milestone handlers ───────────────────────────────
-  async function handleMilestoneStatusUpdate(milestoneTitle: string, col: KanbanColumn) {
-    if (!activeRoadmap || !workspace) return;
-    
-    const updatedMilestones = allMilestones.map((m, idx) => {
-      if (m.title === milestoneTitle) {
-        const msTasks = m.project_tasks ?? [];
-        const msDels = m.deliverables ?? [];
-        
-        let completedTasks = Array.isArray(m.completed_tasks) ? [...m.completed_tasks] : [];
-        let completedDels = Array.isArray(m.completed_deliverables) ? [...m.completed_deliverables] : [];
-        
-        if (col === "completed") {
-          completedTasks = [...msTasks];
-          completedDels = [...msDels];
-        } else if (col === "upcoming") {
-          completedTasks = [];
-          completedDels = [];
-        }
-        
-        return {
-          ...m,
-          status: col,
-          completed_tasks: completedTasks,
-          completed_deliverables: completedDels
-        };
-      }
-      // If other milestones don't have a status yet, set their current derived status
-      if (!m.status) {
-        const derivedCol = getMilestoneColumn(m, idx);
-        return { ...m, status: derivedCol };
-      }
-      return m;
-    });
-
-    const nextCompletedCount = updatedMilestones.filter(m => m.status === "completed").length;
-    const nextProgress = Math.min(100, Math.round((nextCompletedCount / allMilestones.length) * 100));
-
-    const updatedRoadmap = {
-      ...activeRoadmap,
-      progress: nextProgress,
-      milestones: updatedMilestones
-    };
-    
-    const updatedRoadmaps = [updatedRoadmap, ...roadmaps.slice(1)];
-    
-    // Update local React checked state
-    setCheckedTasks(prev => {
-      const nextChecked = { ...prev };
-      updatedMilestones.forEach(m => {
-        if (m.title === milestoneTitle) {
-          const msTasks = m.project_tasks ?? [];
-          const msDels = m.deliverables ?? [];
-          msTasks.forEach((_, i) => {
-            nextChecked[`${m.title}::t::${i}`] = col === "completed";
-          });
-          msDels.forEach((_, i) => {
-            nextChecked[`${m.title}::d::${i}`] = col === "completed";
-          });
-        }
-      });
-      if (profile?.id) {
-        try {
-          localStorage.setItem(`careeros::roadmap_checked_tasks::${profile.id}`, JSON.stringify(nextChecked));
-        } catch {}
-      }
-      return nextChecked;
-    });
-
-    // Update workspace state
-    setWorkspace(prev => prev ? { ...prev, roadmaps: updatedRoadmaps } : null);
-
-    try {
-      if (supabase && profile?.id) {
-        await updateWorkspace(supabase, profile.id, { roadmaps: updatedRoadmaps });
-        showToast(`Milestone moved to ${col === "inprogress" ? "In Progress" : col === "completed" ? "Completed" : "Todo"}.`);
-        if (col === "completed") {
-          setShowCelebration(true);
-          setTimeout(() => setShowCelebration(false), 4000);
-        }
-      } else {
-        showToast("Saved locally.");
-      }
-    } catch {
-      showToast("Cloud sync failed. Saved to memory.");
-    }
-  }
-
   // ── Today's Mission Checklist state handler ─────────────────────────────
   async function toggleTaskState(key: string) {
     if (!activeRoadmap || !workspace) return;

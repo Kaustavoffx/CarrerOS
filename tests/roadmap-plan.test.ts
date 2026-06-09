@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { auditRoadmapQuality, buildRoadmapPlanDetails, resolveDomainProfile, validateRoadmapDomainConsistency, validateRoadmapDomain, MissingRoadmapTitleError, MissingRoadmapMetadataError, IncompleteRoadmapRecordError, DomainMismatchError } from "../lib/roadmap-plan";
 import { generateRoadmapPdfBlob } from "../lib/roadmap-export";
+import type { RoadmapRecord } from "../lib/supabase/types";
+import type { RoadmapPdfReport } from "../lib/roadmap-export";
 
 const domainCases = [
   {
@@ -109,7 +111,7 @@ test("Software Engineering roadmap uses the required SDE-I phases only", () => {
 });
 
 test("domain consistency validator rejects cross-domain roadmap rows", () => {
-  assert.throws(() => validateRoadmapDomainConsistency({ title: "Programming Fundamentals", career_domain: "Operations and Strategy", summary: "Summary text", milestones: [{}] } as any, "Software Development Engineer I"), /Roadmap domain mismatch/);
+  assert.throws(() => validateRoadmapDomainConsistency({ title: "Programming Fundamentals", career_domain: "Operations and Strategy", summary: "Summary text", milestones: [{}] } as unknown as RoadmapRecord, "Software Development Engineer I"), /Roadmap domain mismatch/);
 });
 
 test("role-aware roadmap generator produces completely different contents per career domain", () => {
@@ -155,15 +157,15 @@ test("role-aware roadmap generator produces completely different contents per ca
   assert.ok(dataProviders.has("Kaggle") || dataProviders.has("DataCamp") || dataProviders.has("Microsoft"));
 
   // Verify semantic validator warns on mismatched sections
-  const res1 = validateRoadmapDomainConsistency({ career_domain: "Operations and Strategy", title: "Programming Fundamentals", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any, "Operations and Strategy");
+  const res1 = validateRoadmapDomainConsistency({ career_domain: "Operations and Strategy", title: "Programming Fundamentals", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as unknown as RoadmapRecord, "Operations and Strategy");
   assert.ok(!res1.valid);
   assert.ok(res1.warnings.some(w => w.includes("Semantic Mismatch")));
 
-  const res2 = validateRoadmapDomainConsistency({ career_domain: "Research and Academia", title: "Git & GitHub", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any, "Research and Academia");
+  const res2 = validateRoadmapDomainConsistency({ career_domain: "Research and Academia", title: "Git & GitHub", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as unknown as RoadmapRecord, "Research and Academia");
   assert.ok(!res2.valid);
   assert.ok(res2.warnings.some(w => w.includes("Semantic Mismatch")));
 
-  const res3 = validateRoadmapDomainConsistency({ career_domain: "Design and UX", title: "SQL Analytics", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any, "Design and UX");
+  const res3 = validateRoadmapDomainConsistency({ career_domain: "Design and UX", title: "SQL Analytics", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as unknown as RoadmapRecord, "Design and UX");
   assert.ok(!res3.valid);
   assert.ok(res3.warnings.some(w => w.includes("Semantic Mismatch")));
 });
@@ -195,7 +197,7 @@ test("PDF Redesign Layout Engine Verification across core roles", async () => {
 
     // Generating the PDF runs the programmatic LayoutLedger validation checks.
     // If any element breaches 48pt margins, it throws a fatal layout exception.
-    const pdfBlob = await generateRoadmapPdfBlob(report as any);
+    const pdfBlob = await generateRoadmapPdfBlob(report as unknown as RoadmapPdfReport);
     assert.ok(pdfBlob, `PDF should be generated successfully for ${role}`);
     assert.ok(pdfBlob.size > 1000, `PDF size should be substantial for ${role}`);
   }
@@ -215,7 +217,7 @@ test("semantic domain validator correctly validates role-specific subtopics", ()
   ];
   for (const title of sdePasses) {
     const result = validateRoadmapDomainConsistency(
-      { title, career_domain: "Software Engineering", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any,
+      { title, career_domain: "Software Engineering", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as unknown as RoadmapRecord,
       sdeGoal,
       { throwOnError: false }
     );
@@ -229,7 +231,7 @@ test("semantic domain validator correctly validates role-specific subtopics", ()
   ];
   for (const title of sdeFails) {
     const result = validateRoadmapDomainConsistency(
-      { title, career_domain: "Software Engineering", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any,
+      { title, career_domain: "Software Engineering", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as unknown as RoadmapRecord,
       sdeGoal,
       { throwOnError: false }
     );
@@ -245,7 +247,7 @@ test("semantic domain validator correctly validates role-specific subtopics", ()
   ];
   for (const title of dsPasses) {
     const result = validateRoadmapDomainConsistency(
-      { title, career_domain: "Data and Analytics", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any,
+      { title, career_domain: "Data and Analytics", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as unknown as RoadmapRecord,
       dsGoal,
       { throwOnError: false }
     );
@@ -259,7 +261,7 @@ test("semantic domain validator correctly validates role-specific subtopics", ()
   ];
   for (const title of dsFails) {
     const result = validateRoadmapDomainConsistency(
-      { title, career_domain: "Data and Analytics", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as any,
+      { title, career_domain: "Data and Analytics", summary: "some summary", milestones: [{}], weekly_schedule: [], learning_outcomes: [], project_tasks: [], expected_outcomes: [] } as unknown as RoadmapRecord,
       dsGoal,
       { throwOnError: false }
     );
@@ -360,7 +362,7 @@ test("roadmap validation correctly classifies empty or null titles as metadata e
   };
 
   const nullTitleRoadmap = {
-    title: null as any,
+    title: null as unknown as string,
     career_domain: "Software Engineering",
     summary: "Familiarity with loops, functions, and arrays.",
     milestones: [{ title: "Programming Fundamentals", estimated_duration_weeks: 4, difficulty_level: "Beginner", completion_criteria: [], resource_links: [], projects: [], project_tasks: [], deliverables: [], expected_outcomes: [] }],
@@ -372,29 +374,35 @@ test("roadmap validation correctly classifies empty or null titles as metadata e
 
   // 1. Assert that empty title throws MissingRoadmapTitleError and NOT DomainMismatchError
   assert.throws(
-    () => validateRoadmapDomain(emptyTitleRoadmap as any, "SDE-I"),
-    (err: any) => {
-      assert.equal(err.name, "MissingRoadmapTitleError");
-      return true;
+    () => validateRoadmapDomain(emptyTitleRoadmap as unknown as RoadmapRecord, "SDE-I"),
+    (err: unknown) => {
+      if (err instanceof Error) {
+        assert.equal(err.name, "MissingRoadmapTitleError");
+        return true;
+      }
+      return false;
     }
   );
 
   // 2. Assert that null title throws MissingRoadmapTitleError and NOT DomainMismatchError
   assert.throws(
-    () => validateRoadmapDomain(nullTitleRoadmap as any, "SDE-I"),
-    (err: any) => {
-      assert.equal(err.name, "MissingRoadmapTitleError");
-      return true;
+    () => validateRoadmapDomain(nullTitleRoadmap as unknown as RoadmapRecord, "SDE-I"),
+    (err: unknown) => {
+      if (err instanceof Error) {
+        assert.equal(err.name, "MissingRoadmapTitleError");
+        return true;
+      }
+      return false;
     }
   );
 
   // 3. Assert validateRoadmapDomainConsistency returns warning with "Missing roadmap title"
-  const emptyRes = validateRoadmapDomainConsistency(emptyTitleRoadmap as any, "SDE-I", { throwOnError: false });
+  const emptyRes = validateRoadmapDomainConsistency(emptyTitleRoadmap as unknown as RoadmapRecord, "SDE-I", { throwOnError: false });
   assert.ok(!emptyRes.valid);
   assert.ok(emptyRes.warnings[0].includes("Missing roadmap title"), "Should report missing roadmap title");
   assert.ok(!emptyRes.warnings[0].includes("domain mismatch"), "Should NOT report domain mismatch");
 
-  const nullRes = validateRoadmapDomainConsistency(nullTitleRoadmap as any, "SDE-I", { throwOnError: false });
+  const nullRes = validateRoadmapDomainConsistency(nullTitleRoadmap as unknown as RoadmapRecord, "SDE-I", { throwOnError: false });
   assert.ok(!nullRes.valid);
   assert.ok(nullRes.warnings[0].includes("Missing roadmap title"), "Should report missing roadmap title");
   assert.ok(!nullRes.warnings[0].includes("domain mismatch"), "Should NOT report domain mismatch");
@@ -425,7 +433,7 @@ test("Software Engineering roadmap containing System Design must pass validation
     expected_outcomes: ["reason about database sharding and queues"]
   };
 
-  const result = validateRoadmapDomainConsistency(sdeSystemDesignRoadmap as any, "SDE-I", { throwOnError: false });
+  const result = validateRoadmapDomainConsistency(sdeSystemDesignRoadmap as unknown as RoadmapRecord, "SDE-I", { throwOnError: false });
   assert.ok(result.valid, `Software Engineering with System Design should pass, but failed: ${result.warnings.join(", ")}`);
 });
 
@@ -454,7 +462,7 @@ test("UX roadmap with pure design/layout content passes under Design and UX doma
     expected_outcomes: ["deploy responsive visual interface grids"]
   };
 
-  const result = validateRoadmapDomainConsistency(uxDesignRoadmap as any, "UI/UX Designer", { throwOnError: false });
+  const result = validateRoadmapDomainConsistency(uxDesignRoadmap as unknown as RoadmapRecord, "UI/UX Designer", { throwOnError: false });
   assert.ok(result.valid, `UX Design roadmap should pass under Design and UX domain, but failed: ${result.warnings.join(", ")}`);
 });
 
@@ -488,14 +496,17 @@ test("mixed-domain roadmap containing Software Engineering domain and forbidden 
 
   // Assert that it throws DomainMismatchError on validateRoadmapDomain
   assert.throws(
-    () => validateRoadmapDomain(contaminatedRoadmap as any, "SDE-I"),
-    (err: any) => {
-      assert.equal(err.name, "DomainMismatchError");
-      return true;
+    () => validateRoadmapDomain(contaminatedRoadmap as unknown as RoadmapRecord, "SDE-I"),
+    (err: unknown) => {
+      if (err instanceof Error) {
+        assert.equal(err.name, "DomainMismatchError");
+        return true;
+      }
+      return false;
     }
   );
 
-  const result = validateRoadmapDomainConsistency(contaminatedRoadmap as any, "SDE-I", { throwOnError: false });
+  const result = validateRoadmapDomainConsistency(contaminatedRoadmap as unknown as RoadmapRecord, "SDE-I", { throwOnError: false });
   assert.ok(!result.valid);
   assert.ok(result.warnings.some(w => w.includes("disallowed keyword") || w.includes("domain mismatch")), "Warning should specify disallowed keywords or domain mismatch");
 });
@@ -591,7 +602,7 @@ test("mixed contaminated roadmap fails validation", () => {
     project_tasks: ["construct layout and sort data"],
     expected_outcomes: ["quicksort implementation and pixel perfect layouts"]
   };
-  assert.throws(() => validateRoadmapDomain(contaminated as any, "UI/UX Designer"), DomainMismatchError);
+  assert.throws(() => validateRoadmapDomain(contaminated as unknown as RoadmapRecord, "UI/UX Designer"), DomainMismatchError);
 });
 
 test("empty title roadmap fails metadata validation", () => {
@@ -605,7 +616,7 @@ test("empty title roadmap fails metadata validation", () => {
     project_tasks: [],
     expected_outcomes: ["code output"]
   };
-  assert.throws(() => validateRoadmapDomain(emptyTitle as any, "SDE-I"), MissingRoadmapTitleError);
+  assert.throws(() => validateRoadmapDomain(emptyTitle as unknown as RoadmapRecord, "SDE-I"), MissingRoadmapTitleError);
 });
 
 test("missing metadata roadmap fails metadata validation", () => {
@@ -619,7 +630,7 @@ test("missing metadata roadmap fails metadata validation", () => {
     project_tasks: [],
     expected_outcomes: ["code output"]
   };
-  assert.throws(() => validateRoadmapDomain(missingDomain as any, "SDE-I"), MissingRoadmapMetadataError);
+  assert.throws(() => validateRoadmapDomain(missingDomain as unknown as RoadmapRecord, "SDE-I"), MissingRoadmapMetadataError);
 });
 
 test("incomplete roadmap record fails quality gate validation", () => {
@@ -633,7 +644,7 @@ test("incomplete roadmap record fails quality gate validation", () => {
     project_tasks: [],
     expected_outcomes: []
   };
-  assert.throws(() => validateRoadmapDomain(incomplete as any, "SDE-I"), IncompleteRoadmapRecordError);
+  assert.throws(() => validateRoadmapDomain(incomplete as unknown as RoadmapRecord, "SDE-I"), IncompleteRoadmapRecordError);
 });
 
 test("PDF generation engine handles extremely long resource labels, titles, URLs, and checklists without failing horizontal bounds checks", async () => {
@@ -688,7 +699,7 @@ test("PDF generation engine handles extremely long resource labels, titles, URLs
     readinessScore: 88
   };
 
-  const pdfBlob = await generateRoadmapPdfBlob(report as any);
+  const pdfBlob = await generateRoadmapPdfBlob(report as unknown as RoadmapPdfReport);
   assert.ok(pdfBlob, "PDF should generate successfully even with extremely long content");
   assert.ok(pdfBlob.size > 1000, "Generated PDF should be of valid size");
   if (pdfBlob.warnings && pdfBlob.warnings.length > 0) {

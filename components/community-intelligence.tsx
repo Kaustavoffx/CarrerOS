@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
-  MapPin, Compass, Search, Award, BookOpen, Heart,
-  AlertCircle, Users, CheckCircle2, Loader2, Sparkles,
-  Brain, Copy, FileText, Check, ExternalLink, Sliders, ArrowRight, Clock, HelpCircle, ShieldAlert, Activity
+  MapPin, Compass, Search,
+  AlertCircle, CheckCircle2, Loader2,
+  Brain, Copy, FileText, Check, ExternalLink, Sliders, ArrowRight, Clock, ShieldAlert, Activity
 } from "lucide-react";
 import type { UserProfileRecord, WorkspaceSnapshotRecord } from "@/lib/supabase/types";
-import { CommunityResource, AgentAction, SEEDED_RESOURCES } from "@/lib/community-db";
+import { CommunityResource, SEEDED_RESOURCES } from "@/lib/community-db";
 
 type CommunityIntelligenceProps = {
   profile: UserProfileRecord | null;
@@ -25,6 +25,15 @@ type MatchReport = {
   actionPlan: string[];
 };
 
+interface AgentOutputPayload {
+  eligible?: boolean;
+  matchPercentage?: number;
+  notes?: string;
+  mismatches?: string[];
+  document?: string;
+}
+
+
 // Category details
 const CATEGORY_MAP: Record<string, { label: string; color: string; bg: string; border: string }> = {
   scholarship: { label: "Scholarship", color: "text-amber-400", bg: "bg-amber-950/20", border: "border-amber-500/10" },
@@ -40,7 +49,8 @@ const CATEGORY_MAP: Record<string, { label: string; color: string; bg: string; b
   student_service: { label: "Student Service", color: "text-teal-400", bg: "bg-teal-950/20", border: "border-teal-500/10" }
 };
 
-export function CommunityIntelligence({ profile, workspace }: CommunityIntelligenceProps) {
+export function CommunityIntelligence({ profile }: CommunityIntelligenceProps) {
+
   // Navigation tabs: Support Directory vs Heatmap Intelligence
   const [activeSubTab, setActiveSubTab] = useState<"directory" | "heatmap">("directory");
 
@@ -72,7 +82,8 @@ export function CommunityIntelligence({ profile, workspace }: CommunityIntellige
   // Agent Console States
   const [agentActive, setAgentActive] = useState<boolean>(false);
   const [agentLogs, setAgentLogs] = useState<string[]>([]);
-  const [agentOutput, setAgentOutput] = useState<any>(null);
+  const [agentOutput, setAgentOutput] = useState<AgentOutputPayload | null>(null);
+
   const [agentActionType, setAgentActionType] = useState<string>("");
   const [selectedResourceName, setSelectedResourceName] = useState<string>("");
 
@@ -115,7 +126,7 @@ export function CommunityIntelligence({ profile, workspace }: CommunityIntellige
   };
 
   // Fetch resources
-  const fetchResources = async () => {
+  const fetchResources = useCallback(async () => {
     setLoading(true);
     try {
       const queryParams = new URLSearchParams({
@@ -135,10 +146,10 @@ export function CommunityIntelligence({ profile, workspace }: CommunityIntellige
     } finally {
       setLoading(false);
     }
-  };
+  }, [lat, lng, distance, activeCategory, searchQuery]);
 
   // Run AI matching
-  const runAiMatching = async () => {
+  const runAiMatching = useCallback(async () => {
     if (!profile) return;
     setMatching(true);
     try {
@@ -157,10 +168,10 @@ export function CommunityIntelligence({ profile, workspace }: CommunityIntellige
     } finally {
       setMatching(false);
     }
-  };
+  }, [profile]);
 
   // Fetch Heatmap Intelligence data
-  const fetchHeatmap = async () => {
+  const fetchHeatmap = useCallback(async () => {
     setLoadingHeatmap(true);
     try {
       const response = await fetch("/api/community/heatmap");
@@ -174,7 +185,7 @@ export function CommunityIntelligence({ profile, workspace }: CommunityIntellige
     } finally {
       setLoadingHeatmap(false);
     }
-  };
+  }, []);
 
   // Trigger detailed visibility report view
   const openVisibilityReport = (oppId: string) => {
@@ -269,14 +280,14 @@ export function CommunityIntelligence({ profile, workspace }: CommunityIntellige
 
   useEffect(() => {
     fetchResources();
-  }, [lat, lng, distance, activeCategory, searchQuery]);
+  }, [fetchResources]);
 
   useEffect(() => {
     if (profile) {
       runAiMatching();
       fetchHeatmap();
     }
-  }, [profile]);
+  }, [profile, runAiMatching, fetchHeatmap]);
 
   // Heatmap definitions
   const heatmapCities = ["Bangalore", "New Delhi", "Mumbai", "Kolkata", "Jaipur", "Pune", "Ahmedabad"];
@@ -478,7 +489,7 @@ export function CommunityIntelligence({ profile, workspace }: CommunityIntellige
                   </div>
                 ) : aiMatches.length === 0 ? (
                   <div className="text-center py-6">
-                    <p className="text-xs text-slate-500">No active profile matches computed. Click "Calibrate Matches" to evaluate.</p>
+                    <p className="text-xs text-slate-500">No active profile matches computed. Click &ldquo;Calibrate Matches&rdquo; to evaluate.</p>
                   </div>
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2">
@@ -1074,7 +1085,7 @@ export function CommunityIntelligence({ profile, workspace }: CommunityIntellige
               {!agentOutput && !agentActive && (
                 <div className="flex flex-col items-center justify-center py-20 text-center text-slate-500 space-y-2">
                   <FileText className="h-10 w-10 text-slate-700" />
-                  <p className="text-xs">Select "Verify Rules" or "Draft SOP" in directory cards to evaluate qualifications.</p>
+                  <p className="text-xs">Select &ldquo;Verify Rules&rdquo; or &ldquo;Draft SOP&rdquo; in directory cards to evaluate qualifications.</p>
                 </div>
               )}
 
@@ -1125,7 +1136,7 @@ export function CommunityIntelligence({ profile, workspace }: CommunityIntellige
                       <div className="flex justify-between items-center">
                         <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Generated Application Letter / SOP</span>
                         <button
-                          onClick={() => copyToClipboard(agentOutput.document, "sop-doc")}
+                          onClick={() => copyToClipboard(agentOutput.document || "", "sop-doc")}
                           className="text-cyan-400 hover:text-cyan-300 text-[10px] font-bold inline-flex items-center gap-1 bg-cyan-950/20 border border-cyan-400/20 px-2 py-1 rounded"
                         >
                           {copiedId === "sop-doc" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}

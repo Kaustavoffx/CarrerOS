@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   Send, User, Zap, Brain, Clipboard, Star, X,
-  Link2, Edit2, CheckSquare, Square, Lock, FileText,
-  MessageSquare, Terminal, Target
+  Link2, Edit2, CheckSquare, Square, Lock
 } from "lucide-react";
 
 const MENTOR_LOCKED = true;

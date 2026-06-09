@@ -2,9 +2,11 @@ import { createClient } from "@supabase/supabase-js";
 import * as fs from "fs";
 import * as path from "path";
 
+import type { RoadmapRecord, RoadmapMilestoneRecord } from "../lib/supabase/types";
+
 // 1. Load environment from .env.local
 const envPath = path.resolve(process.cwd(), ".env.local");
-let env: Record<string, string> = {};
+const env: Record<string, string> = {};
 if (fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, "utf-8");
   envContent.split("\n").forEach((line) => {
@@ -38,7 +40,12 @@ const sdeDisallowedKeywords = [
   "academic journals"
 ];
 
-function isContaminated(roadmap: any): boolean {
+type AuditableRoadmap = Pick<
+  RoadmapRecord,
+  "title" | "career_domain" | "milestones" | "summary" | "learning_outcomes" | "project_tasks" | "expected_outcomes"
+> & { id: string; user_id: string };
+
+function isContaminated(roadmap: AuditableRoadmap): boolean {
   if (roadmap.career_domain !== "Software Engineering") {
     return false;
   }
@@ -50,7 +57,7 @@ function isContaminated(roadmap: any): boolean {
     ...(Array.isArray(roadmap.learning_outcomes) ? roadmap.learning_outcomes : []),
     ...(Array.isArray(roadmap.project_tasks) ? roadmap.project_tasks : []),
     ...(Array.isArray(roadmap.expected_outcomes) ? roadmap.expected_outcomes : []),
-    ...milestones.flatMap((m: any) => [
+    ...milestones.flatMap((m: RoadmapMilestoneRecord) => [
       m.title || "",
       m.why_it_matters || "",
       ...(Array.isArray(m.completion_criteria) ? m.completion_criteria : []),
@@ -123,7 +130,7 @@ async function main() {
 
   console.log(`Successfully fetched ${roadmaps?.length} total roadmaps from database.`);
 
-  const contaminatedRoadmaps = (roadmaps || []).filter(isContaminated);
+  const contaminatedRoadmaps = (roadmaps as unknown as AuditableRoadmap[] || []).filter(isContaminated);
   const uniqueAffectedUsers = Array.from(new Set(contaminatedRoadmaps.map((r) => r.user_id)));
 
   console.log("\n==========================================");

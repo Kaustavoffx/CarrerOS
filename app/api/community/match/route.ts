@@ -164,8 +164,9 @@ ${resources.map(r => `- ID: ${r.id}, Name: ${r.name}, Type: ${r.type}, Descripti
     const resultJson = JSON.parse(resultText);
 
     return NextResponse.json(resultJson);
-  } catch (err: any) {
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : "Failed to process matches";
     console.error("Match API error:", err);
-    return NextResponse.json({ error: err.message || "Failed to process matches" }, { status: 500 });
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }

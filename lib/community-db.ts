@@ -1,5 +1,4 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { UserProfileRecord } from "./supabase/types";
 
 export interface CommunityResource {
   id: string;
@@ -40,7 +39,7 @@ export interface CommunityResource {
     student_status?: true;
     entry_fee?: string;
     membership_fee?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   application_link: string;
   contact_details?: string;
@@ -65,7 +64,7 @@ export interface AgentAction {
   resource_id: string | null;
   action_type: "verify_eligibility" | "draft_sop_or_application";
   status: "pending" | "executing" | "completed" | "failed";
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
   logs: string[];
   updated_at: string;
   created_at: string;

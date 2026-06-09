@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 // Framer Motion removed — CSS-only animations for 120fps performance
 import {
-  Sparkles, Brain, Briefcase, Award, CheckSquare, Square, RefreshCw, User,
+  Sparkles, Brain, Briefcase, CheckSquare, Square, RefreshCw, User,
   ArrowRight, History, Plus, Trash2, TrendingUp, AlertCircle
 } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";

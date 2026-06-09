@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getCommunityResources } from "@/lib/community-db";
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
     const supabase = await getSupabaseServerClient();
     const resources = await getCommunityResources(supabase, {});
@@ -147,7 +147,9 @@ ${JSON.stringify(groupedData, null, 2)}
       groupedData,
       report
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to compile heatmap data" }, { status: 500 });
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : "Failed to compile heatmap data";
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
+
 }

@@ -8,7 +8,7 @@ import {
   Download, Printer, RefreshCw, Clock3,
   Check, ExternalLink, Search,
   FileText, Archive, Target, BookOpen, AlertTriangle,
-  MessageSquare, X, ChevronDown, ChevronRight, Play
+  MessageSquare, X, ChevronDown, ChevronRight
 } from "lucide-react";
 import { FREE_GENERATIONS } from "@/lib/config";
 import { FeatureGateButton } from "./feature-status";
@@ -31,7 +31,6 @@ type RoadmapsConsoleProps = {
 };
 
 type ResourceFilter = "all" | "course" | "documentation" | "practice" | "project" | "interview";
-type MilestoneTab = "tasks" | "deliverables" | "resources";
 type MilestoneStatus = "completed" | "active" | "upcoming";
 
 type ResourceWithMilestone = RoadmapResourceLink & {
@@ -142,7 +141,6 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
 
   // ── New Redesigned UI states ─────────────────────────────────────────────
   const [selectedMilestoneTitle, setSelectedMilestoneTitle] = useState<string | null>(null);
-  const [milestoneTab, setMilestoneTab] = useState<MilestoneTab>("tasks");
   const [resourceSearch, setResourceSearch] = useState("");
   const [resourceFilter, setResourceFilter] = useState<ResourceFilter>("all");
   const [restoreConfirmId, setRestoreConfirmId] = useState<string | null>(null);
@@ -413,14 +411,6 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
     showToast("Resource completion updated.");
   };
 
-  const startEditingMilestone = () => {
-    if (!activeMilestone) return;
-    setEditWhyItMatters(activeMilestone.why_it_matters || "");
-    setEditTasksText((activeMilestone.project_tasks || []).join("\n"));
-    setEditDeliverablesText((activeMilestone.deliverables || []).join("\n"));
-    setEditNotesText(activeMilestone.notes || "");
-    setIsEditingMilestone(true);
-  };
 
   const saveMilestoneDetails = async () => {
     if (!activeRoadmap || !activeMilestone) return;
