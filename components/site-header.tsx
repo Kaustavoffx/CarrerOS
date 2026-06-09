@@ -10,6 +10,7 @@ const navigation = [
   { label: "Roadmaps", href: "/roadmaps" },
   { label: "Career Twin", href: "/career-twin" },
   { label: "AI Mentor", href: "/mentor" },
+  { label: "Community Support", href: "/community" },
   { label: "Settings", href: "/settings" },
   { label: "Profile", href: "/profile" }
 ];

@@ -603,6 +603,28 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
         </div>
       </section>
 
+      {/* ═══ GEOLOCATION SUPPORT SPOTLIGHT ═══════════════════════════════════ */}
+      <section className="border border-cyan-500/10 bg-cyan-950/5 p-5 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 rounded-xl bg-cyan-950/40 border border-cyan-400/20 flex items-center justify-center text-cyan-300 shrink-0">
+            <Compass className="h-5 w-5 animate-pulse" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider">Community Intelligence Support Command</h4>
+            <p className="text-xs text-slate-400 mt-1 max-w-xl leading-relaxed">
+              Answer &ldquo;What help exists around me right now?&rdquo; Scan verified scholarships, mentorship programs, government schemes, wellness centers, and NGO internships aligned to your coordinates.
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/community"
+          className="tactile-btn bg-cyan-400 text-black px-4.5 py-2 rounded-xl text-xs font-bold transition hover:scale-[1.02] flex items-center gap-1 shrink-0"
+        >
+          Scan Help Near Me
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      </section>
+
       {/* Quick Actions Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
