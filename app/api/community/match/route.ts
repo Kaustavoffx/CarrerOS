@@ -10,6 +10,7 @@ export async function POST(req: Request) {
     }
 
     const supabase = await getSupabaseServerClient();
+    if (!supabase) throw new Error("Database client unavailable");
     const resources = await getCommunityResources(supabase, {});
 
     const apiKey = process.env.OPENAI_API_KEY;

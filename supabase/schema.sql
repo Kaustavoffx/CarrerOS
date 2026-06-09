@@ -174,3 +174,15 @@ create policy "AI keys are deletable by owner"
   using (auth.uid() = user_id);
 
 revoke all on public.user_ai_keys from anon, authenticated;
+
+-- ============================================================
+-- Community Intelligence Tables
+-- See: supabase/migrations/20260609_community_intelligence.sql
+-- ============================================================
+-- community_need_reports      — user need submissions (career, housing, food, mental health, etc.)
+-- community_resources         — verified program listings
+-- community_ai_actions        — agentic workflow execution logs
+-- community_gap_snapshots     — periodic gap scores per city/category
+-- community_forecasts         — AI demand forecast cache (TTL 6h)
+-- community_heatmap_points    — lat/lng intensity from need reports
+-- community_feedback          — user feedback on resources

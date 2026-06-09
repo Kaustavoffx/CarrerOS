@@ -161,3 +161,91 @@ export type RoadmapAuditSourceReport = {
   invalid: number;
   qualityScore: number;
 };
+
+// ─── Community Intelligence Types ────────────────────────────────────────────
+
+export type NeedCategory =
+  | "career_mentorship"
+  | "housing"
+  | "food"
+  | "mental_health"
+  | "scholarship"
+  | "internship"
+  | "other";
+
+export type NeedUrgency = "low" | "medium" | "high" | "critical";
+export type NeedStatus  = "open" | "in_progress" | "resolved";
+export type ForecastTrend = "crisis" | "increasing" | "stable" | "declining";
+
+export type CommunityNeedReport = {
+  id: string;
+  user_id: string | null;
+  category: NeedCategory;
+  urgency: NeedUrgency;
+  description: string | null;
+  city: string | null;
+  district: string | null;
+  state: string | null;
+  country: string;
+  lat: number | null;
+  lng: number | null;
+  status: NeedStatus;
+  created_at: string;
+};
+
+export type CommunityGapSnapshot = {
+  id: string;
+  city: string;
+  category: string;
+  request_count: number;
+  available_count: number;
+  gap_score: number;
+  snapshot_date: string;
+  created_at: string;
+};
+
+export type CommunityForecast = {
+  id: string;
+  category: string;
+  current_demand: number;
+  predicted_demand: number;
+  percent_change: number;
+  trend: ForecastTrend;
+  forecast_period: string;
+  data_points: Array<{ week: string; count: number }>;
+  generated_at: string;
+};
+
+export type CommunityAiAction = {
+  id: string;
+  user_id: string | null;
+  action_type: string;
+  input_query: string | null;
+  step_logs: string[];
+  output: string | null;
+  resource_ids: string[];
+  urgency_score: number | null;
+  category: string | null;
+  completed: boolean;
+  created_at: string;
+};
+
+export type CommunityHeatmapPoint = {
+  id: string;
+  report_id: string | null;
+  category: string;
+  city: string | null;
+  lat: number;
+  lng: number;
+  intensity: number;
+  created_at: string;
+};
+
+export type CommunityNeedStats = {
+  category: NeedCategory;
+  label: string;
+  requests: number;
+  available: number;
+  gapScore: number;
+  trend: ForecastTrend;
+};

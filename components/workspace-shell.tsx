@@ -25,7 +25,8 @@ import {
   Brain,
   Info,
   X,
-  Database
+  Database,
+  Zap
 } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, useDragControls, AnimatePresence } from "framer-motion";
@@ -192,6 +193,24 @@ const GUIDE_DATA: Record<string, GuideContent> = {
       "Browse pending cases in the crowdsourced list.",
       "Click the 'Approve' button to cast your validation vote for pending entries."
     ]
+  },
+  "/community-command-center": {
+    title: "Command Center Guide",
+    whatItDoes: "NASA-style real-time operations dashboard aggregating live needs, gap scores, demand forecasts, heatmap matrix, and AI agent actions in one mission-control interface.",
+    aiCapabilities: [
+      { name: "Live Need Aggregation", desc: "Polls the community_need_reports table every 30s to surface the latest submissions." },
+      { name: "Predictive Demand Modeling", desc: "Runs linear regression on 5 weeks of report history to forecast next-month demand per category." },
+      { name: "Gap Score Computation", desc: "Calculates real gap scores as requests ÷ (available + 1) × 100 for each need category." }
+    ],
+    dataAnalyzed: "community_need_reports, community_resources, community_ai_actions, community_forecasts, and heatmap density data.",
+    recommendationsGeneration: "Each panel independently fetches its own data slice and auto-refreshes. No stale data.",
+    privacyPolicy: "All aggregated metrics are anonymized. Individual report content is only visible to the submitting user.",
+    howToTakeAction: [
+      "Monitor the Live Needs Feed for urgent community submissions.",
+      "Check Gap Intelligence cards — any score above 80 indicates a crisis-level shortage.",
+      "Review Demand Forecasts to identify categories with >25% projected growth.",
+      "Click 'Report Need' in System Status to submit a new community need."
+    ]
   }
 };
 
@@ -218,7 +237,8 @@ const navGroups = [
       { label: "Community Intel", href: "/community-intelligence", icon: Shield },
       { label: "Support Navigator", href: "/support-navigator", icon: Compass },
       { label: "Resource Discovery", href: "/resource-discovery", icon: Globe },
-      { label: "Gap Intelligence", href: "/community-gaps", icon: Activity }
+      { label: "Gap Intelligence", href: "/community-gaps", icon: Activity },
+      { label: "Command Center", href: "/community-command-center", icon: Zap }
     ]
   },
   {
