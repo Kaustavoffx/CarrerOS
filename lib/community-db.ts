@@ -52,6 +52,9 @@ export interface CommunityResource {
   longitude?: number;
   verified: boolean;
   tags: string[];
+  deadline?: string;
+  strict_requirements?: string[];
+  application_steps?: string[];
   created_at?: string;
   distance_km?: number;
 }
@@ -98,7 +101,18 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 28.6139,
     longitude: 77.2090,
     verified: true,
-    tags: ["Government", "Scholarship", "Study Abroad"]
+    tags: ["Government", "Scholarship", "Study Abroad"],
+    deadline: "2026-08-31",
+    strict_requirements: [
+      "Must be an Indian citizen belonging to SC, Denotified Nomadic/Semi-Nomadic tribes, or Landless Agricultural Labourer category",
+      "Annual family income must be under 8,00,000 INR",
+      "Must have secured at least 60% marks in the qualifying exam (Bachelor/Master)"
+    ],
+    application_steps: [
+      "Register on the Ministry of Social Justice portal and verify credentials",
+      "Upload caste certificate, income statement, and university admission offer",
+      "Submit draft Statement of Purpose detailing foreign study objectives"
+    ]
   },
   {
     id: "res-pm-yuva",
@@ -115,7 +129,18 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 28.6139,
     longitude: 77.2090,
     verified: true,
-    tags: ["Startup", "Mentorship", "Government"]
+    tags: ["Startup", "Mentorship", "Government"],
+    deadline: "2026-09-15",
+    strict_requirements: [
+      "Must have a registered startup proposal or prototype build",
+      "Must be aged between 18 and 30",
+      "Must be enrolled in an affiliated skill-development center or college"
+    ],
+    application_steps: [
+      "Create profile on MSDE Pradhan Mantri Kaushal Kendra (PMKK) hub",
+      "Submit 1-page startup pitch deck and product prototype demo link",
+      "Schedule validation interview with regional incubator board"
+    ]
   },
   {
     id: "res-tata-cornell",
@@ -132,7 +157,18 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 42.4534,
     longitude: -76.4735,
     verified: true,
-    tags: ["Ivy League", "Undergraduate", "Need-Based"]
+    tags: ["Ivy League", "Undergraduate", "Need-Based"],
+    deadline: "2026-07-15",
+    strict_requirements: [
+      "Must be a citizen of India enrolled in high school or university",
+      "Must have applied and been offered admission to an undergraduate program at Cornell University",
+      "Must qualify for need-based financial aid according to Cornell standards"
+    ],
+    application_steps: [
+      "Apply for undergraduate admission through the Cornell University portal",
+      "Complete the College Scholarship Service (CSS) Profile for financial need assessment",
+      "Submit verified Tata Trust foreign student scholarship supplementary documents"
+    ]
   },
   {
     id: "res-google-cert",
@@ -149,7 +185,18 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 0.0,
     longitude: 0.0,
     verified: true,
-    tags: ["Self-Paced", "Technical", "Industry Certification"]
+    tags: ["Self-Paced", "Technical", "Industry Certification"],
+    deadline: "2026-12-31",
+    strict_requirements: [
+      "No college degree or prior experience required",
+      "Must commit to active self-paced study milestones on Coursera",
+      "Must complete the learning track within 6 months of voucher issue"
+    ],
+    application_steps: [
+      "Register on Coursera and apply for Google Career Certificate access",
+      "Request financial aid scholarship waiver on the specific course page",
+      "Complete initial course enrollment onboarding survey"
+    ]
   },
   {
     id: "res-nimhans-tele",
@@ -166,7 +213,17 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 12.9362,
     longitude: 77.5975,
     verified: true,
-    tags: ["Mental Wellness", "Counseling", "24/7 Helpline"]
+    tags: ["Mental Wellness", "Counseling", "24/7 Helpline"],
+    deadline: "Immediate / Continuous Support",
+    strict_requirements: [
+      "Services are free and confidential for all citizens facing emotional stress",
+      "No documents or registration required to initiate support call"
+    ],
+    application_steps: [
+      "Dial the national toll-free support line at 14416",
+      "Connect with a certified clinical mental health counselor",
+      "Optionally request continuous telehealth counseling scheduling"
+    ]
   },
   {
     id: "res-aicte-pragati",
@@ -183,7 +240,18 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 28.5446,
     longitude: 77.1554,
     verified: true,
-    tags: ["Girls Education", "Technical Degree", "Government"]
+    tags: ["Girls Education", "Technical Degree", "Government"],
+    deadline: "2026-10-31",
+    strict_requirements: [
+      "Must be a female student admitted to 1st year of Degree/Diploma course at AICTE institution",
+      "Maximum of two girls per family are eligible",
+      "Annual family income must not exceed 8,00,000 INR"
+    ],
+    application_steps: [
+      "Register on National Scholarship Portal (NSP) under AICTE category",
+      "Upload admission letter, tuition fees receipt, and income certificate",
+      "Verify registration details with your college nodal officer"
+    ]
   },
   {
     id: "res-nasscom-fair",
@@ -200,7 +268,18 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 28.5355,
     longitude: 77.3910,
     verified: true,
-    tags: ["Tech Jobs", "Recruitment", "Internship Opportunities"]
+    tags: ["Tech Jobs", "Recruitment", "Internship Opportunities"],
+    deadline: "2026-08-15",
+    strict_requirements: [
+      "Must have completed B.E/B.Tech/MCA/BCA/B.Sc IT",
+      "Must have a baseline programming portfolio (GitHub/Sandbox link)",
+      "Open for freshers and candidates with under 2 years experience"
+    ],
+    application_steps: [
+      "Register online at NASSCOM Events portal and upload resumes",
+      "Take the preliminary online technical aptitude challenge",
+      "Receive physical entry pass and walk-in interview invitations"
+    ]
   },
   {
     id: "res-sewa-center",
@@ -217,7 +296,18 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 23.0225,
     longitude: 72.5714,
     verified: true,
-    tags: ["Digital Literacy", "Women Empowerment", "Skills Training"]
+    tags: ["Digital Literacy", "Women Empowerment", "Skills Training"],
+    deadline: "2026-07-31",
+    strict_requirements: [
+      "Targeted at female students, micro-entrepreneurs, and workers",
+      "Must commit to attending at least 85% of vocational classes",
+      "Basic literacy in regional language required"
+    ],
+    application_steps: [
+      "Submit regional registration application at Ahmedabad SEWA reception desk",
+      "Provide identity proofs (Aadhaar or local ration card)",
+      "Select batch times matching your current availability constraints"
+    ]
   },
   {
     id: "res-cry-fellow",
@@ -234,7 +324,18 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 22.7230,
     longitude: 88.3780,
     verified: true,
-    tags: ["Social Impact", "Fellowship", "NGO"]
+    tags: ["Social Impact", "Fellowship", "NGO"],
+    deadline: "2026-08-01",
+    strict_requirements: [
+      "Must be at least 18 years old",
+      "Must commit to a minimum of 6 hours of volunteer operations per week",
+      "Must attend monthly child advocacy orientation training sessions"
+    ],
+    application_steps: [
+      "Submit volunteer application form on CRY digital portal",
+      "Complete online behavioral interview and background briefing",
+      "Obtain regional volunteer card and training materials"
+    ]
   },
   {
     id: "res-asha-teach",
@@ -251,7 +352,18 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 13.0067,
     longitude: 80.2400,
     verified: true,
-    tags: ["Teaching", "Rural Education", "Volunteering"]
+    tags: ["Teaching", "Rural Education", "Volunteering"],
+    deadline: "2026-08-30",
+    strict_requirements: [
+      "Minimum commitment of 3 consecutive months",
+      "Open to university students and professionals of any academic background",
+      "Basic interest in curriculum teaching and student tutoring required"
+    ],
+    application_steps: [
+      "Register on Asha for Education fellowship panel page",
+      "Choose regional teaching center (e.g. Chennai/Adyar or online)",
+      "Attend 2-day classroom onboarding seminar"
+    ]
   },
   {
     id: "res-sama-wellness",
@@ -268,7 +380,17 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 18.5204,
     longitude: 73.8567,
     verified: true,
-    tags: ["Mental Wellness", "Student Counsel", "Workshops"]
+    tags: ["Mental Wellness", "Student Counsel", "Workshops"],
+    deadline: "Continuous Support",
+    strict_requirements: [
+      "Services are free and confidential for college/school students in Pune",
+      "Pre-registration requested for scheduling dedicated counselors"
+    ],
+    application_steps: [
+      "Register via Sama online student intake form",
+      "Select wellness area: Exam anxiety, stress management, or group support",
+      "Confirm counselor assignment and booking slot"
+    ]
   },
   {
     id: "res-ibm-skills",
@@ -285,7 +407,18 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 0.0,
     longitude: 0.0,
     verified: true,
-    tags: ["IBM Badge", "Cloud Computing", "AI Fundamentals"]
+    tags: ["IBM Badge", "Cloud Computing", "AI Fundamentals"],
+    deadline: "2026-12-31",
+    strict_requirements: [
+      "No prerequisite tech knowledge required",
+      "Open to high school students, college learners, and job-switchers globally",
+      "Must have access to a digital computer and internet connection"
+    ],
+    application_steps: [
+      "Sign up on IBM SkillsBuild learning portal",
+      "Select technical study tracks matching your profile goals",
+      "Complete modules to claim digital badges and certificates"
+    ]
   },
   {
     id: "res-ms-spark",
@@ -302,7 +435,18 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 17.4483,
     longitude: 78.3741,
     verified: true,
-    tags: ["Tech Intern", "Microsoft", "STEM Support"]
+    tags: ["Tech Intern", "Microsoft", "STEM Support"],
+    deadline: "2026-07-31",
+    strict_requirements: [
+      "Must be currently enrolled in B.Tech/MCA/M.Tech computer science",
+      "Preference given to female coders and underprivileged applicants",
+      "CGPA must be 7.5 or above"
+    ],
+    application_steps: [
+      "Apply through the Microsoft Career opportunities portal",
+      "Upload verified academic transcripts and GitHub code repository link",
+      "Complete standard online programming rounds"
+    ]
   },
   {
     id: "res-pmkvy-jaipur",
@@ -319,7 +463,18 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 26.8524,
     longitude: 75.8073,
     verified: true,
-    tags: ["Vocational Training", "Government Scheme", "Coding Basics"]
+    tags: ["Vocational Training", "Government Scheme", "Coding Basics"],
+    deadline: "2026-09-30",
+    strict_requirements: [
+      "Must have passed at least Class 10/12 exams",
+      "Must hold a valid Aadhaar card with updated mobile linkage",
+      "Unemployed youths seeking vocational certifications prioritized"
+    ],
+    application_steps: [
+      "Visit Malviya Nagar industrial area training hub in Jaipur",
+      "Submit enrollment application forms with academic proofs",
+      "Attend the mandatory biometric attendance setup sessions"
+    ]
   },
   {
     id: "res-samaritans",
@@ -336,7 +491,17 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 19.0345,
     longitude: 72.8402,
     verified: true,
-    tags: ["Suicide Helpline", "Crisis Intervention", "Emotional Support"]
+    tags: ["Suicide Helpline", "Crisis Intervention", "Emotional Support"],
+    deadline: "Immediate Support",
+    strict_requirements: [
+      "No documents or identity checks are ever required to request help",
+      "Services are confidential, free, and open daily from 3 PM to 9 PM"
+    ],
+    application_steps: [
+      "Call the active Samaritans hotline at +91 84229 84528",
+      "Speak confidentially with a trained suicide prevention volunteer",
+      "Walk-in visits can be scheduled for one-on-one counseling"
+    ]
   },
   {
     id: "res-vidyasaarathi",
@@ -353,7 +518,18 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 19.0020,
     longitude: 72.8280,
     verified: true,
-    tags: ["CSR Funding", "Merit Scholarship", "Education Grants"]
+    tags: ["CSR Funding", "Merit Scholarship", "Education Grants"],
+    deadline: "2026-09-15",
+    strict_requirements: [
+      "Must be enrolled in a recognized undergraduate degree or diploma course",
+      "Annual family income must not exceed 6,00,000 INR",
+      "Must have secured a minimum of 50% marks in previous qualification"
+    ],
+    application_steps: [
+      "Register on Vidyasaarathi portal and fill out profile parameters",
+      "Upload scanned income certificate, previous mark sheets, and fee receipt",
+      "Select and apply to matching corporate CSR scholarship listings"
+    ]
   },
   {
     id: "res-nptel-swayam",
@@ -370,7 +546,18 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 13.0067,
     longitude: 80.2400,
     verified: true,
-    tags: ["IIT Certified", "Free Learning", "Credit Transfer"]
+    tags: ["IIT Certified", "Free Learning", "Credit Transfer"],
+    deadline: "2026-08-31",
+    strict_requirements: [
+      "Open to all students, faculty, and industry professionals globally",
+      "Nominal registration fee required only if taking the physical exam",
+      "Must have access to internet and digital devices"
+    ],
+    application_steps: [
+      "Sign up on SWAYAM national portal using Google/Microsoft profile",
+      "Select the specific IIT-guided course and join the active batch",
+      "Complete weekly assignments to qualify for final exam register booking"
+    ]
   },
   {
     id: "res-goonj-fellow",
@@ -387,7 +574,18 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 28.5298,
     longitude: 77.2912,
     verified: true,
-    tags: ["Social Development", "Goonj Fellowship", "NGO Intern"]
+    tags: ["Social Development", "Goonj Fellowship", "NGO Intern"],
+    deadline: "2026-07-25",
+    strict_requirements: [
+      "Must be aged between 21 and 30 years old",
+      "Must commit to a full 12-month program in rural areas",
+      "Graduation from a recognized university required"
+    ],
+    application_steps: [
+      "Submit the detailed Goonj Fellowship questionnaire form",
+      "Attend regional screening interviews (online/offline)",
+      "Undergo 1-week village field work onboarding operations"
+    ]
   },
   {
     id: "res-delhi-scholar",
@@ -404,7 +602,18 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 28.6272,
     longitude: 77.2472,
     verified: true,
-    tags: ["State Government", "Need-Based", "Colleges"]
+    tags: ["State Government", "Need-Based", "Colleges"],
+    deadline: "2026-10-15",
+    strict_requirements: [
+      "Must be a resident of NCT of Delhi with valid residential proof",
+      "Must be enrolled in a state university/college",
+      "Annual family income must be under 6,00,000 INR"
+    ],
+    application_steps: [
+      "Register on Delhi E-District portal under Department of Education",
+      "Upload residence proof, fee receipt, and income affidavit documents",
+      "Submit application to institute administration for online approval"
+    ]
   },
   {
     id: "res-yka-mentor",
@@ -421,7 +630,18 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 0.0,
     longitude: 0.0,
     verified: true,
-    tags: ["Mentorship", "Journalism", "Advocacy"]
+    tags: ["Mentorship", "Journalism", "Advocacy"],
+    deadline: "2026-08-31",
+    strict_requirements: [
+      "Must be aged between 18 and 25 years old",
+      "Must demonstrate interest or experience in blog writing/advocacy",
+      "Must commit to submitting 2 articles per week during mentorship"
+    ],
+    application_steps: [
+      "Apply through the YKA Mentorship recruitment board",
+      "Submit three writing samples or essays on social change topics",
+      "Participate in the digital writing boot camp trial round"
+    ]
   },
   {
     id: "res-kvpy-blr",
@@ -438,7 +658,18 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 13.0219,
     longitude: 77.5671,
     verified: true,
-    tags: ["Fellowship", "IISc", "Research Career"]
+    tags: ["Fellowship", "IISc", "Research Career"],
+    deadline: "2026-07-30",
+    strict_requirements: [
+      "Must be enrolled in Class 11, 12, or 1st year Science degree",
+      "Must study basic science courses (Math/Physics/Chemistry/Biology)",
+      "Requires high academic marks baseline in school boards"
+    ],
+    application_steps: [
+      "Apply online on KVPY DST portal and register personal details",
+      "Upload verified school marks statements and caste certificate if applicable",
+      "Download admit card and clear national aptitude exam"
+    ]
   },
   {
     id: "res-tfi-fellow",
@@ -455,7 +686,18 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 18.5534,
     longitude: 73.8867,
     verified: true,
-    tags: ["Paid Fellowship", "Education Equity", "NGO leadership"]
+    tags: ["Paid Fellowship", "Education Equity", "NGO leadership"],
+    deadline: "2026-07-25",
+    strict_requirements: [
+      "Must be a graduate from a recognized university before June 2026",
+      "Must be an Indian citizen or holder of OCI card",
+      "Must commit to a full-time, 2-year leadership contract in Pune or other hub"
+    ],
+    application_steps: [
+      "Submit Teach For India online fellowship application",
+      "Complete a 30-minute logical reasoning and english proficiency test",
+      "Attend the assessment day containing mock teaching and personal interview"
+    ]
   },
   {
     id: "res-aws-educate",
@@ -472,7 +714,18 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 0.0,
     longitude: 0.0,
     verified: true,
-    tags: ["AWS cloud", "Badges", "AWS Credits"]
+    tags: ["AWS cloud", "Badges", "AWS Credits"],
+    deadline: "2026-12-31",
+    strict_requirements: [
+      "Must be an active student aged 13 or older",
+      "Valid student email ID (.edu or college domain) requested for fast setup",
+      "Must agree to student AWS account Terms of Service guidelines"
+    ],
+    application_steps: [
+      "Sign up on the AWS Educate registration panel",
+      "Verify registration links sent to your student email ID",
+      "Access cloud learning modules and free lab credits immediately"
+    ]
   },
   {
     id: "res-blr-job-fair",
@@ -489,7 +742,18 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 12.9696,
     longitude: 77.5927,
     verified: true,
-    tags: ["Recruitment Fair", "Jobs In Bangalore", "Walk-in Interview"]
+    tags: ["Recruitment Fair", "Jobs In Bangalore", "Walk-in Interview"],
+    deadline: "2026-08-10",
+    strict_requirements: [
+      "Open to all job seekers seeking employment in Karnataka",
+      "Must bring multiple printed copies of resume",
+      "Must hold valid identity proof card for entry"
+    ],
+    application_steps: [
+      "Register at Karnataka State Employment Exchange digital portal",
+      "Receive automated entry pass and schedule interview queue slot",
+      "Attend physical event at Kanteerava stadium in Bangalore"
+    ]
   },
   {
     id: "res-ambedkar-lib",
@@ -506,7 +770,17 @@ export const SEEDED_RESOURCES: CommunityResource[] = [
     latitude: 17.3887,
     longitude: 78.4900,
     verified: true,
-    tags: ["Library", "Study Space", "Community Hub"]
+    tags: ["Library", "Study Space", "Community Hub"],
+    deadline: "Continuous access / No registration limits",
+    strict_requirements: [
+      "Membership is free and open to all students and exam candidates",
+      "Biometric enrollment required to borrow digital library tablets"
+    ],
+    application_steps: [
+      "Visit Ambedkar Library center in Kachiguda, Hyderabad",
+      "Submit local residential proof and passport sized photograph",
+      "Receive student member pass for access to group study workspace room"
+    ]
   }
 ];
 

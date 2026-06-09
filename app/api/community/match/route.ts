@@ -19,6 +19,18 @@ export async function POST(req: Request) {
       const matches = resources.map((res) => {
         let score = 50; // base score
         const reasons: string[] = [];
+        const missing: string[] = [];
+        let eligibilityStatus: "Fully Eligible" | "Partially Eligible" | "Ineligible" = "Fully Eligible";
+
+        // Detected need
+        let detectedNeed = "Career Readiness & Community Placement";
+        if (res.type === "wellness") {
+          detectedNeed = "Mental Wellness & Student Counseling Support";
+        } else if (res.type === "scholarship" || res.type === "scheme") {
+          detectedNeed = "Financial Aid & Scholarship Schemes";
+        } else if (res.type === "certification") {
+          detectedNeed = "Technical Skill Certification & Learning";
+        }
 
         // Goal alignment
         const goal = (profile.goal || "").toLowerCase();
@@ -35,7 +47,17 @@ export async function POST(req: Request) {
           if (res.description.toLowerCase().includes("free") || res.tags.some(t => ["scholarship", "need-based", "free"].includes(t.toLowerCase()))) {
             score += 20;
             reasons.push("Matches your budget requirements by providing free access or funding.");
+          } else if (res.eligibility.need_based) {
+            eligibilityStatus = "Partially Eligible";
+            missing.push("Requires financial need assessment documents validation.");
           }
+        }
+
+        // Gender check mock
+        if (res.eligibility.gender === "Female" && profile.full_name && !profile.full_name.toLowerCase().includes("girl") && !profile.full_name.toLowerCase().includes("female")) {
+          // Rule threshold checks
+          eligibilityStatus = "Partially Eligible";
+          missing.push("Requires verification of female applicant criteria.");
         }
 
         // Obstacles alignment
@@ -49,6 +71,15 @@ export async function POST(req: Request) {
           }
         }
 
+        // Urgency
+        let urgency: "High" | "Medium" | "Low" = "Low";
+        const deadline = res.deadline || "";
+        if (deadline.includes("2026-07") || deadline.includes("2026-08")) {
+          urgency = "High";
+        } else if (deadline.includes("2026-09") || deadline.includes("2026-10")) {
+          urgency = "Medium";
+        }
+
         // Cap score at 98
         const finalScore = Math.min(98, score);
         const reason = reasons.length > 0 
@@ -58,7 +89,16 @@ export async function POST(req: Request) {
         return {
           resourceId: res.id,
           score: finalScore,
-          reasoning: reason
+          detectedNeed,
+          whyMatch: reason,
+          urgency,
+          eligibilityStatus,
+          missingRequirements: missing,
+          actionPlan: res.application_steps || [
+            "Check official portal eligibility guidelines",
+            "Prepare identity and qualifications proof certificates",
+            "Submit online application form with personal context statement"
+          ]
         };
       }).sort((a, b) => b.score - a.score).slice(0, 5);
 
@@ -73,8 +113,13 @@ Return ONLY a valid JSON object matching this schema, without markdown formattin
   "matches": [
     {
       "resourceId": "string-matching-exact-resource-id",
-      "score": number (0 to 100),
-      "reasoning": "precise custom 2-sentence rationale connecting profile variables to this opportunity"
+      "score": number (Confidence score from 0 to 100),
+      "detectedNeed": "specific detected user need statement matching their obstacles",
+      "whyMatch": "detailed custom explainable matching rationale linking user profile parameters to this opportunity",
+      "urgency": "High" | "Medium" | "Low",
+      "eligibilityStatus": "Fully Eligible" | "Partially Eligible" | "Ineligible",
+      "missingRequirements": ["list of profile attributes that conflict or are missing relative to the rules"],
+      "actionPlan": ["Step 1", "Step 2", "Step 3 tailored application steps"]
     }
   ]
 }
@@ -82,6 +127,7 @@ Do not return any extra explanation or backticks.`;
 
     const userPrompt = `
 User Profile:
+- Name: ${profile.full_name || "Applicant"}
 - Goal: ${profile.goal || "Not specified"}
 - Experience Level: ${profile.experience_level || "Not specified"}
 - Skills: ${JSON.stringify(profile.skills || [])}
@@ -89,7 +135,7 @@ User Profile:
 - Obstacles: ${JSON.stringify(profile.obstacles || [])}
 
 Available Resources:
-${resources.map(r => `- ID: ${r.id}, Name: ${r.name}, Type: ${r.type}, Description: ${r.description}, Tags: ${JSON.stringify(r.tags)}`).join("\n")}
+${resources.map(r => `- ID: ${r.id}, Name: ${r.name}, Type: ${r.type}, Description: ${r.description}, Eligibility: ${JSON.stringify(r.eligibility)}, Deadline: ${r.deadline || "None"}, Strict Requirements: ${JSON.stringify(r.strict_requirements || [])}, Application Steps: ${JSON.stringify(r.application_steps || [])}`).join("\n")}
 `;
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {

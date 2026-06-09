@@ -15,6 +15,9 @@ create table if not exists public.community_resources (
   longitude double precision,
   verified boolean not null default true,
   tags jsonb not null default '[]'::jsonb,
+  deadline text,
+  strict_requirements jsonb not null default '[]'::jsonb,
+  application_steps jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now()
 );
 

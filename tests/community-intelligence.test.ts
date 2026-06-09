@@ -57,3 +57,15 @@ test("Category and text query matching on community resources", async () => {
   assert.ok(searchResults.length > 0);
   assert.ok(searchResults.some(res => res.name.includes("Google Career Certificates")));
 });
+
+test("Seeded community resources have visibility engine metadata", () => {
+  const nos = SEEDED_RESOURCES.find(r => r.id === "res-nos");
+  assert.ok(nos);
+  assert.equal(nos.deadline, "2026-08-31");
+  assert.ok(Array.isArray(nos.strict_requirements) && nos.strict_requirements.length > 0);
+  assert.ok(Array.isArray(nos.application_steps) && nos.application_steps.length > 0);
+
+  const googleCert = SEEDED_RESOURCES.find(r => r.id === "res-google-cert");
+  assert.ok(googleCert);
+  assert.equal(googleCert.deadline, "2026-12-31");
+});
