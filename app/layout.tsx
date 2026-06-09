@@ -3,6 +3,7 @@ import { LazyMotion, MotionConfig, domAnimation } from "framer-motion";
 import { AppAtmosphere } from "@/components/app-atmosphere";
 import { CareerOSBackground } from "@/components/careeros-background";
 import { AuthProvider } from "@/components/auth-provider";
+import { RouteTransitionProvider } from "@/components/route-transition-provider";
 import { geom } from "@/lib/fonts";
 import "./globals.css";
 
@@ -34,8 +35,10 @@ export default function RootLayout({
         <MotionConfig reducedMotion="user">
           <LazyMotion features={domAnimation}>
             <AuthProvider>
-              <AppAtmosphere />
-              {children}
+              <RouteTransitionProvider>
+                <AppAtmosphere />
+                {children}
+              </RouteTransitionProvider>
             </AuthProvider>
           </LazyMotion>
         </MotionConfig>

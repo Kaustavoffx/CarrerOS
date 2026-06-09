@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import type { UserProfileRecord, WorkspaceSnapshotRecord } from "@/lib/supabase/types";
 import { useAuth } from "./auth-provider";
+import { useRouteTransition } from "./route-transition-provider";
 import {
   LogOut,
   LayoutDashboard,
@@ -27,7 +28,7 @@ import {
   Database
 } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, useDragControls, AnimatePresence } from "framer-motion";
 
 interface GuideContent {
   title: string;
@@ -280,18 +281,16 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
   const router = useRouter();
   const { signOut } = useAuth();
 
-  // Desktop sidebar collapse state
+  // Route transition overlay context (provided by RouteTransitionProvider in layout.tsx)
+  const { startTransition, isTransitioning, destination } = useRouteTransition();
+  const transitioningTo = isTransitioning ? destination : null;
+
+  // Desktop sidebar collapse state — persisted to localStorage
   const [collapsed, setCollapsed] = useState(false);
-
-  // Asynchronous transition loader indicators
-  const [transitioningTo, setTransitioningTo] = useState<string | null>(null);
-
-  // Progressive estimation loading message states
-  const [showProgressEstimation, setShowProgressEstimation] = useState(false);
-  const [progressMessage, setProgressMessage] = useState("");
 
   // Mobile Quick Action drawer sheet state
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
+  const drawerDragControls = useDragControls();
 
   // Desktop hover slider state
   const [hoveredHref, setHoveredHref] = useState<string | null>(null);
@@ -308,75 +307,43 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
 
   const score = profile?.readiness_score ?? 0;
 
-  // Clear all transition locks and mobile overlays on route change complete
+  // Restore collapsed state from localStorage on mount
   useEffect(() => {
-    setTransitioningTo(null);
+    try {
+      const stored = localStorage.getItem("careeros-sidebar-collapsed");
+      if (stored !== null) setCollapsed(stored === "true");
+    } catch { /* localStorage unavailable in SSR guard */ }
+  }, []);
+
+  // Persist collapsed state to localStorage on every change
+  const handleToggleCollapse = useCallback(() => {
+    setCollapsed((c) => {
+      const next = !c;
+      try { localStorage.setItem("careeros-sidebar-collapsed", String(next)); } catch { /* noop */ }
+      return next;
+    });
+  }, []);
+
+  // Clear mobile overlays and guide on route change complete
+  useEffect(() => {
     setIsQuickActionOpen(false);
     setGuideOpen(false);
   }, [pathname]);
 
-  // Route-aware progress estimation timer triggers
-  useEffect(() => {
-    if (!transitioningTo) {
-      setShowProgressEstimation(false);
-      setProgressMessage("");
-      return;
-    }
+  // Stub retained for type completeness — actual progress logic lives in RouteTransitionProvider
+  const showProgressEstimation = false;
+  const progressMessage = "";
+  void showProgressEstimation;
+  void progressMessage;
 
-    const timer800 = setTimeout(() => {
-      setShowProgressEstimation(true);
-      if (transitioningTo.includes("dashboard")) {
-        setProgressMessage("Preparing Dashboard...");
-      } else if (transitioningTo.includes("roadmap")) {
-        setProgressMessage("Building Recommendations...");
-      } else if (
-        transitioningTo.includes("community") ||
-        transitioningTo.includes("discovery") ||
-        transitioningTo.includes("navigator") ||
-        transitioningTo.includes("gap")
-      ) {
-        setProgressMessage("Loading Community Intelligence...");
-      } else if (transitioningTo.includes("mentor")) {
-        setProgressMessage("Opening AI Mentor...");
-      } else {
-        setProgressMessage("Syncing Workspace state...");
-      }
-    }, 800);
-
-    const timer1600 = setTimeout(() => {
-      if (transitioningTo.includes("roadmap")) {
-        setProgressMessage("Synthesizing learning path...");
-      } else if (
-        transitioningTo.includes("community") ||
-        transitioningTo.includes("discovery") ||
-        transitioningTo.includes("navigator") ||
-        transitioningTo.includes("gap")
-      ) {
-        setProgressMessage("Querying regional matrices...");
-      } else {
-        setProgressMessage("Assembling dashboard components...");
-      }
-    }, 1600);
-
-    const timer2400 = setTimeout(() => {
-      setProgressMessage("Finalizing workspace hydration...");
-    }, 2400);
-
-    return () => {
-      clearTimeout(timer800);
-      clearTimeout(timer1600);
-      clearTimeout(timer2400);
-    };
-  }, [transitioningTo]);
-
-  // Link click handlers
+  // Link click handlers — triggers global RouteTransitionProvider overlay
   const handleNavClick = useCallback((href: string, e: React.MouseEvent<HTMLAnchorElement>) => {
     if (pathname === href) {
       e.preventDefault();
       return;
     }
-    setTransitioningTo(href);
-  }, [pathname]);
+    startTransition(href);
+  }, [pathname, startTransition]);
 
   // Command palette keystroke shortcut triggers (CMD/Ctrl+K)
   useEffect(() => {
@@ -410,7 +377,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
       e.preventDefault();
       const targetItem = filteredPaletteItems[paletteFocusedIndex];
       if (targetItem) {
-        setTransitioningTo(targetItem.href);
+        startTransition(targetItem.href);
         setIsCommandPaletteOpen(false);
         setPaletteQuery("");
         router.push(targetItem.href);
@@ -419,7 +386,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
       e.preventDefault();
       setIsCommandPaletteOpen(false);
     }
-  }, [filteredPaletteItems, paletteFocusedIndex, router]);
+  }, [filteredPaletteItems, paletteFocusedIndex, router, startTransition]);
 
   // Keyboard desktop sidebar navigation support
   const handleSidebarKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -449,9 +416,9 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
   // Command Actions from mobile quick sheet
   const handleQuickAction = useCallback((href: string) => {
     setIsQuickActionOpen(false);
-    setTransitioningTo(href);
+    startTransition(href);
     router.push(href);
-  }, [router]);
+  }, [startTransition, router]);
 
   return (
     <div className="relative min-h-screen bg-transparent text-white overflow-x-hidden">
@@ -489,45 +456,16 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
         }
       `}} />
 
-      {/* Vercel-style glowing progress loader at top of screen */}
-      {transitioningTo && (
-        <div className="fixed top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-cyan-500 via-indigo-500 to-cyan-500 z-50 overflow-hidden shadow-[0_1px_8px_rgba(6,182,212,0.5)]">
-          <div className="absolute inset-y-0 left-0 bg-cyan-300 w-[45%] animate-progress-bar shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
-        </div>
-      )}
 
-      {/* Floating loading indicator in Top-Right Corner */}
-      <AnimatePresence>
-        {transitioningTo && (
-          <motion.div
-            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="fixed top-6 right-6 z-50 bg-slate-950/90 border border-cyan-500/20 px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2.5 max-w-xs select-none"
-          >
-            <span className="flex h-2.5 w-2.5 rounded-full bg-cyan-400 animate-pulse-dot shrink-0" />
-            <div className="min-w-0">
-              <p className="text-xs font-semibold text-white tracking-wide">Loading Workspace...</p>
-              {showProgressEstimation && (
-                <p className="text-[10px] text-cyan-400 mt-0.5 truncate font-mono tracking-normal">
-                  {progressMessage}
-                </p>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Subtle Dot Matrix Background */}
       <div className="pointer-events-none fixed inset-0 opacity-[0.025] [background-image:radial-gradient(rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:28px_28px]" />
 
-      {/* ── DESKTOP STATIC SIDEBAR ── */}
-      <aside
-        style={{
-          width: collapsed ? "4.5rem" : "15rem",
-          transition: "width 220ms ease"
-        }}
+      {/* ── DESKTOP SIDEBAR — GPU-accelerated via Framer Motion ── */}
+      <motion.aside
+        animate={{ width: collapsed ? "4.5rem" : "15rem" }}
+        transition={{ type: "spring", stiffness: 320, damping: 32, mass: 0.8 }}
+        style={{ willChange: "width" }}
         className="fixed left-4 top-4 bottom-4 z-30 hidden flex-col rounded-[24px] border border-white/5 sidebar-glass xl:flex overflow-hidden"
       >
         <div className="flex h-full flex-col">
@@ -686,19 +624,18 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
         {/* Collapse Toggle Arrow */}
         <button
           type="button"
-          onClick={() => setCollapsed((c) => !c)}
+          onClick={handleToggleCollapse}
           className="absolute -right-3 top-20 z-40 flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-[#08080a] text-slate-400 hover:text-cyan-300 transition-colors duration-[120ms]"
         >
           {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
         </button>
-      </aside>
+      </motion.aside>
 
-      {/* ── DESKTOP CONTENT CONTAINER ── */}
-      <div
-        style={{
-          paddingLeft: collapsed ? "5.5rem" : "16.5rem",
-          transition: "padding-left 220ms ease"
-        }}
+      {/* ── DESKTOP CONTENT CONTAINER — follows sidebar width via motion ── */}
+      <motion.div
+        animate={{ paddingLeft: collapsed ? "5.5rem" : "16.5rem" }}
+        transition={{ type: "spring", stiffness: 320, damping: 32, mass: 0.8 }}
+        style={{ willChange: "padding-left" }}
         className="hidden xl:block"
       >
         <main className="mx-auto max-w-7xl px-8 py-8 pb-24 relative">
@@ -724,7 +661,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
             </motion.div>
           </AnimatePresence>
         </main>
-      </div>
+      </motion.div>
 
       {/* ── MOBILE / TABLET VIEWPORTS (DEDICATED NAVIGATION SYSTEM) ── */}
       <div className="xl:hidden min-h-screen flex flex-col">
@@ -834,14 +771,29 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                 className="fixed inset-0 z-40 bg-black/60"
               />
 
-              {/* Sheet container (Solid dark background for high performance on low-end Android) */}
+              {/* Sheet container — drag-to-dismiss with useDragControls */}
               <motion.div
+                drag="y"
+                dragControls={drawerDragControls}
+                dragConstraints={{ top: 0, bottom: 0 }}
+                dragElastic={{ top: 0, bottom: 0.6 }}
+                onDragEnd={(_, info) => {
+                  if (info.offset.y > 80 || info.velocity.y > 400) {
+                    setIsQuickActionOpen(false);
+                  }
+                }}
                 initial={{ y: "100%" }}
                 animate={{ y: 0 }}
                 exit={{ y: "100%" }}
                 transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                style={{ willChange: "transform", touchAction: "none" }}
                 className="fixed bottom-0 left-0 right-0 z-50 bg-slate-950 border-t border-cyan-500/20 rounded-t-[28px] p-6 pb-8 shadow-2xl flex flex-col gap-4 select-none"
               >
+                {/* Drag handle pill */}
+                <div
+                  className="absolute top-3 left-1/2 -translate-x-1/2 h-1 w-10 rounded-full bg-slate-700 cursor-grab active:cursor-grabbing"
+                  onPointerDown={(e) => drawerDragControls.start(e)}
+                />
                 <div className="flex justify-between items-center pb-2 border-b border-white/5">
                   <div>
                     <h3 className="text-sm font-bold text-white tracking-wide flex items-center gap-1.5">
@@ -968,7 +920,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                       <button
                         key={item.href}
                         onClick={() => {
-                          setTransitioningTo(item.href);
+                          startTransition(item.href);
                           setIsCommandPaletteOpen(false);
                           setPaletteQuery("");
                           router.push(item.href);
