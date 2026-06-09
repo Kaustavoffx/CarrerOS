@@ -69,3 +69,42 @@ test("Seeded community resources have visibility engine metadata", () => {
   assert.ok(googleCert);
   assert.equal(googleCert.deadline, "2026-12-31");
 });
+
+test("Community Heatmap density aggregator API returns valid groupings and report", async () => {
+  // Import the GET handler from the heatmap API route
+  const { GET } = await import("../app/api/community/heatmap/route");
+
+  // Call the GET handler with a mock Request object
+  const req = new Request("http://localhost/api/community/heatmap");
+  const res = await GET(req);
+
+  assert.equal(res.status, 200);
+
+  const data = await res.json();
+  assert.ok(data.groupedData, "Response should contain groupedData");
+  assert.ok(data.report, "Response should contain the gap analysis report");
+
+  // Verify that all targets are present in groupedData
+  const targets = ["Bangalore", "New Delhi", "Mumbai", "Kolkata", "Jaipur", "Pune", "Ahmedabad"];
+  targets.forEach((city) => {
+    assert.ok(data.groupedData[city], `Expected groupedData for ${city} to exist`);
+    const counts = data.groupedData[city];
+    assert.ok(typeof counts.scholarship === "number");
+    assert.ok(typeof counts.internship === "number");
+    assert.ok(typeof counts.mentorship === "number");
+    assert.ok(typeof counts.center === "number");
+  });
+
+  // Verify specific counts based on seed data
+  // Bangalore should have 1 scholarship (KVPY) and 0 for others (wellness/job_fair not counted)
+  assert.equal(data.groupedData["Bangalore"].scholarship, 1);
+  assert.equal(data.groupedData["Bangalore"].internship, 0);
+
+  // Jaipur should have 1 center (PMKVY)
+  assert.equal(data.groupedData["Jaipur"].center, 1);
+
+  // The markdown report should contain the document header
+  assert.ok(data.report.includes("# Community Support Help Gap Analysis Report"));
+  assert.ok(data.report.includes("## Severe Regional Gaps Identified"));
+});
+
