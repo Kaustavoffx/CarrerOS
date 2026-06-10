@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
 import {
-  Shield,
   Activity,
   TrendingUp,
   TrendingDown,

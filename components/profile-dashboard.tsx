@@ -7,7 +7,7 @@ import type { UserProfileRecord, WorkspaceSnapshotRecord, ExperienceLevel } from
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { updateProfile } from "@/lib/app-data";
 import {
-  Shield, Download, Activity, User, X,
+  Shield, Download, Activity, X,
   Compass, Link as LinkIcon, Globe, FileText, Settings, Trash2, Plus, Share2, Check
 } from "lucide-react";
 import { PageHero, CardSurface } from "@/components/ui";
@@ -304,10 +304,7 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
     }
   };
 
-  const isGithubConnected = githubUrl.trim().length > 0;
-  const isLinkedinConnected = linkedinUrl.trim().length > 0;
-  const isPortfolioConnected = portfolioUrl.trim().length > 0;
-  const isResumeConnected = resumeUrl.trim().length > 0;
+
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">

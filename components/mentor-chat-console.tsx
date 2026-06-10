@@ -49,35 +49,6 @@ function DesignInput({ className = "", ...props }: React.InputHTMLAttributes<HTM
   );
 }
 
-function DesignTextarea({ className = "", ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  const [isFocused, setIsFocused] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-  const state = isFocused ? "focus" : isHovered ? "hover" : "base";
-  return (
-    <textarea
-      {...props}
-      style={{ ...inputStyle(state), ...props.style }}
-      onFocus={(e) => {
-        setIsFocused(true);
-        props.onFocus?.(e);
-      }}
-      onBlur={(e) => {
-        setIsFocused(false);
-        props.onBlur?.(e);
-      }}
-      onMouseEnter={(e) => {
-        setIsHovered(true);
-        props.onMouseEnter?.(e);
-      }}
-      onMouseLeave={(e) => {
-        setIsHovered(false);
-        props.onMouseLeave?.(e);
-      }}
-      className={className}
-    />
-  );
-}
-
 type MentorChatConsoleProps = {
   profile: UserProfileRecord | null;
   workspace: WorkspaceSnapshotRecord | null;

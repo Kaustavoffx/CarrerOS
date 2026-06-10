@@ -4,8 +4,7 @@ import { getCommunityResources } from "@/lib/community-db";
 
 export async function GET() {
   try {
-    const supabase = await getSupabaseServerClient();
-    if (!supabase) throw new Error("Database client unavailable");
+    const supabase = await getSupabaseServerClient().catch(() => null);
     const resources = await getCommunityResources(supabase, {});
 
     // Target districts we want to evaluate

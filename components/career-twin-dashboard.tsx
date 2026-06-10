@@ -222,6 +222,9 @@ export function CareerTwinDashboard({ profile, workspace, communityNeeds = [] }:
     impact: prio.whyExplain,
     priority: prio.urgency === "critical" ? "Critical" : prio.urgency === "high" ? "High" : prio.urgency === "medium" ? "Medium" : "Low",
     path: prio.link,
+    reasons: prio.reasons,
+    confidence: prio.confidence,
+    sources: prio.sources,
   }));
 
   // ─── Job Matches Opportunity Board ────────────────────────────────────────
@@ -519,16 +522,41 @@ export function CareerTwinDashboard({ profile, workspace, communityNeeds = [] }:
                       )}
                     </button>
 
-                    <div className="flex-1 space-y-1">
+                    <div className="flex-1 space-y-1.5">
                       <div className="flex items-center justify-between gap-2">
-                        <span className={`text-[10px] font-bold uppercase ${isChecked ? "line-through opacity-40" : rec.priority === "High" ? "text-cyan-400" : "text-indigo-400"}`}>
+                        <span className={`text-[10px] font-bold uppercase ${isChecked ? "line-through opacity-40" : rec.priority === "Critical" ? "text-rose-400 animate-pulse" : rec.priority === "High" ? "text-cyan-400" : "text-indigo-400"}`}>
                           {rec.priority} priority
                         </span>
+                        {!isChecked && (
+                          <span className="text-[9px] font-mono font-bold text-cyan-300">
+                            {rec.confidence}% confidence
+                          </span>
+                        )}
                       </div>
                       <p className={`text-xs font-bold text-white ${isChecked ? "line-through opacity-40 text-slate-400" : ""}`}>
                         {rec.action}
                       </p>
                       <p className="text-[10px] text-slate-400 leading-relaxed leading-normal">{rec.impact}</p>
+                      
+                      {!isChecked && (
+                        <div className="space-y-1.5 pt-2 border-t border-white/5">
+                          <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Why am I seeing this?</p>
+                          <ul className="list-disc list-inside text-[10px] text-slate-300 space-y-0.5">
+                            {rec.reasons?.map((reason, i) => (
+                              <li key={i} className="truncate">{reason}</li>
+                            ))}
+                          </ul>
+                          <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                            <span className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">Sources Used:</span>
+                            {rec.sources?.map((src) => (
+                              <span key={src} className="text-[8px] font-bold bg-white/[0.03] border border-white/5 px-1.5 py-0.5 rounded text-slate-400">
+                                {src}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {!isChecked && (
                         <button
                           onClick={() => router.push(rec.path)}

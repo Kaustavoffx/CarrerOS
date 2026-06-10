@@ -2,7 +2,6 @@
 
 import React from "react";
 import {
-  Shield,
   Activity,
   AlertTriangle,
   Brain,

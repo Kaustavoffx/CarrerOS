@@ -16,8 +16,14 @@ import type {
   WorkspaceSnapshotRecord, RoadmapMilestoneRecord, CommunityNeedReport
 } from "@/lib/supabase/types";
 import { PageHero, CardSurface, ActionCenter } from "@/components/ui";
+import dynamic from "next/dynamic";
 import { buttonStyle, inputStyle } from "@/styles/careeros-design-system";
 import { buildUserIntelligenceProfile } from "@/lib/user-intelligence";
+
+const ProductTour = dynamic(
+  () => import("@/components/ui/product-tour").then((mod) => mod.ProductTour),
+  { ssr: false }
+);
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1096,6 +1102,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace, commu
           </div>
         </div>
       )}
+      <ProductTour />
     </div>
   );
 }

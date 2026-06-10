@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion"; // Kept only for Confetti celebration animation
+import { motion, useReducedMotion } from "framer-motion"; // Kept only for Confetti celebration animation
 import {
   Download, Printer, RefreshCw, Clock3,
   Check, ExternalLink, Search,
@@ -157,7 +157,13 @@ function DesignTextarea({ className = "", ...props }: React.TextareaHTMLAttribut
 // ─── Microinteraction Confetti ────────────────────────────────────────────────
 
 const Confetti = () => {
+  const reduceMotion = useReducedMotion();
   const particles = Array.from({ length: 45 });
+
+  if (reduceMotion) {
+    return null;
+  }
+
   return (
     <div className="fixed inset-0 pointer-events-none z-[100] overflow-hidden">
       {particles.map((_, i) => {

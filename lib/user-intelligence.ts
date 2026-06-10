@@ -8,6 +8,9 @@ export interface UserIntelligencePriority {
   urgency: "low" | "medium" | "high" | "critical";
   link: string;
   whyExplain: string; // Explainable AI justification
+  reasons: string[];
+  confidence: number;
+  sources: string[];
 }
 
 export interface UserIntelligenceProfile {
@@ -137,6 +140,13 @@ export function buildUserIntelligenceProfile(
       urgency: primaryNeed.urgency === "critical" ? "critical" : primaryNeed.urgency === "high" ? "high" : "medium",
       link: "/support", // link to support navigator / community
       whyExplain: `Prioritized as you have an unresolved community need report for ${categoryLabel} listed as '${primaryNeed.urgency}' urgency.`,
+      reasons: [
+        `Active unresolved community need filed for: ${categoryLabel}`,
+        `Report urgency is marked as critical or high`,
+        `Direct action required to maintain community support safety index`
+      ],
+      confidence: 90,
+      sources: ["Profile", "Community Signals"]
     });
   }
 
@@ -144,15 +154,27 @@ export function buildUserIntelligenceProfile(
   if (activeRoadmap) {
     let urgency: "low" | "medium" | "high" | "critical" = "medium";
     let explanation = "";
+    let confidence = 85;
+    const reasons = [
+      `Active sprint milestone pending: ${activeRoadmap.title}`,
+      `Current completion is at ${roadmapProgress}%`
+    ];
+
     if (roadmapProgress < 45) {
       urgency = "high";
       explanation = `Prioritized because your active roadmap completion is currently at ${roadmapProgress}%, placing you behind schedule for ${activeRoadmap.title}.`;
+      reasons.push("Alert: Project velocity lagging behind target standard");
+      confidence = 94;
     } else if (roadmapProgress >= 100) {
       urgency = "low";
       explanation = `You have completed 100% of your current roadmap. Consider initiating a new curriculum target.`;
+      reasons.push("Goal milestones fully checked off");
+      confidence = 70;
     } else {
       urgency = "medium";
       explanation = `Completing active tasks on your "${activeRoadmap.title}" roadmap will directly boost your readiness score from ${readiness}%.`;
+      reasons.push("Incremental tasks boost overall readiness indexes");
+      confidence = 88;
     }
 
     priorities.push({
@@ -163,6 +185,9 @@ export function buildUserIntelligenceProfile(
       urgency,
       link: "/roadmaps",
       whyExplain: explanation,
+      reasons,
+      confidence,
+      sources: ["Roadmap", "Profile"]
     });
   } else {
     priorities.push({
@@ -173,6 +198,13 @@ export function buildUserIntelligenceProfile(
       urgency: "high",
       link: "/roadmaps",
       whyExplain: `Your profile does not currently list any active learning roadmaps. Initializing one is required to target readiness goals.`,
+      reasons: [
+        "No active educational roadmap logged",
+        "Required to calculate target readiness scores",
+        "Goal parameters lack structured weekly milestones"
+      ],
+      confidence: 95,
+      sources: ["Profile", "System Rules"]
     });
   }
 
@@ -186,6 +218,13 @@ export function buildUserIntelligenceProfile(
       urgency: "high",
       link: "/profile",
       whyExplain: `No digital resume link is indexed. Connecting a resume activates automated parser indexing and improves Job Opportunity Match accuracy.`,
+      reasons: [
+        "Digital resume credential link missing",
+        "Required to run automated vector parsing algorithm",
+        "Improves similarity scores on the opportunity match board"
+      ],
+      confidence: 89,
+      sources: ["Profile", "Market Indicators"]
     });
   }
 
@@ -199,6 +238,13 @@ export function buildUserIntelligenceProfile(
       urgency: "medium",
       link: "/profile",
       whyExplain: `A portfolio link showcases verified proof-of-work, which is highly matching for Vercel/Linear active developer slots.`,
+      reasons: [
+        "No linked digital sandbox/portfolio address",
+        "Proof-of-work is a high matching criteria for top tech roles",
+        "Enables automated verification audits of design files"
+      ],
+      confidence: 81,
+      sources: ["Profile", "Market Indicators"]
     });
   }
 
@@ -212,6 +258,13 @@ export function buildUserIntelligenceProfile(
       urgency: "medium",
       link: "/profile",
       whyExplain: `Your current skill portfolio registers only ${skills.length} skills, which triggers low confidence scores in matching market parameters.`,
+      reasons: [
+        `Skill portfolio registers only ${skills.length} skills`,
+        "Thin skills directory triggers low confidence matching metrics",
+        "Unlocks advanced roadmap course suggestions"
+      ],
+      confidence: 83,
+      sources: ["Profile"]
     });
   }
 
@@ -225,6 +278,13 @@ export function buildUserIntelligenceProfile(
       urgency: "low",
       link: "/mentor",
       whyExplain: `You have limited historical interactions (${mentorInteractionsCount} messages) with the AI Mentor. Simulating mock boards highlights skill gaps.`,
+      reasons: [
+        `Limited historical conversations (${mentorInteractionsCount} messages) with AI Mentor`,
+        "Mock architecture chat recommended to diagnose blind spots",
+        "Activates context-sync conversational memory"
+      ],
+      confidence: 76,
+      sources: ["Roadmap", "Community Signals"]
     });
   }
 

@@ -26,7 +26,9 @@ import {
   Info,
   X,
   Database,
-  Zap
+  Zap,
+  Play,
+  TrendingUp
 } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { motion, useDragControls, AnimatePresence } from "framer-motion";
@@ -44,6 +46,36 @@ interface GuideContent {
 }
 
 const GUIDE_DATA: Record<string, GuideContent> = {
+  "/demo": {
+    title: "Demo Mode Guide",
+    whatItDoes: "Interactive walkthrough of the platform designed to guide judges and mentors through core AI capabilities in under 2 minutes.",
+    aiCapabilities: [
+      { name: "Guided Walkthrough", desc: "Coordinates dynamic previews of twin calibrations, proximity search, and demand forecasting." }
+    ],
+    dataAnalyzed: "Aggregated platform metrics, seed datasets, and interactive mock state calibrations.",
+    recommendationsGeneration: "Synthesizes slide progression stages with real-time interactive widget responses.",
+    privacyPolicy: "Demo inputs are fully sandbox-isolated in-memory and are never written to permanent database stores.",
+    howToTakeAction: [
+      "Click 'Next' to navigate sequentially through the 8 value proposition steps.",
+      "Interact with the live widget panels (e.g. adding skills, clicking cities) to trigger calibrations.",
+      "Click 'Enter Operational Workspace' on the final slide to transition to the live dashboard."
+    ]
+  },
+  "/impact-center": {
+    title: "Impact Calibration Guide",
+    whatItDoes: "Operations desk compiling real-time reach, assist counts, and support resolution metrics.",
+    aiCapabilities: [
+      { name: "Live Stats Indexing", desc: "Performs exact aggregations on active profile rows, need reports, and chat logs." }
+    ],
+    dataAnalyzed: "Supabase database counts, program categories, and community health access indexes.",
+    recommendationsGeneration: "Computes community reach indicators from primary tables without simulated offsets.",
+    privacyPolicy: "Metrics display anonymous aggregate totals only, safeguarding individual identities.",
+    howToTakeAction: [
+      "Review the operational reach cards monitoring People Assisted and Needs Resolved.",
+      "Monitor the Community Health Index measuring resource density access.",
+      "Check database validation notices detailing transparency protocols."
+    ]
+  },
   "/dashboard": {
     title: "Dashboard Guide",
     whatItDoes: "Centralized workspace that aggregates your readiness score, career goals, active development steps, and roadmap metrics in a unified overview.",
@@ -228,6 +260,13 @@ type WorkspaceShellProps = {
 interface NavSectionConfig { title: string; items: NavItemConfig[] }
 
 const navGroups: NavSectionConfig[] = [
+  {
+    title: "Judge Showcase",
+    items: [
+      { label: "Demo Mode",     href: "/demo",          icon: Play },
+      { label: "Impact Center", href: "/impact-center", icon: TrendingUp },
+    ],
+  },
   {
     title: "Core Space",
     items: [
@@ -727,7 +766,8 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                   type="button"
                   onClick={handleSignOut}
                   title="Sign out"
-                  className="rounded-lg p-1.5 text-slate-500 hover:bg-white/5 hover:text-rose-400 transition-colors duration-[120ms] shrink-0"
+                  aria-label="Sign out of account"
+                  className="rounded-lg p-1.5 text-slate-500 hover:bg-white/5 hover:text-rose-400 focus-visible:ring-2 focus-visible:ring-cyan-500 transition-colors duration-[120ms] shrink-0"
                 >
                   <LogOut className="h-3.5 w-3.5" />
                 </button>
@@ -740,7 +780,8 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
         <button
           type="button"
           onClick={handleToggleCollapse}
-          className="absolute -right-3 top-20 z-40 flex h-6 w-6 items-center justify-center rounded-full text-slate-400 hover:text-cyan-300 transition-colors duration-[150ms]"
+          aria-label="Toggle sidebar collapse"
+          className="absolute -right-3 top-20 z-40 flex h-6 w-6 items-center justify-center rounded-full text-slate-400 hover:text-cyan-300 focus-visible:ring-2 focus-visible:ring-cyan-500 transition-colors duration-[150ms]"
           style={{ background: 'rgba(8,12,24,0.90)', border: '1px solid rgba(255,255,255,0.10)', backdropFilter: 'blur(12px)' }}
         >
           {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
@@ -758,7 +799,8 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
           {isGuideAvailable && (
             <button
               onClick={() => setGuideOpen(true)}
-              className="absolute top-8 right-8 z-30 px-3.5 py-2 rounded-lis-xs text-xs text-slate-300 hover:text-white transition-all duration-[150ms] flex items-center gap-1.5 font-semibold active:scale-95 hover:border-cyan-500/25"
+              aria-label="Open Mission Guide instructions"
+              className="absolute top-8 right-8 z-30 px-3.5 py-2 rounded-lis-xs text-xs text-slate-300 hover:text-white focus-visible:ring-2 focus-visible:ring-cyan-500 transition-all duration-[150ms] flex items-center gap-1.5 font-semibold active:scale-95 hover:border-cyan-500/25"
               style={{ background: 'rgba(8,12,24,0.75)', border: '1px solid rgba(255,255,255,0.09)', backdropFilter: 'blur(20px)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 24px rgba(0,0,0,0.35)' }}
             >
               <Info className="h-3.5 w-3.5 text-cyan-400" />
@@ -928,7 +970,8 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                   </div>
                   <button
                     onClick={() => setIsQuickActionOpen(false)}
-                    className="p-1 text-slate-500 hover:text-white rounded-lg border border-white/5 bg-slate-900"
+                    aria-label="Close Quick Action Hub"
+                    className="p-1 text-slate-500 hover:text-white rounded-lg border border-white/5 bg-slate-900 focus-visible:ring-2 focus-visible:ring-cyan-500"
                     title="Close"
                   >
                     <Plus className="h-4 w-4 rotate-45" />
@@ -1105,7 +1148,8 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                 </div>
                 <button 
                   onClick={() => setGuideOpen(false)}
-                  className="p-1 hover:bg-white/5 rounded-lg border border-white/5 text-slate-500 hover:text-white transition"
+                  aria-label="Close guide panel"
+                  className="p-1 hover:bg-white/5 rounded-lg border border-white/5 text-slate-500 hover:text-white focus-visible:ring-2 focus-visible:ring-cyan-500 transition"
                 >
                   <X className="h-4 w-4" />
                 </button>

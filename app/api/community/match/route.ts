@@ -9,8 +9,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Profile context is required." }, { status: 400 });
     }
 
-    const supabase = await getSupabaseServerClient();
-    if (!supabase) throw new Error("Database client unavailable");
+    const supabase = await getSupabaseServerClient().catch(() => null);
     const resources = await getCommunityResources(supabase, {});
 
     const apiKey = process.env.OPENAI_API_KEY;

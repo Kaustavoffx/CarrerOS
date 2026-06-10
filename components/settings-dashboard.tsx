@@ -558,6 +558,69 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
         </div>
       </CardSurface>
 
+      {/* ═══ SECTION: AI TRANSPARENCY & TRUST ══════════════════════════ */}
+      <CardSurface tag="section" variant="surface" className="p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <Sliders className="h-4 w-4 text-cyan-400" />
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider">AI Transparency & Trust</h3>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Understand how our algorithms calculate calibrations, utilize profile variables, and preserve user privacy.
+            </p>
+          </div>
+
+          <div className="lg:col-span-2 space-y-4 text-xs font-medium">
+            <div className="grid gap-4 sm:grid-cols-2">
+              {/* Data Used */}
+              <div className="p-4 rounded-xl border border-white/5 bg-white/[0.01]">
+                <h4 className="text-xs font-bold text-cyan-300 mb-2 uppercase tracking-wider">What Data is Used</h4>
+                <ul className="list-disc list-inside space-y-1 text-slate-300 text-[11px]">
+                  <li>Active skills & targeted goals</li>
+                  <li>Roadmap milestones progress rate</li>
+                  <li>Logged community support requests</li>
+                </ul>
+              </div>
+
+              {/* Data NOT Used */}
+              <div className="p-4 rounded-xl border border-white/5 bg-white/[0.01]">
+                <h4 className="text-xs font-bold text-rose-300 mb-2 uppercase tracking-wider">What Data is NOT Used</h4>
+                <ul className="list-disc list-inside space-y-1 text-slate-300 text-[11px]">
+                  <li>API Keys (kept encrypted locally)</li>
+                  <li>Password verification hashes</li>
+                  <li>Private chat logs outside prompt context</li>
+                </ul>
+              </div>
+
+              {/* How recommendations are generated */}
+              <div className="p-4 rounded-xl border border-white/5 bg-white/[0.01] sm:col-span-2">
+                <h4 className="text-xs font-bold text-white mb-2 uppercase tracking-wider">How Recommendations Are Generated</h4>
+                <p className="text-slate-300 text-[11px] leading-relaxed">
+                  Our decision engine matches user-profile vectors against industry criteria lists using a cosine similarity index. Proximity resource recommendations compute coordinate distances via the Haversine formula over verified regional support grids.
+                </p>
+              </div>
+
+              {/* AI limitations */}
+              <div className="p-4 rounded-xl border border-white/5 bg-white/[0.01]">
+                <h4 className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">AI Limitations</h4>
+                <p className="text-slate-300 text-[11px] leading-relaxed">
+                  Proximity search relies on static geocoding coordinates. Career twin benchmarks represent general market projections and are updated periodically.
+                </p>
+              </div>
+
+              {/* Privacy Approach */}
+              <div className="p-4 rounded-xl border border-white/5 bg-white/[0.01]">
+                <h4 className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">Privacy & Security</h4>
+                <p className="text-slate-300 text-[11px] leading-relaxed">
+                  All metrics are secured under strict Row Level Security (RLS) policies. No user identifiers, goals, or private skills portfolios are sold or shared.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardSurface>
+
       {/* ═══ SECTION 4: DATA PORTABILITY ═════════════════════════════════ */}
       <CardSurface tag="section" variant="surface" className="p-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

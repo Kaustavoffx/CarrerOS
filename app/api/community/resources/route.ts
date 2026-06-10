@@ -11,8 +11,7 @@ export async function GET(req: Request) {
     const type = searchParams.get("type") || "all";
     const searchQuery = searchParams.get("searchQuery") || "";
 
-    const supabase = await getSupabaseServerClient();
-    if (!supabase) throw new Error("Database client unavailable");
+    const supabase = await getSupabaseServerClient().catch(() => null);
     const resources = await getCommunityResources(supabase, {
       lat,
       lng,
