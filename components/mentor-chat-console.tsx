@@ -13,9 +13,10 @@ import { MagneticButton } from "./magnetic-button";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { generateId } from "@/lib/id";
 import { updateWorkspace, updateProfile } from "@/lib/app-data";
-import type { ChatMessage, UserProfileRecord, WorkspaceSnapshotRecord } from "@/lib/supabase/types";
+import type { ChatMessage, UserProfileRecord, WorkspaceSnapshotRecord, CommunityNeedReport } from "@/lib/supabase/types";
 import { PageHero, CardSurface, EmptyState } from "@/components/ui";
 import { buttonStyle, inputStyle } from "@/styles/careeros-design-system";
+import { buildUserIntelligenceProfile } from "@/lib/user-intelligence";
 
 // ─── Design Input Wrappers ───────────────────────────────────────────────────
 
@@ -80,6 +81,7 @@ function DesignTextarea({ className = "", ...props }: React.TextareaHTMLAttribut
 type MentorChatConsoleProps = {
   profile: UserProfileRecord | null;
   workspace: WorkspaceSnapshotRecord | null;
+  communityNeeds?: CommunityNeedReport[];
 };
 
 type MentorMode = "coach" | "interview" | "skill" | "resume" | "project";
@@ -139,7 +141,8 @@ function renderFormattedContent(content: string) {
   });
 }
 
-export function MentorChatConsole({ profile, workspace: initialWorkspace }: MentorChatConsoleProps) {
+export function MentorChatConsole({ profile, workspace: initialWorkspace, communityNeeds = [] }: MentorChatConsoleProps) {
+  const intelligenceProfile = buildUserIntelligenceProfile(profile, initialWorkspace, communityNeeds);
   const router = useRouter();
   const supabase = getSupabaseBrowserClient();
 
@@ -318,6 +321,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
         body: JSON.stringify({
           message: queryText,
           profile,
+          intelligenceProfile,
           threadHistory: activeThread?.messages || [],
           mentorMode
         })

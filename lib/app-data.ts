@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createStarterWorkspace } from "./workspace";
 import { auditRoadmapQuality, buildRoadmapPlan, resolveDomainProfile, validateRoadmapDomainConsistency, validateGeneratedRoadmap, validateRoadmapDomain } from "./roadmap-plan";
 import { generateId } from "./id";
-import type { AppData, ChatThread, ExperienceLevel, NoteRecord, ProgressRecord, RoadmapAuditReport, RoadmapAuditSourceReport, RoadmapDifficulty, RoadmapMilestoneRecord, RoadmapRecord, RoadmapResourceLink, RoadmapStatus, RoadmapVersionRecord, UserProfileRecord, WorkspaceSnapshotRecord } from "./supabase/types";
+import type { AppData, ChatThread, ExperienceLevel, NoteRecord, ProgressRecord, RoadmapAuditReport, RoadmapAuditSourceReport, RoadmapDifficulty, RoadmapMilestoneRecord, RoadmapRecord, RoadmapResourceLink, RoadmapStatus, RoadmapVersionRecord, UserProfileRecord, WorkspaceSnapshotRecord, CommunityNeedReport } from "./supabase/types";
 
 type ProfileWritePayload = {
   id: string;
@@ -572,16 +572,18 @@ async function persistRoadmapVersion(client: SupabaseClient, userId: string, roa
 }
 
 export async function loadAppData(client: SupabaseClient, userId: string): Promise<AppData> {
-  const [profileResult, workspaceResult, roadmapRowsResult, roadmapHistoryResult] = await Promise.all([
+  const [profileResult, workspaceResult, roadmapRowsResult, roadmapHistoryResult, communityNeedsResult] = await Promise.all([
     client.from("profiles").select("*").eq("id", userId).maybeSingle<UserProfileRecord>(),
     client.from("career_workspace_state").select("*").eq("user_id", userId).maybeSingle<WorkspaceSnapshotRecord>(),
     client.from("roadmaps").select("*").eq("user_id", userId).order("roadmap_version", { ascending: false }),
-    client.from("roadmap_versions").select("*").eq("user_id", userId).order("roadmap_version", { ascending: false }).limit(12)
+    client.from("roadmap_versions").select("*").eq("user_id", userId).order("roadmap_version", { ascending: false }).limit(12),
+    client.from("community_need_reports").select("*").eq("user_id", userId).order("created_at", { ascending: false })
   ]);
 
   const roadmapRows = normalizeRoadmapArray(roadmapRowsResult.data) as RoadmapRow[];
   const roadmapHistory = normalizeRoadmapVersionArray(roadmapHistoryResult.data);
   const workspaceRoadmaps = normalizeRoadmapArray(workspaceResult.data?.roadmaps);
+  const communityNeeds = toArray<CommunityNeedReport>(communityNeedsResult.data);
   const roadmapAudit: RoadmapAuditReport = {
     sources: {
       roadmapsTable: auditRoadmapCollection(roadmapRowsResult.data),
@@ -626,7 +628,8 @@ export async function loadAppData(client: SupabaseClient, userId: string): Promi
     profile: profileResult.data ?? null,
     workspace,
     roadmapHistory,
-    roadmapAudit
+    roadmapAudit,
+    communityNeeds
   };
 }
 

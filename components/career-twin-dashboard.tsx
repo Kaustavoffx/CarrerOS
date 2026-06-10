@@ -9,13 +9,15 @@ import {
 } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { updateProfile } from "@/lib/app-data";
-import type { UserProfileRecord, WorkspaceSnapshotRecord } from "@/lib/supabase/types";
+import type { UserProfileRecord, WorkspaceSnapshotRecord, CommunityNeedReport } from "@/lib/supabase/types";
 import { PageHero, CardSurface, EmptyState } from "@/components/ui";
 import { buttonStyle, inputStyle } from "@/styles/careeros-design-system";
+import { buildUserIntelligenceProfile } from "@/lib/user-intelligence";
 
 type CareerTwinDashboardProps = {
   profile: UserProfileRecord | null;
   workspace: WorkspaceSnapshotRecord | null;
+  communityNeeds?: CommunityNeedReport[];
 };
 
 function formatUtcShortDate(d: Date) {
@@ -55,7 +57,7 @@ function DesignInput({ className = "", ...props }: React.InputHTMLAttributes<HTM
   );
 }
 
-export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardProps) {
+export function CareerTwinDashboard({ profile, workspace, communityNeeds = [] }: CareerTwinDashboardProps) {
   const router = useRouter();
   const supabase = getSupabaseBrowserClient();
 
@@ -138,21 +140,20 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
   };
 
   // ─── Real Data Fetching/Parsing Calculations ────────────────────────────────
-  const readiness = profile?.readiness_score ?? 0;
-  const progressLogs = workspace?.progress ?? [];
+  const intelligenceProfile = buildUserIntelligenceProfile(profile, workspace, communityNeeds);
+  const readiness = intelligenceProfile.readiness;
   const roadmaps = workspace?.roadmaps ?? [];
   const activeRoadmap = roadmaps.find((r) => r.status === "Active") ?? roadmaps[0] ?? null;
   const allMilestones = activeRoadmap ? (Array.isArray(activeRoadmap.milestones) ? activeRoadmap.milestones : []) : [];
   const completedCount = activeRoadmap ? Math.floor((activeRoadmap.progress / 100) * allMilestones.length) : 0;
   
   // Calculate dynamic twin metrics
-  const userSkills = profile?.skills || [];
+  const userSkills = intelligenceProfile.skills;
   const marketMatch = Math.min(98, Math.max(45, 50 + userSkills.length * 4));
   
-  const totalCheckedEver = progressLogs.length + completedCount;
-  const momentum = totalCheckedEver > 0 ? Math.min(100, 65 + (totalCheckedEver * 5) % 35) : 50;
-  
-  const execution = activeRoadmap?.progress ?? 0;
+  const momentum = intelligenceProfile.twinAnalysis.velocityIndex;
+  const execution = intelligenceProfile.roadmapProgress;
+  const verdict = intelligenceProfile.twinAnalysis.verdict;
 
   // ─── Career Journey Timeline (Career Events Only) ─────────────────────────
   const events = [];
@@ -191,17 +192,9 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
   const sortedEvents = events.sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 5);
 
   // ─── Career Intelligence Report ───────────────────────────────────────────
-  const strengths = userSkills.slice(0, 4);
-  if (strengths.length === 0) strengths.push("Initial profile assessment");
-
-  const weaknesses = profile?.weaknesses?.slice(0, 3) || [];
-  if (weaknesses.length === 0) weaknesses.push("Skill gap profiling pending");
-
-  const blindSpots: string[] = [];
-  if (!resumeUrl) blindSpots.push("Resume lack of verified parsing");
-  if (!portfolioUrl) blindSpots.push("No linked digital sandbox portfolio");
-  if (userSkills.length < 5) blindSpots.push("Thin core skills directory");
-  if (blindSpots.length === 0) blindSpots.push("No critical blind spots detected");
+  const strengths = intelligenceProfile.twinAnalysis.strengths;
+  const weaknesses = intelligenceProfile.twinAnalysis.weaknesses;
+  const blindSpots = intelligenceProfile.twinAnalysis.blindSpots;
 
   const opportunities: string[] = [];
   if (profile?.goal) {
@@ -222,37 +215,14 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
     risks.push("Nominal execution risk profile");
   }
 
-  // ─── AI recommendations action queue ──────────────────────────────────────
-  const recommendationsQueue = [
-    {
-      id: "rec1",
-      action: "Link Professional Credentials",
-      impact: "Triggers resume parser algorithms and matches tailored listings.",
-      priority: "High",
-      path: "/profile"
-    },
-    {
-      id: "rec2",
-      action: "Complete active roadmap sprint tasks",
-      impact: "Increments overall readiness score and unlocks subsequent milestones.",
-      priority: "High",
-      path: "/roadmaps"
-    },
-    {
-      id: "rec3",
-      action: "Optimize technical skills tags",
-      impact: "Improves market matching accuracy inside Career Twin database.",
-      priority: "Medium",
-      path: "/profile"
-    },
-    {
-      id: "rec4",
-      action: "Initiate mock system architecture board session",
-      impact: "Builds credentials for interview performance metrics.",
-      priority: "Medium",
-      path: "/mentor"
-    }
-  ];
+  // ─── AI recommendations action queue (sourced from the Decision Engine priorities) ──────────────────────────────────────
+  const recommendationsQueue = intelligenceProfile.priorities.map((prio) => ({
+    id: prio.id,
+    action: prio.action,
+    impact: prio.whyExplain,
+    priority: prio.urgency === "critical" ? "Critical" : prio.urgency === "high" ? "High" : prio.urgency === "medium" ? "Medium" : "Low",
+    path: prio.link,
+  }));
 
   // ─── Job Matches Opportunity Board ────────────────────────────────────────
   const getJobMatches = () => {
@@ -323,6 +293,7 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
             <p className="text-xs text-slate-300 leading-relaxed max-w-2xl font-medium">
               Capability mapping indicates a strong baseline in <span className="text-white font-semibold">{strengths.slice(0, 3).join(", ")}</span>. 
               Target readiness is calibrated at <span className="text-cyan-300 font-semibold">{readiness}%</span> against live specifications for <span className="text-white font-semibold">{profile?.goal || "SDE I"}</span>. 
+              {" "}<span className="text-cyan-300 font-semibold">{verdict}</span>{" "}
               {risks.length > 0 && !risks[0].includes("Nominal")
                 ? ` Warning: Active execution issues identified: ${risks.join(", ")}.` 
                 : " System logs report nominal execution risks."

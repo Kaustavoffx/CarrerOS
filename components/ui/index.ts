@@ -20,3 +20,5 @@ export { Skeleton } from "@/components/ui/skeleton";
 export { EmptyState } from "@/components/ui/empty-state";
 
 export { ErrorState } from "@/components/ui/error-state";
+
+export { ActionCenter } from "@/components/ui/action-center";

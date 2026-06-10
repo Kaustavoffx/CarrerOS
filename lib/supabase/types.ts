@@ -140,6 +140,7 @@ export type AppData = {
   workspace: WorkspaceSnapshotRecord | null;
   roadmapHistory: RoadmapVersionRecord[];
   roadmapAudit?: RoadmapAuditReport;
+  communityNeeds?: CommunityNeedReport[];
 };
 
 export type RoadmapAuditReport = {

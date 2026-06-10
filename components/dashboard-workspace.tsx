@@ -6,23 +6,25 @@ import Image from "next/image";
 import { motion } from "framer-motion"; // Kept only for Confetti celebration animation
 import {
   ArrowRight, Trash2, Check, X, PlusCircle,
-  Search, Flame, Activity, BookOpen, Compass
+  Search, Flame, Activity, BookOpen
 } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { generateId } from "@/lib/id";
 import { updateWorkspace } from "@/lib/app-data";
 import type {
   NoteRecord, ProgressRecord, UserProfileRecord,
-  WorkspaceSnapshotRecord, RoadmapMilestoneRecord
+  WorkspaceSnapshotRecord, RoadmapMilestoneRecord, CommunityNeedReport
 } from "@/lib/supabase/types";
-import { PageHero, CardSurface } from "@/components/ui";
+import { PageHero, CardSurface, ActionCenter } from "@/components/ui";
 import { buttonStyle, inputStyle } from "@/styles/careeros-design-system";
+import { buildUserIntelligenceProfile } from "@/lib/user-intelligence";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type DashboardWorkspaceProps = {
   profile: UserProfileRecord | null;
   workspace: WorkspaceSnapshotRecord | null;
+  communityNeeds?: CommunityNeedReport[];
 };
 
 type KanbanColumn = "upcoming" | "inprogress" | "completed";
@@ -135,8 +137,9 @@ const Confetti = () => {
   );
 };
 
-export function DashboardWorkspace({ profile, workspace: initialWorkspace }: DashboardWorkspaceProps) {
+export function DashboardWorkspace({ profile, workspace: initialWorkspace, communityNeeds = [] }: DashboardWorkspaceProps) {
   const [workspace, setWorkspace] = useState<WorkspaceSnapshotRecord | null>(initialWorkspace);
+  const intelligenceProfile = buildUserIntelligenceProfile(profile, workspace, communityNeeds);
 
   // Redesigned Modals & Drawer states
   const [noteModalOpen, setNoteModalOpen] = useState(false);
@@ -530,32 +533,122 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
         }
       />
 
-      {/* ═══ GEOLOCATION SUPPORT SPOTLIGHT ═══════════════════════════════════ */}
-      <CardSurface
-        variant="glass"
-        dust="tr"
-        className="flex flex-col md:flex-row items-center justify-between gap-4"
-      >
-        <div className="flex items-start gap-3">
-          <div className="h-10 w-10 rounded-xl bg-cyan-950/40 border border-cyan-400/20 flex items-center justify-center text-cyan-300 shrink-0">
-            <Compass className="h-5 w-5 animate-pulse" />
-          </div>
-          <div>
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider">Community Intelligence Support Command</h4>
-            <p className="text-xs text-slate-400 mt-1 max-w-xl leading-relaxed">
-              Answer &ldquo;What help exists around me right now?&rdquo; Scan verified scholarships, mentorship programs, government schemes, wellness centers, and NGO internships aligned to your coordinates.
-            </p>
-          </div>
+      {/* ── Action Center ── */}
+      <ActionCenter intelligenceProfile={intelligenceProfile} />
+
+      {/* ═══ UNIFIED INTELLIGENCE STREAM ═════════════════════════════════════ */}
+      <section className="space-y-4">
+        <div>
+          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Live telemetry</span>
+          <h3 className="text-base font-bold text-white mt-1">Unified Intelligence Feed</h3>
         </div>
-        <Link
-          href="/community"
-          style={buttonStyle("primary")}
-          className="px-4 py-2 rounded-xl text-xs font-bold transition hover:scale-[1.02] flex items-center gap-1 shrink-0 justify-center text-black"
-        >
-          Scan Help Near Me
-          <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
-      </CardSurface>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {/* Item 1: Roadmap status */}
+          <CardSurface variant="glass" dust="tr" className="p-5 flex flex-col justify-between min-h-[160px]">
+            <div>
+              <div className="flex items-center justify-between gap-2.5 mb-3">
+                <span className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider">
+                  Roadmap Pipeline
+                </span>
+                <span className="text-[10px] text-slate-500 font-bold">Active</span>
+              </div>
+              {activeRoadmap ? (
+                <>
+                  <h4 className="text-xs font-bold text-white leading-snug">
+                    Target: {activeRoadmap.title}
+                  </h4>
+                  <p className="text-[10px] text-slate-400 leading-relaxed mt-1">
+                    Overall curriculum is {intelligenceProfile.roadmapProgress}% completed. Next milestone sprint: &ldquo;{currentMilestone?.title || "Complete Track"}&rdquo;.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h4 className="text-xs font-bold text-white leading-snug">
+                    Curriculum Inactive
+                  </h4>
+                  <p className="text-[10px] text-slate-400 leading-relaxed mt-1">
+                    No active learning roadmap loaded. Initialize a path to calibrate target readiness tracking.
+                  </p>
+                </>
+              )}
+            </div>
+            <div className="pt-3 border-t border-white/5 flex items-center justify-between mt-4">
+              <span className="text-[9px] font-bold text-slate-500">Telemetry synced</span>
+              <Link href="/roadmaps" className="text-[9px] font-extrabold text-cyan-400 hover:underline inline-flex items-center gap-0.5">
+                View roadmap &rarr;
+              </Link>
+            </div>
+          </CardSurface>
+
+          {/* Item 2: Twin verdict */}
+          <CardSurface variant="glass" dust="tr" className="p-5 flex flex-col justify-between min-h-[160px]">
+            <div>
+              <div className="flex items-center justify-between gap-2.5 mb-3">
+                <span className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider">
+                  Twin Diagnostics
+                </span>
+                <span className="text-[10px] text-slate-500 font-bold">Calibrated</span>
+              </div>
+              <h4 className="text-xs font-bold text-white leading-snug">
+                Twin Calibration Verdict
+              </h4>
+              <p className="text-[10px] text-slate-400 leading-relaxed mt-1 italic">
+                &ldquo;{intelligenceProfile.twinAnalysis.verdict}&rdquo;
+              </p>
+            </div>
+            <div className="pt-3 border-t border-white/5 flex items-center justify-between mt-4">
+              <span className="text-[9px] font-bold text-slate-500">Index: {intelligenceProfile.twinAnalysis.velocityIndex}%</span>
+              <Link href="/career-twin" className="text-[9px] font-extrabold text-cyan-400 hover:underline inline-flex items-center gap-0.5">
+                Analyze twin &rarr;
+              </Link>
+            </div>
+          </CardSurface>
+
+          {/* Item 3: Support alerts & Geolocation reports */}
+          <CardSurface variant="glass" dust="tr" className="p-5 flex flex-col justify-between min-h-[160px]">
+            <div>
+              {intelligenceProfile.supportNeeds.length > 0 ? (
+                <>
+                  <div className="flex items-center justify-between gap-2.5 mb-3">
+                    <span className="bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider">
+                      Support Alert
+                    </span>
+                    <span className="text-[10px] text-rose-400 font-bold uppercase tracking-wide">Urgent</span>
+                  </div>
+                  <h4 className="text-xs font-bold text-white leading-snug">
+                    Mentorship Need Reported
+                  </h4>
+                  <p className="text-[10px] text-slate-400 leading-relaxed mt-1">
+                    Active reported need for {intelligenceProfile.supportNeeds[0].category.replace("_", " ")} is unresolved. Scan nearby support listings or contact AI mentor.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between gap-2.5 mb-3">
+                    <span className="bg-slate-500/10 text-slate-400 border border-slate-500/20 text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider">
+                      Community Intel
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-bold">Nominal</span>
+                  </div>
+                  <h4 className="text-xs font-bold text-white leading-snug">
+                    Command Centre Online
+                  </h4>
+                  <p className="text-[10px] text-slate-400 leading-relaxed mt-1">
+                    No active coordinate alerts registered. Nearby geolocated support services and resources are online.
+                  </p>
+                </>
+              )}
+            </div>
+            <div className="pt-3 border-t border-white/5 flex items-center justify-between mt-4">
+              <span className="text-[9px] font-bold text-slate-500">GPS verified</span>
+              <Link href="/community" className="text-[9px] font-extrabold text-cyan-400 hover:underline inline-flex items-center gap-0.5">
+                Scan help &rarr;
+              </Link>
+            </div>
+          </CardSurface>
+        </div>
+      </section>
 
       {/* Quick Actions Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
