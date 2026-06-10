@@ -3,6 +3,7 @@ import { LazyMotion, MotionConfig, domAnimation } from "framer-motion";
 import { AppAtmosphere } from "@/components/app-atmosphere";
 import { CareerOSBackground } from "@/components/careeros-background";
 import { AuthProvider } from "@/components/auth-provider";
+import { ThemeProvider } from "@/components/theme-provider";
 import { RouteTransitionProvider } from "@/components/route-transition-provider";
 import { geom } from "@/lib/fonts";
 import "./globals.css";
@@ -29,20 +30,34 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark scroll-smooth">
+    <html lang="en" className="careeros-dark scroll-smooth">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                var theme = localStorage.getItem('careeros-theme') || 'careeros-dark';
+                document.documentElement.className = theme + ' scroll-smooth';
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className={`${geom.variable} text-white antialiased`}>
-        <CareerOSBackground />
-        <MotionConfig reducedMotion="user">
-          <LazyMotion features={domAnimation}>
-            <AuthProvider>
-              <RouteTransitionProvider>
-                <AppAtmosphere />
-                {children}
-              </RouteTransitionProvider>
-            </AuthProvider>
-          </LazyMotion>
-        </MotionConfig>
+        <ThemeProvider>
+          <CareerOSBackground />
+          <MotionConfig reducedMotion="user">
+            <LazyMotion features={domAnimation}>
+              <AuthProvider>
+                <RouteTransitionProvider>
+                  <AppAtmosphere />
+                  {children}
+                </RouteTransitionProvider>
+              </AuthProvider>
+            </LazyMotion>
+          </MotionConfig>
+        </ThemeProvider>
       </body>
     </html>
   );
-}
+}

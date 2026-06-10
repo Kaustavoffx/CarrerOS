@@ -54,12 +54,12 @@ function CareerOSBackgroundComponent() {
           right:    "-120px",
           width:    "600px",
           height:   "500px",
-          background: "radial-gradient(ellipse at center, rgba(34,211,238,0.055) 0%, transparent 65%)",
+          background: "radial-gradient(ellipse at center, rgba(var(--careeros-dust-primary),0.055) 0%, transparent 65%)",
           filter:   "blur(60px)",
           pointerEvents: "none",
         }}
       />
-
+ 
       {/* ── Layer 4: Bottom-left indigo ambient vignette ─────────────────── */}
       {/* Secondary dust — bottom-left origin, blue tint for depth */}
       <div
@@ -69,7 +69,7 @@ function CareerOSBackgroundComponent() {
           left:     "-80px",
           width:    "520px",
           height:   "420px",
-          background: "radial-gradient(ellipse at center, rgba(96,165,250,0.040) 0%, transparent 65%)",
+          background: "radial-gradient(ellipse at center, rgba(var(--careeros-dust-secondary),0.040) 0%, transparent 65%)",
           filter:   "blur(55px)",
           pointerEvents: "none",
         }}

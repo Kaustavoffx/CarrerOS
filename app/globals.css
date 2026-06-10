@@ -10,7 +10,7 @@
                     Linear precision · Arc Browser atmosphere
    ═══════════════════════════════════════════════════════════════════════════ */
 
-:root {
+:root, .careeros-dark {
   color-scheme: dark;
 
   /* ── Global canvas ──────────────────────────────────────────────────────── */
@@ -18,9 +18,133 @@
   --foreground:  #F8FAFC;
   --muted:       rgba(148, 163, 184, 0.65);
 
+  /* ── Required Theme Variables ───────────────────────────────────────────── */
+  --careeros-primary: #22D3EE;
+  --careeros-secondary: #60A5FA;
+  --careeros-accent: #22D3EE;
+  --careeros-card-border: rgba(255, 255, 255, 0.08);
+  --careeros-card-glow: rgba(34, 211, 238, 0.12);
+  --careeros-dust-primary: 34, 211, 238;
+  --careeros-dust-secondary: 96, 165, 250;
+  --careeros-sidebar-active: rgba(34, 211, 238, 0.07);
+  --careeros-progress: #22D3EE;
+  --careeros-badge: #22D3EE;
+
+  /* Helper RGBs for inline gradients and configurations */
+  --careeros-primary-rgb: 34, 211, 238;
+  --careeros-secondary-rgb: 96, 165, 250;
+  --careeros-accent-rgb: 34, 211, 238;
+}
+
+.arctic-glass {
+  --background:  #030712;
+  --foreground:  #F8FAFC;
+  --muted:       rgba(148, 163, 184, 0.65);
+
+  --careeros-primary: #E2E8F0;
+  --careeros-secondary: #93C5FD;
+  --careeros-accent: #93C5FD;
+  --careeros-card-border: rgba(255, 255, 255, 0.12);
+  --careeros-card-glow: rgba(147, 197, 253, 0.15);
+  --careeros-dust-primary: 186, 230, 253;
+  --careeros-dust-secondary: 147, 197, 253;
+  --careeros-sidebar-active: rgba(255, 255, 255, 0.08);
+  --careeros-progress: #38BDF8;
+  --careeros-badge: #93C5FD;
+
+  --careeros-primary-rgb: 226, 232, 240;
+  --careeros-secondary-rgb: 147, 197, 253;
+  --careeros-accent-rgb: 147, 197, 253;
+}
+
+.midnight-violet {
+  --background:  #030712;
+  --foreground:  #F8FAFC;
+  --muted:       rgba(148, 163, 184, 0.65);
+
+  --careeros-primary: #C084FC;
+  --careeros-secondary: #818CF8;
+  --careeros-accent: #C084FC;
+  --careeros-card-border: rgba(255, 255, 255, 0.08);
+  --careeros-card-glow: rgba(192, 132, 252, 0.15);
+  --careeros-dust-primary: 192, 132, 252;
+  --careeros-dust-secondary: 129, 140, 248;
+  --careeros-sidebar-active: rgba(192, 132, 252, 0.08);
+  --careeros-progress: #C084FC;
+  --careeros-badge: #C084FC;
+
+  --careeros-primary-rgb: 192, 132, 252;
+  --careeros-secondary-rgb: 129, 140, 248;
+  --careeros-accent-rgb: 192, 132, 252;
+}
+
+.emerald-command {
+  --background:  #030712;
+  --foreground:  #F8FAFC;
+  --muted:       rgba(148, 163, 184, 0.65);
+
+  --careeros-primary: #34D399;
+  --careeros-secondary: #60A5FA;
+  --careeros-accent: #34D399;
+  --careeros-card-border: rgba(255, 255, 255, 0.08);
+  --careeros-card-glow: rgba(52, 211, 153, 0.12);
+  --careeros-dust-primary: 52, 211, 153;
+  --careeros-dust-secondary: 96, 165, 250;
+  --careeros-sidebar-active: rgba(52, 211, 153, 0.07);
+  --careeros-progress: #34D399;
+  --careeros-badge: #34D399;
+
+  --careeros-primary-rgb: 52, 211, 153;
+  --careeros-secondary-rgb: 96, 165, 250;
+  --careeros-accent-rgb: 52, 211, 153;
+}
+
+.carbon-graphite {
+  --background:  #030712;
+  --foreground:  #F8FAFC;
+  --muted:       rgba(148, 163, 184, 0.65);
+
+  --careeros-primary: #94A3B8;
+  --careeros-secondary: #CBD5E1;
+  --careeros-accent: #94A3B8;
+  --careeros-card-border: rgba(255, 255, 255, 0.09);
+  --careeros-card-glow: rgba(255, 255, 255, 0.07);
+  --careeros-dust-primary: 148, 163, 184;
+  --careeros-dust-secondary: 71, 85, 105;
+  --careeros-sidebar-active: rgba(255, 255, 255, 0.06);
+  --careeros-progress: #94A3B8;
+  --careeros-badge: #94A3B8;
+
+  --careeros-primary-rgb: 148, 163, 184;
+  --careeros-secondary-rgb: 71, 85, 105;
+  --careeros-accent-rgb: 148, 163, 184;
+}
+
+.solar-gold {
+  --background:  #030712;
+  --foreground:  #F8FAFC;
+  --muted:       rgba(148, 163, 184, 0.65);
+
+  --careeros-primary: #FBBF24;
+  --careeros-secondary: #F59E0B;
+  --careeros-accent: #FBBF24;
+  --careeros-card-border: rgba(255, 255, 255, 0.09);
+  --careeros-card-glow: rgba(251, 191, 36, 0.12);
+  --careeros-dust-primary: 251, 191, 36;
+  --careeros-dust-secondary: 245, 158, 11;
+  --careeros-sidebar-active: rgba(251, 191, 36, 0.07);
+  --careeros-progress: #FBBF24;
+  --careeros-badge: #FBBF24;
+
+  --careeros-primary-rgb: 251, 191, 36;
+  --careeros-secondary-rgb: 245, 158, 11;
+  --careeros-accent-rgb: 251, 191, 36;
+}
+
+:root {
   /* ── LIS Surface System ─────────────────────────────────────────────────── */
   --lis-bg:           rgba(8, 12, 24, 0.55);
-  --lis-border:       rgba(255, 255, 255, 0.08);
+  --lis-border:       var(--careeros-card-border);
   --lis-highlight:    rgba(255, 255, 255, 0.12);
   --lis-shadow:       0 20px 60px rgba(0, 0, 0, 0.45);
   --lis-radius:       24px;
@@ -30,15 +154,16 @@
   --lis-blur-heavy:   blur(40px) saturate(200%);
 
   /* ── LIS Color Tokens ───────────────────────────────────────────────────── */
-  --cos-accent:       #22D3EE;
-  --cos-accent-glow:  rgba(34, 211, 238, 0.25);
-  --cos-accent-2:     #60A5FA;
+  --cos-accent:       var(--careeros-primary);
+  --cos-accent-glow:  var(--careeros-card-glow);
+  --cos-accent-2:     var(--careeros-secondary);
   --cos-success:      #10B981;
   --cos-warning:      #F59E0B;
   --cos-danger:       #EF4444;
   --cos-text:         #F8FAFC;
-  --cos-secondary:    #94A3B8;
+  --cos-secondary:    var(--careeros-secondary);
   --cos-muted:        #64748B;
+
 
   /* ── Motion Tokens ──────────────────────────────────────────────────────── */
   --dur-hover:   150ms;
@@ -154,7 +279,7 @@ main {
     background:      rgba(8, 12, 24, 0.55);
     backdrop-filter: blur(30px) saturate(180%);
     -webkit-backdrop-filter: blur(30px) saturate(180%);
-    border:          1px solid rgba(255, 255, 255, 0.08);
+    border:          1px solid var(--careeros-card-border);
     box-shadow:      inset 0 1px 0 rgba(255, 255, 255, 0.12),
                      0 20px 60px rgba(0, 0, 0, 0.45);
     border-radius:   24px;
@@ -171,7 +296,7 @@ main {
     background:      rgba(8, 12, 24, 0.55);
     backdrop-filter: blur(30px) saturate(180%);
     -webkit-backdrop-filter: blur(30px) saturate(180%);
-    border:          1px solid rgba(255, 255, 255, 0.08);
+    border:          1px solid var(--careeros-card-border);
     box-shadow:      inset 0 1px 0 rgba(255, 255, 255, 0.12),
                      0 20px 60px rgba(0, 0, 0, 0.45);
     border-radius:   24px;
@@ -187,9 +312,9 @@ main {
 
   .lis-card:hover {
     transform:    translateY(-4px) scale(1.01) translateZ(0);
-    border-color: rgba(34, 211, 238, 0.35);
+    border-color: rgba(var(--careeros-primary-rgb), 0.35);
     box-shadow:   inset 0 1px 0 rgba(255, 255, 255, 0.14),
-                  0 30px 80px rgba(34, 211, 238, 0.12);
+                  0 30px 80px var(--careeros-card-glow);
   }
 
   /* ══════════════════════════════════════════════════════════════════════════
@@ -207,7 +332,7 @@ main {
     height: 180px;
     background: radial-gradient(
       ellipse 200px 160px at center,
-      rgba(34, 211, 238, 0.065) 0%,
+      rgba(var(--careeros-dust-primary), 0.065) 0%,
       transparent 70%
     );
     filter: blur(40px);
@@ -225,7 +350,7 @@ main {
     height: 170px;
     background: radial-gradient(
       ellipse 180px 150px at center,
-      rgba(96, 165, 250, 0.055) 0%,
+      rgba(var(--careeros-dust-secondary), 0.055) 0%,
       transparent 70%
     );
     filter: blur(40px);
@@ -267,8 +392,8 @@ main {
 
   /* Active nav item — left cyan beam */
   .lis-nav-active {
-    background:   rgba(34, 211, 238, 0.07);
-    border-left:  2px solid #22D3EE;
+    background:   var(--careeros-sidebar-active);
+    border-left:  2px solid var(--careeros-primary);
     border-radius: 0 10px 10px 0;
   }
 
@@ -292,9 +417,9 @@ main {
 
   /* Primary: liquid cyan */
   .lis-btn-primary {
-    background:      linear-gradient(135deg, #22D3EE 0%, #67E8F9 100%);
+    background:      linear-gradient(135deg, var(--careeros-primary) 0%, var(--careeros-secondary) 100%);
     border:          1px solid rgba(255, 255, 255, 0.25);
-    box-shadow:      0 0 28px rgba(34, 211, 238, 0.30),
+    box-shadow:      0 0 28px rgba(var(--careeros-primary-rgb), 0.30),
                      inset 0 1px 0 rgba(255, 255, 255, 0.30);
     color:           #030712;
     font-weight:     650;
@@ -311,7 +436,7 @@ main {
 
   .lis-btn-primary:hover {
     transform:  translateY(-2px) translateZ(0);
-    box-shadow: 0 0 40px rgba(34, 211, 238, 0.45),
+    box-shadow: 0 0 40px rgba(var(--careeros-primary-rgb), 0.45),
                 inset 0 1px 0 rgba(255, 255, 255, 0.35);
   }
 
@@ -344,7 +469,7 @@ main {
   }
 
   .lis-btn-ghost:active  { transform: translateY(0) translateZ(0); }
-  .lis-btn-ghost:focus-visible { outline: 2px solid #22D3EE; outline-offset: 2px; }
+  .lis-btn-ghost:focus-visible { outline: 2px solid var(--careeros-primary); outline-offset: 2px; }
 
   /* Danger ghost variant */
   .lis-btn-danger {
@@ -382,9 +507,9 @@ main {
   .lis-input::placeholder { color: #475569; }
 
   .lis-input:focus {
-    border-color: rgba(34, 211, 238, 0.55);
+    border-color: rgba(var(--careeros-primary-rgb), 0.55);
     box-shadow:   inset 0 2px 6px rgba(0, 0, 0, 0.25),
-                  0 0 0 3px rgba(34, 211, 238, 0.08);
+                  0 0 0 3px rgba(var(--careeros-primary-rgb), 0.08);
   }
 
   .lis-input:hover:not(:focus) {
@@ -488,8 +613,8 @@ main {
      Every page starts with this.
      ══════════════════════════════════════════════════════════════════════════ */
   .lis-mission-banner {
-    background:      linear-gradient(135deg, rgba(34,211,238,0.04) 0%, rgba(8,12,24,0) 60%);
-    border:          1px solid rgba(34, 211, 238, 0.10);
+    background:      linear-gradient(135deg, rgba(var(--careeros-primary-rgb),0.04) 0%, rgba(8,12,24,0) 60%);
+    border:          1px solid rgba(var(--careeros-primary-rgb), 0.10);
     border-radius:   20px;
     padding:         20px 24px;
     position:        relative;
@@ -503,7 +628,7 @@ main {
     right: -30px;
     width: 180px;
     height: 140px;
-    background: radial-gradient(ellipse at center, rgba(34,211,238,0.07), transparent 70%);
+    background: radial-gradient(ellipse at center, rgba(var(--careeros-primary-rgb),0.07), transparent 70%);
     filter: blur(30px);
     pointer-events: none;
   }
@@ -527,7 +652,7 @@ main {
     background:      rgba(8, 12, 24, 0.55) !important;
     backdrop-filter: blur(30px) saturate(180%) !important;
     -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
-    border:          1px solid rgba(255, 255, 255, 0.08) !important;
+    border:          1px solid var(--careeros-card-border) !important;
     box-shadow:      inset 0 1px 0 rgba(255, 255, 255, 0.10),
                      0 16px 48px rgba(0, 0, 0, 0.40) !important;
     border-radius:   20px !important;
@@ -546,28 +671,28 @@ main {
     width: 180px;
     height: 140px;
     z-index: 0;
-    background: radial-gradient(ellipse at center, rgba(34, 211, 238, 0.06), transparent 70%);
+    background: radial-gradient(ellipse at center, rgba(var(--careeros-primary-rgb), 0.06), transparent 70%);
     filter: blur(35px);
     pointer-events: none;
   }
 
   /* Legacy card-action */
   .card-action {
-    border-left:  2px solid rgba(34, 211, 238, 0.20) !important;
+    border-left:  2px solid rgba(var(--careeros-primary-rgb), 0.20) !important;
     transition:   border-color var(--dur-hover) var(--ease-lis),
                   background-color var(--dur-hover) var(--ease-lis) !important;
     will-change:  transform;
     transform:    translateZ(0);
   }
   .card-action:hover {
-    background:   rgba(34, 211, 238, 0.03) !important;
-    border-color: rgba(34, 211, 238, 0.45) !important;
+    background:   rgba(var(--careeros-primary-rgb), 0.03) !important;
+    border-color: rgba(var(--careeros-primary-rgb), 0.45) !important;
   }
 
   /* Legacy semantic color variants */
   .card-purple, .card-insight {
-    background: linear-gradient(135deg, rgba(96,165,250,0.03), rgba(8,12,24,0.55)) !important;
-    border-color: rgba(96, 165, 250, 0.10) !important;
+    background: linear-gradient(135deg, rgba(var(--careeros-secondary-rgb),0.03), rgba(8,12,24,0.55)) !important;
+    border-color: rgba(var(--careeros-secondary-rgb), 0.10) !important;
   }
   .card-green {
     background: linear-gradient(135deg, rgba(16,185,129,0.03), rgba(8,12,24,0.55)) !important;
@@ -595,12 +720,12 @@ main {
   }
   .tactile-btn:hover  { background: rgba(255,255,255,0.07) !important; border-color: rgba(255,255,255,0.15) !important; transform: translateY(-1px) !important; }
   .tactile-btn:active { transform: translateY(1px) !important; }
-  .tactile-btn:focus-visible { outline: 2px solid #22d3ee; outline-offset: 2px; }
+  .tactile-btn:focus-visible { outline: 2px solid var(--careeros-primary); outline-offset: 2px; }
 
   .tactile-btn-primary {
-    background:  linear-gradient(135deg, #22D3EE, #67E8F9) !important;
+    background:  linear-gradient(135deg, var(--careeros-primary), var(--careeros-secondary)) !important;
     border:      1px solid rgba(255,255,255,0.25) !important;
-    box-shadow:  0 0 28px rgba(34,211,238,0.30), inset 0 1px 0 rgba(255,255,255,0.30) !important;
+    box-shadow:  0 0 28px rgba(var(--careeros-primary-rgb),0.30), inset 0 1px 0 rgba(255,255,255,0.30) !important;
     color:       #030712 !important;
     font-weight: 650 !important;
     transition:  transform var(--dur-btn) var(--ease-lis), box-shadow var(--dur-btn) var(--ease-lis), opacity var(--dur-btn) var(--ease-lis) !important;
@@ -608,7 +733,7 @@ main {
     transform:   translateZ(0);
     border-radius: 12px !important;
   }
-  .tactile-btn-primary:hover  { transform: translateY(-2px) !important; box-shadow: 0 0 40px rgba(34,211,238,0.45), inset 0 1px 0 rgba(255,255,255,0.35) !important; }
+  .tactile-btn-primary:hover  { transform: translateY(-2px) !important; box-shadow: 0 0 40px rgba(var(--careeros-primary-rgb),0.45), inset 0 1px 0 rgba(255,255,255,0.35) !important; }
   .tactile-btn-primary:active { transform: translateY(1px) !important; opacity: 0.9 !important; }
   .tactile-btn-primary:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; }
 
@@ -624,8 +749,8 @@ main {
     transition:      border-color 150ms var(--ease-lis), box-shadow 150ms var(--ease-lis);
   }
   .carved-input:focus {
-    border-color: rgba(34, 211, 238, 0.55) !important;
-    box-shadow:   inset 0 2px 6px rgba(0,0,0,0.25), 0 0 0 3px rgba(34,211,238,0.08) !important;
+    border-color: rgba(var(--careeros-primary-rgb), 0.55) !important;
+    box-shadow:   inset 0 2px 6px rgba(0,0,0,0.25), 0 0 0 3px rgba(var(--careeros-primary-rgb), 0.08) !important;
   }
   .carved-input:hover:not(:focus) { border-color: rgba(255,255,255,0.12) !important; }
 
@@ -643,16 +768,16 @@ main {
   }
 
   .sidebar-active-item {
-    background:  rgba(34, 211, 238, 0.07) !important;
-    border-left: 2px solid #22D3EE !important;
+    background:  var(--careeros-sidebar-active) !important;
+    border-left: 2px solid var(--careeros-primary) !important;
     color:       #ffffff !important;
   }
 
   /* Chat message surfaces */
   .chat-message-assistant {
-    background:      rgba(34, 211, 238, 0.07) !important;
+    background:      var(--careeros-sidebar-active) !important;
     backdrop-filter: blur(12px) !important;
-    border:          1px solid rgba(34, 211, 238, 0.15) !important;
+    border:          1px solid rgba(var(--careeros-primary-rgb), 0.15) !important;
     border-radius:   16px !important;
   }
   .chat-message-user {
@@ -716,7 +841,7 @@ main {
   100% { background-position: 200% 0; }
 }
 .shimmer-loading-item {
-  background:      linear-gradient(90deg, rgba(34,211,238,0) 0%, rgba(34,211,238,0.04) 50%, rgba(34,211,238,0) 100%);
+  background:      linear-gradient(90deg, rgba(var(--careeros-primary-rgb),0) 0%, rgba(var(--careeros-primary-rgb),0.04) 50%, rgba(var(--careeros-primary-rgb),0) 100%);
   background-size: 200% 100%;
   animation:       shimmer-item 1.4s infinite linear;
 }
@@ -750,8 +875,8 @@ main {
 
 /* Pulse glow */
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 4px rgba(34,211,238,0.20); }
-  50%       { box-shadow: 0 0 14px rgba(34,211,238,0.45); }
+  0%, 100% { box-shadow: 0 0 4px rgba(var(--careeros-primary-rgb),0.20); }
+  50%       { box-shadow: 0 0 14px rgba(var(--careeros-primary-rgb),0.45); }
 }
 .animate-pulse-glow { animation: pulse-glow 2s infinite ease-in-out; }
 
@@ -774,4 +899,4 @@ main {
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track  { background: rgba(3, 7, 18, 0.95); }
 ::-webkit-scrollbar-thumb  { background: rgba(255,255,255,0.10); border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(34,211,238,0.25); }
+::-webkit-scrollbar-thumb:hover { background: rgba(var(--careeros-primary-rgb), 0.25); }

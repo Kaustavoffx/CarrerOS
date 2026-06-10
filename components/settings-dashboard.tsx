@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { PageHero, CardSurface } from "@/components/ui";
 import { buttonStyle, inputStyle } from "@/styles/careeros-design-system";
+import { useTheme, type Theme } from "@/components/theme-provider";
 
 // ─── Design Input Wrapper ────────────────────────────────────────────────────
 
@@ -74,7 +75,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
   const [showKeyInputs, setShowKeyInputs] = useState<Record<string, boolean>>({ openai: false, gemini: false });
 
   // Preferences
-  const [theme, setTheme] = useState("dark");
+  const { theme, setTheme } = useTheme();
   const [compactMode, setCompactMode] = useState(false);
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
   const [milestoneAlerts, setMilestoneAlerts] = useState(true);
@@ -104,7 +105,6 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setTheme(localStorage.getItem("pref_theme") ?? "dark");
       setCompactMode(localStorage.getItem("pref_compact") === "true");
       setAnimationsEnabled(localStorage.getItem("pref_animations") !== "false");
       setTimezone(localStorage.getItem("profile_timezone") ?? "Asia/Kolkata (GMT+5:30)");
@@ -190,6 +190,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
   const savePreferences = () => {
     if (typeof window !== "undefined") {
       localStorage.setItem("pref_theme", theme);
+      localStorage.setItem("careeros-theme", theme);
       localStorage.setItem("pref_compact", String(compactMode));
       localStorage.setItem("pref_animations", String(animationsEnabled));
       localStorage.setItem("pref_alert_milestones", String(milestoneAlerts));
@@ -476,16 +477,19 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
           <div className="lg:col-span-2 space-y-4">
             <div className="space-y-4 text-xs">
               <label className="block">
-                <span className="text-slate-400 font-semibold block mb-1">Color Palette Profile</span>
+                <span className="text-slate-400 font-semibold block mb-1">Appearance — Theme Selector</span>
                 <select
                   value={theme}
-                  onChange={e => setTheme(e.target.value)}
+                  onChange={e => setTheme(e.target.value as Theme)}
                   style={inputStyle("base")}
                   className="w-full"
                 >
-                  <option value="dark">Dark Theme Premium (Default)</option>
-                  <option value="light">Light Slate Glass</option>
-                  <option value="system">System Synced</option>
+                  <option value="careeros-dark">CareerOS Dark (Default)</option>
+                  <option value="arctic-glass">Arctic Glass</option>
+                  <option value="midnight-violet">Midnight Violet</option>
+                  <option value="emerald-command">Emerald Command</option>
+                  <option value="carbon-graphite">Carbon Graphite</option>
+                  <option value="solar-gold">Solar Gold</option>
                 </select>
               </label>
 

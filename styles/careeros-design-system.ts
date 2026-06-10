@@ -31,17 +31,17 @@ export const COLORS = {
 
   /* ── Brand / Accent ──────────────────────────────────────────────── */
   /** Electric Cyan — primary accent */
-  accent:     "#22D3EE",
+  accent:     "var(--careeros-primary)",
   /** Cyan glow (for shadows, halos) */
-  accentGlow: "rgba(34,211,238,0.25)",
+  accentGlow: "var(--careeros-card-glow)",
   /** Cyan at 7% — active nav background */
-  accentDim:  "rgba(34,211,238,0.07)",
+  accentDim:  "var(--careeros-sidebar-active)",
   /** Cyan at 32% — hover border */
-  accentBdr:  "rgba(34,211,238,0.32)",
+  accentBdr:  "rgba(var(--careeros-primary-rgb), 0.32)",
   /** Secondary accent — Electric Indigo / Sky */
-  accent2:    "#60A5FA",
+  accent2:    "var(--careeros-secondary)",
   /** Accent 2 glow */
-  accent2Glow:"rgba(96,165,250,0.20)",
+  accent2Glow:"rgba(var(--careeros-secondary-rgb), 0.20)",
 
   /* ── Semantic ────────────────────────────────────────────────────── */
   success:    "#10B981",
@@ -58,9 +58,9 @@ export const COLORS = {
   faint:      "#475569",
 
   /* ── Border system ───────────────────────────────────────────────── */
-  border:     "rgba(255,255,255,0.08)",
+  border:     "var(--careeros-card-border)",
   borderSoft: "rgba(255,255,255,0.06)",
-  borderAccnt:"rgba(34,211,238,0.35)",
+  borderAccnt:"rgba(var(--careeros-primary-rgb), 0.35)",
   borderDangr:"rgba(239,68,68,0.25)",
   /** Inner top highlight (inset 0 1px 0) */
   highlight:  "rgba(255,255,255,0.12)",
@@ -128,7 +128,7 @@ export const CARDS = {
   /** Hovered card surface */
   hover: {
     borderColor:  COLORS.accentBdr,
-    boxShadow:    `inset 0 1px 0 ${COLORS.highlight}, 0 28px 80px rgba(0,180,255,0.18)`,
+    boxShadow:    `inset 0 1px 0 ${COLORS.highlight}, 0 28px 80px var(--careeros-card-glow)`,
     transform:    "translateY(-2px) scale(1.01) translateZ(0)",
   },
   /** Radius tokens */
@@ -345,15 +345,15 @@ export const SHADOWS = {
   /** Resting card shadow */
   card:    "inset 0 1px 0 rgba(255,255,255,0.12), 0 20px 60px rgba(0,0,0,0.35)",
   /** Hovered card shadow */
-  hover:   "inset 0 1px 0 rgba(255,255,255,0.14), 0 28px 80px rgba(0,180,255,0.18)",
+  hover:   "inset 0 1px 0 rgba(255,255,255,0.14), 0 28px 80px var(--careeros-card-glow)",
   /** Sidebar rail shadow */
   sidebar: "4px 0 60px rgba(0,0,0,0.40), inset -1px 0 0 rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06)",
   /** Cyan ambient glow */
-  glow:    "0 0 32px rgba(34,211,238,0.28)",
+  glow:    "0 0 32px rgba(var(--careeros-primary-rgb),0.28)",
   /** Elevated overlay */
   overlay: "0 40px 100px rgba(0,0,0,0.65)",
   /** Button primary glow */
-  btnPrimary: "0 0 28px rgba(34,211,238,0.30), inset 0 1px 0 rgba(255,255,255,0.30)",
+  btnPrimary: "0 0 28px rgba(var(--careeros-primary-rgb),0.30), inset 0 1px 0 rgba(255,255,255,0.30)",
   /** Subtle inset (inputs, nested panels) */
   inset:   "inset 0 2px 6px rgba(0,0,0,0.30), inset 0 -1px 0 rgba(255,255,255,0.03)",
 } as const;
@@ -363,13 +363,13 @@ export const SHADOWS = {
    ═══════════════════════════════════════════════════════════════════════════ */
 export const DUST = {
   /** Top-right cyan origin */
-  topRight: "radial-gradient(ellipse 200px 160px at top right, rgba(34,211,238,0.07), transparent 70%)",
+  topRight: "radial-gradient(ellipse 200px 160px at top right, rgba(var(--careeros-dust-primary),0.07), transparent 70%)",
   /** Bottom-left indigo origin */
-  bottomLeft:"radial-gradient(ellipse 180px 150px at bottom left, rgba(96,165,250,0.06), transparent 70%)",
+  bottomLeft:"radial-gradient(ellipse 180px 150px at bottom left, rgba(var(--careeros-dust-secondary),0.06), transparent 70%)",
   /** Top-left subtle */
-  topLeft:   "radial-gradient(ellipse 160px 140px at top left, rgba(34,211,238,0.05), transparent 70%)",
+  topLeft:   "radial-gradient(ellipse 160px 140px at top left, rgba(var(--careeros-dust-primary),0.05), transparent 70%)",
   /** Bottom-right warm */
-  bottomRight:"radial-gradient(ellipse 180px 150px at bottom right, rgba(96,165,250,0.05), transparent 70%)",
+  bottomRight:"radial-gradient(ellipse 180px 150px at bottom right, rgba(var(--careeros-dust-secondary),0.05), transparent 70%)",
   /** Default filter for all dust layers */
   filter:    "blur(40px)",
   /** Default opacity multiplier */
@@ -399,10 +399,10 @@ export const SIDEBAR = {
     background:   COLORS.accentDim,
     borderLeft:   `2px solid ${COLORS.accent}`,
     borderRadius: "0 10px 10px 0",
-    boxShadow:    "inset 0 1px 0 rgba(34,211,238,0.08), inset 0 0 12px rgba(34,211,238,0.03)",
+    boxShadow:    "inset 0 1px 0 rgba(var(--careeros-primary-rgb),0.08), inset 0 0 12px rgba(var(--careeros-primary-rgb),0.03)",
     color:        COLORS.text,
     fontWeight:   600,
-    iconColor:    "#67E8F9",
+    iconColor:    "var(--careeros-primary)",
   },
   /** Nav item — hover state */
   itemHover: {
@@ -429,7 +429,7 @@ export const BADGES = {
     border:         "1px solid",
   },
   variants: {
-    cyan:    { background: "rgba(34,211,238,0.10)",  borderColor: "rgba(34,211,238,0.25)",  color: "#67E8F9"  },
+    cyan:    { background: "rgba(var(--careeros-primary-rgb),0.10)",  borderColor: "rgba(var(--careeros-primary-rgb),0.25)",  color: "var(--careeros-badge)"  },
     green:   { background: "rgba(16,185,129,0.10)",  borderColor: "rgba(16,185,129,0.25)",  color: "#6EE7B7"  },
     amber:   { background: "rgba(245,158,11,0.10)",  borderColor: "rgba(245,158,11,0.25)",  color: "#FCD34D"  },
     rose:    { background: "rgba(239,68,68,0.10)",   borderColor: "rgba(239,68,68,0.25)",   color: "#FCA5A5"  },
