@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Map, Users, Brain, Shield, Compass, 
   Globe, Activity, Zap, Settings, UserCircle, ChevronDown, Sparkles, ArrowRight
 } from "lucide-react";
-import { PageHero, CardSurface } from "@/components/ui";
+import { CardSurface } from "@/components/ui";
 import { buttonStyle } from "@/styles/careeros-design-system";
 
 type GuideItem = {
@@ -71,7 +71,7 @@ const GUIDE_ITEMS: GuideItem[] = [
     label: "AI Mentor",
     icon: Brain,
     color: "#C084FC",
-    purpose: "Interactive 전략 strategist counseling platform for simulated drills, resume reviews, and code troubleshooting.",
+    purpose: "Interactive strategist counseling platform for simulated drills, resume reviews, and code troubleshooting.",
     actions: [
       "Consult chatbot strategist (Under development).",
       "Run STAR method behavioral mock scenarios.",
@@ -182,23 +182,36 @@ export function DemoGuideConsole() {
   const [activeIndex, setActiveIndex] = useState<string>("dashboard");
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Page Hero Header */}
-      <PageHero
-        badge="Interactive Showcase Map"
-        title="Demo Walkthrough Guide"
-        subtitle="A comprehensive 2-minute overview detailing every workspace, algorithm, and capability in CareerOS."
-      />
+    <div className="space-y-8 max-w-7xl mx-auto">
+      
+      {/* ── Custom High-Readibility Page Hero (+25% Headings, 100% Opacity) ── */}
+      <div className="flex flex-col gap-4 mb-8">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <span className="px-3.5 py-1 rounded-full border border-cyan-500/25 bg-cyan-500/10 text-cyan-300 text-[11px] font-extrabold uppercase tracking-widest">
+            Interactive Showcase Map
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-widest text-[#6EE7B7]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#10B981] animate-pulse" />
+            Live Guide
+          </span>
+        </div>
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-white leading-tight font-geom select-text">
+          Demo Walkthrough Guide
+        </h1>
+        <p className="text-[15.5px] text-slate-200 leading-[1.7] max-w-2xl font-medium">
+          A comprehensive 2-minute overview detailing every workspace, algorithm, and capability in CareerOS.
+        </p>
+      </div>
 
-      {/* Guide Intro Card */}
-      <CardSurface variant="surface" className="p-6">
+      {/* ── Guide Intro Card (High Contrast & Eased Height) ── */}
+      <CardSurface variant="surface" className="p-6 border border-white/[0.08]">
         <div className="flex items-start gap-4">
-          <div className="h-10 w-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 shrink-0">
-            <Sparkles className="h-5 w-5 animate-pulse" />
+          <div className="h-12 w-12 rounded-xl bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center text-cyan-400 shrink-0">
+            <Sparkles className="h-6 w-6 animate-pulse" />
           </div>
-          <div className="space-y-2">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider">Judges System Audit Rail</h3>
-            <p className="text-xs text-slate-300 leading-relaxed font-medium">
+          <div className="space-y-3">
+            <h3 className="text-base sm:text-lg font-extrabold text-white uppercase tracking-wider">Judges System Audit Rail</h3>
+            <p className="text-[14.5px] text-slate-200 leading-[1.75] font-medium">
               CareerOS transforms fragmented public assistance systems into accessible, responsive intelligence. 
               Click on any system console card below to inspect its core purpose, live actions, and matching AI technologies, or jump directly into the operational code.
             </p>
@@ -207,48 +220,49 @@ export function DemoGuideConsole() {
       </CardSurface>
 
       {/* Accordion Layout Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         
         {/* Left List of Accordion Buttons */}
-        <div className="lg:col-span-1 space-y-2">
+        <div className="lg:col-span-1 space-y-3">
           {GUIDE_ITEMS.map((item) => {
             const Icon = item.icon;
             const isOpen = activeIndex === item.id;
             return (
               <button
+                type="button"
                 key={item.id}
                 onClick={() => setActiveIndex(item.id)}
-                className={`w-full flex items-center justify-between p-3.5 rounded-xl border text-left transition-all duration-200 ${
+                className={`w-full flex items-center justify-between p-4 rounded-xl border text-left transition-all duration-200 ${
                   isOpen
-                    ? "bg-white/[0.06] text-white border-cyan-500/35 shadow-lg shadow-cyan-500/[0.04] scale-[1.01]"
-                    : "bg-white/[0.01] text-slate-400 border-white/[0.04] hover:bg-white/[0.03] hover:text-slate-200"
+                    ? "bg-white/[0.08] text-white border-cyan-500/40 shadow-xl shadow-cyan-500/[0.05] scale-[1.01]"
+                    : "bg-white/[0.02] text-slate-300 border-white/[0.05] hover:bg-white/[0.04] hover:text-slate-100"
                 }`}
                 style={{
-                  boxShadow: isOpen ? "inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 20px rgba(0,0,0,0.25)" : "none"
+                  boxShadow: isOpen ? "inset 0 1px 0 rgba(255,255,255,0.12), 0 8px 24px rgba(0,0,0,0.30)" : "none"
                 }}
               >
-                <span className="flex items-center gap-3 font-semibold text-xs">
+                <span className="flex items-center gap-3.5 font-bold text-[14px]">
                   <span 
-                    className="p-1.5 rounded-lg border flex items-center justify-center shrink-0"
+                    className="p-2 rounded-lg border flex items-center justify-center shrink-0"
                     style={{
-                      backgroundColor: `${item.color}10`,
-                      borderColor: `${item.color}25`,
+                      backgroundColor: `${item.color}15`,
+                      borderColor: `${item.color}35`,
                       color: item.color
                     }}
                   >
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-4.5 w-4.5" />
                   </span>
                   {item.label}
                 </span>
 
                 <div className="flex items-center gap-2">
                   {item.status && (
-                    <span className="text-[8px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded border border-rose-500/25 bg-rose-500/5 text-rose-300">
+                    <span className="text-[9px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded border border-rose-500/30 bg-rose-500/10 text-rose-300">
                       {item.status}
                     </span>
                   )}
                   <ChevronDown 
-                    className={`h-4 w-4 text-slate-500 transition-transform duration-200 ${
+                    className={`h-4.5 w-4.5 text-slate-400 transition-transform duration-200 ${
                       isOpen ? "rotate-180 text-cyan-400" : ""
                     }`} 
                   />
@@ -258,8 +272,8 @@ export function DemoGuideConsole() {
           })}
         </div>
 
-        {/* Right Active Details Panel (Framer Motion container) */}
-        <div className="lg:col-span-2 min-h-[400px]">
+        {/* Right Active Details Panel */}
+        <div className="lg:col-span-2 min-h-[460px]">
           <AnimatePresence mode="wait">
             {GUIDE_ITEMS.map((item) => {
               if (activeIndex !== item.id) return null;
@@ -273,53 +287,53 @@ export function DemoGuideConsole() {
                   transition={{ duration: 0.2, ease: "easeOut" }}
                   className="h-full"
                 >
-                  <CardSurface variant="surface" className="p-6 h-full flex flex-col justify-between border-cyan-500/20 bg-gradient-to-b from-[#0c0f1d] to-[#050710]">
-                    <div className="space-y-6">
+                  <CardSurface variant="surface" className="p-6 sm:p-8 h-full flex flex-col justify-between border border-cyan-500/25 bg-gradient-to-b from-[#0c0f20] to-[#04060f] shadow-2xl">
+                    <div className="space-y-8">
                       
-                      {/* Header */}
-                      <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                        <div className="flex items-center gap-3">
+                      {/* Header (Title +20%) */}
+                      <div className="flex items-center justify-between border-b border-white/10 pb-5">
+                        <div className="flex items-center gap-3.5">
                           <span 
-                            className="p-2.5 rounded-xl border flex items-center justify-center shrink-0"
+                            className="p-3 rounded-xl border flex items-center justify-center shrink-0"
                             style={{
-                              backgroundColor: `${item.color}10`,
-                              borderColor: `${item.color}30`,
+                              backgroundColor: `${item.color}15`,
+                              borderColor: `${item.color}35`,
                               color: item.color
                             }}
                           >
-                            <Icon className="h-6 w-6" />
+                            <Icon className="h-7 w-7" />
                           </span>
                           <div>
-                            <h2 className="text-base font-extrabold text-white uppercase tracking-wider">{item.label}</h2>
-                            <p className="text-[9px] font-bold text-slate-500 tracking-widest uppercase mt-0.5">Workspace Node Summary</p>
+                            <h2 className="text-xl sm:text-2xl font-extrabold text-white uppercase tracking-wider">{item.label}</h2>
+                            <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mt-1">Workspace Node Summary</p>
                           </div>
                         </div>
 
                         {item.status && (
-                          <span className="text-[9px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full border border-rose-500/30 bg-rose-500/10 text-rose-300">
+                          <span className="text-[10px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full border border-rose-500/35 bg-rose-500/10 text-rose-300">
                             {item.status}
                           </span>
                         )}
                       </div>
 
-                      {/* Purpose */}
-                      <div className="space-y-2">
-                        <span className="text-[9px] font-bold text-cyan-400 uppercase tracking-widest block">Purpose</span>
-                        <p className="text-xs text-slate-300 leading-relaxed font-medium">
+                      {/* Purpose (Labels +20%, Descriptions +15%, Line-height 1.7) */}
+                      <div className="space-y-3">
+                        <span className="text-[11px] font-extrabold text-cyan-400 uppercase tracking-widest block">Purpose</span>
+                        <p className="text-[14px] sm:text-[14.5px] text-slate-200 leading-[1.75] font-medium select-text">
                           {item.purpose}
                         </p>
                       </div>
 
-                      {/* Actions */}
-                      <div className="space-y-2">
-                        <span className="text-[9px] font-bold text-cyan-400 uppercase tracking-widest block">User Actions & Capabilities</span>
-                        <ul className="grid gap-2 sm:grid-cols-1 text-xs">
+                      {/* Actions (Labels +20%, Capability Lists +15%, Line-height 1.55) */}
+                      <div className="space-y-3">
+                        <span className="text-[11px] font-extrabold text-cyan-400 uppercase tracking-widest block">User Actions & Capabilities</span>
+                        <ul className="space-y-3.5">
                           {item.actions.map((act, i) => (
-                            <li key={i} className="flex gap-2.5 items-start text-slate-300 leading-normal">
-                              <span className="h-5 w-5 shrink-0 flex items-center justify-center rounded-full bg-cyan-400/10 text-cyan-300 text-[10px] font-bold mt-0.5">
+                            <li key={i} className="flex gap-3 items-start text-slate-200 leading-[1.55] select-text">
+                              <span className="h-5.5 w-5.5 shrink-0 flex items-center justify-center rounded-full bg-cyan-400/10 border border-cyan-400/20 text-cyan-300 text-[11px] font-bold mt-0.5">
                                 {i + 1}
                               </span>
-                              <span className="font-semibold text-[11px]">{act}</span>
+                              <span className="font-semibold text-[13px] sm:text-[13.5px]">{act}</span>
                             </li>
                           ))}
                         </ul>
@@ -327,11 +341,11 @@ export function DemoGuideConsole() {
 
                       {/* Details (e.g. support includes) */}
                       {item.details && (
-                        <div className="space-y-2 border-t border-white/5 pt-4">
-                          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">Includes support for:</span>
-                          <div className="flex flex-wrap gap-2 pt-1">
+                        <div className="space-y-3 border-t border-white/10 pt-5">
+                          <span className="text-[11px] font-extrabold text-slate-300 uppercase tracking-widest block">Includes support for:</span>
+                          <div className="flex flex-wrap gap-2.5 pt-1">
                             {item.details.map((det, i) => (
-                              <span key={i} className="text-[10px] px-2.5 py-1 rounded-lg border border-white/5 bg-white/[0.02] text-slate-300 font-semibold">
+                              <span key={i} className="text-[11.5px] sm:text-[12px] px-3.5 py-1.5 rounded-lg border border-white/10 bg-white/[0.04] text-slate-200 font-bold">
                                 {det}
                               </span>
                             ))}
@@ -339,14 +353,14 @@ export function DemoGuideConsole() {
                         </div>
                       )}
 
-                      {/* AI Technology */}
+                      {/* AI Technology (Labels +20%, Badges +15%) */}
                       {item.aiTech && (
-                        <div className="space-y-2 border-t border-white/5 pt-4">
-                          <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest block">AI Capabilities</span>
-                          <div className="flex flex-wrap gap-2 pt-1">
+                        <div className="space-y-3 border-t border-white/10 pt-5">
+                          <span className="text-[11px] font-extrabold text-indigo-400 uppercase tracking-widest block">AI Capabilities</span>
+                          <div className="flex flex-wrap gap-2.5 pt-1">
                             {item.aiTech.map((tech, i) => (
-                              <span key={i} className="text-[10px] px-2.5 py-1 rounded-lg border border-indigo-500/20 bg-indigo-500/5 text-indigo-300 font-extrabold flex items-center gap-1.5">
-                                <Sparkles className="h-3 w-3 text-indigo-400 animate-pulse" />
+                              <span key={i} className="text-[11.5px] sm:text-[12px] px-3.5 py-1.5 rounded-lg border border-indigo-500/25 bg-indigo-500/8 text-indigo-300 font-extrabold flex items-center gap-1.5">
+                                <Sparkles className="h-3.5 w-3.5 text-indigo-400 animate-pulse" />
                                 {tech}
                               </span>
                             ))}
@@ -357,14 +371,14 @@ export function DemoGuideConsole() {
                     </div>
 
                     {/* Operational Page Transition Link */}
-                    <div className="pt-6 border-t border-white/5 mt-6 flex justify-end">
+                    <div className="pt-6 border-t border-white/10 mt-8 flex justify-end">
                       <Link 
                         href={item.link} 
                         style={buttonStyle("primary")} 
-                        className="px-6 py-2.5 text-xs text-black font-extrabold flex items-center gap-2 rounded-xl animate-pulse-glow"
+                        className="px-6 py-3 text-xs text-black font-extrabold flex items-center gap-2 rounded-xl animate-pulse-glow"
                       >
                         Enter Operational {item.label}
-                        <ArrowRight className="h-4 w-4" />
+                        <ArrowRight className="h-4.5 w-4.5 text-black" />
                       </Link>
                     </div>
 
