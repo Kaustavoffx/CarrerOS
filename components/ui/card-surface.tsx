@@ -124,6 +124,11 @@ function CardSurfaceComponent({
             }
           : undefined
       }
+      whileTap={
+        interactive && !prefersReducedMotion
+          ? { scale: 0.985, y: 0, transition: { duration: 0.08 } }
+          : undefined
+      }
       transition={
         hover
           ? { duration: CARDS.motion.duration, ease: MOTION.ease }

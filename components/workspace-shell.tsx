@@ -378,7 +378,19 @@ const SidebarNavItem = memo(function SidebarNavItem({
             borderRadius: CAREEROS.SIDEBAR.itemActive.borderRadius,
             boxShadow:    CAREEROS.SIDEBAR.itemActive.boxShadow,
           }}
-          transition={{ type: "spring", stiffness: 380, damping: 30 }}
+          animate={{
+            opacity: [0.85, 1, 0.85],
+            boxShadow: [
+              "inset 0 1px 0 rgba(34,211,238,0.08), inset 0 0 12px rgba(34,211,238,0.03)",
+              "inset 0 1px 0 rgba(34,211,238,0.16), inset 0 0 18px rgba(34,211,238,0.12)",
+              "inset 0 1px 0 rgba(34,211,238,0.08), inset 0 0 12px rgba(34,211,238,0.03)"
+            ]
+          }}
+          transition={{
+            repeat: Infinity,
+            duration: 2.2,
+            ease: "easeInOut"
+          }}
         />
       )}
 
@@ -611,7 +623,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
       {/* ── DESKTOP SIDEBAR — Liquid Command Rail ── */}
       <motion.aside
         animate={{ width: collapsed ? "4.5rem" : "15rem" }}
-        transition={{ type: "spring", stiffness: 320, damping: 32, mass: 0.8 }}
+        transition={CAREEROS.MOTION.sidebar}
         style={{ willChange: "width" }}
         className="fixed left-4 top-4 bottom-4 z-30 hidden flex-col rounded-lis border-0 lis-sidebar xl:flex overflow-hidden"
       >
@@ -738,7 +750,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
       {/* ── DESKTOP CONTENT CONTAINER — follows sidebar width via motion ── */}
       <motion.div
         animate={{ paddingLeft: collapsed ? "5.5rem" : "16.5rem" }}
-        transition={{ type: "spring", stiffness: 320, damping: 32, mass: 0.8 }}
+        transition={CAREEROS.MOTION.sidebar}
         style={{ willChange: "padding-left" }}
         className="hidden xl:block"
       >
@@ -756,11 +768,11 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}
-              initial={{ opacity: 0, y: 5 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -5 }}
-              transition={{ duration: 0.15 }}
-              className={`transition-all duration-300 ${transitioningTo ? "blur-[1px] opacity-80 pointer-events-none" : ""}`}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: CAREEROS.MOTION.route.duration, ease: CAREEROS.MOTION.route.ease }}
+              className={`transition-all duration-[350ms] ${transitioningTo ? "blur-[4px] opacity-40 pointer-events-none" : ""}`}
             >
               {children}
             </motion.div>
@@ -798,7 +810,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
         </header>
 
         {/* Mobile main content container */}
-        <main className="flex-1 mx-auto w-full max-w-5xl px-5 py-6 pb-28 relative">
+        <main className="flex-1 mx-auto w-full max-w-5xl px-5 py-6 pb-28 relative overflow-x-hidden">
           {isGuideAvailable && (
             <button
               onClick={() => setGuideOpen(true)}
@@ -812,11 +824,11 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}
-              initial={{ opacity: 0, y: 5 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -5 }}
-              transition={{ duration: 0.15 }}
-              className={`transition-all duration-300 ${transitioningTo ? "blur-[1px] opacity-80 pointer-events-none" : ""}`}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: CAREEROS.MOTION.route.duration, ease: CAREEROS.MOTION.route.ease }}
+              className={`transition-all duration-[350ms] ${transitioningTo ? "blur-[4px] opacity-40 pointer-events-none" : ""}`}
             >
               {children}
             </motion.div>

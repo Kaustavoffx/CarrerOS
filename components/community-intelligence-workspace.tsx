@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { UserProfileRecord, WorkspaceSnapshotRecord } from "@/lib/supabase/types";
-import { PageHero, CardSurface } from "@/components/ui";
+import { PageHero, CardSurface, ErrorState } from "@/components/ui";
 import { buttonStyle } from "@/styles/careeros-design-system";
 
 
@@ -292,17 +292,12 @@ export function CommunityIntelligenceWorkspace({ profile }: CommunityIntelligenc
           </p>
         </div>
       ) : error ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 border border-red-500/10 bg-red-950/10 rounded-2xl p-6 max-w-md mx-auto">
-          <AlertTriangle className="h-8 w-8 text-red-500 animate-bounce" />
-          <p className="text-xs text-red-200 font-bold uppercase tracking-wider text-center">{error}</p>
-          <button 
-            onClick={loadDashboardData}
-            style={buttonStyle("danger")}
-            className="px-4 text-xs text-white"
-          >
-            Retry Sync
-          </button>
-        </div>
+        <ErrorState
+          title="Anomaly in Intelligence statistics"
+          description={error}
+          onRetry={loadDashboardData}
+          className="max-w-md mx-auto"
+        />
       ) : !data ? (
         <div className="text-center py-20 text-slate-500 text-xs">No metrics data loaded.</div>
       ) : (

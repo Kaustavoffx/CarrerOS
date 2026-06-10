@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Plus, Loader2, AlertCircle, CheckCircle2, TrendingUp, Heart, Home, Briefcase, GraduationCap, Apple, HelpCircle } from "lucide-react";
 import { useCommunitySupport, TARGET_CITIES } from "./community-support-context";
 import type { NeedCategory, NeedUrgency, CommunityNeedReport } from "@/lib/supabase/types";
-import { CardSurface } from "@/components/ui";
+import { CardSurface, Skeleton, EmptyState } from "@/components/ui";
 import { buttonStyle, inputStyle, BADGES } from "@/styles/careeros-design-system";
 
 const NEED_CATEGORIES: Array<{ value: NeedCategory; label: string; icon: React.ComponentType<{ className?: string }>; colorKey: keyof typeof BADGES.variants }> = [
@@ -325,14 +325,12 @@ export function ReportNeedWorkspace() {
           </div>
 
           {loadingReports ? (
-            <div className="flex items-center gap-2 text-[11px] text-slate-500 py-4">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Loading community reports...
-            </div>
+            <Skeleton variant="list" className="py-2" />
           ) : recentReports.length === 0 ? (
-            <div className="p-4 bg-slate-950/30 border border-white/5 rounded-xl text-[11px] text-slate-500 italic text-center">
-              No reports yet. Be the first to surface a community need.
-            </div>
+            <EmptyState
+              title="No Need Reports"
+              description="Be the first to surface a community need or verify regional listings."
+            />
           ) : (
             <div className="space-y-2.5 max-h-[320px] overflow-y-auto pr-1">
               {recentReports.map((r) => {

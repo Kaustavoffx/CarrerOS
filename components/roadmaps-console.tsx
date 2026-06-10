@@ -20,7 +20,7 @@ import type {
   UserProfileRecord, WorkspaceSnapshotRecord, RoadmapResourceLink,
   RoadmapMilestoneRecord
 } from "@/lib/supabase/types";
-import { PageHero, CardSurface } from "@/components/ui";
+import { PageHero, CardSurface, EmptyState } from "@/components/ui";
 import { buttonStyle, inputStyle } from "@/styles/careeros-design-system";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -900,29 +900,25 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
 
       {/* ══ EMPTY STATE CONTAINER ════════════════════════════════════════════ */}
       {!activeRoadmap && (
-        <CardSurface variant="surface" className="flex flex-col items-center gap-4 py-24 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[#202028] bg-[#0d0d10]">
-            <BookOpen className="h-8 w-8 text-slate-500" />
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-slate-300">No active roadmap track</h3>
-            <p className="mt-1.5 text-xs text-slate-500 max-w-sm leading-relaxed">
-              Initialize your execution parameters. Generate your dynamic career roadmap workspace now.
-            </p>
-          </div>
-          <FeatureGateButton
-            type="button"
-            onClick={handleReplan}
-            disabled={refreshDisabled}
-            status="beta"
-            featureName="AI Roadmap Generation"
-            style={buttonStyle("primary")}
-            className="mt-2 inline-flex items-center gap-2 rounded-full px-6 py-3 text-xs font-bold text-black justify-center"
-          >
-            {isReplanning ? <span className="loading-spinner h-4 w-4 border-black" /> : <RefreshCw className="h-4 w-4" />}
-            Generate Career Roadmap
-          </FeatureGateButton>
-        </CardSurface>
+        <EmptyState
+          title="No active roadmap track"
+          description="Initialize your execution parameters. Generate your dynamic career roadmap workspace now."
+          icon={BookOpen}
+          action={
+            <FeatureGateButton
+              type="button"
+              onClick={handleReplan}
+              disabled={refreshDisabled}
+              status="beta"
+              featureName="AI Roadmap Generation"
+              style={buttonStyle("primary")}
+              className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-xs font-bold text-black justify-center"
+            >
+              {isReplanning ? <span className="loading-spinner h-4 w-4 border-black" /> : <RefreshCw className="h-4 w-4" />}
+              Generate Career Roadmap
+            </FeatureGateButton>
+          }
+        />
       )}
 
       {activeRoadmap && (

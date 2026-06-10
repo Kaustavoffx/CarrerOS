@@ -10,7 +10,7 @@ import {
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { updateProfile } from "@/lib/app-data";
 import type { UserProfileRecord, WorkspaceSnapshotRecord } from "@/lib/supabase/types";
-import { PageHero, CardSurface } from "@/components/ui";
+import { PageHero, CardSurface, EmptyState } from "@/components/ui";
 import { buttonStyle, inputStyle } from "@/styles/careeros-design-system";
 
 type CareerTwinDashboardProps = {
@@ -467,7 +467,11 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
                 </div>
               ))}
               {userSkills.length === 0 && (
-                <p className="text-xs text-slate-500 text-center py-6 w-full">No skills logged. Type above to begin indexing.</p>
+                <EmptyState
+                  title="No Skills Logged"
+                  description="No skills logged in your portfolio. Type above to begin indexing."
+                  className="w-full min-h-[160px]"
+                />
               )}
             </div>
           </CardSurface>
@@ -578,7 +582,11 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
             </div>
 
             {sortedEvents.length === 0 ? (
-              <p className="text-xs text-slate-500 text-center py-6">No career events recorded. Clear roadmap tasks to initialize timeline.</p>
+              <EmptyState
+                title="No Career Events"
+                description="No career events recorded. Clear roadmap tasks to initialize timeline."
+                className="min-h-[180px]"
+              />
             ) : (
               <div className="relative border-l border-white/5 pl-4 ml-2 space-y-5">
                 {sortedEvents.map((ev, index) => (

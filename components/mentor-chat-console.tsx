@@ -14,7 +14,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { generateId } from "@/lib/id";
 import { updateWorkspace, updateProfile } from "@/lib/app-data";
 import type { ChatMessage, UserProfileRecord, WorkspaceSnapshotRecord } from "@/lib/supabase/types";
-import { PageHero, CardSurface } from "@/components/ui";
+import { PageHero, CardSurface, EmptyState } from "@/components/ui";
 import { buttonStyle, inputStyle } from "@/styles/careeros-design-system";
 
 // ─── Design Input Wrappers ───────────────────────────────────────────────────
@@ -895,13 +895,12 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
             {/* Chat Messages */}
             <div className="flex-1 overflow-y-auto pr-1 space-y-5 max-h-[420px] min-h-[300px] scrollbar-thin scrollbar-thumb-white/5 relative mb-4">
               {activeThread?.messages.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center p-8 space-y-3">
-                  <Brain className="h-10 w-10 text-slate-600 animate-pulse" />
-                  <h4 className="text-slate-400 font-semibold text-sm">Strategist Session Initialized</h4>
-                  <p className="text-xs text-slate-500 max-w-sm leading-relaxed">
-                    Query parameters dynamically calibrated to goal {profile?.goal || "SDE"}. Send a message below to strategize.
-                  </p>
-                </div>
+                <EmptyState
+                  title="Strategist Session Initialized"
+                  description={`Query parameters dynamically calibrated to goal ${profile?.goal || "SDE"}. Send a message below to strategize.`}
+                  icon={Brain}
+                  className="h-full min-h-[300px]"
+                />
               ) : (
                 activeThread?.messages.map((message) => {
                   const isMentor = message.role === "mentor";

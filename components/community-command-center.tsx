@@ -4,11 +4,11 @@ import React, { useState, useEffect, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity, AlertTriangle, Brain, BarChart3, Globe, Zap,
-  TrendingUp, TrendingDown, Minus, RefreshCw, Loader2,
+  TrendingUp, TrendingDown, Minus, RefreshCw,
   ArrowUpRight, Clock, MapPin, Shield
 } from "lucide-react";
 import type { CommunityNeedReport, CommunityNeedStats, CommunityAiAction } from "@/lib/supabase/types";
-import { PageHero, CardSurface } from "@/components/ui";
+import { PageHero, CardSurface, Skeleton } from "@/components/ui";
 import { buttonStyle } from "@/styles/careeros-design-system";
 
 /* ─────────────────────────────────────────────────────────────
@@ -138,9 +138,7 @@ const NeedsFeedPanel = memo(function NeedsFeedPanel() {
     <CardSurface variant="surface" {...PANEL_ENTER} noPadding className="p-4 space-y-3">
       <PanelHeader icon={Activity} title="Live Needs Feed" subtitle="Real-time community reports" live onRefresh={fetch_} />
       {loading ? (
-        <div className="flex items-center gap-2 py-4 text-[11px] text-slate-500">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Fetching live feed...
-        </div>
+        <Skeleton variant="list" className="py-2" />
       ) : reports.length === 0 ? (
         <p className="text-[11px] text-slate-500 py-4 text-center italic">No reports yet — waiting for first submission...</p>
       ) : (
@@ -208,9 +206,7 @@ const GapScoresPanel = memo(function GapScoresPanel() {
     <CardSurface variant="surface" {...PANEL_ENTER} style={{ transitionDelay: "0.05s" }} noPadding className="p-4 space-y-3">
       <PanelHeader icon={BarChart3} title="Gap Intelligence" subtitle="Demand vs. available resources" onRefresh={fetch_} />
       {loading ? (
-        <div className="flex items-center gap-2 py-4 text-[11px] text-slate-500">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Calculating gap scores...
-        </div>
+        <Skeleton variant="list" className="py-2" />
       ) : (
         <div className="space-y-2">
           {displayStats.map((s) => {
@@ -270,9 +266,7 @@ const ForecastsPanel = memo(function ForecastsPanel() {
     <CardSurface variant="surface" {...PANEL_ENTER} style={{ transitionDelay: "0.1s" }} noPadding className="p-4 space-y-3">
       <PanelHeader icon={TrendingUp} title="Demand Forecast" subtitle="30-day predictive modeling" onRefresh={fetch_} />
       {loading ? (
-        <div className="flex items-center gap-2 py-4 text-[11px] text-slate-500">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Running forecast model...
-        </div>
+        <Skeleton variant="list" className="py-2" />
       ) : (
         <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
           {(forecasts.length > 0 ? forecasts : FALLBACK_FORECASTS).map((f) => {
@@ -337,9 +331,7 @@ const HeatmapPanel = memo(function HeatmapPanel() {
     <CardSurface variant="surface" {...PANEL_ENTER} style={{ transitionDelay: "0.15s" }} noPadding className="p-4 space-y-3">
       <PanelHeader icon={Globe} title="Heatmap Matrix" subtitle="Resource density per city" onRefresh={fetch_} />
       {loading ? (
-        <div className="flex items-center gap-2 py-4 text-[11px] text-slate-500">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Compiling matrix...
-        </div>
+        <Skeleton variant="table" className="py-2" />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-[9px] font-mono border-collapse">
@@ -416,9 +408,7 @@ const AiActionsPanel = memo(function AiActionsPanel() {
     <CardSurface variant="surface" {...PANEL_ENTER} style={{ transitionDelay: "0.2s" }} noPadding className="p-4 space-y-3">
       <PanelHeader icon={Brain} title="AI Actions Log" subtitle="Recent agentic workflow runs" />
       {loading ? (
-        <div className="flex items-center gap-2 py-4 text-[11px] text-slate-500">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading agent actions...
-        </div>
+        <Skeleton variant="list" className="py-2" />
       ) : (
         <div className="space-y-2.5">
           {displayActions.map((a) => (

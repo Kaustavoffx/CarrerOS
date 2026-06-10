@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Download, Loader2, AlertTriangle, FileText, TrendingUp, ArrowUpRight } from "lucide-react";
+import { Download, AlertTriangle, FileText, TrendingUp, ArrowUpRight } from "lucide-react";
 import { useCommunitySupport } from "./community-support-context";
 import type { CommunityNeedStats } from "@/lib/supabase/types";
-import { CardSurface } from "@/components/ui";
+import { CardSurface, Skeleton } from "@/components/ui";
 import { buttonStyle, BADGES } from "@/styles/careeros-design-system";
 
 const TREND_BADGE_MAP: Record<string, keyof typeof BADGES.variants> = {
@@ -107,9 +107,10 @@ export function CommunityGapIntelligenceWorkspace() {
           </p>
 
           {statsLoading ? (
-            <div className="flex items-center gap-2 text-[11px] text-slate-500 py-3">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Loading community need statistics...
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+              <Skeleton variant="dashboard-stat" />
+              <Skeleton variant="dashboard-stat" />
+              <Skeleton variant="dashboard-stat" />
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -212,10 +213,7 @@ export function CommunityGapIntelligenceWorkspace() {
             </div>
 
             {loading ? (
-              <div className="flex-1 flex flex-col items-center justify-center gap-2">
-                <Loader2 className="h-6 w-6 text-cyan-400 animate-spin" />
-                <p className="text-[10px] text-slate-400 animate-pulse">Generating gap intelligence report...</p>
-              </div>
+              <Skeleton variant="chart" className="flex-1 min-h-[300px]" />
             ) : (
               <div className="flex-1 overflow-y-auto max-h-[350px] pr-1 font-mono text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap select-text">
                 {report || "Gap report unavailable. Check API configuration."}
