@@ -8,7 +8,7 @@ import {
   Link2, Edit2, CheckSquare, Square, Lock
 } from "lucide-react";
 
-const MENTOR_LOCKED = true;
+const MENTOR_LOCKED = false;
 import { MagneticButton } from "./magnetic-button";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { generateId } from "@/lib/id";
@@ -342,27 +342,55 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace, commun
     const q = query.toLowerCase();
     const role = profile?.goal || "Frontend Engineer";
     const experience = profile?.experience_level || "Junior";
+    const readiness = profile?.readiness_score ?? 0;
 
-    if (q.includes("resume")) {
-      return `### Resume Performance Insights\n\nYour linked resume requires structural modifications to target **${role}** positions:\n\n- **Objective Audit**: Shift entries to highlight accomplishments (e.g. 'Optimized app renders by 32% under Next.js 15 routing pools.').\n- **Keyword Alignments**: Ensure TypeScript, Tailwind CSS, and testing libraries Jest/Vitest are indexed clearly.`;
+    let content = "";
+    if (q.includes("resume") || q.includes("cv") || mode === "resume") {
+      content = `### Resume Performance Insights\n\nYour linked resume requires structural modifications to target **${role}** positions:\n\n- **Objective Audit**: Shift entries to highlight accomplishments (e.g. 'Optimized app renders by 32% under Next.js 15 routing pools.').\n- **Keyword Alignments**: Ensure TypeScript, Tailwind CSS, and testing libraries Jest/Vitest are indexed clearly.`;
+    } else if (q.includes("interview") || q.includes("mock") || mode === "interview") {
+      content = `### Technical Mock Challenge Initialized\n\n*Focus Area: React State Management*\n\nEvaluate this statement:\n\`\`\`javascript\nconst [data, setData] = useState({ state: 'active' });\n\`\`\`\nWhy is direct mutating state bad, and how does React Fiber schedule renders differently when set functions execute? Describe your understanding.`;
+    } else if (q.includes("project") || q.includes("github") || mode === "project") {
+      content = `### Recommended Technical Spec\n\nFor a **${experience}** target, build a **Distributed Latency Cache API**:\n\n- Node.js API with strict TypeScript schemas.\n- Redis key-value invalidation on state hooks.\n- Playwright integration verifying layout shifts.`;
+    } else if (q.includes("skill") || mode === "skill") {
+      content = `### Technical Readiness Drill\n\n- Focus on array manipulation logic.\n- STAR structure: Start with target problem details first.`;
+    } else {
+      content = `### Strategist Calibration\n\nTarget is **${role}** at **${readiness}%** readiness. Work on active tasks to speed up milestone progress.`;
     }
-    if (q.includes("interview")) {
-      return `### Technical Mock Challenge Initialized\n\n*Focus Area: React State Management*\n\nEvaluate this statement:\n\`\`\`javascript\nconst [data, setData] = useState({ state: 'active' });\n\`\`\`\nWhy is direct mutating state bad, and how does React Fiber schedule renders differently when set functions execute? Describe your understanding.`;
+
+    const baseConfidence = 75 + Math.floor(readiness * 0.15);
+    const confidenceScore = Math.min(98, baseConfidence);
+
+    let relatedActions = "";
+    if (q.includes("resume") || mode === "resume") {
+      relatedActions = `- Review your Resume link in [Profile](/profile)\n- Run a vector alignment test on [Career Twin](/career-twin)`;
+    } else if (q.includes("interview") || mode === "interview") {
+      relatedActions = `- Check interview prep checklist on the [Dashboard](/dashboard)\n- Start an interactive sprint on [Roadmaps](/roadmaps)`;
+    } else {
+      relatedActions = `- Browse local support systems in [Support Navigator](/support-navigator)\n- View system telemetry in [Command Center](/community-command-center)`;
     }
-    if (q.includes("project")) {
-      return `### Recommended Technical Spec\n\nFor a **${experience}** target, build a **Distributed Latency Cache API**:\n\n- Node.js API with strict TypeScript schemas.\n- Redis key-value invalidation on state hooks.\n- Playwright integration verifying layout shifts.`;
+
+    let nextStep = "";
+    if (q.includes("resume") || mode === "resume") {
+      nextStep = `Paste your resume's experience bullet point in this chat, and I will align it using STAR methodology.`;
+    } else if (q.includes("interview") || mode === "interview") {
+      nextStep = `Explain your design pattern choices for local state management (hooks vs global context stores).`;
+    } else {
+      nextStep = `Review your current sprint milestones on the Roadmaps board.`;
     }
-    
-    switch (mode) {
-      case "interview":
-        return `### Technical Readiness Drill\n\n- Focus on array manipulation logic.\n- STAR structure: Star with target problem details first.`;
-      case "resume":
-        return `### Resume Reviewer Output\n\nEnsure direct links to your GitHub code repos are attached to all project descriptions.`;
-      case "project":
-        return `### Project Spec Assessment\n\nIsolate client-side state hooks from core business handlers.`;
-      default:
-        return `### Strategist Calibration\n\nTarget is **${role}** at **${readiness}%** readiness. Work on active tasks to speed up milestone progress.`;
-    }
+
+    return `${content}
+
+### WHY THIS RECOMMENDATION?
+Calibrated using profile goal "${role}" (${experience} level) to optimize active roadmap readiness parameters and cover credential blind spots.
+
+### CONFIDENCE SCORE
+Confidence Score: **${confidenceScore}%** (Based on goal alignment & profile completeness)
+
+### RELATED ACTIONS
+${relatedActions}
+
+### SUGGESTED NEXT STEP
+${nextStep}`;
   }
 
   const addToRoadmap = async (taskText: string) => {

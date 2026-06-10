@@ -9,12 +9,11 @@ import {
   useState,
 } from "react";
 import { usePathname } from "next/navigation";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 
 /* ─────────────────────────────────────────────────────────────
    Types & Context
-───────────────────────────────────────────────────────────── */
+   ───────────────────────────────────────────────────────────── */
 interface RouteTransitionContextValue {
   /** Call before router.push() to trigger the overlay */
   startTransition: (destination: string) => void;
@@ -34,7 +33,7 @@ export function useRouteTransition() {
 
 /* ─────────────────────────────────────────────────────────────
    Destination label helpers
-───────────────────────────────────────────────────────────── */
+   ───────────────────────────────────────────────────────────── */
 function getDestinationLabel(dest: string): string {
   const map: Record<string, string> = {
     "/dashboard":             "Dashboard",
@@ -53,29 +52,14 @@ function getDestinationLabel(dest: string): string {
   return map[dest] ?? "Workspace";
 }
 
-function getProgressMessages(dest: string): string[] {
-  if (dest.includes("dashboard"))
-    return ["Preparing Dashboard...", "Loading metrics...", "Finalizing layout..."];
-  if (dest.includes("roadmap"))
-    return ["Building Recommendations...", "Synthesizing learning path...", "Applying curriculum filters..."];
-  if (dest.includes("community") || dest.includes("discovery") || dest.includes("navigator") || dest.includes("gap") || dest.includes("heatmap"))
-    return ["Loading Community Intelligence...", "Querying regional matrices...", "Compiling impact data..."];
-  if (dest.includes("mentor"))
-    return ["Opening AI Mentor...", "Restoring conversation context...", "Ready to assist..."];
-  if (dest.includes("career-twin"))
-    return ["Initializing Career Twin...", "Computing similarity vectors...", "Calibrating readiness model..."];
-  return ["Loading Workspace...", "Assembling components...", "Finalizing hydration..."];
-}
-
 /* ─────────────────────────────────────────────────────────────
    Provider Component
-───────────────────────────────────────────────────────────── */
+   ───────────────────────────────────────────────────────────── */
 export function RouteTransitionProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [destination, setDestination] = useState<string | null>(null);
-  const [progressIndex, setProgressIndex] = useState(0);
   const [barWidth, setBarWidth] = useState(0);
 
   const prevPathname = useRef(pathname);
@@ -92,19 +76,14 @@ export function RouteTransitionProvider({ children }: { children: React.ReactNod
     clearTimers();
     setDestination(dest);
     setIsTransitioning(true);
-    setProgressIndex(0);
     setBarWidth(10);
 
-    // Animate bar to 80% over ~600ms
+    // Animate bar to 80% over ~700ms
     const t1 = setTimeout(() => setBarWidth(40), 150);
     const t2 = setTimeout(() => setBarWidth(65), 400);
     const t3 = setTimeout(() => setBarWidth(80), 700);
 
-    // Progress message cycle at 800ms
-    const t4 = setTimeout(() => setProgressIndex(1), 800);
-    const t5 = setTimeout(() => setProgressIndex(2), 1800);
-
-    timersRef.current = [t1, t2, t3, t4, t5];
+    timersRef.current = [t1, t2, t3];
   }, [clearTimers]);
 
   /* Complete transition when pathname changes */
@@ -121,7 +100,6 @@ export function RouteTransitionProvider({ children }: { children: React.ReactNod
       setIsTransitioning(false);
       setDestination(null);
       setBarWidth(0);
-      setProgressIndex(0);
     }, 320);
     timersRef.current = [t];
   }, [pathname, isTransitioning, clearTimers]);
@@ -137,8 +115,6 @@ export function RouteTransitionProvider({ children }: { children: React.ReactNod
     return () => clearTimeout(bail);
   }, [isTransitioning]);
 
-  const messages = destination ? getProgressMessages(destination) : [];
-  const currentMessage = messages[progressIndex] ?? messages[0] ?? "Loading...";
   const label = destination ? getDestinationLabel(destination) : "Workspace";
 
   return (
@@ -153,85 +129,47 @@ export function RouteTransitionProvider({ children }: { children: React.ReactNod
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
+            transition={{ duration: 0.12, ease: "easeOut" }}
             className="fixed inset-0 z-[9999] flex flex-col items-center justify-center pointer-events-none"
             style={{ willChange: "opacity" }}
           >
-            {/* Deep atmospheric backdrop */}
-            <div className="absolute inset-0" style={{ background: 'rgba(3,7,18,0.88)', backdropFilter: 'blur(4px)' }} />
+            {/* Extremely subtle backdrop to keep transitions feeling instant */}
+            <div className="absolute inset-0" style={{ background: 'rgba(3,7,18,0.35)', backdropFilter: 'blur(2px)' }} />
 
-            {/* LIS surface card */}
+            {/* Premium, floating glassmorphic tag with GPU-accelerated motion */}
             <motion.div
-              initial={{ scale: 0.96, y: 10 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.96, y: 10 }}
-              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-              className="relative flex flex-col items-center gap-5 px-8 py-8 rounded-lis"
+              initial={{ scale: 0.95, y: 8, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 8, opacity: 0 }}
+              transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+              className="relative flex flex-col items-center gap-3 px-6 py-4 rounded-xl"
               style={{
                 willChange: "transform, opacity",
-                minWidth: "280px",
-                background: 'rgba(8,12,24,0.90)',
-                backdropFilter: 'blur(40px) saturate(200%)',
-                border: '1px solid rgba(255,255,255,0.09)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), 0 40px 100px rgba(0,0,0,0.70)',
+                minWidth: "220px",
+                background: 'rgba(15,23,42,0.85)',
+                backdropFilter: 'blur(16px)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                boxShadow: "0 20px 40px rgba(0,0,0,0.5)",
               }}
             >
-              {/* Logo */}
-              <div className="relative">
-                <Image
-                  src="/logo.png"
-                  alt="CareerOS"
-                  width={48}
-                  height={48}
-                  className="object-contain"
-                  style={{ filter: "drop-shadow(0 0 12px rgba(34,211,238,0.35))" }}
-                />
-                {/* Rotating ring */}
-                <span
-                  className="absolute -inset-2 rounded-full border border-cyan-500/30 border-t-cyan-400"
-                  style={{
-                    animation: "spin 1.1s linear infinite",
-                    willChange: "transform",
-                  }}
-                />
-              </div>
-
-              {/* Destination label */}
-              <div className="text-center space-y-1.5">
-                <p className="text-[9px] uppercase tracking-[0.18em] text-slate-500 select-none font-mono">
-                  Navigating to
-                </p>
-                <p className="text-sm font-bold text-white tracking-wide select-none">
-                  {label}
+              <div className="text-center">
+                <p className="text-xs font-bold text-white tracking-wide select-none">
+                  Loading {label}...
                 </p>
               </div>
 
               {/* Progress bar track */}
-              <div className="w-full h-[3px] rounded-full bg-slate-800/80 overflow-hidden">
+              <div className="w-full h-[2px] rounded-full bg-slate-800/80 overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-cyan-500 to-indigo-500 rounded-full"
+                  className="h-full bg-gradient-to-r from-cyan-400 to-indigo-500 rounded-full"
                   style={{
                     width: `${barWidth}%`,
-                    transition: "width 280ms cubic-bezier(0.16,1,0.3,1)",
+                    transition: "width 200ms cubic-bezier(0.16,1,0.3,1)",
                     willChange: "width",
-                    boxShadow: "0 0 8px rgba(6,182,212,0.5)",
+                    boxShadow: "0 0 6px rgba(6,182,212,0.4)",
                   }}
                 />
               </div>
-
-              {/* Animated progress message — Pulse Beacon */}
-              <AnimatePresence mode="wait">
-                <motion.p
-                  key={currentMessage}
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.18 }}
-                  className="text-[10px] text-cyan-400/75 font-mono tracking-[0.10em] select-none"
-                >
-                  {currentMessage}
-                </motion.p>
-              </AnimatePresence>
             </motion.div>
           </motion.div>
         )}
@@ -259,14 +197,6 @@ export function RouteTransitionProvider({ children }: { children: React.ReactNod
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Spin keyframe injected once */}
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to   { transform: rotate(360deg); }
-        }
-      `}</style>
     </RouteTransitionContext.Provider>
   );
 }

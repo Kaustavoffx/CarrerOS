@@ -56,7 +56,7 @@ const GUIDE_DATA: Record<string, GuideContent> = {
     recommendationsGeneration: "Synthesizes slide progression stages with real-time interactive widget responses.",
     privacyPolicy: "Demo inputs are fully sandbox-isolated in-memory and are never written to permanent database stores.",
     howToTakeAction: [
-      "Click 'Next' to navigate sequentially through the 8 value proposition steps.",
+      "Click 'Next' to navigate sequentially through the 5 value proposition steps.",
       "Interact with the live widget panels (e.g. adding skills, clicking cities) to trigger calibrations.",
       "Click 'Enter Operational Workspace' on the final slide to transition to the live dashboard."
     ]
