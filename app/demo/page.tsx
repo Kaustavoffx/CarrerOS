@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  ArrowRight, X, CheckSquare, Square, Compass, Shield
+  ArrowRight, X, CheckSquare, Square, Compass, Shield, Check
 } from "lucide-react";
 import { CardSurface } from "@/components/ui/card-surface";
 import { PageHero } from "@/components/ui/page-hero";
@@ -13,7 +13,7 @@ import { buttonStyle } from "@/styles/careeros-design-system";
 
 export default function DemoPage() {
   const [step, setStep] = useState(1);
-  const totalSteps = 5;
+  const totalSteps = 6;
 
   // Step 2 (Intelligence) Interactive state
   const [twinCalibrated, setTwinCalibrated] = useState(false);
@@ -126,7 +126,7 @@ export default function DemoPage() {
                     By structuring developer objectives alongside localized resources, CareerOS changes passive advising into daily tactical executions.
                   </p>
                   <div className="flex flex-wrap gap-3 pt-2">
-                    <button onClick={nextStep} style={buttonStyle("primary")} className="px-6 py-2.5 flex items-center gap-2 text-black font-bold">
+                    <button onClick={nextStep} style={buttonStyle("primary")} className="px-6 py-2.5 flex items-center gap-2 text-black font-bold animate-pulse-glow">
                       Begin Calibration
                       <ArrowRight className="h-4 w-4" />
                     </button>
@@ -181,7 +181,7 @@ export default function DemoPage() {
 
                   <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-white/5">
                     <span className="text-[10px] text-slate-500">Allows recruiters to query profile fit semantic scores instantly.</span>
-                    <Link href="/career-twin" style={buttonStyle("ghost")} className="text-xs font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5">
+                    <Link href="/career-twin" style={{ ...buttonStyle("ghost"), height: "32px", fontSize: "11px" }} className="px-4 flex items-center gap-1.5 font-bold">
                       Open Career Twin Panel
                       <ArrowRight className="h-3.5 w-3.5" />
                     </Link>
@@ -214,6 +214,7 @@ export default function DemoPage() {
                   <div className="flex flex-wrap gap-2">
                     {["Bangalore", "New Delhi", "Mumbai", "Jaipur", "Kolkata"].map(city => (
                       <button 
+                      type="button"
                         key={city}
                         onClick={() => {
                           setSelectedCity(city);
@@ -236,7 +237,7 @@ export default function DemoPage() {
                         <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Active Proximity</p>
                         <h4 className="text-xs font-bold text-white mt-1">Discovered {discoveredCount} Support Systems in {selectedCity}</h4>
                       </div>
-                      <Link href="/resource-discovery" style={buttonStyle("ghost")} className="text-xs font-semibold py-1 rounded-xl flex items-center gap-1">
+                      <Link href="/resource-discovery" style={{ ...buttonStyle("ghost"), height: "32px", fontSize: "11px" }} className="py-1 rounded-xl flex items-center justify-center gap-1 font-bold">
                         Browse Proximity Map
                         <ArrowRight className="h-3.5 w-3.5" />
                       </Link>
@@ -251,6 +252,7 @@ export default function DemoPage() {
                             { region: "Kolkata - Student Wellness", gap: "0 active counseling programs", risk: "Critical" },
                           ].map(def => (
                             <button
+                              type="button"
                               key={def.region}
                               onClick={() => setActiveDeficiency(def.region)}
                               className="w-full text-left text-[10px] p-1.5 rounded bg-black/25 flex justify-between items-center border border-transparent hover:border-cyan-500/20"
@@ -263,7 +265,7 @@ export default function DemoPage() {
                           ))}
                         </div>
                       </div>
-                      <Link href="/community-gaps" style={buttonStyle("ghost")} className="text-xs font-semibold py-1 rounded-xl flex items-center gap-1">
+                      <Link href="/community-gaps" style={{ ...buttonStyle("ghost"), height: "32px", fontSize: "11px" }} className="py-1 rounded-xl flex items-center justify-center gap-1 font-bold">
                         Open Gap Desk
                         <ArrowRight className="h-3.5 w-3.5" />
                       </Link>
@@ -306,6 +308,7 @@ export default function DemoPage() {
                           className="p-3.5 rounded-xl border border-white/5 bg-[#0a0d16]/50 flex flex-col gap-2.5"
                         >
                           <button
+                            type="button"
                             onClick={() => setCompletedPriorities(prev => ({ ...prev, [item.id]: !checked }))}
                             className="w-full flex items-start gap-3 text-left transition"
                           >
@@ -329,7 +332,7 @@ export default function DemoPage() {
 
                   <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-white/5">
                     <span className="text-[10px] text-slate-500 font-medium">Explainable details: Why am I seeing this? What data was used? How confident is the system?</span>
-                    <Link href="/support-navigator" style={buttonStyle("ghost")} className="text-xs font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5">
+                    <Link href="/support-navigator" style={{ ...buttonStyle("ghost"), height: "32px", fontSize: "11px" }} className="px-4 flex items-center gap-1.5 font-bold">
                       Open Navigator board
                       <ArrowRight className="h-3.5 w-3.5" />
                     </Link>
@@ -337,7 +340,7 @@ export default function DemoPage() {
                 </CardSurface>
                 <div className="pt-2 flex gap-3">
                   <button onClick={nextStep} style={buttonStyle("primary")} className="px-5 py-2 text-black font-bold">
-                    Next: Impact Center
+                    Next: Operations
                   </button>
                   <button onClick={prevStep} style={buttonStyle("ghost")} className="px-5 py-2 text-xs">
                     Back
@@ -346,13 +349,13 @@ export default function DemoPage() {
               </div>
             )}
 
-            {/* Step 5: Impact & Operations */}
+            {/* Step 5: Explainable Recommendations */}
             {step === 5 && (
               <div className="space-y-6">
                 <PageHero
                   badge="Step 5 // Operations"
-                  title="Command Center & Real Metrics"
-                  subtitle="A consolidated real-time telemetry view demonstrating operational success and grant distribution efficacy."
+                  title="Command Center & Real Telemetry"
+                  subtitle="A consolidated real-time view demonstrating operational success and support calibration."
                 />
                 
                 <div className="grid gap-4 sm:grid-cols-3">
@@ -386,7 +389,7 @@ export default function DemoPage() {
                   <CardSurface variant="surface" className="p-5.5 space-y-3 border border-white/5 bg-slate-900/40">
                     <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
                       <Shield className="h-4 w-4 text-cyan-400" />
-                      Live Impact center
+                      Live Impact Center
                     </h4>
                     <p className="text-[11px] text-slate-400 leading-relaxed">
                       Monitoring aggregate reach parameters, verified scholarship counts, and opportunity match metrics to justify funding allocations.
@@ -397,13 +400,115 @@ export default function DemoPage() {
                   </CardSurface>
                 </div>
 
-                <CardSurface variant="surface" className="p-6 text-center space-y-4">
-                  <h4 className="text-sm font-bold text-white uppercase tracking-wider font-geom">Demo Walkthrough Complete</h4>
-                  <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
-                    You are now ready to explore CareerOS. Launch the main operational workspace to test live interactions.
+                <div className="pt-2 flex gap-3">
+                  <button onClick={nextStep} style={buttonStyle("primary")} className="px-5 py-2 text-black font-bold">
+                    Next: Impact Story
+                  </button>
+                  <button onClick={prevStep} style={buttonStyle("ghost")} className="px-5 py-2 text-xs">
+                    Back
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 6: Impact Center & Story */}
+            {step === 6 && (
+              <div className="space-y-6">
+                <PageHero
+                  badge="Step 6 // Impact Center"
+                  title="CareerOS Impact Center"
+                  subtitle="Transforming fragmented community support systems into accessible intelligence."
+                />
+
+                {/* Section 1 & Section 2 Grid */}
+                <div className="grid gap-6 md:grid-cols-2">
+                  {/* Section 1: The Problem */}
+                  <CardSurface variant="glass" className="p-5.5 space-y-3 border border-red-500/10 bg-red-950/5">
+                    <span className="text-[9px] uppercase tracking-widest text-red-400 font-bold block">Section 1 // The Problem</span>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider font-geom">Fragmentation & Low Visibility</h4>
+                    <p className="text-[11.5px] text-slate-400 leading-relaxed">
+                      A student cannot find a mentor. A family struggle to locate support programs. A learner misses a scholarship. A person in distress needs mental health help. Support programs exist, but they are hidden and isolated. <strong>Visibility is the barrier.</strong>
+                    </p>
+                  </CardSurface>
+
+                  {/* Section 2: What CareerOS Changes */}
+                  <CardSurface variant="glass" className="p-5.5 space-y-3 border border-cyan-500/15 bg-cyan-950/5">
+                    <span className="text-[9px] uppercase tracking-widest text-cyan-400 font-bold block">Section 2 // The Change</span>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider font-geom">Visible Accessible Intelligence</h4>
+                    <p className="text-[11.5px] text-slate-300 leading-relaxed font-semibold">
+                      CareerOS does not construct new support programs—it makes existing help visible. We link people, resources, mentors, opportunities, and communities together through data-driven coordinates.
+                    </p>
+                  </CardSurface>
+                </div>
+
+                {/* Section 3: Community Support Intelligence Ecosystem */}
+                <CardSurface variant="surface" className="p-5.5 space-y-4">
+                  <div>
+                    <span className="text-[9px] uppercase tracking-widest text-slate-500 font-bold block">Section 3 // Connected Ecosystem</span>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider mt-1">Community Support Intelligence</h4>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-5 text-center">
+                    {[
+                      { name: "Support Navigator", desc: "Checks program eligibility with custom constraints." },
+                      { name: "Resource Discovery", desc: "Indexes proximity listings (housing, scholarships, food)." },
+                      { name: "Gap Intelligence", desc: "Audits region shortages to compile deficiency logs." },
+                      { name: "Community Intel", desc: "Aggregates localized densities and accessibility scores." },
+                      { name: "Command Center", desc: "Real-time telemetry board tracking need reports." },
+                    ].map((eco, i) => (
+                      <div key={i} className="p-3 rounded-xl border border-white/5 bg-[#0a0d16]/30 flex flex-col justify-between h-36">
+                        <span className="text-[10px] font-bold text-white block leading-tight">{eco.name}</span>
+                        <span className="text-[9px] text-slate-500 mt-2 block leading-normal">{eco.desc}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardSurface>
+
+                {/* Section 4: Real Impact Checklist */}
+                <CardSurface variant="surface" className="p-5.5 space-y-3">
+                  <div>
+                    <span className="text-[9px] uppercase tracking-widest text-slate-500 font-bold block">Section 4 // Real Action</span>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider mt-1">Direct Calibration Actions</h4>
+                  </div>
+                  <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                    {[
+                      "Find scholarships",
+                      "Find mentorship",
+                      "Find housing support",
+                      "Find food assistance",
+                      "Find mental health resources",
+                      "Discover local opportunities",
+                      "Detect underserved communities"
+                    ].map((imp, idx) => (
+                      <div key={idx} className="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-white/[0.02] border border-white/5 text-[11px] text-slate-300 font-medium">
+                        <Check className="h-4 w-4 text-cyan-400 shrink-0 stroke-[2.5]" />
+                        <span className="truncate">{imp}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardSurface>
+
+                {/* Section 5: Vision */}
+                <CardSurface variant="glass" className="p-6 text-center border-cyan-500/25 bg-gradient-to-br from-cyan-950/20 to-indigo-950/25 relative overflow-hidden">
+                  <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" />
+                  <div className="space-y-2 relative z-10 py-1">
+                    <span className="text-[9px] uppercase tracking-widest text-cyan-400 font-bold block">Section 5 // Vision Statement</span>
+                    <h3 className="text-sm sm:text-base font-extrabold text-white uppercase tracking-wider font-geom">
+                      No one should miss help because they couldn&apos;t find it.
+                    </h3>
+                    <p className="text-[11px] text-slate-300 max-w-lg mx-auto leading-relaxed">
+                      CareerOS transforms fragmented support systems into accessible intelligence.
+                    </p>
+                  </div>
+                </CardSurface>
+
+                {/* Final Enter Workspace Action Card */}
+                <CardSurface variant="surface" className="p-6 text-center space-y-4 border border-cyan-500/10 bg-cyan-950/[0.02]">
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider font-geom">Demo Walkthrough Complete</h4>
+                  <p className="text-[11px] text-slate-400 max-w-md mx-auto leading-relaxed font-semibold">
+                    You have calibrated all core intelligence networks and reviewed the impact strategy. You are now ready to explore CareerOS.
                   </p>
                   <div className="pt-2">
-                    <Link href="/dashboard" style={buttonStyle("primary")} className="px-8 py-3 text-black font-bold rounded-xl inline-flex items-center gap-2 transition active:scale-95">
+                    <Link href="/dashboard" style={buttonStyle("primary")} className="px-8 py-3 text-black font-bold rounded-xl inline-flex items-center gap-2 transition active:scale-95 animate-pulse-glow">
                       Enter Operational Workspace
                       <ArrowRight className="h-4 w-4" />
                     </Link>

@@ -62,6 +62,21 @@ const GUIDE_DATA: Record<string, GuideContent> = {
       "Click 'Enter Operational Workspace' on the final slide to transition to the live dashboard."
     ]
   },
+  "/demo-guide": {
+    title: "Walkthrough Guide",
+    whatItDoes: "An expandable directory system providing a comprehensive mapping of every workspace, AI utility, and operational module.",
+    aiCapabilities: [
+      { name: "Schema Mapping", desc: "Coordinates structured purpose summaries and action triggers across the platform." }
+    ],
+    dataAnalyzed: "Platform navigational targets, actions checklists, and core system architectures.",
+    recommendationsGeneration: "Synthesizes detailed structural components into a single interactive 2-minute overview.",
+    privacyPolicy: "Guide configurations represent static documentation metadata and contain zero personal identifiers.",
+    howToTakeAction: [
+      "Select any system module from the left directory rail.",
+      "Review the purpose description and key features listed in the center panel.",
+      "Click 'Enter Operational Workspace' to visit the live system view."
+    ]
+  },
   "/impact-center": {
     title: "Impact Calibration Guide",
     whatItDoes: "Operations desk compiling real-time reach, assist counts, and support resolution metrics.",
@@ -267,6 +282,7 @@ const navGroups: NavSectionConfig[] = [
     items: [
       { label: "Demo Mode",     href: "/demo",          icon: Play },
       { label: "Impact Center", href: "/impact-center", icon: TrendingUp },
+      { label: "Demo Guide",    href: "/demo-guide",    icon: Info },
     ],
   },
   {
