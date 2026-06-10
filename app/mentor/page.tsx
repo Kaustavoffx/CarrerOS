@@ -3,20 +3,11 @@ import { WorkspaceShell } from "@/components/workspace-shell";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { loadAppData } from "@/lib/app-data";
-import type { CommunityNeedReport } from "@/lib/supabase/types";
-import dynamic from "next/dynamic";
-
-const MentorChatConsole = dynamic(
-  () => import("@/components/mentor-chat-console").then((mod) => mod.MentorChatConsole),
-  {
-    loading: () => <div className="animate-pulse bg-white/[0.02] border border-white/5 rounded-2xl h-[400px] w-full" />
-  }
-);
+import { MentorLockedWorkspace } from "@/components/mentor-locked-workspace";
 
 export default async function MentorPage() {
   let profile = null;
   let workspace = null;
-  let communityNeeds: CommunityNeedReport[] = [];
 
   if (hasSupabaseConfig()) {
     const supabase = await getSupabaseServerClient();
@@ -36,7 +27,6 @@ export default async function MentorPage() {
     const data = await loadAppData(supabase, user.id);
     profile = data.profile;
     workspace = data.workspace;
-    communityNeeds = data.communityNeeds || [];
 
     if (!profile?.onboarding_complete) {
       redirect("/onboarding");
@@ -47,7 +37,7 @@ export default async function MentorPage() {
 
   return (
     <WorkspaceShell profile={profile} workspace={workspace}>
-      <MentorChatConsole profile={profile} workspace={workspace} communityNeeds={communityNeeds} />
+      <MentorLockedWorkspace profile={profile} />
     </WorkspaceShell>
   );
 }

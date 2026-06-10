@@ -34,6 +34,7 @@ import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { motion, useDragControls, AnimatePresence, usePresence } from "framer-motion";
 import { CAREEROS, sidebarItemStyle } from "@/styles/careeros-design-system";
 import { LiquidDust } from "@/components/ui/liquid-dust";
+import { ThemeOrb } from "@/components/theme-orb";
 
 interface GuideContent {
   title: string;
@@ -123,18 +124,19 @@ const GUIDE_DATA: Record<string, GuideContent> = {
     ]
   },
   "/mentor": {
-    title: "AI Mentor Guide",
-    whatItDoes: "Conversational expert counselor to ask programming, scholarship, or wellness questions.",
+    title: "AI Mentor Guide (Locked)",
+    whatItDoes: "The AI Career Mentor will act as a 24/7 expert advisor providing real-time technical prep, resume calibration, and career counseling.",
     aiCapabilities: [
-      { name: "Context-Aware Agentic Workflow", desc: "Maintains chat history with semantic memory parsing to deliver continuous career counseling." }
+      { name: "Agentic Mock Challenges", desc: "Under development: interactive coding drills, technical system design prompts, and behavioral STAR coaching." },
+      { name: "ATS Optimization Engine", desc: "Under development: semantic keyword auditing to check resume compatibility against developer standards." }
     ],
-    dataAnalyzed: "Interactive chat history, current user profile tags, and resource databases.",
-    recommendationsGeneration: "Retrieves contextually relevant advice using retrieval-augmented logic against official career guidelines.",
-    privacyPolicy: "Chat transcripts are private, sandboxed, and stored securely under your profile ID.",
+    dataAnalyzed: "Target profiles, milestones completeness rates, and linked technical assets (e.g. resumes and portfolios).",
+    recommendationsGeneration: "Calculates mock ratings, confidence metrics, and strategic action prompts from active goals.",
+    privacyPolicy: "Session logs, mock records, and text entries are sandboxed and fully isolated to your profile context.",
     howToTakeAction: [
-      "Type coding questions or ask for help with scholarship criteria.",
-      "Request draft emails or cover letters tailored to specific opportunities.",
-      "Switch conversation contexts to start fresh advice loops."
+      "Review the features preview in the locked panel to see upcoming modules.",
+      "Ensure your Goal Target and Capacity fields are set in Settings to prepare for simulator drills.",
+      "Connect your GitHub URL in Profile settings to calibrate project reviews when calibrations complete."
     ]
   },
   "/community-intelligence": {
@@ -1227,6 +1229,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
           </>
         )}
       </AnimatePresence>
+      <ThemeOrb />
     </div>
   );
 }

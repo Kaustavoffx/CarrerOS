@@ -900,3 +900,57 @@ main {
 ::-webkit-scrollbar-track  { background: rgba(3, 7, 18, 0.95); }
 ::-webkit-scrollbar-thumb  { background: rgba(255,255,255,0.10); border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(var(--careeros-primary-rgb), 0.25); }
+
+/* ── Smooth Theme Switch Color Interpolation (150ms-250ms) ── */
+html,
+body,
+.lis-panel,
+.lis-sidebar,
+.lis-input,
+.sidebar-glass,
+.chat-message-assistant,
+.chat-message-user,
+.mentor-input-dock,
+.carved-input,
+.card-data,
+.card-spotlight,
+.card-insight,
+.card-gold,
+.card-purple,
+.card-green,
+.card-red,
+.card-danger,
+.card-mission {
+  transition: color 200ms cubic-bezier(0.16, 1, 0.3, 1), 
+              background-color 200ms cubic-bezier(0.16, 1, 0.3, 1), 
+              border-color 200ms cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lis-card,
+.card-action {
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 200ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 200ms cubic-bezier(0.16, 1, 0.3, 1),
+              color 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lis-btn-primary,
+.tactile-btn-primary {
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 180ms cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 200ms cubic-bezier(0.16, 1, 0.3, 1),
+              color 200ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lis-btn-ghost,
+.tactile-btn {
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 200ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 200ms cubic-bezier(0.16, 1, 0.3, 1),
+              color 200ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
