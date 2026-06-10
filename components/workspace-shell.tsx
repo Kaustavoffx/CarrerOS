@@ -31,7 +31,7 @@ import {
   TrendingUp
 } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo, memo } from "react";
-import { motion, useDragControls, AnimatePresence } from "framer-motion";
+import { motion, useDragControls, AnimatePresence, usePresence } from "framer-motion";
 import { CAREEROS, sidebarItemStyle } from "@/styles/careeros-design-system";
 import { LiquidDust } from "@/components/ui/liquid-dust";
 
@@ -375,6 +375,7 @@ const SidebarNavItem = memo(function SidebarNavItem({
   const Icon = item.icon;
   const state = active ? "active" : isHovered ? "hover" : "idle";
   const baseStyle = sidebarItemStyle(state);
+  const [isPresent] = usePresence();
 
   const linkStyle = {
     ...baseStyle,
@@ -407,8 +408,9 @@ const SidebarNavItem = memo(function SidebarNavItem({
       ].join(" ")}
     >
       {/* ── Active indicator — LIS liquid cyan beam ─────────────── */}
-      {active && (
+      {active && isPresent && (
         <motion.div
+          layoutId="active-indicator-desktop"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="absolute inset-0 -z-10 animate-active-pulse"
@@ -427,8 +429,9 @@ const SidebarNavItem = memo(function SidebarNavItem({
       )}
 
       {/* ── Hover indicator — only on non-active items ───────────── */}
-      {isHovered && !active && (
+      {isHovered && !active && isPresent && (
         <motion.div
+          layoutId="hover-indicator-desktop"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="absolute inset-0 -z-10"

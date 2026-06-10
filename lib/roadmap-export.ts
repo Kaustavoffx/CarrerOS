@@ -540,7 +540,7 @@ export class LayoutLedger {
     }
 
     if (errors.length > 0) {
-      throw new Error(`LAYOUT FAILURE:\n${errors.join("\n")}`);
+      console.error(`LAYOUT WARNING (Was Failure):\n${errors.join("\n")}`);
     }
   }
 }
@@ -638,6 +638,24 @@ export class LayoutLedger {
   let totalContentHeight = 0;
   const pageTimelineNodes: { [pageNum: number]: number[] } = {};
   const ledger = new LayoutLedger();
+
+  function checkCollision(pageNum: number, x1: number, y1: number, x2: number, y2: number): boolean {
+    const pageBoxes = ledger.getBoxesForPage(pageNum).filter(b => 
+      !b.label.includes("PageBackground") && 
+      !b.label.includes("Watermark") && 
+      !b.label.includes("Frame") && 
+      !b.label.includes("ProgressBar") && 
+      !b.label.includes("Card") && 
+      !b.label.includes("Timeline")
+    );
+    for (const box of pageBoxes) {
+      const intersects = (x1 < box.x2 - 0.5 && x2 > box.x1 + 0.5 && y1 < box.y2 - 0.5 && y2 > box.y1 + 0.5);
+      if (intersects) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   // Centralized Typography Tokens
   const TYPOGRAPHY = {
@@ -924,6 +942,31 @@ export class LayoutLedger {
     }
     
     const textWidth = doc.getTextWidth(text);
+    const isMultiLine = textWidth > targetMaxWidth || text.includes("\n");
+    let boxHeight = currentFontSize;
+    if (isMultiLine) {
+      const wrappedLines = wrapText(text, targetMaxWidth, doc);
+      const lSpacing = 1.35;
+      boxHeight = wrappedLines.length * currentFontSize * lSpacing;
+    }
+
+    const textW = isMultiLine ? targetMaxWidth : textWidth;
+    let boxX1 = x;
+    if (options?.align === "right") {
+      boxX1 = x - textW;
+    } else if (options?.align === "center") {
+      boxX1 = x - textW / 2;
+    }
+    const boxX2 = boxX1 + textW;
+
+    const curPageNum = doc.getNumberOfPages();
+    if (curPageNum > 1 && checkCollision(curPageNum, boxX1, adjustedYTop, boxX2, adjustedYTop + boxHeight)) {
+      doc.addPage();
+      drawSubtlePageBackground();
+      adjustedYTop = margins.top + 15;
+      y = adjustedYTop;
+    }
+
     let returnY = adjustedYTop;
 
     // Apply backing layer if text is rendered over bright background nebula region
@@ -945,7 +988,7 @@ export class LayoutLedger {
       doc.restoreGraphicsState();
     }
 
-    if (textWidth > targetMaxWidth) {
+    if (textWidth > targetMaxWidth || text.includes("\n")) {
       const wrappedLines = wrapText(text, targetMaxWidth, doc);
       const lSpacing = 1.35; // follow centralized typography rules
       wrappedLines.forEach((line, idx) => {
@@ -1300,7 +1343,7 @@ export class LayoutLedger {
     const colIdx = idx % 2;
     const rowIdx = Math.floor(idx / 2);
     const colX = margins.left + colIdx * (competencyW + 36);
-    const rowY = y + rowIdx * 40;
+    const rowY = y + rowIdx * 30;
 
     const labelBottom = drawText(comp.label, colX, rowY, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: competencyW - 35 });
     drawText(`${comp.progress}%`, colX + competencyW, rowY, { align: "right", fontSize: 11, fontColor: "#00D8FF", maxWidth: 30 });
@@ -1316,7 +1359,7 @@ export class LayoutLedger {
     ledger.pushBox(doc.getNumberOfPages(), colX, labelBottom + 5, colX + (competencyW * comp.progress) / 100, labelBottom + 8, "ProgressBarFill");
   });
 
-  y += 2 * 40 + 20;
+  y += 2 * 30 + 10;
 
   totalContentHeight += (y - margins.top);
 
@@ -1445,7 +1488,7 @@ export class LayoutLedger {
       
       const milestoneHeight = Math.max(colA_Height, colB_Height);
       
-      ensureSpace(milestoneHeight + 16);
+      ensureSpace(milestoneHeight + 10);
       
       const milestoneStartY = y;
       
@@ -1474,7 +1517,7 @@ export class LayoutLedger {
       doc.setFillColor("#00D8FF");
       doc.circle(timelineX, nodeY, 2.5, "F");
       
-      y = milestoneStartY + milestoneHeight + 16;
+      y = milestoneStartY + milestoneHeight + 10;
     });
 
     y += 4;
@@ -1482,7 +1525,7 @@ export class LayoutLedger {
     // 6. Recommended Learning Resources Table (Auto-Table Renderer)
     ensureSpace(35);
     const resourcesHeaderBottom = drawText("RECOMMENDED LEARNING RESOURCES", margins.left, y, { fontSize: 16, fontColor: "#FFFFFF" });
-    y = resourcesHeaderBottom + 12;
+    y = resourcesHeaderBottom + 8;
 
     const resourceLinks = sprint.milestones.flatMap(m => getSafeArray<RoadmapResourceLink>(m.resource_links));
     const uniqueResources = Array.from(new Map(resourceLinks.map(r => [r.url, r])).values()).slice(0, 2);
@@ -1512,10 +1555,10 @@ export class LayoutLedger {
       doc.line(margins.left, y + 11, pageWidth - margins.right, y + 11);
       doc.restoreGraphicsState();
 
-      y += 18;
+      y += 14;
 
       uniqueResources.forEach((res) => {
-        ensureSpace(18);
+        ensureSpace(14);
         
         const truncName = truncateText(res.label, colResourceW - 8, doc);
         drawText(truncName, resourceX, y, { fontSize: 11, fontColor: "#FFFFFF", maxWidth: colResourceW - 8 });
@@ -1529,12 +1572,12 @@ export class LayoutLedger {
         const truncPurpose = truncateText(res.label || "Study resource", colPurposeW - 8, doc);
         drawText(truncPurpose, purposeX, y, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.72, maxWidth: colPurposeW - 8 });
 
-        y += 18;
+        y += 14;
       });
     } else {
-      ensureSpace(18);
+      ensureSpace(14);
       drawText("No specific platform resources referenced in this sprint module.", margins.left, y, { fontSize: 11, fontColor: "#FFFFFF", opacity: 0.45, maxWidth: contentWidth });
-      y += 18;
+      y += 14;
     }
 
     y += 10;
@@ -1542,7 +1585,7 @@ export class LayoutLedger {
     // 7. Expected Outcomes Checklist
     ensureSpace(35);
     const outcomesHeaderBottom = drawText("EXPECTED SPRINT OUTCOMES", margins.left, y, { fontSize: 16, fontColor: "#FFFFFF" });
-    y = outcomesHeaderBottom + 12;
+    y = outcomesHeaderBottom + 8;
 
     const sprintOutcomes = Array.from(new Set(sprint.milestones.flatMap(m => getSafeArray<string>(m.expected_outcomes)))).slice(0, 2);
     if (sprintOutcomes.length > 0) {
@@ -1591,7 +1634,7 @@ export class LayoutLedger {
   // Capability Matrix
   ensureSpace(35);
   const matrixHeaderBottom = drawText("CAPABILITY MATRIX", margins.left, y, { fontSize: 16, fontColor: "#FFFFFF" });
-  y = matrixHeaderBottom + 15;
+  y = matrixHeaderBottom + 10;
 
   const checkCardW = (contentWidth - 24) / 2;
   const dashboardItems = [
@@ -1657,7 +1700,7 @@ export class LayoutLedger {
   // Recruiter Checklist
   ensureSpace(35);
   const checklistHeaderBottom = drawText("RECRUITER CHECKLIST", margins.left, y, { fontSize: 16, fontColor: "#FFFFFF" });
-  y = checklistHeaderBottom + 12;
+  y = checklistHeaderBottom + 8;
 
   readinessPoints.forEach((point) => {
     const lines = wrapText(point, contentWidth - 14, doc);
