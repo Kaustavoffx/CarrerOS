@@ -4,8 +4,15 @@ import { hasSupabaseConfig } from "@/lib/supabase/config";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { loadAppData } from "@/lib/app-data";
 import { loadAiProviderStatuses } from "@/lib/ai-provider-store";
-import { RoadmapsConsole } from "@/components/roadmaps-console";
 import type { AiProviderStatusRecord, RoadmapVersionRecord } from "@/lib/supabase/types";
+import dynamic from "next/dynamic";
+
+const RoadmapsConsole = dynamic(
+  () => import("@/components/roadmaps-console").then((mod) => mod.RoadmapsConsole),
+  {
+    loading: () => <div className="animate-pulse bg-white/[0.02] border border-white/5 rounded-2xl h-[500px] w-full" />
+  }
+);
 
 export default async function RoadmapsPage() {
   let profile = null;

@@ -3,8 +3,15 @@ import { WorkspaceShell } from "@/components/workspace-shell";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { loadAppData } from "@/lib/app-data";
-import { MentorChatConsole } from "@/components/mentor-chat-console";
 import type { CommunityNeedReport } from "@/lib/supabase/types";
+import dynamic from "next/dynamic";
+
+const MentorChatConsole = dynamic(
+  () => import("@/components/mentor-chat-console").then((mod) => mod.MentorChatConsole),
+  {
+    loading: () => <div className="animate-pulse bg-white/[0.02] border border-white/5 rounded-2xl h-[400px] w-full" />
+  }
+);
 
 export default async function MentorPage() {
   let profile = null;

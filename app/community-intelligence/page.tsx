@@ -1,9 +1,22 @@
 import { redirect } from "next/navigation";
 import { WorkspaceShell } from "@/components/workspace-shell";
-import { CommunityIntelligenceWorkspace } from "@/components/community-intelligence-workspace";
-import { ReportNeedWorkspace } from "@/components/report-need-workspace";
 import { CommunitySupportProvider } from "@/components/community-support-context";
 import { CommunitySupportLayout } from "@/components/community-support-layout";
+import dynamic from "next/dynamic";
+
+const CommunityIntelligenceWorkspace = dynamic(
+  () => import("@/components/community-intelligence-workspace").then((mod) => mod.CommunityIntelligenceWorkspace),
+  {
+    loading: () => <div className="animate-pulse bg-white/[0.02] border border-white/5 rounded-2xl h-[450px] w-full" />
+  }
+);
+
+const ReportNeedWorkspace = dynamic(
+  () => import("@/components/report-need-workspace").then((mod) => mod.ReportNeedWorkspace),
+  {
+    loading: () => <div className="animate-pulse bg-white/[0.02] border border-white/5 rounded-2xl h-[400px] w-full" />
+  }
+);
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { loadAppData } from "@/lib/app-data";

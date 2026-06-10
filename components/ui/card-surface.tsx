@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, ComponentPropsWithoutRef } from "react";
+import { memo } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { CAREEROS } from "@/styles/careeros-design-system";
 import { LiquidDust } from "@/components/ui/liquid-dust";
@@ -53,7 +53,7 @@ interface CardSurfaceOwnProps {
 }
 
 type CardSurfaceProps = CardSurfaceOwnProps &
-  Omit<ComponentPropsWithoutRef<"div">, keyof CardSurfaceOwnProps>;
+  Omit<React.HTMLAttributes<HTMLElement>, keyof CardSurfaceOwnProps>;
 
 const { CARDS, GLASS, SHADOWS, COLORS, MOTION } = CAREEROS;
 
@@ -79,33 +79,65 @@ const VARIANT_STYLE: Record<CardVariant, React.CSSProperties> = {
   },
 };
 
-function CardSurfaceComponent({
-  variant    = "surface",
-  dust       = "none",
-  hover      = false,
-  interactive= false,
-  noPadding  = false,
-  tag        = "div",
-  className  = "",
+interface StaticCardProps extends Omit<React.HTMLAttributes<HTMLElement>, "tag"> {
+  tag: CardTag;
+  baseStyle: React.CSSProperties;
+  classes: string;
+  extraProps: Record<string, unknown>;
+  dust: CardDust;
+  children: React.ReactNode;
+}
+
+function StaticCard({
+  tag,
+  baseStyle,
+  classes,
+  extraProps,
+  dust,
   children,
   ...rest
-}: CardSurfaceProps) {
+}: StaticCardProps) {
+  const TagEl = tag;
+  return (
+    <TagEl
+      {...rest}
+      {...extraProps}
+      style={baseStyle}
+      className={classes}
+    >
+      {/* ── Atmospheric dust layers (behind content) ──────────────── */}
+      {(dust === "tr" || dust === "both") && (
+        <LiquidDust origin="tr" color="cyan"   intensity={0.065} />
+      )}
+      {(dust === "bl" || dust === "both") && (
+        <LiquidDust origin="bl" color="indigo" intensity={0.055} />
+      )}
+
+      {/* ── Content sits above dust layers ───────────────────────── */}
+      <div className="relative z-10">
+        {children}
+      </div>
+    </TagEl>
+  );
+}
+
+interface MotionCardProps extends StaticCardProps {
+  hover: boolean;
+  interactive: boolean;
+}
+
+function MotionCard({
+  tag,
+  baseStyle,
+  classes,
+  extraProps,
+  dust,
+  hover,
+  interactive,
+  children,
+  ...rest
+}: MotionCardProps) {
   const prefersReducedMotion = useReducedMotion();
-
-  const baseStyle = VARIANT_STYLE[variant];
-
-  const extraProps = interactive
-    ? { tabIndex: 0, role: "button" as const }
-    : {};
-
-  const classes = [
-    "relative overflow-hidden",
-    noPadding ? "" : "p-6",
-    interactive ? "cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 focus-visible:ring-offset-transparent" : "",
-    className,
-  ].filter(Boolean).join(" ");
-
-  // Framer Motion custom component for the tag
   const MotionEl = motion[tag as keyof typeof motion] as typeof motion.div;
 
   return (
@@ -148,6 +180,63 @@ function CardSurfaceComponent({
         {children}
       </div>
     </MotionEl>
+  );
+}
+
+function CardSurfaceComponent({
+  variant    = "surface",
+  dust       = "none",
+  hover      = false,
+  interactive= false,
+  noPadding  = false,
+  tag        = "div",
+  className  = "",
+  children,
+  ...rest
+}: CardSurfaceProps) {
+  const baseStyle = VARIANT_STYLE[variant];
+
+  const extraProps = interactive
+    ? { tabIndex: 0, role: "button" as const }
+    : {};
+
+  const classes = [
+    "relative overflow-hidden",
+    noPadding ? "" : "p-6",
+    interactive ? "cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 focus-visible:ring-offset-transparent" : "",
+    className,
+  ].filter(Boolean).join(" ");
+
+  const isInteractive = hover || interactive;
+
+  if (isInteractive) {
+    return (
+      <MotionCard
+        tag={tag}
+        baseStyle={baseStyle}
+        classes={classes}
+        extraProps={extraProps}
+        dust={dust}
+        hover={hover}
+        interactive={interactive}
+        {...rest}
+      >
+        {children}
+      </MotionCard>
+    );
+  }
+
+  return (
+    <StaticCard
+      tag={tag}
+      baseStyle={baseStyle}
+      classes={classes}
+      extraProps={extraProps}
+      dust={dust}
+      {...rest}
+    >
+      {children}
+    </StaticCard>
   );
 }
 

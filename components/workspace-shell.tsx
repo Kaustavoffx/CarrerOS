@@ -409,26 +409,19 @@ const SidebarNavItem = memo(function SidebarNavItem({
       {/* ── Active indicator — LIS liquid cyan beam ─────────────── */}
       {active && (
         <motion.div
-          layoutId="active-indicator-desktop"
-          className="absolute inset-0 -z-10"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="absolute inset-0 -z-10 animate-active-pulse"
           style={{
             background:   CAREEROS.SIDEBAR.itemActive.background,
             borderLeft:   CAREEROS.SIDEBAR.itemActive.borderLeft,
             borderRadius: CAREEROS.SIDEBAR.itemActive.borderRadius,
             boxShadow:    CAREEROS.SIDEBAR.itemActive.boxShadow,
           }}
-          animate={{
-            opacity: [0.85, 1, 0.85],
-            boxShadow: [
-              "inset 0 1px 0 rgba(34,211,238,0.08), inset 0 0 12px rgba(34,211,238,0.03)",
-              "inset 0 1px 0 rgba(34,211,238,0.16), inset 0 0 18px rgba(34,211,238,0.12)",
-              "inset 0 1px 0 rgba(34,211,238,0.08), inset 0 0 12px rgba(34,211,238,0.03)"
-            ]
-          }}
           transition={{
-            repeat: Infinity,
-            duration: 2.2,
-            ease: "easeInOut"
+            type: "spring",
+            stiffness: 380,
+            damping: 30,
           }}
         />
       )}
@@ -436,13 +429,18 @@ const SidebarNavItem = memo(function SidebarNavItem({
       {/* ── Hover indicator — only on non-active items ───────────── */}
       {isHovered && !active && (
         <motion.div
-          layoutId="hover-indicator-desktop"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
           className="absolute inset-0 -z-10"
           style={{
             background:   CAREEROS.SIDEBAR.itemHover.background,
             borderRadius: CAREEROS.SIDEBAR.itemHover.borderRadius,
           }}
-          transition={{ type: "spring", stiffness: 400, damping: 35 }}
+          transition={{
+            type: "spring",
+            stiffness: 380,
+            damping: 30,
+          }}
         />
       )}
 
@@ -655,15 +653,24 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
         .animate-pulse-glow {
           animation: pulse-glow 2s infinite ease-in-out;
         }
+        @keyframes active-pulse {
+          0%, 100% { opacity: 0.85; }
+          50% { opacity: 1; }
+        }
+        .animate-active-pulse {
+          animation: active-pulse 2.2s infinite ease-in-out;
+        }
       `}} />
 
 
 
       {/* ── DESKTOP SIDEBAR — Liquid Command Rail ── */}
-      <motion.aside
-        animate={{ width: collapsed ? "4.5rem" : "15rem" }}
-        transition={CAREEROS.MOTION.sidebar}
-        style={{ willChange: "width" }}
+      <aside
+        style={{
+          width: collapsed ? "4.5rem" : "15rem",
+          transition: "width 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+          willChange: "width",
+        }}
         className="fixed left-4 top-4 bottom-4 z-30 hidden flex-col rounded-lis border-0 lis-sidebar xl:flex overflow-hidden"
       >
         <LiquidDust origin="tr" color="cyan" intensity={0.05} />
@@ -786,13 +793,15 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
         >
           {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
         </button>
-      </motion.aside>
+      </aside>
 
       {/* ── DESKTOP CONTENT CONTAINER — follows sidebar width via motion ── */}
-      <motion.div
-        animate={{ paddingLeft: collapsed ? "5.5rem" : "16.5rem" }}
-        transition={CAREEROS.MOTION.sidebar}
-        style={{ willChange: "padding-left" }}
+      <div
+        style={{
+          paddingLeft: collapsed ? "5.5rem" : "16.5rem",
+          transition: "padding-left 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+          willChange: "padding-left",
+        }}
         className="hidden xl:block"
       >
         <main className="mx-auto max-w-7xl px-8 py-8 pb-24 relative">
@@ -820,7 +829,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
             </motion.div>
           </AnimatePresence>
         </main>
-      </motion.div>
+      </div>
 
       {/* ── MOBILE / TABLET VIEWPORTS (DEDICATED NAVIGATION SYSTEM) ── */}
       <div className="xl:hidden min-h-screen flex flex-col">

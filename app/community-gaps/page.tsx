@@ -1,6 +1,13 @@
 import { redirect } from "next/navigation";
 import { WorkspaceShell } from "@/components/workspace-shell";
-import { CommunityGapIntelligenceWorkspace } from "@/components/community-gap-intelligence-workspace";
+import dynamic from "next/dynamic";
+
+const CommunityGapIntelligenceWorkspace = dynamic(
+  () => import("@/components/community-gap-intelligence-workspace").then((mod) => mod.CommunityGapIntelligenceWorkspace),
+  {
+    loading: () => <div className="animate-pulse bg-white/[0.02] border border-white/5 rounded-2xl h-[400px] w-full" />
+  }
+);
 import { CommunitySupportProvider } from "@/components/community-support-context";
 import { CommunitySupportLayout } from "@/components/community-support-layout";
 import { hasSupabaseConfig } from "@/lib/supabase/config";

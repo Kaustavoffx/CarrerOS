@@ -4,8 +4,15 @@ import { hasSupabaseConfig } from "@/lib/supabase/config";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { WorkspaceShell } from "@/components/workspace-shell";
 import { CommunitySupportProvider } from "@/components/community-support-context";
-import { CommunityCommandCenter } from "@/components/community-command-center";
 import type { UserProfileRecord, WorkspaceSnapshotRecord } from "@/lib/supabase/types";
+import dynamic from "next/dynamic";
+
+const CommunityCommandCenter = dynamic(
+  () => import("@/components/community-command-center").then((mod) => mod.CommunityCommandCenter),
+  {
+    loading: () => <div className="animate-pulse bg-white/[0.02] border border-white/5 rounded-2xl h-[500px] w-full" />
+  }
+);
 
 export const metadata = {
   title: "Community Command Center | CareerOS",
