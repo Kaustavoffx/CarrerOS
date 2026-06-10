@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { UserProfileRecord, WorkspaceSnapshotRecord } from "@/lib/supabase/types";
+import { PageHero, CardSurface } from "@/components/ui";
+import { buttonStyle } from "@/styles/careeros-design-system";
 
 
 type CommunityIntelligenceWorkspaceProps = {
@@ -85,7 +87,7 @@ const HealthMetricCard = React.memo(function HealthMetricCard({
   colorClass: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/5 bg-slate-900/40 p-4 flex items-center justify-between gap-4 transition-all hover:border-white/10 hover:bg-slate-900/60">
+    <CardSurface variant="glass" hover noPadding className="p-4 flex items-center justify-between gap-4 w-full">
       <div className="space-y-1.5 min-w-0">
         <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">{title}</p>
         <p className={`text-xl font-bold tracking-tight ${colorClass}`}>{value}</p>
@@ -94,7 +96,7 @@ const HealthMetricCard = React.memo(function HealthMetricCard({
       <div className={`h-10 w-10 rounded-xl bg-slate-950/60 border border-white/5 flex items-center justify-center shrink-0`}>
         <Icon className={`h-5 w-5 ${colorClass}`} />
       </div>
-    </div>
+    </CardSurface>
   );
 });
 
@@ -112,7 +114,7 @@ const AIInsightCard = React.memo(function AIInsightCard({
   impact: string;
 }) {
   return (
-    <div className="rounded-2xl border border-indigo-500/10 bg-indigo-950/[0.02] p-4.5 space-y-3 relative overflow-hidden transition-all hover:border-indigo-500/20 hover:bg-indigo-950/[0.04]">
+    <CardSurface variant="glass" hover noPadding className="p-4.5 space-y-3">
       <div className="absolute top-0 right-0 bg-indigo-500/10 border-l border-b border-indigo-500/20 px-2.5 py-0.5 rounded-bl-xl text-[9px] font-bold text-indigo-400">
         {confidence}% CONFIDENCE
       </div>
@@ -129,7 +131,7 @@ const AIInsightCard = React.memo(function AIInsightCard({
         <span>IMPACT: <strong className={impact === "High" ? "text-cyan-400" : "text-amber-400"}>{impact}</strong></span>
         <span>ENGINE // LIVE DEPLOYMENT</span>
       </div>
-    </div>
+    </CardSurface>
   );
 });
 
@@ -151,9 +153,14 @@ const ActionRowItem = React.memo(function ActionRowItem({
   const isDone = action.status === "completed";
 
   return (
-    <div className={`p-3.5 rounded-xl border transition-all flex items-start gap-3 justify-between ${
-      isDone ? "border-emerald-500/10 bg-emerald-950/[0.01]" : "border-white/5 bg-slate-950/30 hover:border-white/10"
-    }`}>
+    <CardSurface
+      variant="glass"
+      hover={!isDone}
+      noPadding
+      className={`p-3.5 border transition-all flex items-start gap-3 justify-between ${
+        isDone ? "border-emerald-500/10 bg-emerald-950/[0.01]" : "border-white/5 bg-slate-950/30"
+      }`}
+    >
       <button 
         onClick={() => onToggle(action.id)}
         className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border border-slate-700 hover:border-cyan-400 transition"
@@ -176,7 +183,7 @@ const ActionRowItem = React.memo(function ActionRowItem({
           {action.description}
         </p>
       </div>
-    </div>
+    </CardSurface>
   );
 });
 
@@ -260,36 +267,22 @@ export function CommunityIntelligenceWorkspace({ profile }: CommunityIntelligenc
 
 
       {/* --- Dashboard Header --- */}
-      <div className="relative rounded-[24px] border border-cyan-500/10 bg-slate-950/45 p-6 backdrop-blur-md overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 opacity-[0.03] [background-image:linear-gradient(to_right,#22d3ee_1px,transparent_1px),linear-gradient(to_bottom,#22d3ee_1px,transparent_1px)] [background-size:16px_16px]" />
-        
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 relative z-10">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
-              <p className="text-[10px] font-mono tracking-widest text-cyan-400 uppercase">CSI Dashboard // Live Analytics Engine</p>
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-              <Shield className="h-6 w-6 text-cyan-400" />
-              Community Support Intelligence
-            </h1>
-            <p className="text-xs text-slate-400 max-w-xl">
-              Cross-referencing real-time regional support directories, active student career milestones, and agentic workflows for {profile?.full_name || "our developers"}.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2.5 self-start sm:self-center shrink-0">
-            <button
-              onClick={loadDashboardData}
-              disabled={loading}
-              className="h-9 w-9 rounded-xl bg-slate-900 border border-white/5 hover:border-cyan-500/30 flex items-center justify-center text-slate-400 hover:text-white transition shrink-0"
-              title="Reload Statistics"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin text-cyan-400" : ""}`} />
-            </button>
-          </div>
-        </div>
-      </div>
+      <PageHero
+        badge="CSI Dashboard // Live Analytics Engine"
+        title="Community Support Intelligence"
+        subtitle={`Cross-referencing real-time regional support directories, active student career milestones, and agentic workflows for ${profile?.full_name || "our developers"}.`}
+        actions={
+          <button
+            onClick={loadDashboardData}
+            disabled={loading}
+            style={{ ...buttonStyle("ghost"), height: "36px", width: "36px", padding: 0 }}
+            className="flex items-center justify-center text-slate-400 hover:text-white transition shrink-0"
+            title="Reload Statistics"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin text-cyan-400" : ""}`} />
+          </button>
+        }
+      />
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-40 gap-3">
@@ -304,7 +297,8 @@ export function CommunityIntelligenceWorkspace({ profile }: CommunityIntelligenc
           <p className="text-xs text-red-200 font-bold uppercase tracking-wider text-center">{error}</p>
           <button 
             onClick={loadDashboardData}
-            className="px-4 py-1.5 bg-red-900/40 hover:bg-red-900/60 border border-red-500/20 text-xs font-semibold rounded-lg text-white transition"
+            style={buttonStyle("danger")}
+            className="px-4 text-xs text-white"
           >
             Retry Sync
           </button>
@@ -354,7 +348,7 @@ export function CommunityIntelligenceWorkspace({ profile }: CommunityIntelligenc
 
             {/* Custom SVG Distribution Chart */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-4">
-              <div className="lg:col-span-8 bg-slate-900/20 border border-white/5 p-5 rounded-2xl flex flex-col justify-between">
+              <CardSurface variant="surface" noPadding className="lg:col-span-8 p-5 flex flex-col justify-between">
                 <div>
                   <h3 className="text-xs font-bold text-white uppercase tracking-wider">Resource Allocation Spectrum</h3>
                   <p className="text-[10px] text-slate-400 mt-0.5">Distribution breakdown by support classification category</p>
@@ -387,10 +381,10 @@ export function CommunityIntelligenceWorkspace({ profile }: CommunityIntelligenc
                     );
                   })}
                 </div>
-              </div>
+              </CardSurface>
 
               {/* District Health Indexes details */}
-              <div className="lg:col-span-4 bg-slate-900/20 border border-white/5 p-5 rounded-2xl flex flex-col justify-between">
+              <CardSurface variant="surface" noPadding className="lg:col-span-4 p-5 flex flex-col justify-between">
                 <div className="space-y-1">
                   <h3 className="text-xs font-bold text-white uppercase tracking-wider">Proximity Density</h3>
                   <p className="text-[10px] text-slate-400">Total programs located outside online directories</p>
@@ -408,7 +402,7 @@ export function CommunityIntelligenceWorkspace({ profile }: CommunityIntelligenc
                     <span>Offline Database: Seeded</span>
                   </div>
                 </div>
-              </div>
+              </CardSurface>
             </div>
           </section>
 
@@ -416,7 +410,7 @@ export function CommunityIntelligenceWorkspace({ profile }: CommunityIntelligenc
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
             {/* Demand Intelligence Panel */}
-            <div className="bg-slate-900/20 border border-white/5 p-5 rounded-2xl space-y-4">
+            <CardSurface variant="surface" noPadding className="p-5 space-y-4">
               <div className="flex justify-between items-center border-b border-white/5 pb-2">
                 <div className="flex items-center gap-1.5">
                   <Eye className="h-4.5 w-4.5 text-cyan-400" />
@@ -458,10 +452,10 @@ export function CommunityIntelligenceWorkspace({ profile }: CommunityIntelligenc
                   })}
                 </div>
               </div>
-            </div>
+            </CardSurface>
 
             {/* Community Trends & Workflow Metrics */}
-            <div className="bg-slate-900/20 border border-white/5 p-5 rounded-2xl space-y-4">
+            <CardSurface variant="surface" noPadding className="p-5 space-y-4">
               <div className="flex justify-between items-center border-b border-white/5 pb-2">
                 <div className="flex items-center gap-1.5">
                   <TrendingUp className="h-4.5 w-4.5 text-cyan-400" />
@@ -496,11 +490,11 @@ export function CommunityIntelligenceWorkspace({ profile }: CommunityIntelligenc
                   <CheckCircle2 className="h-3.5 w-3.5" /> Normal Execution
                 </div>
               </div>
-            </div>
+            </CardSurface>
           </section>
 
           {/* --- Section 3b: Demand Forecast (Predictive Modeling) --- */}
-          <section className="bg-slate-900/20 border border-white/5 p-5 rounded-2xl space-y-4">
+          <CardSurface tag="section" variant="surface" noPadding className="p-5 space-y-4">
             <div className="flex justify-between items-center border-b border-white/5 pb-2">
               <div className="flex items-center gap-1.5">
                 <TrendingUp className="h-4.5 w-4.5 text-indigo-400" />
@@ -514,10 +508,10 @@ export function CommunityIntelligenceWorkspace({ profile }: CommunityIntelligenc
               30-day demand projection per need category. Computed via linear regression on weekly report volumes.
             </p>
             <DemandForecastSection />
-          </section>
+          </CardSurface>
 
           {/* --- Section 4: Underserved Areas (Gap Mapping) --- */}
-          <section className="bg-slate-900/20 border border-white/5 p-5 rounded-2xl space-y-4">
+          <CardSurface tag="section" variant="surface" noPadding className="p-5 space-y-4">
             <div className="flex justify-between items-center border-b border-white/5 pb-2">
               <div className="flex items-center gap-1.5">
                 <AlertTriangle className="h-4.5 w-4.5 text-rose-500" />
@@ -530,11 +524,17 @@ export function CommunityIntelligenceWorkspace({ profile }: CommunityIntelligenc
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-h-[160px] overflow-y-auto pr-1">
               {data.underservedAreas.map((gap, i) => (
-                <div key={i} className={`p-3 rounded-xl border flex flex-col justify-between gap-2 transition ${
-                  gap.gapLevel === "critical" 
-                    ? "border-rose-500/20 bg-rose-950/[0.02] hover:border-rose-500/30" 
-                    : "border-amber-500/20 bg-amber-950/[0.02] hover:border-amber-500/30"
-                }`}>
+                <CardSurface
+                  key={i}
+                  variant="glass"
+                  hover
+                  noPadding
+                  className={`p-3 border flex flex-col justify-between gap-2 transition ${
+                    gap.gapLevel === "critical" 
+                      ? "border-rose-500/20 bg-rose-950/[0.02]" 
+                      : "border-amber-500/20 bg-amber-950/[0.02]"
+                  }`}
+                >
                   <div>
                     <div className="flex items-center gap-1">
                       <MapPin className="h-3 w-3 text-slate-400" />
@@ -549,7 +549,7 @@ export function CommunityIntelligenceWorkspace({ profile }: CommunityIntelligenc
                   }`}>
                     {gap.gapLevel === "critical" ? "Critical (0)" : "Low Density (1)"}
                   </span>
-                </div>
+                </CardSurface>
               ))}
               {data.underservedAreas.length === 0 && (
                 <div className="col-span-full py-6 text-center text-[10px] text-slate-500 border border-dashed border-white/5 rounded-xl">
@@ -557,7 +557,7 @@ export function CommunityIntelligenceWorkspace({ profile }: CommunityIntelligenc
                 </div>
               )}
             </div>
-          </section>
+          </CardSurface>
 
           {/* --- Section 5: AI Insights (Pattern Detection & Predictive Modeling) --- */}
           <section className="space-y-4">
@@ -581,7 +581,7 @@ export function CommunityIntelligenceWorkspace({ profile }: CommunityIntelligenc
           </section>
 
           {/* --- Section 6: Recommended Actions (Strategic Tasks) --- */}
-          <section className="bg-slate-900/20 border border-white/5 p-5 rounded-2xl space-y-4">
+          <CardSurface tag="section" variant="surface" noPadding className="p-5 space-y-4">
             <div className="flex justify-between items-center border-b border-white/5 pb-2">
               <div className="flex items-center gap-1.5">
                 <Settings className="h-4.5 w-4.5 text-cyan-400" />
@@ -601,50 +601,44 @@ export function CommunityIntelligenceWorkspace({ profile }: CommunityIntelligenc
                 />
               ))}
             </div>
-          </section>
+          </CardSurface>
 
         </Suspense>
       )}
 
       {/* --- Tactical Sub-Route Shortcuts Footer --- */}
       <section className="border-t border-white/5 pt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 relative z-10">
-        <Link
-          href="/support-navigator"
-          prefetch={true}
-          className="p-4 rounded-xl bg-slate-950/30 border border-white/5 hover:border-cyan-500/20 text-left transition group"
-        >
-          <div className="flex justify-between items-start">
-            <Compass className="h-5 w-5 text-cyan-400" />
-            <ArrowUpRight className="h-4 w-4 text-slate-500 group-hover:text-white transition" />
-          </div>
-          <h4 className="text-xs font-bold text-white mt-2.5">Open Match Engine</h4>
-          <p className="text-[10px] text-slate-500 mt-1">Calibrate proximity eligibility & custom plans.</p>
+        <Link href="/support-navigator" prefetch={true} className="group">
+          <CardSurface variant="glass" hover noPadding className="p-4 text-left transition h-full">
+            <div className="flex justify-between items-start">
+              <Compass className="h-5 w-5 text-cyan-400" />
+              <ArrowUpRight className="h-4 w-4 text-slate-500 group-hover:text-white transition" />
+            </div>
+            <h4 className="text-xs font-bold text-white mt-2.5">Open Match Engine</h4>
+            <p className="text-[10px] text-slate-500 mt-1">Calibrate proximity eligibility & custom plans.</p>
+          </CardSurface>
         </Link>
 
-        <Link
-          href="/resource-discovery"
-          prefetch={true}
-          className="p-4 rounded-xl bg-slate-950/30 border border-white/5 hover:border-cyan-500/20 text-left transition group"
-        >
-          <div className="flex justify-between items-start">
-            <MapPin className="h-5 w-5 text-cyan-400" />
-            <ArrowUpRight className="h-4 w-4 text-slate-500 group-hover:text-white transition" />
-          </div>
-          <h4 className="text-xs font-bold text-white mt-2.5">Explore Proximity Map</h4>
-          <p className="text-[10px] text-slate-500 mt-1">Directly query regional databases.</p>
+        <Link href="/resource-discovery" prefetch={true} className="group">
+          <CardSurface variant="glass" hover noPadding className="p-4 text-left transition h-full">
+            <div className="flex justify-between items-start">
+              <MapPin className="h-5 w-5 text-cyan-400" />
+              <ArrowUpRight className="h-4 w-4 text-slate-500 group-hover:text-white transition" />
+            </div>
+            <h4 className="text-xs font-bold text-white mt-2.5">Explore Proximity Map</h4>
+            <p className="text-[10px] text-slate-500 mt-1">Directly query regional databases.</p>
+          </CardSurface>
         </Link>
 
-        <Link
-          href="/community-command-center"
-          prefetch={true}
-          className="p-4 rounded-xl bg-cyan-950/10 border border-cyan-500/15 hover:border-cyan-500/30 text-left transition group"
-        >
-          <div className="flex justify-between items-start">
-            <Zap className="h-5 w-5 text-cyan-400" />
-            <ArrowUpRight className="h-4 w-4 text-slate-500 group-hover:text-white transition" />
-          </div>
-          <h4 className="text-xs font-bold text-white mt-2.5">Command Center</h4>
-          <p className="text-[10px] text-slate-500 mt-1">NASA-style live operations dashboard.</p>
+        <Link href="/community-command-center" prefetch={true} className="group">
+          <CardSurface variant="glass" hover noPadding className="p-4 text-left transition h-full">
+            <div className="flex justify-between items-start">
+              <Zap className="h-5 w-5 text-cyan-400" />
+              <ArrowUpRight className="h-4 w-4 text-slate-500 group-hover:text-white transition" />
+            </div>
+            <h4 className="text-xs font-bold text-white mt-2.5">Command Center</h4>
+            <p className="text-[10px] text-slate-500 mt-1">NASA-style live operations dashboard.</p>
+          </CardSurface>
         </Link>
       </section>
 
@@ -712,7 +706,12 @@ export function DemandForecastSection() {
         const isUp = f.percent_change > 0;
 
         return (
-          <div key={f.category} className={`p-4 rounded-xl border bg-gradient-to-br ${tr.bg.replace("border-", "")} border space-y-3`}>
+          <CardSurface
+            key={f.category}
+            variant="glass"
+            noPadding
+            className={`p-4 border bg-gradient-to-br ${tr.bg.replace("border-", "")} space-y-3`}
+          >
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold text-white">{f.label}</span>
               <div className={`flex items-center gap-1 text-[9px] font-bold ${tr.color}`}>
@@ -741,7 +740,7 @@ export function DemandForecastSection() {
                 <p className="text-[9px] text-slate-500">Predicted (30d)</p>
               </div>
             </div>
-          </div>
+          </CardSurface>
         );
       })}
     </div>

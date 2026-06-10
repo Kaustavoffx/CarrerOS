@@ -1,8 +1,70 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Search, MapPin, CheckCircle2, ArrowRight } from "lucide-react";
 import { useCommunitySupport, TARGET_CITIES } from "./community-support-context";
+import { CardSurface } from "@/components/ui";
+import { buttonStyle, inputStyle } from "@/styles/careeros-design-system";
+
+// ─── Design Input Wrappers ───────────────────────────────────────────────────
+
+function DesignInput({ className = "", style, ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+  const [isFocused, setIsFocused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const state = isFocused ? "focus" : isHovered ? "hover" : "base";
+  return (
+    <input
+      {...props}
+      style={{ ...inputStyle(state), ...style }}
+      onFocus={(e) => {
+        setIsFocused(true);
+        props.onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        setIsFocused(false);
+        props.onBlur?.(e);
+      }}
+      onMouseEnter={(e) => {
+        setIsHovered(true);
+        props.onMouseEnter?.(e);
+      }}
+      onMouseLeave={(e) => {
+        setIsHovered(false);
+        props.onMouseLeave?.(e);
+      }}
+      className={className}
+    />
+  );
+}
+
+function DesignSelect({ className = "", style, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  const [isFocused, setIsFocused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const state = isFocused ? "focus" : isHovered ? "hover" : "base";
+  return (
+    <select
+      {...props}
+      style={{ ...inputStyle(state), ...style }}
+      onFocus={(e) => {
+        setIsFocused(true);
+        props.onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        setIsFocused(false);
+        props.onBlur?.(e);
+      }}
+      onMouseEnter={(e) => {
+        setIsHovered(true);
+        props.onMouseEnter?.(e);
+      }}
+      onMouseLeave={(e) => {
+        setIsHovered(false);
+        props.onMouseLeave?.(e);
+      }}
+      className={className}
+    />
+  );
+}
 
 export function ResourceDiscoveryWorkspace() {
   const {
@@ -16,23 +78,24 @@ export function ResourceDiscoveryWorkspace() {
   } = useCommunitySupport();
 
   return (
-    <div className="rounded-2xl border border-white/5 bg-slate-900/20 p-5 space-y-4">
-      <div className="flex flex-col sm:flex-row gap-3">
+    <CardSurface variant="surface" className="p-5 space-y-4" noPadding>
+      <div className="flex flex-col sm:flex-row gap-3 p-5 pb-0">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-          <input
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 z-10" />
+          <DesignInput
             type="text"
             placeholder="Search resources, tags, or cities..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-950 border border-white/10 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+            style={{ paddingLeft: "2.25rem" }}
+            className="w-full text-xs text-white placeholder-slate-500"
           />
         </div>
         <div className="flex gap-2">
-          <select
+          <DesignSelect
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-cyan-500"
+            className="text-xs text-slate-300"
           >
             <option value="all">All Sectors</option>
             <option value="scholarship">Scholarships</option>
@@ -41,11 +104,11 @@ export function ResourceDiscoveryWorkspace() {
             <option value="scheme">Government Schemes</option>
             <option value="center">Learning Centers</option>
             <option value="wellness">Wellness Support</option>
-          </select>
-          <select
+          </DesignSelect>
+          <DesignSelect
             value={selectedCityFilter}
             onChange={(e) => setSelectedCityFilter(e.target.value)}
-            className="bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-cyan-500"
+            className="text-xs text-slate-300"
           >
             <option value="all">All Cities</option>
             {TARGET_CITIES.map((city) => (
@@ -53,18 +116,18 @@ export function ResourceDiscoveryWorkspace() {
                 {city}
               </option>
             ))}
-          </select>
+          </DesignSelect>
         </div>
       </div>
 
-      <div className="space-y-4 max-h-[440px] overflow-y-auto pr-1">
+      <div className="space-y-4 max-h-[440px] overflow-y-auto pr-1 p-5 pt-0">
         {filteredResources.length === 0 ? (
           <div className="text-center py-10 bg-slate-950/20 rounded-xl border border-dashed border-white/5">
             <p className="text-xs text-slate-500">No support facilities found matching the filters.</p>
           </div>
         ) : (
           filteredResources.map((res) => (
-            <div key={res.id} className="rounded-xl border border-white/5 bg-slate-950/45 p-4 space-y-3">
+            <CardSurface key={res.id} variant="glass" className="p-4 space-y-3" noPadding>
               <div className="flex justify-between items-start gap-2">
                 <div>
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -109,16 +172,25 @@ export function ResourceDiscoveryWorkspace() {
                   href={res.application_link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[10px] font-bold text-cyan-400 hover:text-cyan-300 inline-flex items-center gap-1 bg-cyan-950/20 border border-cyan-400/20 px-3 py-1 rounded"
+                  style={{
+                    ...buttonStyle("secondary"),
+                    height: "28px",
+                    fontSize: "10px",
+                    padding: "0 10px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                  className="font-bold"
                 >
                   Apply Externally
                   <ArrowRight className="h-3 w-3" />
                 </a>
               </div>
-            </div>
+            </CardSurface>
           ))
         )}
       </div>
-    </div>
+    </CardSurface>
   );
 }

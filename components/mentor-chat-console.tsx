@@ -14,6 +14,68 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { generateId } from "@/lib/id";
 import { updateWorkspace, updateProfile } from "@/lib/app-data";
 import type { ChatMessage, UserProfileRecord, WorkspaceSnapshotRecord } from "@/lib/supabase/types";
+import { PageHero, CardSurface } from "@/components/ui";
+import { buttonStyle, inputStyle } from "@/styles/careeros-design-system";
+
+// ─── Design Input Wrappers ───────────────────────────────────────────────────
+
+function DesignInput({ className = "", ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+  const [isFocused, setIsFocused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const state = isFocused ? "focus" : isHovered ? "hover" : "base";
+  return (
+    <input
+      {...props}
+      style={{ ...inputStyle(state), ...props.style }}
+      onFocus={(e) => {
+        setIsFocused(true);
+        props.onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        setIsFocused(false);
+        props.onBlur?.(e);
+      }}
+      onMouseEnter={(e) => {
+        setIsHovered(true);
+        props.onMouseEnter?.(e);
+      }}
+      onMouseLeave={(e) => {
+        setIsHovered(false);
+        props.onMouseLeave?.(e);
+      }}
+      className={className}
+    />
+  );
+}
+
+function DesignTextarea({ className = "", ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const [isFocused, setIsFocused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const state = isFocused ? "focus" : isHovered ? "hover" : "base";
+  return (
+    <textarea
+      {...props}
+      style={{ ...inputStyle(state), ...props.style }}
+      onFocus={(e) => {
+        setIsFocused(true);
+        props.onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        setIsFocused(false);
+        props.onBlur?.(e);
+      }}
+      onMouseEnter={(e) => {
+        setIsHovered(true);
+        props.onMouseEnter?.(e);
+      }}
+      onMouseLeave={(e) => {
+        setIsHovered(false);
+        props.onMouseLeave?.(e);
+      }}
+      className={className}
+    />
+  );
+}
 
 type MentorChatConsoleProps = {
   profile: UserProfileRecord | null;
@@ -438,43 +500,45 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
           <div className="space-y-3 text-xs bg-[#0b0b0e] p-3 rounded-xl border border-white/5">
             <div>
               <label className="block text-[9px] text-slate-400 font-bold uppercase mb-1">Target Goal</label>
-              <input
+              <DesignInput
                 type="text"
                 value={editGoal}
                 onChange={e => setEditGoal(e.target.value)}
-                className="carved-input w-full px-2 py-1 text-xs rounded-lg"
+                className="w-full"
               />
             </div>
             <div>
               <label className="block text-[9px] text-slate-400 font-bold uppercase mb-1">Weekly Capacity</label>
-              <input
+              <DesignInput
                 type="text"
                 value={editTimeAvailability}
                 onChange={e => setEditTimeAvailability(e.target.value)}
-                className="carved-input w-full px-2 py-1 text-xs rounded-lg"
+                className="w-full"
               />
             </div>
             <div>
               <label className="block text-[9px] text-slate-400 font-bold uppercase mb-1">Weekly Hours</label>
-              <input
+              <DesignInput
                 type="number"
                 value={editWeeklyHours}
                 onChange={e => setEditWeeklyHours(e.target.value)}
-                className="carved-input w-full px-2 py-1 text-xs rounded-lg"
+                className="w-full"
               />
             </div>
             <div className="flex gap-1.5 justify-end pt-1">
               <button
                 type="button"
                 onClick={() => setIsEditingContext(false)}
-                className="text-[10px] font-semibold text-slate-400 px-2 py-1 hover:text-white"
+                style={buttonStyle("ghost")}
+                className="text-[10px] px-2.5 py-1 font-bold text-slate-400"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={saveContext}
-                className="text-[10px] font-bold text-black bg-cyan-400 px-3 py-1 rounded-md"
+                style={buttonStyle("primary")}
+                className="text-[10px] px-3 py-1 font-bold text-black"
               >
                 Save
               </button>
@@ -598,9 +662,16 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
           ].map((rec) => {
             const isChecked = checkedRecs[rec.id] ?? false;
             return (
-              <div key={rec.id} className={`border p-3 rounded-xl transition ${
-                isChecked ? "border-cyan-500/10 bg-cyan-950/[0.01] text-slate-500" : "border-white/5 bg-black/20 hover:border-cyan-400/25"
-              }`}>
+              <CardSurface
+                key={rec.id}
+                tag="div"
+                variant="glass"
+                hover={!isChecked}
+                noPadding
+                className={`p-3 border transition ${
+                  isChecked ? "border-cyan-500/10 bg-cyan-950/[0.01] text-slate-500" : "border-white/5 bg-black/20"
+                }`}
+              >
                 <div className="flex items-start gap-2.5">
                   <button
                     onClick={() => setCheckedRecs(prev => ({ ...prev, [rec.id]: !prev[rec.id] }))}
@@ -622,19 +693,22 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
                       <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5 mt-2">
                         <button
                           onClick={() => handleRecommendationClick(rec.query, "coach")}
-                          className="text-[9px] text-cyan-400 font-bold hover:underline"
+                          style={{ ...buttonStyle("secondary"), height: "24px", padding: "0 8px", fontSize: "9px" }}
+                          className="font-bold"
                         >
                           Ask AI
                         </button>
                         <button
                           onClick={() => void addToRoadmap(rec.action)}
-                          className="text-[9px] text-indigo-400 font-bold hover:underline"
+                          style={{ ...buttonStyle("ghost"), height: "24px", padding: "0 8px", fontSize: "9px" }}
+                          className="font-bold"
                         >
                           + Roadmap
                         </button>
                         <button
                           onClick={() => void saveNote(rec.action + ": " + rec.impact)}
-                          className="text-[9px] text-slate-400 font-bold hover:underline"
+                          style={{ ...buttonStyle("ghost"), height: "24px", padding: "0 8px", fontSize: "9px" }}
+                          className="font-bold text-slate-400"
                         >
                           Save Note
                         </button>
@@ -642,7 +716,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
                     )}
                   </div>
                 </div>
-              </div>
+              </CardSurface>
             );
           })}
         </div>
@@ -661,8 +735,15 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
     <div className="min-h-screen text-slate-200 max-w-[1440px] mx-auto relative px-4 sm:px-6">
       <div className="absolute inset-x-0 top-0 -z-10 h-80 bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.03),transparent_50%)]" />
 
+      <PageHero
+        badge="AI mentor advisor console"
+        title="AI Career Mentor"
+        subtitle="Advanced simulator boards, coaching engines & resume reviewer tools"
+        status={MENTOR_LOCKED ? "beta" : "live"}
+      />
+
       {/* Relative wrapper for lock overlay positioning */}
-      <div className="relative min-h-[70vh] flex flex-col">
+      <div className="relative min-h-[70vh] flex flex-col mt-6">
         
         {/* Main console content, blurred if locked */}
         <div className={`flex-1 flex flex-col transition-all duration-[400ms] ${
@@ -674,7 +755,8 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
         <button
           type="button"
           onClick={() => setIsLeftDrawerOpen(true)}
-          className="tactile-btn flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-slate-300 rounded-xl flex-1"
+          style={buttonStyle("ghost")}
+          className="flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-slate-300 rounded-xl flex-1"
         >
           <Brain className="h-4 w-4 text-cyan-400" />
           Context Memory
@@ -682,7 +764,8 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
         <button
           type="button"
           onClick={() => setIsRightDrawerOpen(true)}
-          className="tactile-btn flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-slate-300 rounded-xl flex-1"
+          style={buttonStyle("ghost")}
+          className="flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-slate-300 rounded-xl flex-1"
         >
           <Zap className="h-4 w-4 text-cyan-400" />
           Action Center
@@ -733,15 +816,18 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
       <div className="grid grid-cols-1 lg:grid-cols-[20%_55%_25%] gap-6 pb-20 items-start">
         
         {/* LEFT COLUMN: Context Memory Sidebar */}
-        <aside className="hidden lg:block space-y-6 card-data p-5.5 shadow-xl">
-          {renderLeftSidebarContent()}
+        <aside className="hidden lg:block">
+          <CardSurface variant="surface" className="space-y-6 p-5.5 shadow-xl">
+            {renderLeftSidebarContent()}
+          </CardSurface>
         </aside>
 
         {/* CENTER COLUMN: Chat Interface */}
-        <main className="flex flex-col min-h-[580px] bg-white/[0.02] border border-white/[0.08] backdrop-blur-xl rounded-[28px] p-5 sm:p-6 shadow-2xl relative">
-          
-          {/* Conversation Header: CareerOS Strategist */}
-          <div className="flex items-center gap-2.5 pb-3 mb-3 border-b border-white/5">
+        <main className="flex flex-col">
+          <CardSurface variant="surface" className="flex-1 flex flex-col p-5 sm:p-6 min-h-[580px] shadow-2xl relative">
+            
+            {/* Conversation Header: CareerOS Strategist */}
+            <div className="flex items-center gap-2.5 pb-3 mb-3 border-b border-white/5">
             <Image src="/logo.png" alt="CareerOS" width={22} height={22} className="object-contain" />
             <div>
               <h3 className="text-xs font-bold text-white uppercase tracking-wider">CareerOS Strategist</h3>
@@ -782,8 +868,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
             
             {/* ═══ SPOTLIGHT CARD 1: AI STRATEGIST INSIGHT ════════════════════ */}
             {activeInsights.length > 0 && (
-              <article className="card-spotlight rounded-[24px] p-5 mb-5 relative overflow-hidden">
-                <div className="absolute top-0 right-0 h-32 w-48 bg-cyan-400/5 rounded-full blur-3xl pointer-events-none" />
+              <CardSurface tag="article" variant="glass" dust="tr" className="p-5 mb-5">
                 <div className="relative z-10 flex items-start gap-3.5">
                   <Image src="/logo.png" alt="Strategist" width={18} height={18} className="shrink-0 mt-0.5" />
                   <div className="space-y-1.5 flex-1 text-xs">
@@ -795,16 +880,16 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
                     </ul>
                   </div>
                 </div>
-              </article>
+              </CardSurface>
             )}
 
             {pinnedMessageId && activeThread && (
-              <div className="relative z-10 rounded-2xl border border-cyan-400/25 bg-[#082f49]/60 p-4 mb-4 text-xs text-cyan-200">
+              <CardSurface variant="glass" className="border-cyan-400/25 bg-[#082f49]/60 p-4 mb-4 text-xs text-cyan-200">
                 <p className="caption text-cyan-400 font-bold uppercase tracking-wider mb-1">Pinned Strategy</p>
                 <p className="italic font-semibold">
                   {activeThread.messages.find(m => m.id === pinnedMessageId)?.content.slice(0, 100)}...
                 </p>
-              </div>
+              </CardSurface>
             )}
 
             {/* Chat Messages */}
@@ -942,18 +1027,19 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
                   <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider shrink-0 pl-1">
                     {inlineEditAccount === "resume" ? "Resume" : "GitHub"} URL:
                   </span>
-                  <input
+                  <DesignInput
                     type="text"
                     value={inlineUrlVal}
                     onChange={(e) => setInlineUrlVal(e.target.value)}
-                    className="carved-input flex-1 text-xs px-2.5 py-1.5 text-white"
+                    className="flex-1 text-xs text-white"
                     placeholder="https://..."
                   />
                   <div className="flex gap-1">
                     <button
                       type="button"
                       onClick={() => setInlineEditAccount(null)}
-                      className="text-[10px] font-bold px-2.5 py-1.5 rounded text-slate-400 hover:text-white"
+                      style={{ ...buttonStyle("ghost"), height: "28px", padding: "0 10px", fontSize: "10px" }}
+                      className="font-bold text-slate-400"
                     >
                       Cancel
                     </button>
@@ -968,7 +1054,8 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
                         setInlineEditAccount(null);
                         showToast(`${inlineEditAccount === "resume" ? "Resume" : "GitHub"} URL linked.`);
                       }}
-                      className="text-[10px] font-extrabold px-3 py-1.5 rounded bg-cyan-400 text-black hover:bg-cyan-300 transition-colors"
+                      style={{ ...buttonStyle("primary"), height: "28px", padding: "0 12px", fontSize: "10px" }}
+                      className="font-extrabold text-black"
                     >
                       Save
                     </button>
@@ -977,17 +1064,18 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
               )}
 
               {/* Chat Input */}
-              <form onSubmit={handleSendMessage} className="flex items-center gap-3 relative p-1.5 mentor-input-dock rounded-[20px]">
-                <input
+              <form onSubmit={handleSendMessage} className="flex items-center gap-3 relative p-1.5 mentor-input-dock rounded-[20px] w-full">
+                <DesignInput
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Ask advisor about roadmap, resume review, mock interviews, or project specification..."
-                  className="w-full bg-transparent px-4 py-2.5 text-xs text-white outline-none border-none placeholder:text-slate-500"
+                  className="w-full bg-transparent px-4 py-2.5 text-xs text-white"
                 />
                 <MagneticButton asChild>
                   <button
                     type="submit"
-                    className="tactile-btn-primary h-10 w-10 rounded-xl text-black flex items-center justify-center shrink-0 transition"
+                    style={{ ...buttonStyle("primary"), width: "40px", height: "40px" }}
+                    className="rounded-xl text-black flex items-center justify-center shrink-0 transition"
                   >
                     <Send className="h-4 w-4" />
                   </button>
@@ -996,18 +1084,21 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
 
             </div>
           </div>
+          </CardSurface>
         </main>
 
         {/* RIGHT COLUMN: Action Center Sidebar */}
-        <aside className="hidden lg:block space-y-6 bg-[#08080a] border border-white/5 rounded-[24px] p-5.5 shadow-xl">
-          {renderRightSidebarContent()}
+        <aside className="hidden lg:block">
+          <CardSurface variant="surface" className="space-y-6 p-5.5 shadow-xl">
+            {renderRightSidebarContent()}
+          </CardSurface>
         </aside>
 
       </div>
 
       {/* Pinned Insights bottom log */}
       {savedInsights.length > 0 && (
-        <section className="card-data rounded-[24px] p-5 shadow-xl mb-20 max-w-[1440px] mx-auto border border-white/5">
+        <CardSurface tag="section" variant="surface" className="mb-20 max-w-[1440px] mx-auto">
           <div className="flex items-center gap-2 border-b border-white/5 pb-3 mb-4">
             <Star className="h-4.5 w-4.5 text-cyan-400" />
             <h4 className="text-xs font-bold text-white uppercase tracking-wider">
@@ -1028,7 +1119,7 @@ export function MentorChatConsole({ profile, workspace: initialWorkspace }: Ment
               </div>
             ))}
           </div>
-        </section>
+        </CardSurface>
       )}
         </div>
 

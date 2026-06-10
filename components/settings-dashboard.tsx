@@ -10,6 +10,39 @@ import { MagneticButton } from "./magnetic-button";
 import {
   Download, Check, User, X, Sliders, AlertTriangle
 } from "lucide-react";
+import { PageHero, CardSurface } from "@/components/ui";
+import { buttonStyle, inputStyle } from "@/styles/careeros-design-system";
+
+// ─── Design Input Wrapper ────────────────────────────────────────────────────
+
+function DesignInput({ className = "", ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+  const [isFocused, setIsFocused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const state = isFocused ? "focus" : isHovered ? "hover" : "base";
+  return (
+    <input
+      {...props}
+      style={{ ...inputStyle(state), ...props.style }}
+      onFocus={(e) => {
+        setIsFocused(true);
+        props.onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        setIsFocused(false);
+        props.onBlur?.(e);
+      }}
+      onMouseEnter={(e) => {
+        setIsHovered(true);
+        props.onMouseEnter?.(e);
+      }}
+      onMouseLeave={(e) => {
+        setIsHovered(false);
+        props.onMouseLeave?.(e);
+      }}
+      className={className}
+    />
+  );
+}
 
 type SettingsDashboardProps = {
   profile: UserProfileRecord | null;
@@ -221,12 +254,12 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
               This action is permanent and cannot be undone. Please type <span className="font-mono text-white font-bold bg-white/5 px-1.5 py-0.5 rounded">CONFIRM</span> to proceed.
             </p>
 
-            <input
+            <DesignInput
               type="text"
               value={dangerConfirmText}
               onChange={(e) => setDangerConfirmText(e.target.value)}
               placeholder="Type CONFIRM"
-              className="carved-input w-full text-xs rounded-lg px-3 py-2 text-white"
+              className="w-full text-xs text-white"
             />
 
             <div className="flex gap-3 pt-2">
@@ -255,8 +288,14 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
         </div>
       )}
 
+      <PageHero
+        badge="System Configuration Portal"
+        title="Workspace Settings"
+        subtitle="Manage AI integrations, account preferences, data backups, and diagnostic tools"
+      />
+
       {/* ═══ SECTION 1: SYSTEM AI PROVIDERS ═══════════════════════════════ */}
-      <section className="card-data rounded-xl p-6">
+      <CardSurface tag="section" variant="surface" className="p-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
@@ -272,7 +311,7 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
             {providers.map((p) => {
               const isManaging = showKeyInputs[p.provider];
               return (
-                <div key={p.provider} className="border border-white/[0.04] bg-white/[0.01] p-4 rounded-lg flex flex-col gap-3 transition">
+                <CardSurface key={p.provider} variant="glass" hover noPadding className="p-4 border border-white/[0.04] bg-white/[0.01] flex flex-col gap-3">
                   <div className="flex justify-between items-center">
                     <div>
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
@@ -291,16 +330,17 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
 
                   {isManaging && (
                     <div className="flex gap-2 pt-2">
-                      <input
+                      <DesignInput
                         type="password"
                         value={providerKeys[p.provider]}
                         onChange={e => setProviderKeys(prev => ({ ...prev, [p.provider]: e.target.value }))}
                         placeholder="Paste credential token..."
-                        className="carved-input flex-1 text-xs rounded-lg px-2.5 py-1.5"
+                        className="flex-1 text-xs"
                       />
                       <button
                         onClick={() => saveProviderKey(p.provider)}
-                        className="tactile-btn tactile-btn-primary px-3 py-1.5 text-[10px] rounded-lg font-bold"
+                        style={{ ...buttonStyle("primary"), height: "28px", padding: "0 12px", fontSize: "10px" }}
+                        className="font-bold text-black"
                       >
                         Save
                       </button>
@@ -310,28 +350,30 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
                   <div className="flex gap-2 pt-1">
                     <button
                       onClick={() => setShowKeyInputs(prev => ({ ...prev, [p.provider]: !isManaging }))}
-                      className="tactile-btn border border-white/5 bg-white/5 text-[10px] font-bold px-3 py-1.5 rounded-lg flex-1 text-white text-center"
+                      style={{ ...buttonStyle("ghost"), height: "32px", fontSize: "10px" }}
+                      className="font-bold flex-1 text-white text-center"
                     >
                       {p.connected ? "Update Key" : "Connect Key"}
                     </button>
                     {p.connected && (
                       <button
                         onClick={() => removeProviderKey(p.provider)}
-                        className="tactile-btn border border-rose-500/10 bg-rose-500/[0.02] text-rose-300 text-[10px] font-bold px-3 py-1.5 rounded-lg flex-1 text-center"
+                        style={{ ...buttonStyle("danger"), height: "32px", fontSize: "10px" }}
+                        className="font-bold flex-1 text-center"
                       >
                         Disconnect
                       </button>
                     )}
                   </div>
-                </div>
+                </CardSurface>
               );
             })}
           </div>
         </div>
-      </section>
+      </CardSurface>
 
       {/* ═══ SECTION 2: ACCOUNT PARAMETERS ═══════════════════════════════ */}
-      <section className="card-data rounded-xl p-6">
+      <CardSurface tag="section" variant="surface" className="p-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
@@ -347,11 +389,11 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
             <div className="grid gap-4 sm:grid-cols-2 text-xs">
               <label className="block">
                 <span className="text-slate-400 font-semibold block mb-1">Full Name</span>
-                <input
+                <DesignInput
                   type="text"
                   value={fullName}
                   onChange={e => setFullName(e.target.value)}
-                  className="carved-input w-full px-3 py-2 rounded-lg"
+                  className="w-full"
                 />
               </label>
 
@@ -361,17 +403,18 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
                   type="email"
                   value={userEmail || ""}
                   disabled
-                  className="carved-input w-full px-3 py-2 rounded-lg opacity-40 cursor-not-allowed"
+                  style={{ ...inputStyle("base"), opacity: 0.4, cursor: "not-allowed" }}
+                  className="w-full"
                 />
               </label>
 
               <label className="block">
                 <span className="text-slate-400 font-semibold block mb-1">Career Goal</span>
-                <input
+                <DesignInput
                   type="text"
                   value={goal}
                   onChange={e => setGoal(e.target.value)}
-                  className="carved-input w-full px-3 py-2 rounded-lg"
+                  className="w-full"
                 />
               </label>
 
@@ -380,7 +423,8 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
                 <select
                   value={experienceLevel}
                   onChange={e => setExperienceLevel(e.target.value as ExperienceLevel)}
-                  className="carved-input w-full px-2.5 py-2 rounded-lg"
+                  style={inputStyle("base")}
+                  className="w-full"
                 >
                   <option value="Student">Student</option>
                   <option value="Junior">Junior</option>
@@ -392,11 +436,11 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
 
               <label className="block sm:col-span-2">
                 <span className="text-slate-400 font-semibold block mb-1">Timezone Coordinates</span>
-                <input
+                <DesignInput
                   type="text"
                   value={timezone}
                   onChange={e => setTimezone(e.target.value)}
-                  className="carved-input w-full px-3 py-2 rounded-lg"
+                  className="w-full"
                 />
               </label>
             </div>
@@ -405,7 +449,8 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
               <button
                 onClick={saveAccountData}
                 disabled={savingAccount}
-                className="tactile-btn tactile-btn-primary w-full py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5"
+                style={buttonStyle("primary")}
+                className="w-full flex items-center justify-center gap-1.5"
               >
                 {savingAccount ? <span className="loading-spinner border-slate-900" /> : <Check className="h-4 w-4" />}
                 Save Account Parameters
@@ -413,10 +458,10 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
             </div>
           </div>
         </div>
-      </section>
+      </CardSurface>
 
       {/* ═══ SECTION 3: WORKSPACE PREFERENCES ════════════════════════════ */}
-      <section className="card-data rounded-xl p-6">
+      <CardSurface tag="section" variant="surface" className="p-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
@@ -435,7 +480,8 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
                 <select
                   value={theme}
                   onChange={e => setTheme(e.target.value)}
-                  className="carved-input w-full px-2.5 py-2 rounded-lg"
+                  style={inputStyle("base")}
+                  className="w-full"
                 >
                   <option value="dark">Dark Theme Premium (Default)</option>
                   <option value="light">Light Slate Glass</option>
@@ -499,16 +545,21 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
             </div>
 
             <div className="pt-2">
-              <MagneticButton type="button" onClick={savePreferences} className="tactile-btn w-full py-2.5 rounded-lg text-xs font-bold">
-                Save Workspace Preferences
+              <MagneticButton type="button" onClick={savePreferences} className="w-full">
+                <button
+                  style={buttonStyle("secondary")}
+                  className="w-full text-xs font-bold"
+                >
+                  Save Workspace Preferences
+                </button>
               </MagneticButton>
             </div>
           </div>
         </div>
-      </section>
+      </CardSurface>
 
       {/* ═══ SECTION 4: DATA PORTABILITY ═════════════════════════════════ */}
-      <section className="card-data rounded-xl p-6">
+      <CardSurface tag="section" variant="surface" className="p-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
@@ -522,36 +573,45 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
 
           <div className="lg:col-span-2">
             <div className="grid gap-3 sm:grid-cols-3 text-xs">
-              <button
+              <CardSurface
+                interactive
+                variant="glass"
+                noPadding
                 onClick={() => triggerExport("Profile data packet exported.")}
-                className="tactile-btn p-3 rounded-lg text-left text-white flex flex-col justify-between hover:bg-white/[0.08]"
+                className="p-3 text-left text-white flex flex-col justify-between hover:bg-white/[0.08] w-full"
               >
                 <span className="font-bold block text-[11px] leading-tight">Export Identity</span>
                 <span className="text-[9px] text-slate-500 block mt-2 font-mono">14.2 KB</span>
-              </button>
+              </CardSurface>
               
-              <button
+              <CardSurface
+                interactive
+                variant="glass"
+                noPadding
                 onClick={() => triggerExport("Curriculum roadmaps package compiled.")}
-                className="tactile-btn p-3 rounded-lg text-left text-white flex flex-col justify-between hover:bg-white/[0.08]"
+                className="p-3 text-left text-white flex flex-col justify-between hover:bg-white/[0.08] w-full"
               >
                 <span className="font-bold block text-[11px] leading-tight">Export Roadmaps</span>
                 <span className="text-[9px] text-slate-500 block mt-2 font-mono">450 KB</span>
-              </button>
+              </CardSurface>
               
-              <button
+              <CardSurface
+                interactive
+                variant="glass"
+                noPadding
                 onClick={() => triggerExport("Cloud backup synced successfully.")}
-                className="tactile-btn p-3 rounded-lg text-left text-white flex flex-col justify-between hover:bg-white/[0.08]"
+                className="p-3 text-left text-white flex flex-col justify-between hover:bg-white/[0.08] w-full"
               >
                 <span className="font-bold block text-[11px] leading-tight">Backup Snapshot</span>
                 <span className="text-[9px] text-slate-500 block mt-2 font-mono">Database JSON</span>
-              </button>
+              </CardSurface>
             </div>
           </div>
         </div>
-      </section>
+      </CardSurface>
 
       {/* ═══ SECTION 5: DANGER ZONE ══════════════════════════════════════ */}
-      <section className="card-danger rounded-xl p-6">
+      <CardSurface tag="section" variant="glass" className="border-rose-500/20 bg-rose-500/5 p-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
@@ -564,60 +624,64 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
           </div>
 
           <div className="lg:col-span-2 space-y-3 text-xs">
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 p-3 bg-rose-950/[0.04] border border-rose-500/10 rounded-lg">
+            <CardSurface variant="glass" noPadding className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 p-3 bg-rose-950/[0.04] border border-rose-500/10">
               <div>
                 <span className="font-bold text-white block">Reset Workspace Onboarding</span>
                 <span className="text-[10px] text-slate-500">Wipe assessment diagnostics to rerun the setup wizard.</span>
               </div>
               <button
                 onClick={() => setDangerModalAction("reset")}
-                className="tactile-btn border-rose-500/25 hover:bg-rose-500/10 text-rose-300 font-bold px-3 py-1.5 rounded-lg text-center"
+                style={{ ...buttonStyle("danger"), height: "28px", padding: "0 10px", fontSize: "10px" }}
+                className="font-bold text-center"
               >
                 Reset Setup
               </button>
-            </div>
+            </CardSurface>
 
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 p-3 bg-rose-950/[0.04] border border-rose-500/10 rounded-lg">
+            <CardSurface variant="glass" noPadding className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 p-3 bg-rose-950/[0.04] border border-rose-500/10">
               <div>
                 <span className="font-bold text-white block">Delete All Roadmaps</span>
                 <span className="text-[10px] text-slate-500">Wipe all generated paths, milestones, and logs.</span>
               </div>
               <button
                 onClick={() => setDangerModalAction("roadmaps")}
-                className="tactile-btn border-rose-500/25 hover:bg-rose-500/10 text-rose-300 font-bold px-3 py-1.5 rounded-lg text-center"
+                style={{ ...buttonStyle("danger"), height: "28px", padding: "0 10px", fontSize: "10px" }}
+                className="font-bold text-center"
               >
                 Delete Paths
               </button>
-            </div>
+            </CardSurface>
 
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 p-3 bg-rose-950/[0.04] border border-rose-500/10 rounded-lg">
+            <CardSurface variant="glass" noPadding className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 p-3 bg-rose-950/[0.04] border border-rose-500/10">
               <div>
                 <span className="font-bold text-white block">Clear Mentor Strategy History</span>
                 <span className="text-[10px] text-slate-500">Wipe all past chatbot and simulator logs.</span>
               </div>
               <button
                 onClick={() => setDangerModalAction("mentor")}
-                className="tactile-btn border-rose-500/25 hover:bg-rose-500/10 text-rose-300 font-bold px-3 py-1.5 rounded-lg text-center"
+                style={{ ...buttonStyle("danger"), height: "28px", padding: "0 10px", fontSize: "10px" }}
+                className="font-bold text-center"
               >
                 Clear Chats
               </button>
-            </div>
+            </CardSurface>
 
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 p-3 bg-rose-950/[0.04] border border-rose-500/10 rounded-lg">
+            <CardSurface variant="glass" noPadding className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 p-3 bg-rose-950/[0.04] border border-rose-500/10">
               <div>
                 <span className="font-bold text-rose-300 block">Terminate Operator Profile</span>
                 <span className="text-[10px] text-slate-500">Permanently terminate this profile account identity.</span>
               </div>
               <button
                 onClick={() => setDangerModalAction("account")}
-                className="tactile-btn border-rose-500/25 bg-rose-950/20 hover:bg-rose-950/40 text-rose-300 font-bold px-3 py-1.5 rounded-lg text-center"
+                style={{ ...buttonStyle("danger"), height: "28px", padding: "0 10px", fontSize: "10px" }}
+                className="font-bold text-center"
               >
                 Terminate Identity
               </button>
-            </div>
+            </CardSurface>
           </div>
         </div>
-      </section>
+      </CardSurface>
 
       {/* Export Success Modal */}
       {exportSuccessOpen && (

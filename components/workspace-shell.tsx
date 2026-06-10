@@ -30,6 +30,8 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { motion, useDragControls, AnimatePresence } from "framer-motion";
+import { CAREEROS, sidebarItemStyle } from "@/styles/careeros-design-system";
+import { LiquidDust } from "@/components/ui/liquid-dust";
 
 interface GuideContent {
   title: string;
@@ -307,7 +309,7 @@ function AvatarCircle({ name }: { name: string | null }) {
 interface NavItemConfig {
   label: string;
   href:  string;
-  icon:  React.ComponentType<{ className?: string }>;
+  icon:  React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
 }
 
 interface SidebarNavItemProps {
@@ -332,6 +334,21 @@ const SidebarNavItem = memo(function SidebarNavItem({
   onMouseLeave,
 }: SidebarNavItemProps) {
   const Icon = item.icon;
+  const state = active ? "active" : isHovered ? "hover" : "idle";
+  const baseStyle = sidebarItemStyle(state);
+
+  const linkStyle = {
+    ...baseStyle,
+    background: "transparent",
+    borderLeft: "none",
+    boxShadow: "none",
+    color: active 
+      ? CAREEROS.SIDEBAR.itemActive.color 
+      : isHovered 
+        ? "#cbd5e1" 
+        : CAREEROS.SIDEBAR.item.color,
+  };
+
   return (
     <Link
       href={item.href}
@@ -341,13 +358,12 @@ const SidebarNavItem = memo(function SidebarNavItem({
       onMouseEnter={() => onMouseEnter(item.href)}
       onMouseLeave={onMouseLeave}
       title={collapsed ? item.label : undefined}
+      style={linkStyle}
       className={[
         "sidebar-link-item lis-nav-item group",
-        "relative flex items-center gap-2.5",
-        "rounded-lg px-2.5 py-2 text-xs",
+        "relative flex items-center",
         "focus:outline-none focus:ring-1 focus:ring-cyan-500/40",
         collapsed ? "justify-center" : "",
-        active ? "text-white font-semibold" : "text-slate-500 hover:text-slate-300",
         isLoading ? "shimmer-loading-item" : "",
       ].join(" ")}
     >
@@ -357,10 +373,10 @@ const SidebarNavItem = memo(function SidebarNavItem({
           layoutId="active-indicator-desktop"
           className="absolute inset-0 -z-10"
           style={{
-            background:   "rgba(34,211,238,0.07)",
-            borderLeft:   "2px solid #22D3EE",
-            borderRadius: "0 10px 10px 0",
-            boxShadow:    "inset 0 1px 0 rgba(34,211,238,0.08), inset 0 0 12px rgba(34,211,238,0.03)",
+            background:   CAREEROS.SIDEBAR.itemActive.background,
+            borderLeft:   CAREEROS.SIDEBAR.itemActive.borderLeft,
+            borderRadius: CAREEROS.SIDEBAR.itemActive.borderRadius,
+            boxShadow:    CAREEROS.SIDEBAR.itemActive.boxShadow,
           }}
           transition={{ type: "spring", stiffness: 380, damping: 30 }}
         />
@@ -372,8 +388,8 @@ const SidebarNavItem = memo(function SidebarNavItem({
           layoutId="hover-indicator-desktop"
           className="absolute inset-0 -z-10"
           style={{
-            background:   "rgba(255,255,255,0.025)",
-            borderRadius: "8px",
+            background:   CAREEROS.SIDEBAR.itemHover.background,
+            borderRadius: CAREEROS.SIDEBAR.itemHover.borderRadius,
           }}
           transition={{ type: "spring", stiffness: 400, damping: 35 }}
         />
@@ -382,7 +398,11 @@ const SidebarNavItem = memo(function SidebarNavItem({
       {/* ── Icon ─────────────────────────────────────────────────── */}
       <div className="relative shrink-0 flex items-center justify-center">
         <Icon
-          className={`h-3.5 w-3.5 transition-colors duration-[150ms] ${
+          style={{
+            width: CAREEROS.SIDEBAR.item.iconSize,
+            height: CAREEROS.SIDEBAR.item.iconSize,
+          }}
+          className={`transition-colors duration-[150ms] ${
             active ? "text-cyan-300" : "text-slate-500 group-hover:text-slate-300"
           }`}
         />
@@ -595,7 +615,9 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
         style={{ willChange: "width" }}
         className="fixed left-4 top-4 bottom-4 z-30 hidden flex-col rounded-lis border-0 lis-sidebar xl:flex overflow-hidden"
       >
-        <div className="flex h-full flex-col">
+        <LiquidDust origin="tr" color="cyan" intensity={0.05} />
+        <LiquidDust origin="bl" color="indigo" intensity={0.06} />
+        <div className="flex h-full flex-col relative z-10">
           {/* Logo Header */}
           <div className={`flex items-center gap-3 px-4 py-4 border-b border-white/5 ${collapsed ? "justify-center" : ""}`}>
             <Image

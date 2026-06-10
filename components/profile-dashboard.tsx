@@ -10,6 +10,68 @@ import {
   Shield, Download, Activity, User, X,
   Compass, Link as LinkIcon, Globe, FileText, Settings, Trash2, Plus, Share2, Check
 } from "lucide-react";
+import { PageHero, CardSurface } from "@/components/ui";
+import { buttonStyle, inputStyle } from "@/styles/careeros-design-system";
+
+// ─── Design Input Wrappers ───────────────────────────────────────────────────
+
+function DesignInput({ className = "", ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+  const [isFocused, setIsFocused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const state = isFocused ? "focus" : isHovered ? "hover" : "base";
+  return (
+    <input
+      {...props}
+      style={{ ...inputStyle(state), ...props.style }}
+      onFocus={(e) => {
+        setIsFocused(true);
+        props.onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        setIsFocused(false);
+        props.onBlur?.(e);
+      }}
+      onMouseEnter={(e) => {
+        setIsHovered(true);
+        props.onMouseEnter?.(e);
+      }}
+      onMouseLeave={(e) => {
+        setIsHovered(false);
+        props.onMouseLeave?.(e);
+      }}
+      className={className}
+    />
+  );
+}
+
+function DesignTextarea({ className = "", ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const [isFocused, setIsFocused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const state = isFocused ? "focus" : isHovered ? "hover" : "base";
+  return (
+    <textarea
+      {...props}
+      style={{ ...inputStyle(state), ...props.style }}
+      onFocus={(e) => {
+        setIsFocused(true);
+        props.onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        setIsFocused(false);
+        props.onBlur?.(e);
+      }}
+      onMouseEnter={(e) => {
+        setIsHovered(true);
+        props.onMouseEnter?.(e);
+      }}
+      onMouseLeave={(e) => {
+        setIsHovered(false);
+        props.onMouseLeave?.(e);
+      }}
+      className={className}
+    />
+  );
+}
 
 const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -263,151 +325,65 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
         </div>
       )}
 
+      <PageHero
+        badge="Operator Identity Portal"
+        title={profile?.full_name || "Agent Operator"}
+        subtitle={`Goal Target: ${profile?.goal || "Unspecified"} · Level: ${profile?.experience_level || "Junior"}`}
+        actions={
+          <button
+            onClick={copyShareLink}
+            style={buttonStyle("ghost")}
+            className="text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-1.5"
+          >
+            <Share2 className="h-3.5 w-3.5" />
+            Copy Share Link
+          </button>
+        }
+      />
+
       {/* ═══ PROFILE HEADER SYSTEM: IDENTITY HUB & READINESS ════════════════ */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         
-        {/* Span 2: Primary Identity Hub */}
-        <section className="card-spotlight rounded-xl p-6 relative overflow-hidden lg:col-span-2 flex flex-col justify-between min-h-[180px]">
-          <div className="absolute top-0 right-0 h-32 w-48 bg-cyan-400/5 rounded-full blur-3xl pointer-events-none" />
-          
-          <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="relative w-14 h-14 rounded-full overflow-hidden border border-cyan-400/25 bg-white/[0.03] flex items-center justify-center shrink-0">
-                {avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                ) : (
-                  <User className="h-6 w-6 text-cyan-300" />
-                )}
-                <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-cyan-400 border border-[#09090b]" />
-              </div>
-
-              <div className="space-y-1">
-                <span className="text-[9px] font-bold text-cyan-400 uppercase tracking-widest bg-cyan-950/40 border border-cyan-400/20 px-2 py-0.5 rounded-full inline-block">
-                  Primary Operator Identity
-                </span>
-                <h2 className="text-lg font-bold text-white leading-none">{fullName || "Set Operator Name"}</h2>
-                <p className="text-xs text-slate-400">
-                  Goal: <strong className="text-slate-200 font-semibold">{goal || "Unspecified"}</strong> &middot; Level: <strong className="text-slate-200 font-semibold">{experienceLevel}</strong>
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={copyShareLink}
-              className="tactile-btn text-xs font-bold text-slate-300 hover:text-white px-3.5 py-2 rounded-lg flex items-center gap-1.5 self-start sm:self-auto"
-            >
-              <Share2 className="h-3.5 w-3.5" />
-              Copy Share Link
-            </button>
-          </div>
-
-          {/* Connected Asset Badges */}
-          <div className="border-t border-white/5 mt-6 pt-4 relative z-10">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-2">Connected Assets</span>
-            <div className="flex flex-wrap gap-2">
-              <a
-                href={isGithubConnected ? githubUrl : undefined}
-                target={isGithubConnected ? "_blank" : undefined}
-                rel="noopener noreferrer"
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-semibold transition ${
-                  isGithubConnected
-                    ? "bg-cyan-950/20 border-cyan-400/20 text-cyan-300 hover:bg-cyan-950/40"
-                    : "bg-white/[0.01] border-white/5 text-slate-500 cursor-default"
-                }`}
-              >
-                <GithubIcon className="h-3.5 w-3.5" />
-                <span>GitHub</span>
-                {isGithubConnected && <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />}
-              </a>
-              <a
-                href={isLinkedinConnected ? linkedinUrl : undefined}
-                target={isLinkedinConnected ? "_blank" : undefined}
-                rel="noopener noreferrer"
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-semibold transition ${
-                  isLinkedinConnected
-                    ? "bg-cyan-950/20 border-cyan-400/20 text-cyan-300 hover:bg-cyan-950/40"
-                    : "bg-white/[0.01] border-white/5 text-slate-500 cursor-default"
-                }`}
-              >
-                <Globe className="h-3.5 w-3.5" />
-                <span>LinkedIn</span>
-                {isLinkedinConnected && <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />}
-              </a>
-              <a
-                href={isPortfolioConnected ? portfolioUrl : undefined}
-                target={isPortfolioConnected ? "_blank" : undefined}
-                rel="noopener noreferrer"
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-semibold transition ${
-                  isPortfolioConnected
-                    ? "bg-cyan-950/20 border-cyan-400/20 text-cyan-300 hover:bg-cyan-950/40"
-                    : "bg-white/[0.01] border-white/5 text-slate-500 cursor-default"
-                }`}
-              >
-                <Compass className="h-3.5 w-3.5" />
-                <span>Portfolio</span>
-                {isPortfolioConnected && <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />}
-              </a>
-              <a
-                href={isResumeConnected ? resumeUrl : undefined}
-                target={isResumeConnected ? "_blank" : undefined}
-                rel="noopener noreferrer"
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-semibold transition ${
-                  isResumeConnected
-                    ? "bg-cyan-950/20 border-cyan-400/20 text-cyan-300 hover:bg-cyan-950/40"
-                    : "bg-white/[0.01] border-white/5 text-slate-500 cursor-default"
-                }`}
-              >
-                <FileText className="h-3.5 w-3.5" />
-                <span>Resume</span>
-                {isResumeConnected && <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />}
-              </a>
-            </div>
-          </div>
-        </section>
-
         {/* Span 1: Portfolio Readiness Score */}
-        <section className="card-purple rounded-xl p-6 relative overflow-hidden flex flex-col justify-between min-h-[180px]">
-          <div>
-            <div className="flex items-center justify-between gap-2 border-b border-indigo-400/10 pb-2.5 mb-3">
-              <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Portfolio Readiness</span>
-              <span className="text-xs font-bold text-white font-geom bg-indigo-950/40 border border-indigo-400/20 px-2 py-0.5 rounded-full">
-                {calculatedScore}%
-              </span>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden mb-3">
-              <div 
-                className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 transition-all duration-500" 
-                style={{ width: `${calculatedScore}%` }} 
-              />
-            </div>
-
-            {/* Checklist items */}
-            <ul className="space-y-1 text-[10px] text-slate-400">
-              <li className="flex items-center gap-2">
-                <span className={`h-1.5 w-1.5 rounded-full ${resumeUrl ? "bg-cyan-400 animate-pulse" : "bg-white/10"}`} />
-                <span className={resumeUrl ? "text-slate-200" : ""}>Credentials Linked (+20%)</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className={`h-1.5 w-1.5 rounded-full ${portfolioUrl ? "bg-cyan-400 animate-pulse" : "bg-white/10"}`} />
-                <span className={portfolioUrl ? "text-slate-200" : ""}>Portfolio Sandboxed (+20%)</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className={`h-1.5 w-1.5 rounded-full ${githubUrl ? "bg-cyan-400 animate-pulse" : "bg-white/10"}`} />
-                <span className={githubUrl ? "text-slate-200" : ""}>GitHub Connected (+20%)</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className={`h-1.5 w-1.5 rounded-full ${professionalSummary.trim() ? "bg-cyan-400 animate-pulse" : "bg-white/10"}`} />
-                <span className={professionalSummary.trim() ? "text-slate-200" : ""}>Bio Summary Written (+20%)</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className={`h-1.5 w-1.5 rounded-full ${skillsList.length >= 5 ? "bg-cyan-400 animate-pulse" : "bg-white/10"}`} />
-                <span className={skillsList.length >= 5 ? "text-slate-200" : ""}>Skills Inventory Indexed (5+) (+20%)</span>
-              </li>
-            </ul>
+        <CardSurface variant="surface" className="p-6">
+          <div className="flex items-center justify-between gap-2 border-b border-indigo-400/10 pb-2.5 mb-3">
+            <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Portfolio Readiness</span>
+            <span className="text-xs font-bold text-white font-geom bg-indigo-950/40 border border-indigo-400/20 px-2 py-0.5 rounded-full">
+              {calculatedScore}%
+            </span>
           </div>
+
+          {/* Progress Bar */}
+          <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden mb-3">
+            <div 
+              className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 transition-all duration-500" 
+              style={{ width: `${calculatedScore}%` }} 
+            />
+          </div>
+
+          {/* Checklist items */}
+          <ul className="space-y-1 text-[10px] text-slate-400">
+            <li className="flex items-center gap-2">
+              <span className={`h-1.5 w-1.5 rounded-full ${resumeUrl ? "bg-cyan-400 animate-pulse" : "bg-white/10"}`} />
+              <span className={resumeUrl ? "text-slate-200" : ""}>Credentials Linked (+20%)</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className={`h-1.5 w-1.5 rounded-full ${portfolioUrl ? "bg-cyan-400 animate-pulse" : "bg-white/10"}`} />
+              <span className={portfolioUrl ? "text-slate-200" : ""}>Portfolio Sandboxed (+20%)</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className={`h-1.5 w-1.5 rounded-full ${githubUrl ? "bg-cyan-400 animate-pulse" : "bg-white/10"}`} />
+              <span className={githubUrl ? "text-slate-200" : ""}>GitHub Connected (+20%)</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className={`h-1.5 w-1.5 rounded-full ${professionalSummary.trim() ? "bg-cyan-400 animate-pulse" : "bg-white/10"}`} />
+              <span className={professionalSummary.trim() ? "text-slate-200" : ""}>Bio Summary Written (+20%)</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className={`h-1.5 w-1.5 rounded-full ${skillsList.length >= 5 ? "bg-cyan-400 animate-pulse" : "bg-white/10"}`} />
+              <span className={skillsList.length >= 5 ? "text-slate-200" : ""}>Skills Inventory Indexed (5+) (+20%)</span>
+            </li>
+          </ul>
 
           <div className="mt-3 pt-2.5 border-t border-indigo-400/10 text-[9px] text-slate-500 font-semibold flex items-center justify-between">
             <span>Outreach Index:</span>
@@ -415,7 +391,7 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
               {calculatedScore >= 80 ? "Ready for Outreach" : calculatedScore >= 40 ? "Optimizing Portfolio" : "Structuring Setup"}
             </span>
           </div>
-        </section>
+        </CardSurface>
       </div>
 
       {/* ═══ PROFILE WORKSPACE: CONFIGURATION MATRIX ═══════════════════════ */}
@@ -425,7 +401,7 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
         <div className="lg:col-span-2 space-y-6">
           
           {/* Operator Specifications Form */}
-          <section className="card-data rounded-xl p-6">
+          <CardSurface tag="section" variant="surface" className="p-6">
             <div className="border-b border-white/5 pb-3 mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Settings className="h-4 w-4 text-cyan-400" />
@@ -437,32 +413,32 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
             <div className="grid gap-4 sm:grid-cols-2 text-xs">
               <label className="block">
                 <span className="text-slate-400 font-semibold block mb-1">Operator Full Name</span>
-                <input
+                <DesignInput
                   type="text"
                   value={fullName}
                   onChange={e => setFullName(e.target.value)}
-                  className="carved-input w-full px-3 py-2 rounded-lg"
+                  className="w-full"
                 />
               </label>
 
               <label className="block">
                 <span className="text-slate-400 font-semibold block mb-1">Avatar Image URL</span>
-                <input
+                <DesignInput
                   type="text"
                   value={avatarUrl}
                   onChange={e => setAvatarUrl(e.target.value)}
                   placeholder="https://..."
-                  className="carved-input w-full px-3 py-2 rounded-lg"
+                  className="w-full"
                 />
               </label>
 
               <label className="block">
                 <span className="text-slate-400 font-semibold block mb-1">Target Goal Role</span>
-                <input
+                <DesignInput
                   type="text"
                   value={goal}
                   onChange={e => setGoal(e.target.value)}
-                  className="carved-input w-full px-3 py-2 rounded-lg"
+                  className="w-full"
                 />
               </label>
 
@@ -471,7 +447,8 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
                 <select
                   value={experienceLevel}
                   onChange={e => setExperienceLevel(e.target.value as ExperienceLevel)}
-                  className="carved-input w-full px-2.5 py-2 rounded-lg"
+                  style={inputStyle("base")}
+                  className="w-full"
                 >
                   <option value="Student">Student</option>
                   <option value="Junior">Junior</option>
@@ -483,23 +460,23 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
 
               <label className="block">
                 <span className="text-slate-400 font-semibold block mb-1">Weekly Time Capacity</span>
-                <input
+                <DesignInput
                   type="text"
                   value={timeAvailability}
                   onChange={e => setTimeAvailability(e.target.value)}
                   placeholder="e.g. 15 hours / week"
-                  className="carved-input w-full px-3 py-2 rounded-lg"
+                  className="w-full"
                 />
               </label>
 
               <label className="block">
                 <span className="text-slate-400 font-semibold block mb-1">Learning Style Mode</span>
-                <input
+                <DesignInput
                   type="text"
                   value={learningStyle}
                   onChange={e => setLearningStyle(e.target.value)}
                   placeholder="e.g. Visual/Hands-on"
-                  className="carved-input w-full px-3 py-2 rounded-lg"
+                  className="w-full"
                 />
               </label>
 
@@ -507,7 +484,8 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
                 <button
                   onClick={saveIdentitySettings}
                   disabled={savingIdentity}
-                  className="tactile-btn tactile-btn-primary w-full py-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5"
+                  style={buttonStyle("primary")}
+                  className="w-full flex items-center justify-center gap-1.5"
                 >
                   {savingIdentity ? (
                     <span className="loading-spinner border-slate-900" />
@@ -518,10 +496,10 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
                 </button>
               </div>
             </div>
-          </section>
+          </CardSurface>
 
           {/* Biographical Summary */}
-          <section className="card-data rounded-xl p-6">
+          <CardSurface tag="section" variant="surface" className="p-6">
             <div className="flex justify-between items-center border-b border-white/5 pb-3 mb-4">
               <div className="flex items-center gap-2">
                 <FileText className="h-4 w-4 text-cyan-400" />
@@ -535,17 +513,17 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
               </span>
             </div>
 
-            <textarea
+            <DesignTextarea
               value={professionalSummary}
               onChange={e => handleSummaryChange(e.target.value)}
               placeholder="Add professional biographical background summary..."
               maxLength={400}
-              className="carved-input w-full text-xs rounded-lg px-4 py-3 h-28 resize-none leading-relaxed placeholder:text-slate-500"
+              className="w-full text-xs h-28 resize-none leading-relaxed placeholder:text-slate-500"
             />
             <div className="flex justify-end text-[10px] text-slate-500 font-semibold mt-2">
               <span>{professionalSummary.length} / 400 characters</span>
             </div>
-          </section>
+          </CardSurface>
 
         </div>
 
@@ -553,7 +531,7 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
         <div className="space-y-6">
           
           {/* Connected Assets Configuration */}
-          <section className="card-data rounded-xl p-6">
+          <CardSurface tag="section" variant="surface" className="p-6">
             <div className="border-b border-white/5 pb-3 mb-4">
               <div className="flex items-center gap-2">
                 <LinkIcon className="h-4 w-4 text-cyan-400" />
@@ -586,7 +564,8 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
                       </div>
                       <button
                         onClick={() => setActiveManageAccount(isManaging ? null : account.key)}
-                        className="text-[11px] font-bold text-cyan-400 hover:text-white px-2 py-0.5 rounded transition"
+                        style={{ ...buttonStyle("ghost"), height: "24px", padding: "0 8px", fontSize: "10px" }}
+                        className="font-bold"
                       >
                         {isManaging ? "Close" : "Setup"}
                       </button>
@@ -594,16 +573,17 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
 
                     {isManaging && (
                       <div className="flex gap-2 mt-3 pt-3 border-t border-white/5">
-                        <input
+                        <DesignInput
                           type="text"
                           value={account.url}
                           onChange={e => account.setUrl(e.target.value)}
                           placeholder={`Paste URL...`}
-                          className="carved-input flex-1 text-xs rounded-lg px-2.5 py-1.5"
+                          className="flex-1 text-xs px-2.5 py-1.5"
                         />
                         <button
                           onClick={() => saveAccountConnection(account.key)}
-                          className="tactile-btn tactile-btn-primary px-3 py-1.5 text-[10px] rounded-lg font-bold"
+                          style={{ ...buttonStyle("primary"), height: "28px", padding: "0 12px", fontSize: "10px" }}
+                          className="font-bold text-black"
                         >
                           Save
                         </button>
@@ -619,10 +599,10 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
                 );
               })}
             </div>
-          </section>
+          </CardSurface>
 
           {/* Skill Inventory Portfolio */}
-          <section className="card-data rounded-xl p-6">
+          <CardSurface tag="section" variant="surface" className="p-6">
             <div className="flex justify-between items-center border-b border-white/5 pb-3 mb-4">
               <div className="flex items-center gap-2">
                 <Compass className="h-4 w-4 text-cyan-400" />
@@ -632,17 +612,18 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
             </div>
 
             <div className="flex gap-2 mb-3">
-              <input
+              <DesignInput
                 type="text"
                 placeholder="Add skill tag..."
                 value={newSkillInput}
                 onChange={e => setNewSkillInput(e.target.value)}
-                className="carved-input flex-1 text-xs rounded-lg px-3 py-1.5"
+                className="flex-1 text-xs px-3 py-1.5"
               />
               <button
                 onClick={addNewSkill}
                 disabled={savingSkills || !newSkillInput.trim()}
-                className="tactile-btn tactile-btn-primary px-3 rounded-lg flex items-center justify-center disabled:opacity-50"
+                style={{ ...buttonStyle("primary"), height: "32px", width: "32px", padding: 0 }}
+                className="flex items-center justify-center disabled:opacity-50 shrink-0"
               >
                 <Plus className="h-3.5 w-3.5 text-black" />
               </button>
@@ -668,10 +649,10 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
                 <p className="text-xs text-slate-500 py-4 text-center w-full">No skills tagged yet.</p>
               )}
             </div>
-          </section>
+          </CardSurface>
 
           {/* Profile Activity Feed (Identity Log) */}
-          <section className="card-data rounded-xl p-6">
+          <CardSurface tag="section" variant="surface" className="p-6">
             <div className="border-b border-white/5 pb-3 mb-4">
               <div className="flex items-center gap-2">
                 <Activity className="h-4 w-4 text-cyan-400" />
@@ -692,14 +673,14 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
                 ))}
               </div>
             )}
-          </section>
+          </CardSurface>
 
         </div>
 
       </div>
 
       {/* Danger Actions Area */}
-      <section className="card-danger rounded-xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <CardSurface tag="section" variant="glass" className="border-rose-500/20 bg-rose-500/5 p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
           <Shield className="h-4.5 w-4.5 text-rose-400 shrink-0" />
           <div className="text-xs">
@@ -710,14 +691,15 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
 
         <button
           onClick={() => triggerExport("Permanent account deletion requested.")}
-          className="tactile-btn border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/10 text-rose-300 font-bold px-4 py-2 rounded-lg text-xs"
+          style={buttonStyle("danger")}
+          className="font-bold text-rose-300 px-4 text-xs"
         >
           Delete Operator Identity
         </button>
-      </section>
+      </CardSurface>
 
       {/* Database utilities */}
-      <div className="card-data rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+      <CardSurface variant="surface" className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
         <span className="text-slate-500 font-medium font-mono">Operator ID: {userId}</span>
         <div className="flex items-center gap-2">
           <button
@@ -728,7 +710,7 @@ export function ProfileDashboard({ userId, profile }: ProfileDashboardProps) {
             Download Data Packet
           </button>
         </div>
-      </div>
+      </CardSurface>
 
       {/* Export Success Modal */}
       {exportSuccessOpen && (

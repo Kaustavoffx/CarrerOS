@@ -4,12 +4,14 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 // Framer Motion removed — CSS-only animations for 120fps performance
 import {
-  Sparkles, Brain, Briefcase, CheckSquare, Square, RefreshCw, User,
+  Sparkles, Brain, Briefcase, CheckSquare, Square, RefreshCw,
   ArrowRight, History, Plus, Trash2, TrendingUp, AlertCircle
 } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { updateProfile } from "@/lib/app-data";
 import type { UserProfileRecord, WorkspaceSnapshotRecord } from "@/lib/supabase/types";
+import { PageHero, CardSurface } from "@/components/ui";
+import { buttonStyle, inputStyle } from "@/styles/careeros-design-system";
 
 type CareerTwinDashboardProps = {
   profile: UserProfileRecord | null;
@@ -17,9 +19,40 @@ type CareerTwinDashboardProps = {
 };
 
 function formatUtcShortDate(d: Date) {
-  if (!d || isNaN(d.getTime())) return "";
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   return `${months[d.getUTCMonth()]} ${d.getUTCDate()}`;
+}
+
+
+// ─── Design Input Wrappers ───────────────────────────────────────────────────
+
+function DesignInput({ className = "", ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+  const [isFocused, setIsFocused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const state = isFocused ? "focus" : isHovered ? "hover" : "base";
+  return (
+    <input
+      {...props}
+      style={{ ...inputStyle(state), ...props.style }}
+      onFocus={(e) => {
+        setIsFocused(true);
+        props.onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        setIsFocused(false);
+        props.onBlur?.(e);
+      }}
+      onMouseEnter={(e) => {
+        setIsHovered(true);
+        props.onMouseEnter?.(e);
+      }}
+      onMouseLeave={(e) => {
+        setIsHovered(false);
+        props.onMouseLeave?.(e);
+      }}
+      className={className}
+    />
+  );
 }
 
 export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardProps) {
@@ -250,53 +283,34 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
         {toastMessage}
       </div>
 
-      {/* Profile/Goal Header Banner (Neutral Page Header) */}
-      <section className="card-data rounded-[24px] p-6 relative overflow-hidden">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="h-14 w-14 rounded-full border border-white/10 bg-black/40 flex items-center justify-center text-cyan-300 relative shrink-0">
-              {profile?.avatar_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover rounded-full" />
-              ) : (
-                <User className="h-6 w-6 text-slate-500" />
-              )}
-              <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-cyan-400 border-2 border-[#09090b]" />
-            </div>
-
-            <div>
-              <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest bg-cyan-950/40 border border-cyan-400/20 px-2 py-0.5 rounded-full">
-                Digital twin interface
-              </span>
-              <h1 className="text-xl font-bold tracking-tight text-white mt-1">
-                {profile?.full_name || "Agent Operator"}
-              </h1>
-              <p className="text-xs text-slate-400">
-                Calibrated targeting: <strong className="text-slate-200 font-semibold">{profile?.goal || "SDE I"}</strong>
-              </p>
-            </div>
-          </div>
-
+      {/* Profile/Goal Header Banner */}
+      <PageHero
+        badge="Digital twin interface"
+        title={profile?.full_name || "Agent Operator"}
+        subtitle={`Calibrated targeting: ${profile?.goal || "SDE I"}`}
+        actions={
           <div className="flex items-center gap-2">
             <button
               onClick={triggerSync}
-              className="tactile-btn p-2 rounded-xl"
+              style={buttonStyle("ghost")}
+              className="p-2 rounded-xl flex items-center justify-center"
               aria-label="Refresh twin calibration"
             >
               <RefreshCw className={`h-4 w-4 text-slate-400 ${isSyncing ? "animate-spin text-cyan-300" : ""}`} />
             </button>
             <button
               onClick={() => router.push("/profile")}
-              className="tactile-btn text-xs font-bold text-slate-300 hover:text-white px-4 py-2 rounded-xl"
+              style={buttonStyle("ghost")}
+              className="text-xs font-bold px-4 py-2 rounded-xl"
             >
               Configure Identity
             </button>
           </div>
-        </div>
-      </section>
+        }
+      />
 
       {/* ═══ SPOTLIGHT CARD 1: ANALYST BRIEFING & EXECUTIVE SUMMARY ═══════════ */}
-      <section className="card-data rounded-xl p-6 relative overflow-hidden">
+      <CardSurface variant="surface" dust="tr" className="p-6">
         <div className="flex items-center gap-2 mb-4">
           <Brain className="h-4 w-4 text-cyan-300" />
           <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Analyst Briefing</span>
@@ -332,7 +346,7 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
             ))}
           </div>
         </div>
-      </section>
+      </CardSurface>
 
       {/* ═══ 2-COLUMN CENTRAL MATRIX ═════════════════════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -341,7 +355,7 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
         <div className="lg:col-span-2 space-y-6">
           
           {/* Career Intelligence Report */}
-          <section className="card-data rounded-xl p-6">
+          <CardSurface variant="surface">
             <div className="flex items-center gap-2 border-b border-white/5 pb-3 mb-4">
               <Brain className="h-4 w-4 text-indigo-400" />
               <h2 className="text-xs font-bold text-white uppercase tracking-wider">Career Intelligence Report</h2>
@@ -404,10 +418,10 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
                 </div>
               </div>
             </div>
-          </section>
+          </CardSurface>
 
           {/* Skill Portfolio (Editable inventory) */}
-          <section className="card-data rounded-xl p-6">
+          <CardSurface variant="surface">
             <div className="flex justify-between items-center border-b border-white/5 pb-3 mb-4">
               <div className="flex items-center gap-2">
                 <Briefcase className="h-4 w-4 text-cyan-400" />
@@ -417,18 +431,19 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
             </div>
 
             <form onSubmit={handleAddSkill} className="flex gap-2 mb-4">
-              <input
+              <DesignInput
                 type="text"
                 value={newSkillText}
                 onChange={e => setNewSkillText(e.target.value)}
                 placeholder="Add new skill target..."
-                className="carved-input flex-1 px-3.5 py-2 text-xs rounded-lg animate-none"
+                className="flex-1"
                 disabled={isAddingSkill}
               />
               <button
                 type="submit"
                 disabled={isAddingSkill || !newSkillText.trim()}
-                className="tactile-btn tactile-btn-primary px-4 py-2 text-xs rounded-lg inline-flex items-center gap-1 text-black font-bold"
+                style={buttonStyle("primary")}
+                className="px-4 py-2 text-xs rounded-lg inline-flex items-center gap-1 text-black font-bold justify-center"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Add
@@ -455,10 +470,10 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
                 <p className="text-xs text-slate-500 text-center py-6 w-full">No skills logged. Type above to begin indexing.</p>
               )}
             </div>
-          </section>
+          </CardSurface>
 
           {/* Job Matches Opportunity Board */}
-          <section className="card-data rounded-xl p-6">
+          <CardSurface variant="surface">
             <div className="flex items-center gap-2 border-b border-white/5 pb-3 mb-4">
               <TrendingUp className="h-4 w-4 text-cyan-400" />
               <h2 className="text-xs font-bold text-white uppercase tracking-wider">Opportunity Match Board</h2>
@@ -466,7 +481,7 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
 
             <div className="grid gap-4 sm:grid-cols-3">
               {jobs.map(job => (
-                <div key={job.id} className="border border-white/5 bg-white/[0.01] hover:border-cyan-400/20 p-4 rounded-xl flex flex-col justify-between transition group">
+                <CardSurface key={job.id} variant="glass" hover noPadding className="p-4 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-2.5">
                       <span className="h-7 w-7 rounded bg-white/5 border border-white/10 flex items-center justify-center font-bold text-white text-xs">
@@ -490,10 +505,10 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
                       <ArrowRight className="h-3 w-3" />
                     </button>
                   </div>
-                </div>
+                </CardSurface>
               ))}
             </div>
-          </section>
+          </CardSurface>
 
         </div>
 
@@ -501,7 +516,7 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
         <div className="space-y-6">
 
           {/* AI Recommendations Action Queue */}
-          <section className="card-purple rounded-xl p-5">
+          <CardSurface variant="surface" dust="both" className="p-5">
             <div className="flex items-center gap-2 border-b border-indigo-400/10 pb-3 mb-4">
               <Sparkles className="h-4 w-4 text-indigo-400" />
               <h2 className="text-xs font-bold text-white uppercase tracking-wider">AI Recommendations</h2>
@@ -511,13 +526,12 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
               {recommendationsQueue.map(rec => {
                 const isChecked = checkedRecs[rec.id] ?? false;
                 return (
-                  <div
+                  <CardSurface
                     key={rec.id}
-                    className={`border p-3.5 rounded-xl transition duration-200 flex items-start gap-3 relative ${
-                      isChecked
-                        ? "border-cyan-500/10 bg-cyan-950/[0.02] text-slate-500"
-                        : "border-white/5 bg-white/[0.01] hover:border-cyan-400/20"
-                    }`}
+                    variant="glass"
+                    hover={!isChecked}
+                    noPadding
+                    className={`p-3.5 flex items-start gap-3 relative`}
                   >
                     <button
                       onClick={() => setCheckedRecs(prev => ({ ...prev, [rec.id]: !prev[rec.id] }))}
@@ -550,14 +564,14 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
                         </button>
                       )}
                     </div>
-                  </div>
+                  </CardSurface>
                 );
               })}
             </div>
-          </section>
+          </CardSurface>
 
           {/* Career Journey Timeline */}
-          <section className="card-data rounded-xl p-5">
+          <CardSurface variant="surface" className="p-5">
             <div className="flex items-center gap-2 border-b border-white/5 pb-3 mb-4">
               <History className="h-4 w-4 text-cyan-400" />
               <h2 className="text-xs font-bold text-white uppercase tracking-wider">Career Timeline</h2>
@@ -580,7 +594,7 @@ export function CareerTwinDashboard({ profile, workspace }: CareerTwinDashboardP
                 ))}
               </div>
             )}
-          </section>
+          </CardSurface>
 
         </div>
 

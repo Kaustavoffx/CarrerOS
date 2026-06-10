@@ -20,6 +20,8 @@ import type {
   UserProfileRecord, WorkspaceSnapshotRecord, RoadmapResourceLink,
   RoadmapMilestoneRecord
 } from "@/lib/supabase/types";
+import { PageHero, CardSurface } from "@/components/ui";
+import { buttonStyle, inputStyle } from "@/styles/careeros-design-system";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -89,6 +91,67 @@ function getEstimatedHours(type: ResourceFilter, milestoneWeeks?: number): numbe
     return Math.max(1, Math.round(base * (milestoneWeeks / 2)));
   }
   return base;
+}
+
+
+// ─── Design Input Wrappers ───────────────────────────────────────────────────
+
+function DesignInput({ className = "", ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+  const [isFocused, setIsFocused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const state = isFocused ? "focus" : isHovered ? "hover" : "base";
+  return (
+    <input
+      {...props}
+      style={{ ...inputStyle(state), ...props.style }}
+      onFocus={(e) => {
+        setIsFocused(true);
+        props.onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        setIsFocused(false);
+        props.onBlur?.(e);
+      }}
+      onMouseEnter={(e) => {
+        setIsHovered(true);
+        props.onMouseEnter?.(e);
+      }}
+      onMouseLeave={(e) => {
+        setIsHovered(false);
+        props.onMouseLeave?.(e);
+      }}
+      className={className}
+    />
+  );
+}
+
+function DesignTextarea({ className = "", ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const [isFocused, setIsFocused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const state = isFocused ? "focus" : isHovered ? "hover" : "base";
+  return (
+    <textarea
+      {...props}
+      style={{ ...inputStyle(state), ...props.style }}
+      onFocus={(e) => {
+        setIsFocused(true);
+        props.onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        setIsFocused(false);
+        props.onBlur?.(e);
+      }}
+      onMouseEnter={(e) => {
+        setIsHovered(true);
+        props.onMouseEnter?.(e);
+      }}
+      onMouseLeave={(e) => {
+        setIsHovered(false);
+        props.onMouseLeave?.(e);
+      }}
+      className={className}
+    />
+  );
 }
 
 // ─── Microinteraction Confetti ────────────────────────────────────────────────
@@ -744,71 +807,48 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
         {toastMessage}
       </div>
 
-      {/* ══ SECTION 1: ROADMAP HERO (Minimal Info Card) ══════════════════════ */}
-      <section className="card-data relative overflow-hidden rounded-[24px] p-6 sm:p-8">
-        {/* API limit alert banner */}
-        {limitExhausted && !hasConnectedProvider && (
-          <div className="relative z-10 mb-6 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-sm font-semibold text-amber-200">Free generations exhausted</p>
-                  <p className="mt-0.5 text-xs text-amber-200/70">Configure your custom AI Provider key in Settings to resume limitless regenerations.</p>
-                </div>
+      {limitExhausted && !hasConnectedProvider && (
+        <CardSurface variant="glass" className="mb-6 border-amber-500/20">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-amber-200">Free generations exhausted</p>
+                <p className="mt-0.5 text-xs text-amber-200/70">Configure your custom AI Provider key in Settings to resume limitless regenerations.</p>
               </div>
-              <Link href="/settings#ai-providers" className="tactile-btn tactile-btn-primary shrink-0 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold text-black">
-                Configure Provider
-              </Link>
             </div>
+            <Link 
+              href="/settings#ai-providers" 
+              style={buttonStyle("primary")}
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold text-black justify-center"
+            >
+              Configure Provider
+            </Link>
           </div>
-        )}
+        </CardSurface>
+      )}
 
-        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2.5 mb-2">
-              <Image src="/logo.png" alt="CareerOS" width={18} height={18} className="object-contain" />
-              <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Navigation Engine</p>
-              
-              {activeRoadmap && (
-                <>
-                  <span className="rounded-full border border-cyan-400/15 bg-cyan-400/10 px-2 py-0.5 text-[10px] font-semibold text-cyan-300">
-                    {activeRoadmap.career_domain}
-                  </span>
-                  <button 
-                    onClick={() => setIsVersionDrawerOpen(true)}
-                    className="flex items-center gap-1 hover:text-cyan-300 transition text-[10px] rounded-full border border-[#202028] bg-[#0d0d10] px-2 py-0.5 text-slate-400"
-                  >
-                    <Clock3 className="h-3 w-3" />
-                    v{activeRoadmap.roadmap_version} History
-                  </button>
-                </>
-              )}
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Image src="/logo.png" alt="CareerOS" width={24} height={24} className="object-contain shrink-0" />
-              <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight leading-tight">
-                CareerOS Roadmap Engine
-              </h1>
-            </div>
-            
+      {/* ══ SECTION 1: ROADMAP HERO ══════════════════════ */}
+      <PageHero
+        badge={activeRoadmap ? `Navigation Engine • ${activeRoadmap.career_domain} • v${activeRoadmap.roadmap_version}` : "Navigation Engine"}
+        title="Your Career Roadmap"
+        subtitle={`Target Career Goal: ${profile?.goal || "SDE I"} • ${activeRoadmap?.summary || "Create your career track roadmap to initiate execution guides."}`}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
             {activeRoadmap && (
-              <p className="mt-2 text-xs font-semibold text-slate-400">
-                Active Track: <strong className="text-white">{activeRoadmap.title}</strong>
-              </p>
+              <button 
+                onClick={() => setIsVersionDrawerOpen(true)}
+                style={buttonStyle("ghost")}
+                className="flex items-center gap-1 text-[10px] px-3.5 py-2 rounded-xl"
+              >
+                <Clock3 className="h-3 w-3" />
+                History
+              </button>
             )}
-            
-            <p className="mt-1 text-xs sm:text-sm text-slate-400 max-w-2xl leading-relaxed">
-              Target Career Goal: <span className="text-white font-semibold">{profile?.goal || "SDE I"}</span> &middot; {activeRoadmap?.summary || "Create your career track roadmap to initiate execution guides."}
-            </p>
-          </div>
-
-          {/* Quick Actions Header Section */}
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <Link
               href="/mentor"
-              className="tactile-btn border border-[#202028] hover:border-indigo-400/30 text-white font-semibold px-4 py-2.5 rounded-full text-xs transition inline-flex items-center gap-1.5"
+              style={buttonStyle("ghost")}
+              className="px-4 py-2 rounded-xl text-xs flex items-center gap-1.5"
             >
               <MessageSquare className="h-3.5 w-3.5 text-indigo-400" />
               Open Mentor
@@ -819,46 +859,48 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
               disabled={refreshDisabled}
               status="beta"
               featureName="AI Roadmap Generation"
-              className="tactile-btn tactile-btn-primary font-bold px-4 py-2.5 rounded-full text-xs text-black transition inline-flex items-center gap-1.5 disabled:opacity-40"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs text-black font-bold disabled:opacity-40"
+              style={buttonStyle("primary")}
             >
               {isReplanning ? <span className="loading-spinner h-3 w-3 border-black" /> : <RefreshCw className="h-3.5 w-3.5" />}
               {isReplanning ? "Syncing..." : "Refresh track"}
             </FeatureGateButton>
           </div>
-        </div>
+        }
+      />
 
-        {/* Primary CTA Next Action Area */}
-        {activeRoadmap && nextActionLabel && (
-          <div className="mt-6 border-t border-[#1e1e24]/60 pt-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#08080a] border border-[#141417] p-4 rounded-2xl relative overflow-hidden">
-              <div className="flex items-start gap-3 flex-1 min-w-0">
-                <div className="h-8 w-8 rounded-lg bg-cyan-400/10 border border-cyan-400/25 flex items-center justify-center shrink-0 mt-0.5">
-                  <Target className="h-4 w-4 text-cyan-400" />
-                </div>
-                <div className="min-w-0">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Primary Next Action</span>
-                  <p className="text-xs sm:text-sm font-semibold text-white truncate max-w-xl">
-                    {nextActionLabel}
-                  </p>
-                </div>
+      {/* Primary CTA Next Action Area */}
+      {activeRoadmap && nextActionLabel && (
+        <CardSurface variant="glass" className="mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              <div className="h-8 w-8 rounded-lg bg-cyan-400/10 border border-cyan-400/25 flex items-center justify-center shrink-0 mt-0.5">
+                <Target className="h-4 w-4 text-cyan-400" />
               </div>
-              {nextActionLabel !== "All Milestones Completed!" && (
-                <button
-                  onClick={handleCompleteNextAction}
-                  className="tactile-btn bg-cyan-400 text-black hover:bg-cyan-300 font-bold text-xs px-4 py-2 rounded-xl transition inline-flex items-center gap-1.5 shrink-0 self-end sm:self-center"
-                >
-                  <Check className="h-3.5 w-3.5 stroke-[3]" />
-                  Done
-                </button>
-              )}
+              <div className="min-w-0">
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Primary Next Action</span>
+                <p className="text-xs sm:text-sm font-semibold text-white truncate max-w-xl">
+                  {nextActionLabel}
+                </p>
+              </div>
             </div>
+            {nextActionLabel !== "All Milestones Completed!" && (
+              <button
+                onClick={handleCompleteNextAction}
+                style={buttonStyle("primary")}
+                className="font-bold text-xs px-4 py-2 rounded-xl transition inline-flex items-center gap-1.5 shrink-0 self-end sm:self-center text-black"
+              >
+                <Check className="h-3.5 w-3.5 stroke-[3]" />
+                Done
+              </button>
+            )}
           </div>
-        )}
-      </section>
+        </CardSurface>
+      )}
 
       {/* ══ EMPTY STATE CONTAINER ════════════════════════════════════════════ */}
       {!activeRoadmap && (
-        <div className="flex flex-col items-center gap-4 rounded-[28px] border border-dashed border-[#202028] py-24 text-center bg-[#070709]/40">
+        <CardSurface variant="surface" className="flex flex-col items-center gap-4 py-24 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[#202028] bg-[#0d0d10]">
             <BookOpen className="h-8 w-8 text-slate-500" />
           </div>
@@ -874,20 +916,20 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
             disabled={refreshDisabled}
             status="beta"
             featureName="AI Roadmap Generation"
-            className="tactile-btn tactile-btn-primary mt-2 inline-flex items-center gap-2 rounded-full px-6 py-3 text-xs font-bold text-black"
+            style={buttonStyle("primary")}
+            className="mt-2 inline-flex items-center gap-2 rounded-full px-6 py-3 text-xs font-bold text-black justify-center"
           >
             {isReplanning ? <span className="loading-spinner h-4 w-4 border-black" /> : <RefreshCw className="h-4 w-4" />}
             Generate Career Roadmap
           </FeatureGateButton>
-        </div>
+        </CardSurface>
       )}
 
       {activeRoadmap && (
         <>
           {/* ══ SECTION 2: CURRENT SPRINT (Spotlight Card 1) ═══════════════════ */}
           <section id="current-sprint-section" className="scroll-mt-6">
-            <div className="card-spotlight rounded-[24px] p-6 relative overflow-hidden">
-              <div className="pointer-events-none absolute top-0 right-0 h-40 w-64 bg-cyan-400/5 rounded-full blur-3xl animate-pulse" />
+            <CardSurface variant="glass" dust="tr">
               
               <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex-1 min-w-0">
@@ -953,7 +995,8 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                   {sprintProgress === 100 && (
                     <button
                       onClick={() => void handleCompleteActiveMilestone()}
-                      className="tactile-btn bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs w-full py-2 rounded-xl transition flex items-center justify-center gap-1.5 mt-2"
+                      style={buttonStyle("primary")}
+                      className="font-bold text-xs w-full py-2 rounded-xl transition flex items-center justify-center gap-1.5 mt-2 text-black"
                     >
                       <Check className="h-3.5 w-3.5 stroke-[3]" />
                       Complete Sprint
@@ -961,7 +1004,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                   )}
                 </div>
               </div>
-            </div>
+            </CardSurface>
           </section>
 
           {/* ══ SECTION 3: ROADMAP JOURNEY TIMELINE (Linear-style Planning Studio) ════ */}
@@ -971,7 +1014,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
               <h3 className="text-base font-bold text-white mt-1">Planning Studio</h3>
             </div>
 
-            <div className="card-data rounded-xl p-4 sm:p-6 overflow-hidden">
+            <CardSurface variant="surface" className="sm:p-6">
               {/* Table Header Row */}
               <div className="hidden md:grid md:grid-cols-[3fr_1.2fr_1.2fr_1.2fr_1fr] gap-4 px-4 py-2.5 text-[9px] text-slate-500 font-bold uppercase tracking-wider border-b border-white/5 mb-2">
                 <span>Milestone Track Title</span>
@@ -1061,36 +1104,36 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                               <h4 className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest">Edit Milestone Specifications</h4>
                               <label className="block">
                                 <span className="text-slate-500 font-semibold block mb-1">Why it matters</span>
-                                <textarea
+                                <DesignTextarea
                                   value={editWhyItMatters}
                                   onChange={(e) => setEditWhyItMatters(e.target.value)}
-                                  className="carved-input w-full rounded-lg px-3 py-2 h-16 resize-none"
+                                  className="w-full rounded-lg px-3 py-2 h-16 resize-none"
                                 />
                               </label>
                               <div className="grid gap-4 md:grid-cols-2">
                                 <label className="block">
                                   <span className="text-slate-500 font-semibold block mb-1">Milestone Tasks (one per line)</span>
-                                  <textarea
+                                  <DesignTextarea
                                     value={editTasksText}
                                     onChange={(e) => setEditTasksText(e.target.value)}
-                                    className="carved-input w-full rounded-lg px-3 py-2 h-24 font-mono text-[10.5px] leading-relaxed"
+                                    className="w-full rounded-lg px-3 py-2 h-24 font-mono text-[10.5px] leading-relaxed"
                                   />
                                 </label>
                                 <label className="block">
                                   <span className="text-slate-500 font-semibold block mb-1">Deliverables (one per line)</span>
-                                  <textarea
+                                  <DesignTextarea
                                     value={editDeliverablesText}
                                     onChange={(e) => setEditDeliverablesText(e.target.value)}
-                                    className="carved-input w-full rounded-lg px-3 py-2 h-24 font-mono text-[10.5px] leading-relaxed"
+                                    className="w-full rounded-lg px-3 py-2 h-24 font-mono text-[10.5px] leading-relaxed"
                                   />
                                 </label>
                               </div>
                               <label className="block">
                                 <span className="text-slate-500 font-semibold block mb-1">Study/Concept Notes</span>
-                                <textarea
+                                <DesignTextarea
                                   value={editNotesText}
                                   onChange={(e) => setEditNotesText(e.target.value)}
-                                  className="carved-input w-full rounded-lg px-3 py-2 h-16"
+                                  className="w-full rounded-lg px-3 py-2 h-16"
                                   placeholder="Add concepts, definitions, or study notes..."
                                 />
                               </label>
@@ -1099,14 +1142,16 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                                 <button
                                   type="button"
                                   onClick={() => setIsEditingMilestone(false)}
-                                  className="tactile-btn px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-400"
+                                  style={buttonStyle("ghost")}
+                                  className="px-3 py-1.5 text-xs font-semibold rounded-lg"
                                 >
                                   Cancel
                                 </button>
                                 <button
                                   type="button"
                                   onClick={saveMilestoneDetails}
-                                  className="tactile-btn tactile-btn-primary px-4 py-1.5 text-xs font-semibold rounded-lg text-black"
+                                  style={buttonStyle("primary")}
+                                  className="px-4 py-1.5 text-xs font-semibold rounded-lg text-black"
                                 >
                                   Save Specifications
                                 </button>
@@ -1235,7 +1280,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                   );
                 })}
               </div>
-            </div>
+            </CardSurface>
           </section>
 
           {/* ══ SECTION 4: RESOURCE HUB (Bookmark / Completed Status Tracking) ══ */}
@@ -1245,15 +1290,15 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
               <h3 className="text-base font-bold text-white mt-1">Resource Hub</h3>
             </div>
 
-            <div className="card-data rounded-[24px] p-6">
+            <CardSurface variant="surface">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                 <div className="relative flex-1 max-w-sm">
                   <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
-                  <input
+                  <DesignInput
                     value={resourceSearch}
                     onChange={e => setResourceSearch(e.target.value)}
                     placeholder="Search resources..."
-                    className="carved-input w-full rounded-xl py-2 pl-9 pr-4 text-xs text-white"
+                    className="w-full pl-9"
                   />
                 </div>
 
@@ -1262,11 +1307,8 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                     <button
                       key={f}
                       onClick={() => setResourceFilter(f)}
-                      className={`rounded-full px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider transition ${
-                        resourceFilter === f
-                          ? "border border-cyan-400/30 bg-cyan-400/10 text-cyan-300"
-                          : "border border-[#202028] bg-[#0d0d10] text-slate-500 hover:text-slate-300"
-                      }`}
+                      style={resourceFilter === f ? buttonStyle("secondary") : buttonStyle("ghost")}
+                      className="rounded-full px-3.5 py-1.5 text-[10px] uppercase tracking-wider"
                     >
                       {f}
                     </button>
@@ -1282,9 +1324,12 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                     const isCompleted = completedResources[res.url] ?? false;
 
                     return (
-                      <div
+                      <CardSurface
                         key={`${res.url}-${idx}`}
-                        className="group flex flex-col justify-between border border-white/[0.06] hover:border-cyan-400/20 bg-white/[0.02] hover:bg-white/[0.04] p-4 rounded-2xl transition-all duration-[120ms]"
+                        variant="glass"
+                        hover
+                        noPadding
+                        className="p-4 flex flex-col justify-between"
                       >
                         <div>
                           <div className="flex items-start justify-between gap-3 mb-2">
@@ -1347,7 +1392,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                             <ExternalLink className="h-3 w-3" />
                           </a>
                         </div>
-                      </div>
+                      </CardSurface>
                     );
                   })}
                 </div>
@@ -1359,13 +1404,13 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                   </p>
                 </div>
               )}
-            </div>
+            </CardSurface>
           </section>
 
           {/* ══ SECTION 5: DYNAMIC INSIGHTS (Strengths, Blockers, Recommended) ══ */}
           <section className="grid gap-5 md:grid-cols-3">
             {/* Strengths */}
-            <div className="card-data rounded-[24px] p-5 border border-[#1f1f23]">
+            <CardSurface variant="surface" className="p-5">
               <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block mb-2">Strengths</span>
               {profile?.skills && profile.skills.length > 0 ? (
                 <div className="flex flex-wrap gap-1">
@@ -1376,10 +1421,10 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
               ) : (
                 <span className="text-xs text-slate-500">Complete profile to map strengths.</span>
               )}
-            </div>
+            </CardSurface>
 
             {/* Skill Gaps / Obstacles */}
-            <div className="card-data rounded-[24px] p-5 border border-[#1f1f23]">
+            <CardSurface variant="surface" className="p-5">
               <span className="text-[10px] text-rose-400 font-bold uppercase tracking-wider block mb-2">Active Blockers</span>
               {profile?.weaknesses && profile.weaknesses.length > 0 ? (
                 <div className="flex flex-wrap gap-1">
@@ -1390,10 +1435,10 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
               ) : (
                 <span className="text-xs text-slate-500">No skill gaps calculated yet.</span>
               )}
-            </div>
+            </CardSurface>
 
             {/* Recommended Focus */}
-            <div className="card-data rounded-[24px] p-5 border border-[#1f1f23]">
+            <CardSurface variant="surface" className="p-5">
               <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider block mb-2">Recommended Focus</span>
               {currentMilestone ? (
                 <p className="text-xs text-slate-300 font-medium leading-relaxed">
@@ -1402,7 +1447,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
               ) : (
                 <span className="text-xs text-slate-500">All milestones completed.</span>
               )}
-            </div>
+            </CardSurface>
           </section>
         </>
       )}
@@ -1410,7 +1455,7 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
       {/* ══ SECTION 8: EXPORT CENTER ═════════════════════════════════════════ */}
       {activeRoadmap && (
         <section className="pt-2">
-          <div className="card-data rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <CardSurface variant="surface" noPadding className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Archive className="h-4 w-4 text-slate-400" />
               <p className="text-xs text-slate-400 font-semibold">
@@ -1421,27 +1466,30 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
             <div className="flex items-center gap-2">
               <button
                 onClick={handleMarkdownExport}
-                className="tactile-btn border border-[#202028] hover:border-cyan-400/20 px-3.5 py-2 rounded-xl text-xs text-slate-300 hover:text-white transition inline-flex items-center gap-1.5 font-bold"
+                style={buttonStyle("ghost")}
+                className="px-3.5 py-2 rounded-xl text-xs transition inline-flex items-center gap-1.5 font-bold text-slate-300 hover:text-white"
               >
                 <FileText className="h-3.5 w-3.5 text-cyan-400" />
                 Markdown
               </button>
               <button
                 onClick={handleJsonExport}
-                className="tactile-btn border border-[#202028] hover:border-cyan-400/20 px-3.5 py-2 rounded-xl text-xs text-slate-300 hover:text-white transition inline-flex items-center gap-1.5 font-bold"
+                style={buttonStyle("ghost")}
+                className="px-3.5 py-2 rounded-xl text-xs transition inline-flex items-center gap-1.5 font-bold text-slate-300 hover:text-white"
               >
                 <Download className="h-3.5 w-3.5 text-cyan-400" />
                 JSON
               </button>
               <button
                 onClick={() => void handlePdfDownload()}
-                className="tactile-btn bg-[#121216] border border-[#202028] hover:border-cyan-400/20 px-3.5 py-2 rounded-xl text-xs text-slate-300 hover:text-white transition inline-flex items-center gap-1.5 font-bold"
+                style={buttonStyle("ghost")}
+                className="px-3.5 py-2 rounded-xl text-xs transition inline-flex items-center gap-1.5 font-bold text-slate-300 hover:text-white"
               >
                 <Printer className="h-3.5 w-3.5 text-cyan-400" />
                 PDF
               </button>
             </div>
-          </div>
+          </CardSurface>
         </section>
       )}
 
@@ -1581,7 +1629,8 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                     setIsVersionDrawerOpen(false);
                     setCompareVersionId(null);
                   }}
-                  className="tactile-btn border border-[#202028] hover:border-slate-500 w-full rounded-xl py-2.5 text-xs text-slate-300 font-semibold transition"
+                  style={buttonStyle("ghost")}
+                  className="w-full py-2.5 text-xs font-semibold"
                 >
                   Close History
                 </button>
@@ -1603,7 +1652,8 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
             <div className="mt-6 flex gap-3">
               <button
                 onClick={() => setRestoreConfirmId(null)}
-                className="tactile-btn flex-1 rounded-xl py-2.5 text-xs font-semibold text-slate-400 border border-[#202028] hover:border-slate-500 transition"
+                style={buttonStyle("ghost")}
+                className="flex-1 rounded-xl py-2.5 text-xs font-semibold"
               >
                 Cancel
               </button>
@@ -1612,7 +1662,8 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                   const version = safeRoadmapHistory.find(v => v.id === restoreConfirmId);
                   if (version) void restoreRoadmapVersion(version);
                 }}
-                className="tactile-btn tactile-btn-primary flex-1 rounded-xl py-2.5 text-xs font-semibold text-black"
+                style={buttonStyle("primary")}
+                className="flex-1 rounded-xl py-2.5 text-xs font-semibold text-black"
               >
                 Confirm Restore
               </button>
@@ -1654,7 +1705,8 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
               <button
                 type="button"
                 onClick={() => setExportSuccessOpen(false)}
-                className="tactile-btn tactile-btn-primary w-full py-2.5 rounded-xl text-xs font-bold text-black mt-2"
+                style={buttonStyle("primary")}
+                className="w-full py-2.5 rounded-xl text-xs font-bold text-black mt-2"
               >
                 Dismiss
               </button>
@@ -1774,7 +1826,8 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                   <button
                     type="button"
                     onClick={handlePdfDownloadClick}
-                    className="tactile-btn tactile-btn-primary w-full py-2.5 rounded-xl text-xs font-bold text-black mt-2 inline-flex items-center justify-center gap-1.5"
+                    style={buttonStyle("primary")}
+                    className="w-full py-2.5 rounded-xl text-xs font-bold text-black mt-2 inline-flex items-center justify-center gap-1.5"
                   >
                     <Download className="h-3.5 w-3.5" />
                     Download PDF
@@ -1801,7 +1854,8 @@ export function RoadmapsConsole({ profile, workspace: initialWorkspace, roadmapH
                   <button
                     type="button"
                     onClick={() => void handlePdfDownload()}
-                    className="tactile-btn tactile-btn-primary w-full py-2.5 rounded-xl text-xs font-bold text-black mt-2"
+                    style={buttonStyle("primary")}
+                    className="w-full py-2.5 rounded-xl text-xs font-bold text-black mt-2"
                   >
                     Retry Generation
                   </button>

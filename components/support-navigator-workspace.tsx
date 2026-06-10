@@ -2,6 +2,8 @@
 
 import React from "react";
 import { useCommunitySupport } from "./community-support-context";
+import { CardSurface } from "@/components/ui";
+import { inputStyle } from "@/styles/careeros-design-system";
 
 export function SupportNavigatorWorkspace() {
   const {
@@ -15,21 +17,25 @@ export function SupportNavigatorWorkspace() {
   } = useCommunitySupport();
 
   return (
-    <div className="rounded-2xl border border-white/5 bg-slate-900/20 p-5 space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+    <CardSurface variant="surface" className="p-5 space-y-6" noPadding>
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-5 p-5">
         <div className="md:col-span-5 space-y-3">
           <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Ranked Compatibility Listings</p>
           <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
             {sortedMatchingResources.map((res) => {
               const matched = matchScores[res.id];
+              const isSelected = selectedMatchResourceId === res.id;
               return (
                 <button
                   key={res.id}
                   onClick={() => setSelectedMatchResourceId(res.id)}
+                  style={{
+                    backgroundColor: isSelected ? "rgba(34,211,238,0.08)" : "rgba(4,8,16,0.30)",
+                    borderColor: isSelected ? "rgba(34,211,238,0.30)" : "rgba(255,255,255,0.05)",
+                    boxShadow: isSelected ? "0px 0px 12px rgba(34,211,238,0.1)" : "none",
+                  }}
                   className={`w-full text-left p-3 rounded-xl border transition-all ${
-                    selectedMatchResourceId === res.id
-                      ? "bg-cyan-500/10 border-cyan-400/30 shadow-[0_0_12px_rgba(34,211,238,0.1)]"
-                      : "bg-slate-950/30 border-white/5 hover:bg-slate-900/40"
+                    isSelected ? "" : "hover:bg-white/[0.02]"
                   }`}
                 >
                   <div className="flex justify-between items-center gap-2">
@@ -49,9 +55,9 @@ export function SupportNavigatorWorkspace() {
           </div>
         </div>
 
-        <div className="md:col-span-7 space-y-4 bg-slate-950/40 border border-white/5 rounded-2xl p-4">
+        <CardSurface variant="glass" className="md:col-span-7 space-y-4 p-4" noPadding>
           {activeMatchResource ? (
-            <>
+            <div className="space-y-4 p-4">
               <div>
                 <span className="text-[9px] bg-cyan-950 text-cyan-300 font-bold px-2 py-0.5 rounded-full border border-cyan-500/20 uppercase tracking-wider">
                   {activeMatchResource.type}
@@ -96,7 +102,15 @@ export function SupportNavigatorWorkspace() {
                               [stepKey]: !isChecked
                             }))
                           }
-                          className="h-3.5 w-3.5 rounded border-white/10 bg-slate-950 text-cyan-500 focus:ring-cyan-500"
+                          style={{
+                            ...inputStyle("base"),
+                            height: "14px",
+                            width: "14px",
+                            padding: 0,
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                          }}
+                          className="text-cyan-500 focus:ring-cyan-500 checked:bg-cyan-400"
                         />
                         <span className={`text-[10px] text-slate-300 select-none ${isChecked ? "line-through opacity-50" : ""}`}>
                           {step}
@@ -106,14 +120,14 @@ export function SupportNavigatorWorkspace() {
                   })}
                 </div>
               </div>
-            </>
+            </div>
           ) : (
-            <div className="h-full flex items-center justify-center text-center">
+            <div className="h-full flex items-center justify-center text-center p-4">
               <p className="text-xs text-slate-500">Select a ranked resource to review compatibility audit analytics.</p>
             </div>
           )}
-        </div>
+        </CardSurface>
       </div>
-    </div>
+    </CardSurface>
   );
 }

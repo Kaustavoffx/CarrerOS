@@ -14,6 +14,41 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useCommunitySupport } from "./community-support-context";
+import { PageHero, CardSurface } from "@/components/ui";
+import { buttonStyle, inputStyle } from "@/styles/careeros-design-system";
+
+// ─── Design Input Wrapper ────────────────────────────────────────────────────
+
+function DesignInput({ className = "", ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+  const [isFocused, setIsFocused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const state = isFocused ? "focus" : isHovered ? "hover" : "base";
+  return (
+    <input
+      {...props}
+      style={{ ...inputStyle(state), ...props.style }}
+      onFocus={(e) => {
+        setIsFocused(true);
+        props.onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        setIsFocused(false);
+        props.onBlur?.(e);
+      }}
+      onMouseEnter={(e) => {
+        setIsHovered(true);
+        props.onMouseEnter?.(e);
+      }}
+      onMouseLeave={(e) => {
+        setIsHovered(false);
+        props.onMouseLeave?.(e);
+      }}
+      className={className}
+    />
+  );
+}
+
+import { useState } from "react";
 
 type CommunitySupportLayoutProps = {
   activeTab: "discovery" | "matching" | "gaps" | "heatmap" | "review";
@@ -52,23 +87,11 @@ export function CommunitySupportLayout({ activeTab, children }: CommunitySupport
   return (
     <div className="space-y-6">
       {/* --- Dashboard Tactical Header Banner --- */}
-      <div className="relative rounded-[24px] border border-cyan-500/10 bg-slate-950/45 p-6 backdrop-blur-md overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 opacity-[0.03] [background-image:linear-gradient(to_right,#22d3ee_1px,transparent_1px),linear-gradient(to_bottom,#22d3ee_1px,transparent_1px)] [background-size:16px_16px]" />
-        
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
-              <p className="text-[10px] font-mono tracking-widest text-cyan-400 uppercase">CSI Command Center // Live Encryption Active</p>
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-              <Shield className="h-6 w-6 text-cyan-400" />
-              Community Support Intelligence <span className="text-xs bg-cyan-500/20 text-cyan-300 font-semibold px-2.5 py-0.5 rounded-full border border-cyan-400/20">PREMIUM</span>
-            </h1>
-            <p className="text-xs text-slate-400 max-w-xl">
-              Government-grade regional assessment, AI resource matching, and agentic eligibility validation operations.
-            </p>
-          </div>
+      <PageHero
+        badge="CSI Command Center // Live Encryption Active"
+        title="Community Support Intelligence"
+        subtitle="Government-grade regional assessment, AI resource matching, and agentic eligibility validation operations."
+        actions={
           <div className="flex items-center gap-4 bg-slate-900/60 border border-white/5 rounded-2xl p-3 shrink-0">
             <Globe className="h-8 w-8 text-cyan-500/80 animate-spin-slow shrink-0" />
             <div className="min-w-0">
@@ -77,8 +100,8 @@ export function CommunitySupportLayout({ activeTab, children }: CommunitySupport
               <p className="text-[9px] font-mono text-cyan-400/70">SYNC: 100% OK</p>
             </div>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* --- Main 3-Column command setup --- */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -89,7 +112,7 @@ export function CommunitySupportLayout({ activeTab, children }: CommunitySupport
         <div className="lg:col-span-3 space-y-6 flex flex-col">
           
           {/* Health Index Metric Ring */}
-          <div className="rounded-2xl border border-white/5 bg-slate-900/40 p-4 space-y-4">
+          <CardSurface variant="surface" className="p-4 space-y-4">
             <div className="flex justify-between items-center">
               <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold flex items-center gap-1.5">
                 <Activity className="h-3 w-3 text-cyan-400" />
@@ -115,11 +138,11 @@ export function CommunitySupportLayout({ activeTab, children }: CommunitySupport
                 <p className="text-sm font-bold text-emerald-400 mt-0.5">{healthMetrics.verifiedPrograms}</p>
               </div>
             </div>
-          </div>
+          </CardSurface>
 
           {/* Crisis Detection alerts */}
           {criticalDeficiencies.length > 0 && (
-            <div className="rounded-2xl border border-rose-500/10 bg-rose-950/10 p-4 space-y-3">
+            <CardSurface variant="glass" className="border-rose-500/10 bg-rose-950/10 p-4 space-y-3">
               <p className="text-[10px] uppercase tracking-wider text-rose-400 font-semibold flex items-center gap-1.5">
                 <AlertTriangle className="h-3.5 w-3.5 text-rose-500 animate-pulse" />
                 Crisis Detection Layer
@@ -147,11 +170,11 @@ export function CommunitySupportLayout({ activeTab, children }: CommunitySupport
                   </div>
                 ))}
               </div>
-            </div>
+            </CardSurface>
           )}
 
           {/* AI Support Operations Feed */}
-          <div className="rounded-2xl border border-white/5 bg-slate-900/40 p-4 space-y-3 flex-1 flex flex-col">
+          <CardSurface variant="surface" className="p-4 space-y-3 flex-1 flex flex-col">
             <div className="flex justify-between items-center shrink-0">
               <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Live Systems Feed</p>
               <select
@@ -190,7 +213,7 @@ export function CommunitySupportLayout({ activeTab, children }: CommunitySupport
                   </div>
                 ))}
             </div>
-          </div>
+          </CardSurface>
         </div>
 
         {/* ========================================================================= */}
@@ -198,49 +221,44 @@ export function CommunitySupportLayout({ activeTab, children }: CommunitySupport
         {/* ========================================================================= */}
         <div className="lg:col-span-6 space-y-6">
           {/* Navigation Tab Menu */}
-          <div className="flex border border-white/5 bg-slate-900/50 rounded-2xl p-1 relative z-10 shrink-0 overflow-x-auto">
+          <div className="flex border border-white/5 bg-slate-900/50 rounded-2xl p-1 relative z-10 shrink-0 overflow-x-auto gap-1">
             <Link
               href="/resource-discovery"
               prefetch={true}
-              className={`flex-1 py-2 px-3 text-xs font-semibold rounded-xl transition-all whitespace-nowrap text-center ${
-                activeTab === "discovery" ? "bg-cyan-500/10 text-cyan-300 border border-cyan-500/20" : "text-slate-400 hover:text-slate-200"
-              }`}
+              style={activeTab === "discovery" ? { ...buttonStyle("secondary"), height: "32px", display: "inline-flex", alignItems: "center", justifyContent: "center" } : { ...buttonStyle("ghost"), height: "32px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+              className="flex-1 py-2 px-3 text-xs font-semibold rounded-xl whitespace-nowrap text-center"
             >
               Resource Discovery
             </Link>
             <Link
               href="/support-navigator"
               prefetch={true}
-              className={`flex-1 py-2 px-3 text-xs font-semibold rounded-xl transition-all whitespace-nowrap text-center ${
-                activeTab === "matching" ? "bg-cyan-500/10 text-cyan-300 border border-cyan-500/20" : "text-slate-400 hover:text-slate-200"
-              }`}
+              style={activeTab === "matching" ? { ...buttonStyle("secondary"), height: "32px", display: "inline-flex", alignItems: "center", justifyContent: "center" } : { ...buttonStyle("ghost"), height: "32px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+              className="flex-1 py-2 px-3 text-xs font-semibold rounded-xl whitespace-nowrap text-center"
             >
               Match Engine
             </Link>
             <Link
               href="/community-heatmap"
               prefetch={true}
-              className={`flex-1 py-2 px-3 text-xs font-semibold rounded-xl transition-all whitespace-nowrap text-center ${
-                activeTab === "heatmap" ? "bg-cyan-500/10 text-cyan-300 border border-cyan-500/20" : "text-slate-400 hover:text-slate-200"
-              }`}
+              style={activeTab === "heatmap" ? { ...buttonStyle("secondary"), height: "32px", display: "inline-flex", alignItems: "center", justifyContent: "center" } : { ...buttonStyle("ghost"), height: "32px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+              className="flex-1 py-2 px-3 text-xs font-semibold rounded-xl whitespace-nowrap text-center"
             >
               Heatmap Matrix
             </Link>
             <Link
               href="/community-gaps"
               prefetch={true}
-              className={`flex-1 py-2 px-3 text-xs font-semibold rounded-xl transition-all whitespace-nowrap text-center ${
-                activeTab === "gaps" ? "bg-cyan-500/10 text-cyan-300 border border-cyan-500/20" : "text-slate-400 hover:text-slate-200"
-              }`}
+              style={activeTab === "gaps" ? { ...buttonStyle("secondary"), height: "32px", display: "inline-flex", alignItems: "center", justifyContent: "center" } : { ...buttonStyle("ghost"), height: "32px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+              className="flex-1 py-2 px-3 text-xs font-semibold rounded-xl whitespace-nowrap text-center"
             >
               Gap Reports
             </Link>
             <Link
               href="/report-need"
               prefetch={true}
-              className={`flex-1 py-2 px-3 text-xs font-semibold rounded-xl transition-all whitespace-nowrap text-center ${
-                activeTab === "review" ? "bg-cyan-500/10 text-cyan-300 border border-cyan-500/20" : "text-slate-400 hover:text-slate-200"
-              }`}
+              style={activeTab === "review" ? { ...buttonStyle("secondary"), height: "32px", display: "inline-flex", alignItems: "center", justifyContent: "center" } : { ...buttonStyle("ghost"), height: "32px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+              className="flex-1 py-2 px-3 text-xs font-semibold rounded-xl whitespace-nowrap text-center"
             >
               Review Queue
             </Link>
@@ -255,7 +273,7 @@ export function CommunitySupportLayout({ activeTab, children }: CommunitySupport
         <div className="lg:col-span-3 space-y-6 flex flex-col">
           
           {/* Agentic Workflow Terminal */}
-          <div className="rounded-2xl border border-white/5 bg-slate-900/40 p-4 space-y-4">
+          <CardSurface variant="surface" className="p-4 space-y-4">
             <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold flex items-center gap-1.5">
               <Terminal className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
               Agentic Workflow Center
@@ -265,7 +283,8 @@ export function CommunitySupportLayout({ activeTab, children }: CommunitySupport
               <select
                 value={selectedWorkflowResourceId}
                 onChange={(e) => setSelectedWorkflowResourceId(e.target.value)}
-                className="w-full bg-slate-950 border border-white/10 rounded-xl px-2.5 py-2 text-xs text-slate-300 focus:outline-none"
+                style={inputStyle("base")}
+                className="w-full text-slate-300"
               >
                 {resources.map((r) => (
                   <option key={r.id} value={r.id}>
@@ -277,21 +296,15 @@ export function CommunitySupportLayout({ activeTab, children }: CommunitySupport
               <div className="flex gap-2">
                 <button
                   onClick={() => setWorkflowAction("verify_eligibility")}
-                  className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg border transition-all ${
-                    workflowAction === "verify_eligibility"
-                      ? "bg-cyan-500/10 border-cyan-400/30 text-cyan-300"
-                      : "bg-slate-950/30 border-white/5 text-slate-500 hover:text-slate-300"
-                  }`}
+                  style={workflowAction === "verify_eligibility" ? { ...buttonStyle("secondary"), height: "32px", fontSize: "10px" } : { ...buttonStyle("ghost"), height: "32px", fontSize: "10px" }}
+                  className="flex-1 font-bold"
                 >
                   Verify Eligibility
                 </button>
                 <button
                   onClick={() => setWorkflowAction("draft_sop_or_application")}
-                  className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg border transition-all ${
-                    workflowAction === "draft_sop_or_application"
-                      ? "bg-cyan-500/10 border-cyan-400/30 text-cyan-300"
-                      : "bg-slate-950/30 border-white/5 text-slate-500 hover:text-slate-300"
-                  }`}
+                  style={workflowAction === "draft_sop_or_application" ? { ...buttonStyle("secondary"), height: "32px", fontSize: "10px" } : { ...buttonStyle("ghost"), height: "32px", fontSize: "10px" }}
+                  className="flex-1 font-bold"
                 >
                   Draft SOP
                 </button>
@@ -300,7 +313,8 @@ export function CommunitySupportLayout({ activeTab, children }: CommunitySupport
               <button
                 onClick={() => triggerAgentAction(selectedWorkflowResourceId, activeWorkflowResource?.name || "Target", workflowAction)}
                 disabled={isWorkflowRunning}
-                className="w-full py-2 bg-slate-950 border border-cyan-500/25 hover:border-cyan-400/50 text-cyan-400 hover:text-cyan-300 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2"
+                style={buttonStyle("primary")}
+                className="w-full flex items-center justify-center gap-2"
               >
                 {isWorkflowRunning ? (
                   <>
@@ -349,10 +363,10 @@ export function CommunitySupportLayout({ activeTab, children }: CommunitySupport
                 )}
               </div>
             )}
-          </div>
+          </CardSurface>
 
           {/* AI Community Navigator Chat */}
-          <div className="rounded-2xl border border-white/5 bg-slate-900/40 p-4 flex-1 flex flex-col overflow-hidden space-y-3">
+          <CardSurface variant="surface" className="p-4 flex-1 flex flex-col overflow-hidden space-y-3">
             <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold flex items-center gap-1.5 shrink-0">
               <Brain className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
               AI Navigator Assistant
@@ -391,23 +405,24 @@ export function CommunitySupportLayout({ activeTab, children }: CommunitySupport
 
               {/* Chat Input */}
               <div className="flex gap-2 mt-3 pt-2 border-t border-white/5 shrink-0">
-                <input
+                <DesignInput
                   type="text"
                   placeholder="Ask about resources..."
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSendChatMessage()}
-                  className="flex-1 px-3 py-1.5 bg-slate-900 border border-white/10 rounded-xl text-[11px] focus:outline-none focus:border-cyan-500 text-white placeholder-slate-500"
+                  className="flex-1 px-3 py-1.5 bg-transparent border-none text-[11px] text-white"
                 />
                 <button
                   onClick={handleSendChatMessage}
-                  className="h-8 w-8 rounded-xl bg-cyan-950/20 border border-cyan-400/25 flex items-center justify-center text-cyan-400 hover:text-cyan-300 transition-colors"
+                  style={{ ...buttonStyle("primary"), height: "32px", width: "32px", padding: 0 }}
+                  className="flex items-center justify-center shrink-0"
                 >
                   <Send className="h-3.5 w-3.5" />
                 </button>
               </div>
             </div>
-          </div>
+          </CardSurface>
         </div>
 
       </div>

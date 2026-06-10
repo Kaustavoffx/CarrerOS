@@ -8,6 +8,8 @@ import {
   ArrowUpRight, Clock, MapPin, Shield
 } from "lucide-react";
 import type { CommunityNeedReport, CommunityNeedStats, CommunityAiAction } from "@/lib/supabase/types";
+import { PageHero, CardSurface } from "@/components/ui";
+import { buttonStyle } from "@/styles/careeros-design-system";
 
 /* ─────────────────────────────────────────────────────────────
    Types
@@ -133,7 +135,7 @@ const NeedsFeedPanel = memo(function NeedsFeedPanel() {
   };
 
   return (
-    <motion.div {...PANEL_ENTER} className="bg-slate-900/40 border border-white/[0.06] rounded-2xl p-4 space-y-3">
+    <CardSurface variant="surface" {...PANEL_ENTER} noPadding className="p-4 space-y-3">
       <PanelHeader icon={Activity} title="Live Needs Feed" subtitle="Real-time community reports" live onRefresh={fetch_} />
       {loading ? (
         <div className="flex items-center gap-2 py-4 text-[11px] text-slate-500">
@@ -176,7 +178,7 @@ const NeedsFeedPanel = memo(function NeedsFeedPanel() {
           </AnimatePresence>
         </div>
       )}
-    </motion.div>
+    </CardSurface>
   );
 });
 
@@ -203,7 +205,7 @@ const GapScoresPanel = memo(function GapScoresPanel() {
   const displayStats: CommunityNeedStats[] = stats.length > 0 ? stats.slice(0, 6) : FALLBACK_STATS;
 
   return (
-    <motion.div {...PANEL_ENTER} style={{ transitionDelay: "0.05s" }} className="bg-slate-900/40 border border-white/[0.06] rounded-2xl p-4 space-y-3">
+    <CardSurface variant="surface" {...PANEL_ENTER} style={{ transitionDelay: "0.05s" }} noPadding className="p-4 space-y-3">
       <PanelHeader icon={BarChart3} title="Gap Intelligence" subtitle="Demand vs. available resources" onRefresh={fetch_} />
       {loading ? (
         <div className="flex items-center gap-2 py-4 text-[11px] text-slate-500">
@@ -240,7 +242,7 @@ const GapScoresPanel = memo(function GapScoresPanel() {
           })}
         </div>
       )}
-    </motion.div>
+    </CardSurface>
   );
 });
 
@@ -265,7 +267,7 @@ const ForecastsPanel = memo(function ForecastsPanel() {
   useEffect(() => { fetch_(); }, [fetch_]);
 
   return (
-    <motion.div {...PANEL_ENTER} style={{ transitionDelay: "0.1s" }} className="bg-slate-900/40 border border-white/[0.06] rounded-2xl p-4 space-y-3">
+    <CardSurface variant="surface" {...PANEL_ENTER} style={{ transitionDelay: "0.1s" }} noPadding className="p-4 space-y-3">
       <PanelHeader icon={TrendingUp} title="Demand Forecast" subtitle="30-day predictive modeling" onRefresh={fetch_} />
       {loading ? (
         <div className="flex items-center gap-2 py-4 text-[11px] text-slate-500">
@@ -304,7 +306,7 @@ const ForecastsPanel = memo(function ForecastsPanel() {
           })}
         </div>
       )}
-    </motion.div>
+    </CardSurface>
   );
 });
 
@@ -332,7 +334,7 @@ const HeatmapPanel = memo(function HeatmapPanel() {
   const TYPES  = ["scholarship", "internship", "mentorship", "center"];
 
   return (
-    <motion.div {...PANEL_ENTER} style={{ transitionDelay: "0.15s" }} className="bg-slate-900/40 border border-white/[0.06] rounded-2xl p-4 space-y-3">
+    <CardSurface variant="surface" {...PANEL_ENTER} style={{ transitionDelay: "0.15s" }} noPadding className="p-4 space-y-3">
       <PanelHeader icon={Globe} title="Heatmap Matrix" subtitle="Resource density per city" onRefresh={fetch_} />
       {loading ? (
         <div className="flex items-center gap-2 py-4 text-[11px] text-slate-500">
@@ -380,7 +382,7 @@ const HeatmapPanel = memo(function HeatmapPanel() {
           </div>
         </div>
       )}
-    </motion.div>
+    </CardSurface>
   );
 });
 
@@ -411,7 +413,7 @@ const AiActionsPanel = memo(function AiActionsPanel() {
   const displayActions = actions.length > 0 ? actions : SIMULATED;
 
   return (
-    <motion.div {...PANEL_ENTER} style={{ transitionDelay: "0.2s" }} className="bg-slate-900/40 border border-white/[0.06] rounded-2xl p-4 space-y-3">
+    <CardSurface variant="surface" {...PANEL_ENTER} style={{ transitionDelay: "0.2s" }} noPadding className="p-4 space-y-3">
       <PanelHeader icon={Brain} title="AI Actions Log" subtitle="Recent agentic workflow runs" />
       {loading ? (
         <div className="flex items-center gap-2 py-4 text-[11px] text-slate-500">
@@ -445,7 +447,7 @@ const AiActionsPanel = memo(function AiActionsPanel() {
           ))}
         </div>
       )}
-    </motion.div>
+    </CardSurface>
   );
 });
 
@@ -463,7 +465,7 @@ const SystemStatusPanel = memo(function SystemStatusPanel() {
   ];
 
   return (
-    <motion.div {...PANEL_ENTER} style={{ transitionDelay: "0.25s" }} className="bg-slate-900/40 border border-white/[0.06] rounded-2xl p-4 space-y-3">
+    <CardSurface variant="surface" {...PANEL_ENTER} style={{ transitionDelay: "0.25s" }} noPadding className="p-4 space-y-3">
       <PanelHeader icon={Shield} title="System Status" subtitle="Community intelligence modules" />
       <div className="space-y-2">
         {systems.map((s) => (
@@ -481,20 +483,22 @@ const SystemStatusPanel = memo(function SystemStatusPanel() {
       <div className="grid grid-cols-2 gap-2 pt-1">
         <a
           href="/report-need"
-          className="flex items-center justify-center gap-1.5 text-[9px] font-bold text-white bg-cyan-600/20 border border-cyan-500/20 hover:bg-cyan-600/30 rounded-xl py-2 transition-all"
+          style={{ ...buttonStyle("secondary"), height: "32px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+          className="gap-1.5 text-[9px] font-bold text-white transition-all"
         >
           <Zap className="h-3 w-3 text-cyan-400" />
           Report Need
         </a>
         <a
           href="/community-intelligence"
-          className="flex items-center justify-center gap-1.5 text-[9px] font-bold text-white bg-indigo-600/20 border border-indigo-500/20 hover:bg-indigo-600/30 rounded-xl py-2 transition-all"
+          style={{ ...buttonStyle("ghost"), height: "32px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+          className="gap-1.5 text-[9px] font-bold text-white transition-all"
         >
           <Globe className="h-3 w-3 text-indigo-400" />
           Intelligence
         </a>
       </div>
-    </motion.div>
+    </CardSurface>
   );
 });
 
@@ -513,37 +517,22 @@ export function CommunityCommandCenter() {
     <div className="space-y-6">
 
       {/* ── Mission Header ─────────────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 rounded-2xl border border-cyan-500/10 bg-gradient-to-r from-cyan-950/20 to-indigo-950/10"
-      >
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-cyan-500/15 border border-cyan-500/20">
-              <Shield className="h-4 w-4 text-cyan-400" />
-            </div>
-            <h1 className="text-base font-black text-white tracking-wide">Community Command Center</h1>
-            <span className="text-[8px] font-bold uppercase tracking-widest text-cyan-400/60 font-mono border border-cyan-500/20 px-2 py-0.5 rounded">
-              CSI v2.0
-            </span>
+      <PageHero
+        badge="CSI v2.0"
+        title="Community Command Center"
+        subtitle="Real-time intelligence platform. Live needs · Gap scores · Demand forecasts · Heatmap · AI actions."
+        actions={
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <p className="text-xl font-black text-cyan-400 font-mono tabular-nums">
+              {time.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+            </p>
+            <p className="text-[9px] text-slate-500 font-mono">
+              {time.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
+            </p>
+            <LiveBadge />
           </div>
-          <p className="text-[10px] text-slate-400 leading-relaxed max-w-xl">
-            Real-time intelligence platform. Live needs · Gap scores · Demand forecasts · Heatmap · AI actions.
-          </p>
-        </div>
-
-        {/* Live Clock */}
-        <div className="flex flex-col items-end gap-1 shrink-0">
-          <p className="text-xl font-black text-cyan-400 font-mono tabular-nums">
-            {time.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-          </p>
-          <p className="text-[9px] text-slate-500 font-mono">
-            {time.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
-          </p>
-          <LiveBadge />
-        </div>
-      </motion.div>
+        }
+      />
 
       {/* ── 6-Panel Grid ─────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

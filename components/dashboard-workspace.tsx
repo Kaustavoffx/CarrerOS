@@ -15,6 +15,8 @@ import type {
   NoteRecord, ProgressRecord, UserProfileRecord,
   WorkspaceSnapshotRecord, RoadmapMilestoneRecord
 } from "@/lib/supabase/types";
+import { PageHero, CardSurface } from "@/components/ui";
+import { buttonStyle, inputStyle } from "@/styles/careeros-design-system";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -31,6 +33,67 @@ function formatUtcDate(dateStr: string) {
   if (isNaN(d.getTime())) return dateStr;
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   return `${months[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
+}
+
+
+// ─── Design Input Wrappers ───────────────────────────────────────────────────
+
+function DesignInput({ className = "", ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+  const [isFocused, setIsFocused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const state = isFocused ? "focus" : isHovered ? "hover" : "base";
+  return (
+    <input
+      {...props}
+      style={{ ...inputStyle(state), ...props.style }}
+      onFocus={(e) => {
+        setIsFocused(true);
+        props.onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        setIsFocused(false);
+        props.onBlur?.(e);
+      }}
+      onMouseEnter={(e) => {
+        setIsHovered(true);
+        props.onMouseEnter?.(e);
+      }}
+      onMouseLeave={(e) => {
+        setIsHovered(false);
+        props.onMouseLeave?.(e);
+      }}
+      className={className}
+    />
+  );
+}
+
+function DesignTextarea({ className = "", ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const [isFocused, setIsFocused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const state = isFocused ? "focus" : isHovered ? "hover" : "base";
+  return (
+    <textarea
+      {...props}
+      style={{ ...inputStyle(state), ...props.style }}
+      onFocus={(e) => {
+        setIsFocused(true);
+        props.onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        setIsFocused(false);
+        props.onBlur?.(e);
+      }}
+      onMouseEnter={(e) => {
+        setIsHovered(true);
+        props.onMouseEnter?.(e);
+      }}
+      onMouseLeave={(e) => {
+        setIsHovered(false);
+        props.onMouseLeave?.(e);
+      }}
+      className={className}
+    />
+  );
 }
 
 
@@ -450,49 +513,29 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
         {toastMessage}
       </div>
 
-      {/* ═══ LEVEL 1: MISSION CARD (Mission Control Banner) ═══════════════════ */}
-      <section className="card-mission relative overflow-hidden rounded-2xl p-6">
-        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-start gap-4">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <Image src="/logo.png" alt="CareerOS" width={16} height={16} className="object-contain" />
-                <p className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Mission Control</p>
-                {activeRoadmap && (
-                  <span className="rounded-full border border-white/5 bg-white/[0.02] px-2 py-0.5 text-[9px] text-slate-500">
-                    Roadmap v{activeRoadmap.roadmap_version}
-                  </span>
-                )}
-              </div>
-
-              <h2 className="mt-2 text-2xl font-bold text-white tracking-tight leading-tight font-geom">
-                {profile?.goal || "SDE I Target Track"}
-              </h2>
-
-              <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-500 font-semibold">
-                <span>Readiness Score: <strong className="text-cyan-400">{profile?.readiness_score || 0}%</strong></span>
-                <span>&bull;</span>
-                <span>Active Sprint: <strong className="text-white">{currentMilestone?.title || "No Sprint Active"}</strong></span>
-                <span>&bull;</span>
-                <span>Weekly Hours Target: <strong className="text-white">{activeRoadmap?.weekly_hours || 10} hours</strong></span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            <button
-              onClick={() => setIsDrawerOpen(true)}
-              className="tactile-btn border border-white/5 hover:border-cyan-400/20 px-4 py-2 rounded-xl text-xs font-bold transition inline-flex items-center gap-1.5"
-            >
-              View Notes Archives
-              <ArrowRight className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        </div>
-      </section>
+      {/* ═══ LEVEL 1: MISSION CONTROL HERO ═══════════════════ */}
+      <PageHero
+        badge={activeRoadmap ? `Mission Control (Roadmap v${activeRoadmap.roadmap_version})` : "Mission Control"}
+        title={profile?.goal || "SDE I Target Track"}
+        subtitle={`Readiness Score: ${profile?.readiness_score || 0}% • Active Sprint: ${currentMilestone?.title || "No Sprint Active"} • Weekly Hours Target: ${activeRoadmap?.weekly_hours || 10} hours`}
+        actions={
+          <button
+            onClick={() => setIsDrawerOpen(true)}
+            style={buttonStyle("ghost")}
+            className="px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5"
+          >
+            View Notes Archives
+            <ArrowRight className="h-3.5 w-3.5" />
+          </button>
+        }
+      />
 
       {/* ═══ GEOLOCATION SUPPORT SPOTLIGHT ═══════════════════════════════════ */}
-      <section className="border border-cyan-500/10 bg-cyan-950/5 p-5 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+      <CardSurface
+        variant="glass"
+        dust="tr"
+        className="flex flex-col md:flex-row items-center justify-between gap-4"
+      >
         <div className="flex items-start gap-3">
           <div className="h-10 w-10 rounded-xl bg-cyan-950/40 border border-cyan-400/20 flex items-center justify-center text-cyan-300 shrink-0">
             <Compass className="h-5 w-5 animate-pulse" />
@@ -506,12 +549,13 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
         </div>
         <Link
           href="/community"
-          className="tactile-btn bg-cyan-400 text-black px-4.5 py-2 rounded-xl text-xs font-bold transition hover:scale-[1.02] flex items-center gap-1 shrink-0"
+          style={buttonStyle("primary")}
+          className="px-4 py-2 rounded-xl text-xs font-bold transition hover:scale-[1.02] flex items-center gap-1 shrink-0 justify-center text-black"
         >
           Scan Help Near Me
           <ArrowRight className="h-3.5 w-3.5" />
         </Link>
-      </section>
+      </CardSurface>
 
       {/* Quick Actions Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -532,9 +576,11 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
               <Link
                 key={i}
                 href={act.href}
-                className="group border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] hover:border-white/10 p-4 rounded-xl transition duration-150"
+                className="group block"
               >
-                {content}
+                <CardSurface variant="surface" hover className="p-4">
+                  {content}
+                </CardSurface>
               </Link>
             );
           } else {
@@ -542,9 +588,11 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
               <button
                 key={i}
                 onClick={act.onClick}
-                className="group text-left border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] hover:border-white/10 p-4 rounded-xl transition duration-150"
+                className="group block text-left w-full"
               >
-                {content}
+                <CardSurface variant="surface" hover className="p-4">
+                  {content}
+                </CardSurface>
               </button>
             );
           }
@@ -553,7 +601,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
 
       {/* Empty State: No active roadmap track */}
       {!activeRoadmap && (
-        <section className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-white/5 py-16 text-center bg-white/[0.01] relative overflow-hidden">
+        <CardSurface variant="surface" className="flex flex-col items-center gap-4 py-16 text-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/5 bg-white/[0.02]">
             <Image src="/logo.png" alt="CareerOS" width={24} height={24} className="object-contain" />
           </div>
@@ -565,11 +613,12 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
           </div>
           <Link
             href="/roadmaps"
-            className="tactile-btn tactile-btn-primary mt-2 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold text-black"
+            style={buttonStyle("primary")}
+            className="mt-2 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold text-black justify-center"
           >
             Generate Career Roadmap &rarr;
           </Link>
-        </section>
+        </CardSurface>
       )}
 
       {/* ═══ LEVEL 2: SPRINT PROGRESS (Active Milestone Checklist) ═══════════════ */}
@@ -580,7 +629,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
             <h3 className="text-base font-bold text-white mt-1">Sprint Progress</h3>
           </div>
 
-          <div className="card-data rounded-2xl p-6 sm:p-8 relative overflow-hidden">
+          <CardSurface variant="surface" className="sm:p-8">
             <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-3">
@@ -663,13 +712,14 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
 
                 <Link
                   href="/roadmaps"
-                  className="tactile-btn tactile-btn-primary w-full py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 mt-2"
+                  style={buttonStyle("primary")}
+                  className="w-full py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 mt-2 text-black"
                 >
                   Start Working &rarr;
                 </Link>
               </div>
             </div>
-          </div>
+          </CardSurface>
         </section>
       )}
 
@@ -689,13 +739,13 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
               { label: "Consistency Rate", value: `${weeklyConsistency}%`, sub: "Workspace actions" },
               { label: "Logged Progress Items", value: String(workspace.progress?.length ?? 0), sub: "Momentum events" },
             ].map(stat => (
-              <div key={stat.label} className="card-data p-4 rounded-xl flex flex-col justify-between">
+              <CardSurface key={stat.label} variant="surface" noPadding className="p-4 flex flex-col justify-between">
                 <div>
                   <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">{stat.label}</span>
                   <p className="text-lg font-bold text-white mt-1.5 leading-none font-geom">{stat.value}</p>
                 </div>
                 <span className="text-[9px] text-slate-500 mt-2 block">{stat.sub}</span>
-              </div>
+              </CardSurface>
             ))}
           </div>
         </section>
@@ -708,7 +758,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
           <h3 className="text-base font-bold text-white mt-1">Activity Logs</h3>
         </div>
 
-        <div className="card-data rounded-xl p-6">
+        <CardSurface variant="surface">
           {activityFeedList.length > 0 ? (
             <div className="relative space-y-4">
               <div className="absolute left-[15px] top-3 bottom-3 w-px bg-white/5" />
@@ -729,7 +779,8 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                 <div className="mt-4 flex justify-center border-t border-white/5 pt-4">
                   <button
                     onClick={() => setActivityLimit(prev => prev + 5)}
-                    className="tactile-btn border border-white/5 hover:border-slate-500 px-4 py-1.5 rounded-lg text-xs text-slate-400 hover:text-white transition font-semibold"
+                    style={buttonStyle("ghost")}
+                    className="px-4 py-1.5 text-xs font-semibold"
                   >
                     Load More Activities
                   </button>
@@ -739,7 +790,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
           ) : (
             <p className="text-xs text-slate-500 py-6 text-center">No recent activities logged.</p>
           )}
-        </div>
+        </CardSurface>
       </section>
 
       {/* ═══ NOTES SIDE DRAWER — CSS transition 220ms ══════════════════════════ */}
@@ -786,12 +837,12 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
 
                   <div className="mb-3">
                     <div className="relative">
-                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-500" />
-                      <input
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
+                      <DesignInput
                         value={noteSearch}
                         onChange={e => setNoteSearch(e.target.value)}
                         placeholder="Search notes..."
-                        className="carved-input w-full rounded-lg py-1.5 pl-8 pr-3 text-xs text-white"
+                        className="w-full pl-9"
                       />
                     </div>
                   </div>
@@ -799,7 +850,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                   <div className="space-y-2">
                     {filteredNotes.length > 0 ? (
                       filteredNotes.map(note => (
-                        <div key={note.id} className="border border-white/[0.06] bg-white/[0.02] p-3 rounded-lg relative group">
+                        <CardSurface key={note.id} variant="glass" noPadding className="p-3 relative group">
                           <div className="flex items-center justify-between mb-1.5">
                             <span className="bg-cyan-950/30 border border-cyan-500/20 px-1.5 py-0.2 rounded text-[8px] font-bold text-cyan-300 uppercase">
                               {note.tag}
@@ -813,7 +864,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                           </div>
                           <h5 className="text-xs font-semibold text-white leading-snug">{note.title}</h5>
                           <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">{note.content}</p>
-                        </div>
+                        </CardSurface>
                       ))
                     ) : (
                       <p className="text-[10px] text-slate-500 text-center py-6">No strategy notes found.</p>
@@ -826,7 +877,8 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
             <div className="border-t border-[#202028] pt-4 flex gap-2">
               <button
                 onClick={() => setIsDrawerOpen(false)}
-                className="tactile-btn border border-[#202028] hover:border-slate-500 w-full rounded-xl py-2.5 text-xs text-slate-300 font-semibold transition"
+                style={buttonStyle("ghost")}
+                className="w-full py-2.5 text-xs font-semibold"
               >
                 Close Drawer
               </button>
@@ -849,11 +901,11 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
             <div className="space-y-4 relative z-10">
               <label className="block space-y-1.5">
                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Title</span>
-                <input value={noteTitle} onChange={(e) => setNoteTitle(e.target.value)} placeholder="e.g. Portfolio positioning narrative" className="carved-input w-full rounded-xl px-4 py-2.5 text-sm text-white" />
+                <DesignInput value={noteTitle} onChange={(e) => setNoteTitle(e.target.value)} placeholder="e.g. Portfolio positioning narrative" className="w-full" />
               </label>
               <label className="block space-y-1.5">
                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Content</span>
-                <textarea value={noteContent} onChange={(e) => setNoteContent(e.target.value)} rows={4} placeholder="Strategy actions, milestones, observations..." className="carved-input w-full rounded-xl px-4 py-2.5 text-sm text-white resize-none" />
+                <DesignTextarea value={noteContent} onChange={(e) => setNoteContent(e.target.value)} rows={4} placeholder="Strategy actions, milestones, observations..." className="w-full resize-none p-3 h-auto" />
               </label>
               <div>
                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-2">Tag</span>
@@ -866,8 +918,8 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setNoteModalOpen(false)} className="tactile-btn rounded-xl px-4 py-2 text-xs font-semibold text-slate-400">Cancel</button>
-                <button type="button" onClick={handleCreateNote} className="tactile-btn tactile-btn-primary rounded-xl px-5 py-2 text-xs font-semibold text-black">Pin Note</button>
+                <button type="button" onClick={() => setNoteModalOpen(false)} style={buttonStyle("ghost")} className="px-4 py-2 text-xs font-semibold">Cancel</button>
+                <button type="button" onClick={handleCreateNote} style={buttonStyle("primary")} className="px-5 py-2 text-xs font-semibold text-black">Pin Note</button>
               </div>
             </div>
           </div>
@@ -888,7 +940,7 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
             <div className="space-y-4 relative z-10">
               <label className="block space-y-1.5">
                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Metric Label</span>
-                <input value={progressLabel} onChange={(e) => setProgressLabel(e.target.value)} placeholder="e.g. Portfolio Readiness, AWS Certificate..." className="carved-input w-full rounded-xl px-4 py-2.5 text-sm text-white" />
+                <DesignInput value={progressLabel} onChange={(e) => setProgressLabel(e.target.value)} placeholder="e.g. Portfolio Readiness, AWS Certificate..." className="w-full" />
               </label>
               <label className="block space-y-1.5">
                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Value ({progressValue}%)</span>
@@ -899,11 +951,11 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
               </label>
               <label className="block space-y-1.5">
                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Context Note</span>
-                <textarea value={progressNote} onChange={(e) => setProgressNote(e.target.value)} rows={3} placeholder="Observations, blockers, wins..." className="carved-input w-full rounded-xl px-4 py-2.5 text-sm text-white resize-none" />
+                <DesignTextarea value={progressNote} onChange={(e) => setProgressNote(e.target.value)} rows={3} placeholder="Observations, blockers, wins..." className="w-full resize-none p-3 h-auto" />
               </label>
               <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setProgressModalOpen(false)} className="tactile-btn rounded-xl px-4 py-2 text-xs font-semibold text-slate-400">Cancel</button>
-                <button type="button" onClick={handleAddProgress} className="tactile-btn tactile-btn-primary rounded-xl px-5 py-2 text-xs font-semibold text-black">Log Progress</button>
+                <button type="button" onClick={() => setProgressModalOpen(false)} style={buttonStyle("ghost")} className="px-4 py-2 text-xs font-semibold">Cancel</button>
+                <button type="button" onClick={handleAddProgress} style={buttonStyle("primary")} className="px-5 py-2 text-xs font-semibold text-black">Log Progress</button>
               </div>
             </div>
           </div>
@@ -942,7 +994,8 @@ export function DashboardWorkspace({ profile, workspace: initialWorkspace }: Das
               <button
                 type="button"
                 onClick={() => setExportSuccessOpen(false)}
-                className="tactile-btn tactile-btn-primary w-full py-2.5 rounded-xl text-xs font-bold text-black mt-2"
+                style={buttonStyle("primary")}
+                className="w-full py-2.5 rounded-xl text-xs font-bold text-black mt-2"
               >
                 Dismiss
               </button>
