@@ -33,12 +33,12 @@
   /* Helper RGBs for inline gradients and configurations */
   --careeros-primary-rgb: 34, 211, 238;
   --careeros-secondary-rgb: 96, 165, 250;
-  \
+  --careeros-accent-rgb: 34, 211, 238;
   --theme-bg-image: url('/background.webp');
-  --lis-bg: var(--lis-bg);
-  --lis-panel-bg: var(--lis-panel-bg);
-  --lis-sidebar-bg: var(--lis-sidebar-bg);
-  --lis-input-bg: var(--lis-input-bg);
+  --lis-bg: rgba(8, 12, 24, 0.55);
+  --lis-panel-bg: rgba(6, 10, 20, 0.45);
+  --lis-sidebar-bg: rgba(7, 10, 22, 0.72);
+  --lis-input-bg: rgba(4, 8, 16, 0.50);
 }
 
 
