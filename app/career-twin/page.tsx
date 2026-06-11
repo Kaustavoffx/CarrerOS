@@ -1,6 +1,13 @@
 import { redirect } from "next/navigation";
 import { WorkspaceShell } from "@/components/workspace-shell";
-import { CareerTwinDashboard } from "@/components/career-twin-dashboard";
+import dynamic from "next/dynamic";
+
+const CareerTwinDashboard = dynamic(
+  () => import("@/components/career-twin-dashboard").then((mod) => mod.CareerTwinDashboard),
+  {
+    loading: () => <div className="animate-pulse bg-white/[0.02] border border-white/5 rounded-2xl h-[400px] w-full" />
+  }
+);
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { loadAppData } from "@/lib/app-data";

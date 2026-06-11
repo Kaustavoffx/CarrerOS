@@ -51,8 +51,6 @@ export function ThemeOrb() {
             className="mb-3 w-56 rounded-2xl p-2.5 border border-white/[0.08] shadow-2xl relative overflow-hidden"
             style={{
               background: "rgba(8, 12, 24, 0.85)",
-              backdropFilter: "blur(30px) saturate(180%)",
-              WebkitBackdropFilter: "blur(30px) saturate(180%)",
               boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 20px 50px rgba(0, 0, 0, 0.5)",
               borderColor: "var(--careeros-card-border)"
             }}
@@ -112,8 +110,6 @@ export function ThemeOrb() {
         className="lis-float flex h-12 w-12 items-center justify-center rounded-full border shadow-lg cursor-pointer transition-all duration-300 relative group overflow-hidden"
         style={{
           background: "rgba(8, 12, 24, 0.65)",
-          backdropFilter: "blur(20px) saturate(180%)",
-          WebkitBackdropFilter: "blur(20px) saturate(180%)",
           borderColor: "var(--careeros-card-border)",
           boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 0 20px var(--careeros-card-glow)"
         }}

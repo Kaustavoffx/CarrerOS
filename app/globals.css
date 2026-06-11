@@ -448,8 +448,7 @@ main {
      ══════════════════════════════════════════════════════════════════════════ */
   .lis-surface {
     background:      var(--lis-bg);
-    backdrop-filter: blur(30px) saturate(180%);
-    -webkit-backdrop-filter: blur(30px) saturate(180%);
+
     border:          1px solid var(--careeros-card-border);
     box-shadow:      inset 0 1px 0 rgba(255, 255, 255, 0.12),
                      0 20px 60px rgba(0, 0, 0, 0.45);
@@ -465,8 +464,7 @@ main {
      ══════════════════════════════════════════════════════════════════════════ */
   .lis-card {
     background:      var(--lis-bg);
-    backdrop-filter: blur(30px) saturate(180%);
-    -webkit-backdrop-filter: blur(30px) saturate(180%);
+
     border:          1px solid var(--careeros-card-border);
     box-shadow:      inset 0 1px 0 rgba(255, 255, 255, 0.12),
                      0 20px 60px rgba(0, 0, 0, 0.45);
@@ -534,8 +532,7 @@ main {
      ══════════════════════════════════════════════════════════════════════════ */
   .lis-panel {
     background:      var(--lis-panel-bg);
-    backdrop-filter: blur(20px) saturate(160%);
-    -webkit-backdrop-filter: blur(20px) saturate(160%);
+
     border:          1px solid rgba(255, 255, 255, 0.06);
     box-shadow:      inset 0 1px 0 rgba(255, 255, 255, 0.08);
     border-radius:   16px;
@@ -550,8 +547,7 @@ main {
      ══════════════════════════════════════════════════════════════════════════ */
   .lis-sidebar {
     background:      var(--lis-sidebar-bg);
-    backdrop-filter: blur(40px) saturate(200%);
-    -webkit-backdrop-filter: blur(40px) saturate(200%);
+
     border:          1px solid rgba(255, 255, 255, 0.07);
     box-shadow:
       4px 0 60px rgba(0, 0, 0, 0.4),
@@ -617,8 +613,7 @@ main {
   /* Ghost: glass */
   .lis-btn-ghost {
     background:      rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+
     border:          1px solid rgba(255, 255, 255, 0.09);
     box-shadow:      inset 0 1px 0 rgba(255, 255, 255, 0.06);
     color:           #F8FAFC;
@@ -658,8 +653,7 @@ main {
      ══════════════════════════════════════════════════════════════════════════ */
   .lis-input {
     background:      var(--lis-input-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+
     border:          1px solid rgba(255, 255, 255, 0.08);
     box-shadow:      inset 0 2px 6px rgba(0, 0, 0, 0.30),
                      inset 0 -1px 0 rgba(255, 255, 255, 0.03);
@@ -821,8 +815,7 @@ main {
   .card-danger,
   .card-mission {
     background:      var(--lis-bg) !important;
-    backdrop-filter: blur(30px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
+
     border:          1px solid var(--careeros-card-border) !important;
     box-shadow:      inset 0 1px 0 rgba(255, 255, 255, 0.10),
                      0 16px 48px rgba(0, 0, 0, 0.40) !important;
@@ -877,7 +870,7 @@ main {
   /* Legacy tactile buttons — mapped to LIS */
   .tactile-btn {
     background:      rgba(255, 255, 255, 0.04) !important;
-    backdrop-filter: blur(10px) !important;
+    
     border:          1px solid rgba(255, 255, 255, 0.09) !important;
     box-shadow:      0 4px 12px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06) !important;
     color:           #ffffff !important;
@@ -911,7 +904,7 @@ main {
   /* Legacy carved inputs — mapped to LIS */
   .carved-input {
     background:      var(--lis-input-bg) !important;
-    backdrop-filter: blur(12px) !important;
+    
     border:          1px solid rgba(255, 255, 255, 0.08) !important;
     box-shadow:      inset 0 2px 6px rgba(0,0,0,0.30), inset 0 -1px 0 rgba(255,255,255,0.03) !important;
     border-radius:   12px !important;
@@ -928,8 +921,7 @@ main {
   /* Legacy sidebar glass — mapped to LIS */
   .sidebar-glass {
     background:      var(--lis-sidebar-bg) !important;
-    backdrop-filter: blur(40px) saturate(200%) !important;
-    -webkit-backdrop-filter: blur(40px) saturate(200%) !important;
+
     border:          1px solid rgba(255, 255, 255, 0.07) !important;
     box-shadow:      4px 0 60px rgba(0,0,0,0.4),
                      inset -1px 0 0 rgba(255,255,255,0.04),
@@ -947,13 +939,13 @@ main {
   /* Chat message surfaces */
   .chat-message-assistant {
     background:      var(--careeros-sidebar-active) !important;
-    backdrop-filter: blur(12px) !important;
+    
     border:          1px solid rgba(var(--careeros-primary-rgb), 0.15) !important;
     border-radius:   16px !important;
   }
   .chat-message-user {
     background:      rgba(255, 255, 255, 0.05) !important;
-    backdrop-filter: blur(12px) !important;
+    
     border:          1px solid rgba(255, 255, 255, 0.09) !important;
     border-radius:   16px !important;
   }
@@ -961,7 +953,7 @@ main {
   /* Mentor input dock */
   .mentor-input-dock {
     background:      rgba(4, 8, 16, 0.60) !important;
-    backdrop-filter: blur(20px) !important;
+    
     border:          1px solid rgba(255, 255, 255, 0.09) !important;
     box-shadow:      0 8px 40px rgba(0, 0, 0, 0.40) !important;
     border-radius:   20px !important;

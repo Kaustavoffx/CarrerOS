@@ -134,7 +134,7 @@ export function RouteTransitionProvider({ children }: { children: React.ReactNod
             style={{ willChange: "opacity" }}
           >
             {/* Extremely subtle backdrop to keep transitions feeling instant */}
-            <div className="absolute inset-0" style={{ background: 'rgba(3,7,18,0.35)', backdropFilter: 'blur(2px)' }} />
+            <div className="absolute inset-0" style={{ background: 'rgba(3,7,18,0.35)' }} />
 
             {/* Premium, floating glassmorphic tag with GPU-accelerated motion */}
             <motion.div
@@ -147,7 +147,6 @@ export function RouteTransitionProvider({ children }: { children: React.ReactNod
                 willChange: "transform, opacity",
                 minWidth: "220px",
                 background: 'rgba(15,23,42,0.85)',
-                backdropFilter: 'blur(16px)',
                 border: '1px solid rgba(255,255,255,0.08)',
                 boxShadow: "0 20px 40px rgba(0,0,0,0.5)",
               }}

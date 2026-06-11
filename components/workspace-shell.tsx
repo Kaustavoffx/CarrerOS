@@ -8,7 +8,7 @@ import { useAuth } from "./auth-provider";
 import { useRouteTransition } from "./route-transition-provider";
 import {
   LogOut,
-  LayoutDashboard,
+  LayoutDashboard, LayoutGrid, MapPin,
   Map,
   Users,
   MessageSquare,
@@ -314,14 +314,17 @@ const navGroups: NavSectionConfig[] = [
 
 const allNavItems = navGroups.flatMap((g) => g.items);
 
-// Mobile radial navigation modules
+// Mobile radial navigation modules (11 modules)
 const radialModules = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Roadmaps", href: "/roadmaps", icon: Map },
   { label: "Career Twin", href: "/career-twin", icon: Users },
   { label: "AI Mentor", href: "/mentor", icon: MessageSquare },
-  { label: "Community Support", href: "/support-navigator", icon: Shield },
-  { label: "Analytics", href: "/community-command-center", icon: TrendingUp },
+  { label: "Community Intel", href: "/community-intelligence", icon: Brain },
+  { label: "Support Navigator", href: "/support-navigator", icon: Shield },
+  { label: "Resource Directory", href: "/resource-discovery", icon: Globe },
+  { label: "Geo Intelligence", href: "/community-heatmap", icon: MapPin },
+  { label: "Command Center", href: "/community-command-center", icon: Zap },
   { label: "Settings", href: "/settings", icon: Settings },
   { label: "Profile", href: "/profile", icon: UserCircle },
 ];
@@ -734,7 +737,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
             <button
               onClick={() => setIsCommandPaletteOpen(true)}
               className="mx-4 mt-4 flex items-center justify-between rounded-lis-xs border border-white/[0.06] px-3 py-1.5 text-left text-slate-500 hover:text-slate-300 hover:border-white/10 transition-all duration-[150ms]"
-              style={{ background: 'rgba(4,8,16,0.55)', backdropFilter: 'blur(12px)' }}
+              style={{ background: 'rgba(4,8,16,0.55)',  }}
             >
               <span className="text-[11px] flex items-center gap-1.5">
                 <Search className="h-3 w-3" />
@@ -811,7 +814,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
           onClick={handleToggleCollapse}
           aria-label="Toggle sidebar collapse"
           className="absolute -right-3 top-20 z-40 flex h-6 w-6 items-center justify-center rounded-full text-slate-400 hover:text-cyan-300 focus-visible:ring-2 focus-visible:ring-cyan-500 transition-colors duration-[150ms]"
-          style={{ background: 'rgba(8,12,24,0.90)', border: '1px solid rgba(255,255,255,0.10)', backdropFilter: 'blur(12px)' }}
+          style={{ background: 'rgba(8,12,24,0.90)', border: '1px solid rgba(255,255,255,0.10)',  }}
         >
           {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
         </button>
@@ -832,7 +835,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
               onClick={() => setGuideOpen(true)}
               aria-label="Open Mission Guide instructions"
               className="absolute top-8 right-8 z-30 px-3.5 py-2 rounded-lis-xs text-xs text-slate-300 hover:text-white focus-visible:ring-2 focus-visible:ring-cyan-500 transition-all duration-[150ms] flex items-center gap-1.5 font-semibold active:scale-95 hover:border-cyan-500/25"
-              style={{ background: 'rgba(8,12,24,0.75)', border: '1px solid rgba(255,255,255,0.09)', backdropFilter: 'blur(20px)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 24px rgba(0,0,0,0.35)' }}
+              style={{ background: 'rgba(8,12,24,0.75)', border: '1px solid rgba(255,255,255,0.09)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 24px rgba(0,0,0,0.35)' }}
             >
               <Info className="h-3.5 w-3.5 text-cyan-400" />
               Mission Guide
@@ -858,7 +861,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
         {/* Mobile Top Header — LIS surface */}
         <header
           className="sticky top-0 z-20 px-5 py-3"
-          style={{ background: 'rgba(7,10,22,0.82)', backdropFilter: 'blur(30px) saturate(180%)', borderBottom: '1px solid rgba(255,255,255,0.07)', boxShadow: 'inset 0 -1px 0 rgba(255,255,255,0.03)' }}
+          style={{ background: 'rgba(7,10,22,0.82)', borderBottom: '1px solid rgba(255,255,255,0.07)', boxShadow: 'inset 0 -1px 0 rgba(255,255,255,0.03)' }}
         >
           <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
             <div className="flex items-center gap-2">
@@ -888,7 +891,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
             <button
               onClick={() => setGuideOpen(true)}
               className="absolute top-4 right-5 z-30 px-2.5 py-1.5 rounded-lis-xs text-[10px] text-slate-300 hover:text-white transition-all duration-[150ms] flex items-center gap-1 font-semibold active:scale-95"
-              style={{ background: 'rgba(8,12,24,0.80)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.07)' }}
+              style={{ background: 'rgba(8,12,24,0.80)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.07)' }}
             >
               <Info className="h-3.5 w-3.5 text-cyan-400" />
               Guide
@@ -910,6 +913,11 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
 
         {/* ── FLOATING RADIAL NAVIGATION HUB (MOBILE ONLY) ── */}
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center justify-center select-none pb-safe">
+          {/* Prefetch Links */}
+          <div className="hidden">
+            {radialModules.map(mod => <Link key={`prefetch-${mod.href}`} href={mod.href} prefetch={true} />)}
+          </div>
+
           {/* Radial Items Container */}
           <AnimatePresence>
             {isRadialNavOpen && (
@@ -920,9 +928,14 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                 className="absolute inset-0 pointer-events-none"
               >
                 {radialModules.map((mod, idx) => {
-                  const N = radialModules.length;
-                  const angle = Math.PI - (idx * (Math.PI / (N - 1)));
-                  const radius = 130; 
+                  // Concentric Double Arc Geometry
+                  // First 4 items in inner arc, remaining 7 in outer arc
+                  const isInner = idx < 4;
+                  const N = isInner ? 4 : 7;
+                  const subIdx = isInner ? idx : idx - 4;
+                  
+                  const angle = Math.PI - (subIdx * (Math.PI / (N - 1)));
+                  const radius = isInner ? 90 : 155; 
                   const x = Math.cos(angle) * radius;
                   const y = -Math.sin(angle) * radius - 12;
 
@@ -937,25 +950,24 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                         type: "spring", 
                         stiffness: 280, 
                         damping: 22, 
-                        delay: idx * 0.035
+                        delay: idx * 0.02
                       }}
                       className="absolute flex flex-col items-center justify-center pointer-events-auto"
                       style={{ 
                         left: "50%", 
                         top: "50%",
-                        marginLeft: "-24px", 
-                        marginTop: "-24px"
+                        marginLeft: "-22px", 
+                        marginTop: "-22px"
                       }}
                     >
                       <button
                         onClick={() => handleRadialAction(mod.href)}
-                        className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-900 border border-white/10 hover:border-cyan-500/50 shadow-xl shadow-black/60 transition-colors active:scale-95 group relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                        className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-900 border border-white/10 hover:border-cyan-500/50 shadow-xl shadow-black/80 transition-colors active:scale-95 group relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
                         title={mod.label}
-                        style={{ backdropFilter: 'blur(10px)' }}
                       >
-                        <Icon className="h-[22px] w-[22px] text-cyan-400 group-hover:text-cyan-300 transition-colors" />
+                        <Icon className="h-5 w-5 text-cyan-400 group-hover:text-cyan-300 transition-colors" />
                         
-                        <div className="absolute -top-9 bg-slate-900/90 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full text-[11px] font-semibold text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-lg">
+                        <div className="absolute -top-9 bg-slate-900/95 border border-white/10 px-3 py-1 rounded-full text-[10px] font-semibold text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-lg">
                           {mod.label}
                         </div>
                       </button>
@@ -973,20 +985,24 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
             aria-expanded={isRadialNavOpen}
             className="flex h-[60px] w-[60px] items-center justify-center rounded-full transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 relative z-10"
             style={{ 
-              background: 'linear-gradient(135deg, #22d3ee, #3b82f6)',
-              border: '1px solid rgba(255,255,255,0.25)',
+              background: 'linear-gradient(135deg, #1e293b, #0f172a)',
+              border: '1px solid rgba(255,255,255,0.15)',
               boxShadow: isRadialNavOpen 
-                ? '0 0 35px rgba(34,211,238,0.6), inset 0 2px 4px rgba(255,255,255,0.3)'
-                : '0 0 20px rgba(34,211,238,0.4), inset 0 2px 4px rgba(255,255,255,0.3)',
+                ? '0 0 35px rgba(34,211,238,0.3), inset 0 2px 4px rgba(255,255,255,0.1)'
+                : '0 0 20px rgba(0,0,0,0.8), inset 0 2px 4px rgba(255,255,255,0.1)',
               transform: isRadialNavOpen ? 'scale(0.92)' : 'scale(1)',
               transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease'
             }}
           >
             <motion.div
-               animate={{ rotate: isRadialNavOpen ? 135 : 0 }}
+               animate={{ rotate: isRadialNavOpen ? 45 : 0 }}
                transition={{ type: "spring", stiffness: 220, damping: 20 }}
             >
-              <Zap className="h-[26px] w-[26px] text-slate-900 fill-slate-900 stroke-[1.5]" />
+              {isRadialNavOpen ? (
+                 <X className="h-7 w-7 text-cyan-400 stroke-[2]" />
+              ) : (
+                 <LayoutGrid className="h-7 w-7 text-cyan-400 stroke-[1.5]" />
+              )}
             </motion.div>
           </button>
         </div>
@@ -1009,7 +1025,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
               exit={{ opacity: 0, y: -16, scale: 0.96 }}
               transition={{ duration: 0.20, ease: [0.16,1,0.3,1] }}
               className="fixed inset-x-4 top-[15vh] mx-auto z-50 max-w-lg overflow-hidden rounded-lis p-4 space-y-3"
-              style={{ background: 'rgba(8,12,24,0.90)', backdropFilter: 'blur(40px) saturate(200%)', border: '1px solid rgba(255,255,255,0.09)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.10), 0 40px 100px rgba(0,0,0,0.60)' }}
+              style={{ background: 'rgba(8,12,24,0.90)', border: '1px solid rgba(255,255,255,0.09)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.10), 0 40px 100px rgba(0,0,0,0.60)' }}
             >
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
@@ -1091,7 +1107,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
               exit={{ x: "100%" }}
               transition={{ type: "spring", stiffness: 380, damping: 35 }}
               className="fixed top-0 right-0 h-screen w-80 z-50 p-6 flex flex-col gap-5 select-none text-xs text-slate-300 overflow-hidden"
-              style={{ background: 'rgba(7,10,22,0.96)', backdropFilter: 'blur(40px) saturate(200%)', borderLeft: '1px solid rgba(255,255,255,0.08)', boxShadow: 'inset 1px 0 0 rgba(255,255,255,0.04), -20px 0 80px rgba(0,0,0,0.50)' }}
+              style={{ background: 'rgba(7,10,22,0.96)', borderLeft: '1px solid rgba(255,255,255,0.08)', boxShadow: 'inset 1px 0 0 rgba(255,255,255,0.04), -20px 0 80px rgba(0,0,0,0.50)' }}
             >
               <div className="flex justify-between items-center border-b border-white/5 pb-2.5 shrink-0">
                 <div className="flex items-center gap-2">

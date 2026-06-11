@@ -75,30 +75,22 @@ export const COLORS = {
 export const GLASS = {
   /** Standard card / panel */
   surface: {
-    backdropFilter:         "blur(20px) saturate(180%)",
-    WebkitBackdropFilter:   "blur(20px) saturate(180%)",
-    willChange:             "backdrop-filter, transform" as const,
+    willChange: "transform" as const,
     transform:              "translateZ(0)",
   },
   /** Sidebar Command Rail — heavier blur */
   sidebar: {
-    backdropFilter:         "blur(24px) saturate(200%)",
-    WebkitBackdropFilter:   "blur(24px) saturate(200%)",
-    willChange:             "backdrop-filter, transform" as const,
+    willChange: "transform" as const,
     transform:              "translateZ(0)",
   },
   /** Overlay / modal — maximum depth */
   modal: {
-    backdropFilter:         "blur(24px) saturate(200%)",
-    WebkitBackdropFilter:   "blur(24px) saturate(200%)",
-    willChange:             "backdrop-filter, transform" as const,
+    willChange: "transform" as const,
     transform:              "translateZ(0)",
   },
   /** Light input / search bar */
   light: {
-    backdropFilter:         "blur(12px)",
-    WebkitBackdropFilter:   "blur(12px)",
-    willChange:             "backdrop-filter" as const,
+    willChange: "transform" as const,
     transform:              "translateZ(0)",
   },
 } as const;
