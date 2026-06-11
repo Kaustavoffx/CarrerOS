@@ -314,18 +314,13 @@ const navGroups: NavSectionConfig[] = [
 
 const allNavItems = navGroups.flatMap((g) => g.items);
 
-// Mobile navigation links
-const mobileNavItems = [
+// Mobile radial navigation modules
+const radialModules = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Roadmaps", href: "/roadmaps", icon: Map },
-  { label: "Career Twin", href: "/career-twin", icon: Users }
-];
-
-const secondaryModules = [
+  { label: "Career Twin", href: "/career-twin", icon: Users },
   { label: "AI Mentor", href: "/mentor", icon: MessageSquare },
-  { label: "Community Intel", href: "/community-intelligence", icon: Shield },
-  { label: "Opportunities", href: "/support-navigator", icon: Compass },
-  { label: "Reports", href: "/community-gaps", icon: Activity },
+  { label: "Community Support", href: "/support-navigator", icon: Shield },
   { label: "Analytics", href: "/community-command-center", icon: TrendingUp },
   { label: "Settings", href: "/settings", icon: Settings },
   { label: "Profile", href: "/profile", icon: UserCircle },
@@ -516,7 +511,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
   const [collapsed, setCollapsed] = useState(false);
 
   // Mobile Swift Diagnostic expandable menu state
-  const [isSwiftDiagnosticOpen, setIsSwiftDiagnosticOpen] = useState(false);
+  const [isRadialNavOpen, setIsRadialNavOpen] = useState(false);
 
   // Desktop hover slider state
   const [hoveredHref, setHoveredHref] = useState<string | null>(null);
@@ -552,7 +547,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
 
   // Clear mobile overlays and guide on route change complete
   useEffect(() => {
-    setIsSwiftDiagnosticOpen(false);
+    setIsRadialNavOpen(false);
     setGuideOpen(false);
   }, [pathname]);
 
@@ -639,9 +634,9 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
     router.refresh();
   }, [signOut, router]);
 
-  // Command Actions from mobile swift diagnostic
-  const handleSwiftAction = useCallback((href: string) => {
-    setIsSwiftDiagnosticOpen(false);
+  // Command Actions from mobile radial navigation
+  const handleRadialAction = useCallback((href: string) => {
+    setIsRadialNavOpen(false);
     startTransition(href);
     router.push(href);
   }, [startTransition, router]);
@@ -913,118 +908,88 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
           </AnimatePresence>
         </main>
 
-        {/* ── MOBILE BOTTOM NAVIGATION BAR ── */}
-        <nav
-          className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around h-20 px-2 pb-safe select-none"
-          style={{ background: 'rgba(7,10,22,0.85)', backdropFilter: 'blur(20px) saturate(180%)', borderTop: '1px solid rgba(255,255,255,0.07)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}
-        >
-          {mobileNavItems.map((item, idx) => {
-            const active = pathname === item.href;
-            const isLoading = transitioningTo === item.href;
-            const Icon = item.icon;
+        {/* ── FLOATING RADIAL NAVIGATION HUB (MOBILE ONLY) ── */}
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center justify-center select-none pb-safe">
+          {/* Radial Items Container */}
+          <AnimatePresence>
+            {isRadialNavOpen && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 pointer-events-none"
+              >
+                {radialModules.map((mod, idx) => {
+                  const N = radialModules.length;
+                  const angle = Math.PI - (idx * (Math.PI / (N - 1)));
+                  const radius = 130; 
+                  const x = Math.cos(angle) * radius;
+                  const y = -Math.sin(angle) * radius - 12;
 
-            return (
-              <div key={item.href} className="flex flex-1 items-center justify-center relative">
-                {/* Insert Swift Diagnostic Orb directly after the first item (Dashboard) to center it in a 3-item + orb layout */}
-                {idx === 1 && (
-                  <div className="px-4 shrink-0 relative z-50">
-                    <button
-                      onClick={() => setIsSwiftDiagnosticOpen(prev => !prev)}
-                      aria-label="Toggle Swift Diagnostic Menu"
-                      aria-expanded={isSwiftDiagnosticOpen}
-                      className="flex h-12 w-12 items-center justify-center rounded-full transition-transform active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
-                      style={{ 
-                        background: 'linear-gradient(135deg, #22d3ee, #3b82f6)',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        boxShadow: '0 0 20px rgba(34,211,238,0.4), inset 0 2px 4px rgba(255,255,255,0.3)',
-                        transform: isSwiftDiagnosticOpen ? 'rotate(45deg)' : 'rotate(0deg)',
-                        transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-                      }}
-                    >
-                      <Zap className="h-6 w-6 text-slate-900 fill-slate-900 stroke-[1.5]" />
-                    </button>
-                  </div>
-                )}
-
-                <Link
-                  href={item.href}
-                  prefetch={true}
-                  onClick={(e) => handleNavClick(item.href, e)}
-                  className={`flex flex-col items-center gap-1.5 py-2 w-full text-[10px] font-medium transition-colors ${
-                    active ? "text-cyan-300 font-semibold" : "text-slate-500 hover:text-slate-300"
-                  }`}
-                >
-                  <div className="relative">
-                    <Icon className="h-5 w-5" />
-                    {isLoading && (
-                      <span className="absolute -top-1 -right-1 flex h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse-dot" />
-                    )}
-                  </div>
-                  <span className="truncate max-w-[65px]">{item.label}</span>
-                </Link>
-              </div>
-            );
-          })}
-        </nav>
-
-        {/* ── SWIFT DIAGNOSTIC FULL-SCREEN MENU ── */}
-        <AnimatePresence>
-          {isSwiftDiagnosticOpen && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.98, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.98, y: 20 }}
-              transition={{ type: "spring", stiffness: 350, damping: 30, duration: 0.25 }}
-              className="fixed inset-0 z-40 flex flex-col pt-24 px-6 pb-28 overflow-y-auto overscroll-contain"
-              style={{ 
-                background: 'rgba(3,7,18,0.92)', 
-                backdropFilter: 'blur(16px)', 
-                willChange: "transform, opacity" 
-              }}
-            >
-              <div className="mb-8">
-                <h2 className="text-xl font-bold text-white tracking-wide flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-cyan-400 fill-cyan-400/20" />
-                  Swift Diagnostic
-                </h2>
-                <p className="text-xs text-slate-400 mt-1">Access all secondary modules and tools</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                {secondaryModules.map((mod) => {
                   const Icon = mod.icon;
                   return (
-                    <button
+                    <motion.div
                       key={mod.href}
-                      onClick={() => handleSwiftAction(mod.href)}
-                      className="flex flex-col items-start gap-3 p-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] hover:border-cyan-500/30 active:scale-[0.98] transition-all text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                      initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
+                      animate={{ opacity: 1, scale: 1, x, y }}
+                      exit={{ opacity: 0, scale: 0, x: 0, y: 0 }}
+                      transition={{ 
+                        type: "spring", 
+                        stiffness: 280, 
+                        damping: 22, 
+                        delay: idx * 0.035
+                      }}
+                      className="absolute flex flex-col items-center justify-center pointer-events-auto"
+                      style={{ 
+                        left: "50%", 
+                        top: "50%",
+                        marginLeft: "-24px", 
+                        marginTop: "-24px"
+                      }}
                     >
-                      <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <span className="text-sm font-semibold text-white block">{mod.label}</span>
-                      </div>
-                    </button>
+                      <button
+                        onClick={() => handleRadialAction(mod.href)}
+                        className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-900 border border-white/10 hover:border-cyan-500/50 shadow-xl shadow-black/60 transition-colors active:scale-95 group relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                        title={mod.label}
+                        style={{ backdropFilter: 'blur(10px)' }}
+                      >
+                        <Icon className="h-[22px] w-[22px] text-cyan-400 group-hover:text-cyan-300 transition-colors" />
+                        
+                        <div className="absolute -top-9 bg-slate-900/90 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full text-[11px] font-semibold text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-lg">
+                          {mod.label}
+                        </div>
+                      </button>
+                    </motion.div>
                   );
                 })}
-                
-                {/* Theme Studio Inline Launcher */}
-                <div className="flex flex-col items-start gap-3 p-4 rounded-2xl border border-white/5 bg-gradient-to-br from-cyan-500/5 to-purple-500/5 active:scale-[0.98] transition-all text-left relative overflow-hidden">
-                   <div className="p-2 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 relative z-10">
-                     <Settings className="h-5 w-5" />
-                   </div>
-                   <div className="relative z-10 w-full flex items-center justify-between">
-                     <span className="text-sm font-semibold text-white block">Theme Studio</span>
-                   </div>
-                   <div className="absolute right-4 bottom-4 z-20 scale-75 origin-bottom-right">
-                     <ThemeOrb />
-                   </div>
-                </div>
-              </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Central Orb */}
+          <button
+            onClick={() => setIsRadialNavOpen(prev => !prev)}
+            aria-label="Toggle Radial Navigation"
+            aria-expanded={isRadialNavOpen}
+            className="flex h-[60px] w-[60px] items-center justify-center rounded-full transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 relative z-10"
+            style={{ 
+              background: 'linear-gradient(135deg, #22d3ee, #3b82f6)',
+              border: '1px solid rgba(255,255,255,0.25)',
+              boxShadow: isRadialNavOpen 
+                ? '0 0 35px rgba(34,211,238,0.6), inset 0 2px 4px rgba(255,255,255,0.3)'
+                : '0 0 20px rgba(34,211,238,0.4), inset 0 2px 4px rgba(255,255,255,0.3)',
+              transform: isRadialNavOpen ? 'scale(0.92)' : 'scale(1)',
+              transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease'
+            }}
+          >
+            <motion.div
+               animate={{ rotate: isRadialNavOpen ? 135 : 0 }}
+               transition={{ type: "spring", stiffness: 220, damping: 20 }}
+            >
+              <Zap className="h-[26px] w-[26px] text-slate-900 fill-slate-900 stroke-[1.5]" />
             </motion.div>
-          )}
-        </AnimatePresence>
+          </button>
+        </div>
       </div>
 
       {/* ── COMMAND PALETTE (CMD+K) OVERLAY ── */}
