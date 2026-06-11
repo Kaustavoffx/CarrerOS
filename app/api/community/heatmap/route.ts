@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getCommunityResources } from "@/lib/community-db";
 
-export async function GET() {
+export async function GET(_request: Request) {
   try {
     const supabase = await getSupabaseServerClient().catch(() => null);
     const resources = await getCommunityResources(supabase, {});

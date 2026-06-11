@@ -21,7 +21,6 @@ import {
   Activity,
   Globe,
   Search,
-  Plus,
   Brain,
   Info,
   X,
@@ -31,7 +30,7 @@ import {
   TrendingUp
 } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo, memo } from "react";
-import { motion, useDragControls, AnimatePresence, usePresence } from "framer-motion";
+import { motion, AnimatePresence, usePresence } from "framer-motion";
 import { CAREEROS, sidebarItemStyle } from "@/styles/careeros-design-system";
 import { LiquidDust } from "@/components/ui/liquid-dust";
 import { ThemeOrb } from "@/components/theme-orb";
@@ -319,9 +318,17 @@ const allNavItems = navGroups.flatMap((g) => g.items);
 const mobileNavItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Roadmaps", href: "/roadmaps", icon: Map },
-  { label: "Community", href: "/community-intelligence", icon: Shield },
-  { label: "Mentor", href: "/mentor", icon: MessageSquare },
-  { label: "Profile", href: "/profile", icon: UserCircle }
+  { label: "Career Twin", href: "/career-twin", icon: Users }
+];
+
+const secondaryModules = [
+  { label: "AI Mentor", href: "/mentor", icon: MessageSquare },
+  { label: "Community Intel", href: "/community-intelligence", icon: Shield },
+  { label: "Opportunities", href: "/support-navigator", icon: Compass },
+  { label: "Reports", href: "/community-gaps", icon: Activity },
+  { label: "Analytics", href: "/community-command-center", icon: TrendingUp },
+  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Profile", href: "/profile", icon: UserCircle },
 ];
 
 function ScoreRing({ score }: { score: number }) {
@@ -508,9 +515,8 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
   // Desktop sidebar collapse state — persisted to localStorage
   const [collapsed, setCollapsed] = useState(false);
 
-  // Mobile Quick Action drawer sheet state
-  const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
-  const drawerDragControls = useDragControls();
+  // Mobile Swift Diagnostic expandable menu state
+  const [isSwiftDiagnosticOpen, setIsSwiftDiagnosticOpen] = useState(false);
 
   // Desktop hover slider state
   const [hoveredHref, setHoveredHref] = useState<string | null>(null);
@@ -546,7 +552,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
 
   // Clear mobile overlays and guide on route change complete
   useEffect(() => {
-    setIsQuickActionOpen(false);
+    setIsSwiftDiagnosticOpen(false);
     setGuideOpen(false);
   }, [pathname]);
 
@@ -633,9 +639,9 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
     router.refresh();
   }, [signOut, router]);
 
-  // Command Actions from mobile quick sheet
-  const handleQuickAction = useCallback((href: string) => {
-    setIsQuickActionOpen(false);
+  // Command Actions from mobile swift diagnostic
+  const handleSwiftAction = useCallback((href: string) => {
+    setIsSwiftDiagnosticOpen(false);
     startTransition(href);
     router.push(href);
   }, [startTransition, router]);
@@ -909,26 +915,33 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
 
         {/* ── MOBILE BOTTOM NAVIGATION BAR ── */}
         <nav
-          className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around h-16 px-1 pb-safe select-none"
-          style={{ background: 'rgba(7,10,22,0.90)', backdropFilter: 'blur(30px) saturate(180%)', borderTop: '1px solid rgba(255,255,255,0.07)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}
+          className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around h-20 px-2 pb-safe select-none"
+          style={{ background: 'rgba(7,10,22,0.85)', backdropFilter: 'blur(20px) saturate(180%)', borderTop: '1px solid rgba(255,255,255,0.07)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}
         >
           {mobileNavItems.map((item, idx) => {
             const active = pathname === item.href;
             const isLoading = transitioningTo === item.href;
             const Icon = item.icon;
 
-            // Render navigation items with a center gap to fit the Quick Action Hub button
             return (
               <div key={item.href} className="flex flex-1 items-center justify-center relative">
-                {/* Insert Quick Action Hub directly in the middle (between item 2 and 3) */}
-                {idx === 2 && (
-                  <div className="px-2 shrink-0">
+                {/* Insert Swift Diagnostic Orb directly after the first item (Dashboard) to center it in a 3-item + orb layout */}
+                {idx === 1 && (
+                  <div className="px-4 shrink-0 relative z-50">
                     <button
-                      onClick={() => setIsQuickActionOpen(true)}
-                      className="flex h-11 w-11 items-center justify-center rounded-full bg-cyan-500 text-black border border-cyan-400/40 shadow-lg shadow-cyan-500/20 active:scale-95 active:opacity-90 transition-transform animate-pulse-glow"
-                      title="Quick Action Hub"
+                      onClick={() => setIsSwiftDiagnosticOpen(prev => !prev)}
+                      aria-label="Toggle Swift Diagnostic Menu"
+                      aria-expanded={isSwiftDiagnosticOpen}
+                      className="flex h-12 w-12 items-center justify-center rounded-full transition-transform active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                      style={{ 
+                        background: 'linear-gradient(135deg, #22d3ee, #3b82f6)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        boxShadow: '0 0 20px rgba(34,211,238,0.4), inset 0 2px 4px rgba(255,255,255,0.3)',
+                        transform: isSwiftDiagnosticOpen ? 'rotate(45deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                      }}
                     >
-                      <Plus className="h-5 w-5 stroke-[2.5]" />
+                      <Zap className="h-6 w-6 text-slate-900 fill-slate-900 stroke-[1.5]" />
                     </button>
                   </div>
                 )}
@@ -947,125 +960,69 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
                       <span className="absolute -top-1 -right-1 flex h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse-dot" />
                     )}
                   </div>
-                  <span className="truncate max-w-[50px]">{item.label}</span>
+                  <span className="truncate max-w-[65px]">{item.label}</span>
                 </Link>
               </div>
             );
           })}
         </nav>
 
-        {/* ── MOBILE QUICK ACTION HUB GLASS DRAWER ── */}
+        {/* ── SWIFT DIAGNOSTIC FULL-SCREEN MENU ── */}
         <AnimatePresence>
-          {isQuickActionOpen && (
-            <>
-              {/* Backing Modal Shade */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setIsQuickActionOpen(false)}
-                className="fixed inset-0 z-40 bg-black/60"
-              />
+          {isSwiftDiagnosticOpen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98, y: 20 }}
+              transition={{ type: "spring", stiffness: 350, damping: 30, duration: 0.25 }}
+              className="fixed inset-0 z-40 flex flex-col pt-24 px-6 pb-28 overflow-y-auto overscroll-contain"
+              style={{ 
+                background: 'rgba(3,7,18,0.92)', 
+                backdropFilter: 'blur(16px)', 
+                willChange: "transform, opacity" 
+              }}
+            >
+              <div className="mb-8">
+                <h2 className="text-xl font-bold text-white tracking-wide flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-cyan-400 fill-cyan-400/20" />
+                  Swift Diagnostic
+                </h2>
+                <p className="text-xs text-slate-400 mt-1">Access all secondary modules and tools</p>
+              </div>
 
-              {/* Sheet container — drag-to-dismiss with useDragControls */}
-              <motion.div
-                drag="y"
-                dragControls={drawerDragControls}
-                dragConstraints={{ top: 0, bottom: 0 }}
-                dragElastic={{ top: 0, bottom: 0.6 }}
-                onDragEnd={(_, info) => {
-                  if (info.offset.y > 80 || info.velocity.y > 400) {
-                    setIsQuickActionOpen(false);
-                  }
-                }}
-                initial={{ y: "100%" }}
-                animate={{ y: 0 }}
-                exit={{ y: "100%" }}
-                transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                style={{ willChange: "transform", touchAction: "none", background: 'rgba(7,10,22,0.95)', backdropFilter: 'blur(40px) saturate(200%)', borderTop: '1px solid rgba(34,211,238,0.15)', boxShadow: 'inset 0 1px 0 rgba(34,211,238,0.08), 0 -20px 60px rgba(0,0,0,0.50)' }}
-                className="fixed bottom-0 left-0 right-0 z-50 rounded-t-[28px] p-6 pb-8 flex flex-col gap-4 select-none"
-              >
-                {/* Drag handle pill */}
-                <div
-                  className="absolute top-3 left-1/2 -translate-x-1/2 h-1 w-10 rounded-full bg-slate-700 cursor-grab active:cursor-grabbing"
-                  onPointerDown={(e) => drawerDragControls.start(e)}
-                />
-                <div className="flex justify-between items-center pb-2 border-b border-white/5">
-                  <div>
-                    <h3 className="text-sm font-bold text-white tracking-wide flex items-center gap-1.5">
-                      <Compass className="h-4 w-4 text-cyan-400" />
-                      Quick Action Hub
-                    </h3>
-                    <p className="text-[10px] text-slate-500 mt-0.5">Tactical command short cuts</p>
-                  </div>
-                  <button
-                    onClick={() => setIsQuickActionOpen(false)}
-                    aria-label="Close Quick Action Hub"
-                    className="p-1 text-slate-500 hover:text-white rounded-lg border border-white/5 bg-slate-900 focus-visible:ring-2 focus-visible:ring-cyan-500"
-                    title="Close"
-                  >
-                    <Plus className="h-4 w-4 rotate-45" />
-                  </button>
+              <div className="grid grid-cols-2 gap-3">
+                {secondaryModules.map((mod) => {
+                  const Icon = mod.icon;
+                  return (
+                    <button
+                      key={mod.href}
+                      onClick={() => handleSwiftAction(mod.href)}
+                      className="flex flex-col items-start gap-3 p-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] hover:border-cyan-500/30 active:scale-[0.98] transition-all text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                    >
+                      <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <span className="text-sm font-semibold text-white block">{mod.label}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+                
+                {/* Theme Studio Inline Launcher */}
+                <div className="flex flex-col items-start gap-3 p-4 rounded-2xl border border-white/5 bg-gradient-to-br from-cyan-500/5 to-purple-500/5 active:scale-[0.98] transition-all text-left relative overflow-hidden">
+                   <div className="p-2 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 relative z-10">
+                     <Settings className="h-5 w-5" />
+                   </div>
+                   <div className="relative z-10 w-full flex items-center justify-between">
+                     <span className="text-sm font-semibold text-white block">Theme Studio</span>
+                   </div>
+                   <div className="absolute right-4 bottom-4 z-20 scale-75 origin-bottom-right">
+                     <ThemeOrb />
+                   </div>
                 </div>
-
-                <div className="grid grid-cols-1 gap-2.5">
-                  <button
-                    onClick={() => handleQuickAction("/roadmaps")}
-                    className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-white/5 hover:border-cyan-500/20 text-left active:scale-98 transition-transform"
-                  >
-                    <span className="flex items-center gap-3">
-                      <Map className="h-4 w-4 text-cyan-400" />
-                      <span className="text-xs font-semibold text-white">Generate Roadmap</span>
-                    </span>
-                    <ChevronRight className="h-3.5 w-3.5 text-slate-500" />
-                  </button>
-
-                  <button
-                    onClick={() => handleQuickAction("/resource-discovery")}
-                    className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-white/5 hover:border-cyan-500/20 text-left active:scale-98 transition-transform"
-                  >
-                    <span className="flex items-center gap-3">
-                      <Globe className="h-4 w-4 text-cyan-400" />
-                      <span className="text-xs font-semibold text-white">Find Resources</span>
-                    </span>
-                    <ChevronRight className="h-3.5 w-3.5 text-slate-500" />
-                  </button>
-
-                  <button
-                    onClick={() => handleQuickAction("/mentor")}
-                    className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-white/5 hover:border-cyan-500/20 text-left active:scale-98 transition-transform"
-                  >
-                    <span className="flex items-center gap-3">
-                      <Brain className="h-4 w-4 text-cyan-400" />
-                      <span className="text-xs font-semibold text-white">Ask AI Mentor</span>
-                    </span>
-                    <ChevronRight className="h-3.5 w-3.5 text-slate-500" />
-                  </button>
-
-                  <button
-                    onClick={() => handleQuickAction("/support-navigator")}
-                    className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-white/5 hover:border-cyan-500/20 text-left active:scale-98 transition-transform"
-                  >
-                    <span className="flex items-center gap-3">
-                      <MessageSquare className="h-4 w-4 text-cyan-400" />
-                      <span className="text-xs font-semibold text-white">Discover Support</span>
-                    </span>
-                    <ChevronRight className="h-3.5 w-3.5 text-slate-500" />
-                  </button>
-
-                  <button
-                    onClick={() => handleQuickAction("/report-need")}
-                    className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-white/5 hover:border-cyan-500/20 text-left active:scale-98 transition-transform"
-                  >
-                    <span className="flex items-center gap-3">
-                      <Shield className="h-4 w-4 text-cyan-400" />
-                      <span className="text-xs font-semibold text-white">Report Community Need</span>
-                    </span>
-                    <ChevronRight className="h-3.5 w-3.5 text-slate-500" />
-                  </button>
-                </div>
-              </motion.div>
-            </>
+              </div>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>

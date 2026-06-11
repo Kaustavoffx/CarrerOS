@@ -1,6 +1,22 @@
 "use client";
 
 import { memo } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useTheme } from "@/components/theme-provider";
+
+const themeImageMap: Record<string, string> = {
+  "careeros-dark": "/background.webp",
+  "theme-executive": "/back1.webp",
+  "theme-wealth": "/back2.webp",
+  "theme-innovation": "/back3.webp",
+  "theme-tech-luxury": "/back4.webp",
+  "theme-finance": "/back5.webp",
+  "theme-scandinavian": "/back6.webp",
+  "theme-ai-lab": "/back7.webp",
+  "theme-eco": "/back8.webp",
+  "theme-enterprise": "/back9.webp",
+  "theme-minimal": "/back10.webp",
+};
 
 /**
  * CareerOS Liquid Intelligence System — Global Atmospheric Background
@@ -14,18 +30,37 @@ import { memo } from "react";
  * 6. Dot matrix grid — ultra-low opacity structural rhythm
  */
 function CareerOSBackgroundComponent() {
-  return (
-    <div className="fixed inset-0 pointer-events-none z-[-10] overflow-hidden">
+  const { theme } = useTheme();
+  const bgImage = themeImageMap[theme] || "/background.webp";
 
-      {/* ── Layer 1: Base WebP canvas ───────────────────────────────────── */}
-      <div
-        className="absolute inset-0"
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[-10] overflow-hidden bg-[#030712]">
+
+      {/* ── Layer 1: Base WebP canvas (Crossfade Stack) ──────────────────── */}
+      <AnimatePresence initial={false}>
+        <motion.div
+          key={bgImage}
+          initial={{ opacity: 0, scale: 1.02 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 1.02 }}
+          transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+          className="absolute inset-0"
+          style={{
+            backgroundImage:    `url('${bgImage}')`,
+            backgroundSize:     "cover",
+            backgroundPosition: "center",
+            backgroundRepeat:   "no-repeat",
+            filter:             "brightness(0.85) contrast(1.05) saturate(0.95)",
+            willChange:         "transform, opacity",
+          }}
+        />
+      </AnimatePresence>
+
+      {/* ── Noise grain blend (Subtle atmospheric fusion) ── */}
+      <div 
+        className="absolute inset-0 opacity-[0.02] mix-blend-overlay pointer-events-none"
         style={{
-          backgroundImage:    "var(--theme-bg-image, url('/background.webp'))",
-          backgroundSize:     "cover",
-          backgroundPosition: "center",
-          backgroundRepeat:   "no-repeat",
-          filter:             "brightness(0.85) contrast(1.05) saturate(0.95)",
+          backgroundImage: "url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E')",
         }}
       />
 
