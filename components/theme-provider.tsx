@@ -4,11 +4,16 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 export type Theme =
   | "careeros-dark"
-  | "arctic-glass"
-  | "midnight-violet"
-  | "emerald-command"
-  | "carbon-graphite"
-  | "solar-gold";
+  | "theme-executive"
+  | "theme-wealth"
+  | "theme-innovation"
+  | "theme-tech-luxury"
+  | "theme-finance"
+  | "theme-scandinavian"
+  | "theme-ai-lab"
+  | "theme-eco"
+  | "theme-enterprise"
+  | "theme-minimal";
 
 type ThemeContextValue = {
   theme: Theme;

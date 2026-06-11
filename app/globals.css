@@ -33,117 +33,288 @@
   /* Helper RGBs for inline gradients and configurations */
   --careeros-primary-rgb: 34, 211, 238;
   --careeros-secondary-rgb: 96, 165, 250;
-  --careeros-accent-rgb: 34, 211, 238;
+  \
+  --theme-bg-image: url('/background.webp');
+  --lis-bg: var(--lis-bg);
+  --lis-panel-bg: var(--lis-panel-bg);
+  --lis-sidebar-bg: var(--lis-sidebar-bg);
+  --lis-input-bg: var(--lis-input-bg);
 }
 
-.arctic-glass {
-  --background:  #030712;
+
+.theme-executive {
+  --background:  #1A1513;
   --foreground:  #F8FAFC;
   --muted:       rgba(148, 163, 184, 0.65);
+  --theme-bg-image: url('/back1.webp');
 
-  --careeros-primary: #E2E8F0;
-  --careeros-secondary: #93C5FD;
-  --careeros-accent: #93C5FD;
-  --careeros-card-border: rgba(255, 255, 255, 0.12);
-  --careeros-card-glow: rgba(147, 197, 253, 0.15);
-  --careeros-dust-primary: 186, 230, 253;
-  --careeros-dust-secondary: 147, 197, 253;
-  --careeros-sidebar-active: rgba(255, 255, 255, 0.08);
-  --careeros-progress: #38BDF8;
-  --careeros-badge: #93C5FD;
-
-  --careeros-primary-rgb: 226, 232, 240;
-  --careeros-secondary-rgb: 147, 197, 253;
-  --careeros-accent-rgb: 147, 197, 253;
-}
-
-.midnight-violet {
-  --background:  #030712;
-  --foreground:  #F8FAFC;
-  --muted:       rgba(148, 163, 184, 0.65);
-
-  --careeros-primary: #C084FC;
-  --careeros-secondary: #818CF8;
-  --careeros-accent: #C084FC;
+  --careeros-primary: #d9b18e;
+  --careeros-secondary: #a67564;
+  --careeros-accent: #d9b18e;
   --careeros-card-border: rgba(255, 255, 255, 0.08);
-  --careeros-card-glow: rgba(192, 132, 252, 0.15);
-  --careeros-dust-primary: 192, 132, 252;
-  --careeros-dust-secondary: 129, 140, 248;
-  --careeros-sidebar-active: rgba(192, 132, 252, 0.08);
-  --careeros-progress: #C084FC;
-  --careeros-badge: #C084FC;
+  --careeros-card-glow: rgba(217, 177, 142, 0.12);
+  --careeros-dust-primary: 217, 177, 142;
+  --careeros-dust-secondary: 166, 117, 100;
+  --careeros-sidebar-active: rgba(217, 177, 142, 0.07);
+  --careeros-progress: #d9b18e;
+  --careeros-badge: #d9b18e;
 
-  --careeros-primary-rgb: 192, 132, 252;
-  --careeros-secondary-rgb: 129, 140, 248;
-  --careeros-accent-rgb: 192, 132, 252;
+  --careeros-primary-rgb: 217, 177, 142;
+  --careeros-secondary-rgb: 166, 117, 100;
+  --careeros-accent-rgb: 217, 177, 142;
+
+  --lis-bg: rgba(31, 25, 22, 0.55);
+  --lis-panel-bg: rgba(28, 23, 20, 0.45);
+  --lis-sidebar-bg: rgba(33, 27, 24, 0.72);
+  --lis-input-bg: rgba(23, 18, 17, 0.50);
 }
 
-.emerald-command {
-  --background:  #030712;
+.theme-wealth {
+  --background:  #0a0e14;
   --foreground:  #F8FAFC;
   --muted:       rgba(148, 163, 184, 0.65);
+  --theme-bg-image: url('/back2.webp');
 
-  --careeros-primary: #34D399;
-  --careeros-secondary: #60A5FA;
-  --careeros-accent: #34D399;
+  --careeros-primary: #c0b283;
+  --careeros-secondary: #404a42;
+  --careeros-accent: #c0b283;
   --careeros-card-border: rgba(255, 255, 255, 0.08);
-  --careeros-card-glow: rgba(52, 211, 153, 0.12);
-  --careeros-dust-primary: 52, 211, 153;
-  --careeros-dust-secondary: 96, 165, 250;
-  --careeros-sidebar-active: rgba(52, 211, 153, 0.07);
-  --careeros-progress: #34D399;
-  --careeros-badge: #34D399;
+  --careeros-card-glow: rgba(192, 178, 131, 0.12);
+  --careeros-dust-primary: 192, 178, 131;
+  --careeros-dust-secondary: 64, 74, 66;
+  --careeros-sidebar-active: rgba(192, 178, 131, 0.07);
+  --careeros-progress: #c0b283;
+  --careeros-badge: #c0b283;
 
-  --careeros-primary-rgb: 52, 211, 153;
-  --careeros-secondary-rgb: 96, 165, 250;
-  --careeros-accent-rgb: 52, 211, 153;
+  --careeros-primary-rgb: 192, 178, 131;
+  --careeros-secondary-rgb: 64, 74, 66;
+  --careeros-accent-rgb: 192, 178, 131;
+
+  --lis-bg: rgba(12, 16, 24, 0.55);
+  --lis-panel-bg: rgba(11, 15, 22, 0.45);
+  --lis-sidebar-bg: rgba(13, 18, 26, 0.72);
+  --lis-input-bg: rgba(9, 12, 18, 0.50);
 }
 
-.carbon-graphite {
-  --background:  #030712;
+.theme-innovation {
+  --background:  #1a0508;
   --foreground:  #F8FAFC;
   --muted:       rgba(148, 163, 184, 0.65);
+  --theme-bg-image: url('/back3.webp');
 
-  --careeros-primary: #94A3B8;
-  --careeros-secondary: #CBD5E1;
-  --careeros-accent: #94A3B8;
-  --careeros-card-border: rgba(255, 255, 255, 0.09);
-  --careeros-card-glow: rgba(255, 255, 255, 0.07);
-  --careeros-dust-primary: 148, 163, 184;
-  --careeros-dust-secondary: 71, 85, 105;
-  --careeros-sidebar-active: rgba(255, 255, 255, 0.06);
-  --careeros-progress: #94A3B8;
-  --careeros-badge: #94A3B8;
+  --careeros-primary: #a71f13;
+  --careeros-secondary: #d88b79;
+  --careeros-accent: #a71f13;
+  --careeros-card-border: rgba(255, 255, 255, 0.08);
+  --careeros-card-glow: rgba(167, 31, 19, 0.12);
+  --careeros-dust-primary: 167, 31, 19;
+  --careeros-dust-secondary: 216, 139, 121;
+  --careeros-sidebar-active: rgba(167, 31, 19, 0.07);
+  --careeros-progress: #a71f13;
+  --careeros-badge: #a71f13;
 
-  --careeros-primary-rgb: 148, 163, 184;
-  --careeros-secondary-rgb: 71, 85, 105;
-  --careeros-accent-rgb: 148, 163, 184;
+  --careeros-primary-rgb: 167, 31, 19;
+  --careeros-secondary-rgb: 216, 139, 121;
+  --careeros-accent-rgb: 167, 31, 19;
+
+  --lis-bg: rgba(31, 6, 9, 0.55);
+  --lis-panel-bg: rgba(28, 5, 8, 0.45);
+  --lis-sidebar-bg: rgba(33, 6, 10, 0.72);
+  --lis-input-bg: rgba(23, 4, 7, 0.50);
 }
 
-.solar-gold {
-  --background:  #030712;
+.theme-tech-luxury {
+  --background:  #010006;
   --foreground:  #F8FAFC;
   --muted:       rgba(148, 163, 184, 0.65);
+  --theme-bg-image: url('/back4.webp');
 
-  --careeros-primary: #FBBF24;
-  --careeros-secondary: #F59E0B;
-  --careeros-accent: #FBBF24;
-  --careeros-card-border: rgba(255, 255, 255, 0.09);
-  --careeros-card-glow: rgba(251, 191, 36, 0.12);
-  --careeros-dust-primary: 251, 191, 36;
-  --careeros-dust-secondary: 245, 158, 11;
-  --careeros-sidebar-active: rgba(251, 191, 36, 0.07);
-  --careeros-progress: #FBBF24;
-  --careeros-badge: #FBBF24;
+  --careeros-primary: #a65e46;
+  --careeros-secondary: #d9aa90;
+  --careeros-accent: #a65e46;
+  --careeros-card-border: rgba(255, 255, 255, 0.08);
+  --careeros-card-glow: rgba(166, 94, 70, 0.12);
+  --careeros-dust-primary: 166, 94, 70;
+  --careeros-dust-secondary: 217, 170, 144;
+  --careeros-sidebar-active: rgba(166, 94, 70, 0.07);
+  --careeros-progress: #a65e46;
+  --careeros-badge: #a65e46;
 
-  --careeros-primary-rgb: 251, 191, 36;
-  --careeros-secondary-rgb: 245, 158, 11;
-  --careeros-accent-rgb: 251, 191, 36;
+  --careeros-primary-rgb: 166, 94, 70;
+  --careeros-secondary-rgb: 217, 170, 144;
+  --careeros-accent-rgb: 166, 94, 70;
+
+  --lis-bg: rgba(1, 0, 7, 0.55);
+  --lis-panel-bg: rgba(1, 0, 6, 0.45);
+  --lis-sidebar-bg: rgba(1, 0, 7, 0.72);
+  --lis-input-bg: rgba(0, 0, 5, 0.50);
+}
+
+.theme-finance {
+  --background:  #120904;
+  --foreground:  #F8FAFC;
+  --muted:       rgba(148, 163, 184, 0.65);
+  --theme-bg-image: url('/back5.webp');
+
+  --careeros-primary: #d9b061;
+  --careeros-secondary: #8d6f57;
+  --careeros-accent: #d9b061;
+  --careeros-card-border: rgba(255, 255, 255, 0.08);
+  --careeros-card-glow: rgba(217, 176, 97, 0.12);
+  --careeros-dust-primary: 217, 176, 97;
+  --careeros-dust-secondary: 141, 111, 87;
+  --careeros-sidebar-active: rgba(217, 176, 97, 0.07);
+  --careeros-progress: #d9b061;
+  --careeros-badge: #d9b061;
+
+  --careeros-primary-rgb: 217, 176, 97;
+  --careeros-secondary-rgb: 141, 111, 87;
+  --careeros-accent-rgb: 217, 176, 97;
+
+  --lis-bg: rgba(21, 10, 4, 0.55);
+  --lis-panel-bg: rgba(19, 9, 4, 0.45);
+  --lis-sidebar-bg: rgba(23, 11, 5, 0.72);
+  --lis-input-bg: rgba(16, 8, 3, 0.50);
+}
+
+.theme-scandinavian {
+  --background:  #0b0c0c;
+  --foreground:  #F8FAFC;
+  --muted:       rgba(148, 163, 184, 0.65);
+  --theme-bg-image: url('/back6.webp');
+
+  --careeros-primary: #557373;
+  --careeros-secondary: #dfe5f3;
+  --careeros-accent: #557373;
+  --careeros-card-border: rgba(255, 255, 255, 0.08);
+  --careeros-card-glow: rgba(85, 115, 115, 0.12);
+  --careeros-dust-primary: 85, 115, 115;
+  --careeros-dust-secondary: 223, 229, 243;
+  --careeros-sidebar-active: rgba(85, 115, 115, 0.07);
+  --careeros-progress: #557373;
+  --careeros-badge: #557373;
+
+  --careeros-primary-rgb: 85, 115, 115;
+  --careeros-secondary-rgb: 223, 229, 243;
+  --careeros-accent-rgb: 85, 115, 115;
+
+  --lis-bg: rgba(13, 14, 14, 0.55);
+  --lis-panel-bg: rgba(12, 13, 13, 0.45);
+  --lis-sidebar-bg: rgba(14, 15, 15, 0.72);
+  --lis-input-bg: rgba(9, 10, 10, 0.50);
+}
+
+.theme-ai-lab {
+  --background:  #09141b;
+  --foreground:  #F8FAFC;
+  --muted:       rgba(148, 163, 184, 0.65);
+  --theme-bg-image: url('/back7.webp');
+
+  --careeros-primary: #a6445d;
+  --careeros-secondary: #62929E;
+  --careeros-accent: #a6445d;
+  --careeros-card-border: rgba(255, 255, 255, 0.08);
+  --careeros-card-glow: rgba(166, 68, 93, 0.12);
+  --careeros-dust-primary: 166, 68, 93;
+  --careeros-dust-secondary: 98, 146, 158;
+  --careeros-sidebar-active: rgba(166, 68, 93, 0.07);
+  --careeros-progress: #a6445d;
+  --careeros-badge: #a6445d;
+
+  --careeros-primary-rgb: 166, 68, 93;
+  --careeros-secondary-rgb: 98, 146, 158;
+  --careeros-accent-rgb: 166, 68, 93;
+
+  --lis-bg: rgba(10, 24, 32, 0.55);
+  --lis-panel-bg: rgba(9, 22, 29, 0.45);
+  --lis-sidebar-bg: rgba(11, 26, 35, 0.72);
+  --lis-input-bg: rgba(8, 18, 24, 0.50);
+}
+
+.theme-eco {
+  --background:  #080a05;
+  --foreground:  #F8FAFC;
+  --muted:       rgba(148, 163, 184, 0.65);
+  --theme-bg-image: url('/back8.webp');
+
+  --careeros-primary: #617246;
+  --careeros-secondary: #314021;
+  --careeros-accent: #617246;
+  --careeros-card-border: rgba(255, 255, 255, 0.08);
+  --careeros-card-glow: rgba(97, 114, 70, 0.12);
+  --careeros-dust-primary: 97, 114, 70;
+  --careeros-dust-secondary: 49, 64, 33;
+  --careeros-sidebar-active: rgba(97, 114, 70, 0.07);
+  --careeros-progress: #617246;
+  --careeros-badge: #617246;
+
+  --careeros-primary-rgb: 97, 114, 70;
+  --careeros-secondary-rgb: 49, 64, 33;
+  --careeros-accent-rgb: 97, 114, 70;
+
+  --lis-bg: rgba(9, 12, 6, 0.55);
+  --lis-panel-bg: rgba(8, 11, 5, 0.45);
+  --lis-sidebar-bg: rgba(10, 13, 6, 0.72);
+  --lis-input-bg: rgba(7, 9, 4, 0.50);
+}
+
+.theme-enterprise {
+  --background:  #0a0b0d;
+  --foreground:  #F8FAFC;
+  --muted:       rgba(148, 163, 184, 0.65);
+  --theme-bg-image: url('/back9.webp');
+
+  --careeros-primary: #5b6e74;
+  --careeros-secondary: #819fa7;
+  --careeros-accent: #5b6e74;
+  --careeros-card-border: rgba(255, 255, 255, 0.08);
+  --careeros-card-glow: rgba(91, 110, 116, 0.12);
+  --careeros-dust-primary: 91, 110, 116;
+  --careeros-dust-secondary: 129, 159, 167;
+  --careeros-sidebar-active: rgba(91, 110, 116, 0.07);
+  --careeros-progress: #5b6e74;
+  --careeros-badge: #5b6e74;
+
+  --careeros-primary-rgb: 91, 110, 116;
+  --careeros-secondary-rgb: 129, 159, 167;
+  --careeros-accent-rgb: 91, 110, 116;
+
+  --lis-bg: rgba(12, 13, 15, 0.55);
+  --lis-panel-bg: rgba(11, 12, 14, 0.45);
+  --lis-sidebar-bg: rgba(13, 14, 16, 0.72);
+  --lis-input-bg: rgba(9, 9, 11, 0.50);
+}
+
+.theme-minimal {
+  --background:  #05090d;
+  --foreground:  #F8FAFC;
+  --muted:       rgba(148, 163, 184, 0.65);
+  --theme-bg-image: url('/back10.webp');
+
+  --careeros-primary: #bfafaf;
+  --careeros-secondary: #d9d9d9;
+  --careeros-accent: #bfafaf;
+  --careeros-card-border: rgba(255, 255, 255, 0.08);
+  --careeros-card-glow: rgba(191, 175, 175, 0.12);
+  --careeros-dust-primary: 191, 175, 175;
+  --careeros-dust-secondary: 217, 217, 217;
+  --careeros-sidebar-active: rgba(191, 175, 175, 0.07);
+  --careeros-progress: #bfafaf;
+  --careeros-badge: #bfafaf;
+
+  --careeros-primary-rgb: 191, 175, 175;
+  --careeros-secondary-rgb: 217, 217, 217;
+  --careeros-accent-rgb: 191, 175, 175;
+
+  --lis-bg: rgba(6, 10, 15, 0.55);
+  --lis-panel-bg: rgba(5, 9, 14, 0.45);
+  --lis-sidebar-bg: rgba(6, 11, 16, 0.72);
+  --lis-input-bg: rgba(4, 8, 11, 0.50);
 }
 
 :root {
   /* ── LIS Surface System ─────────────────────────────────────────────────── */
-  --lis-bg:           rgba(8, 12, 24, 0.55);
+  --lis-bg:           var(--lis-bg);
   --lis-border:       var(--careeros-card-border);
   --lis-highlight:    rgba(255, 255, 255, 0.12);
   --lis-shadow:       0 20px 60px rgba(0, 0, 0, 0.45);
@@ -276,7 +447,7 @@ main {
      Every card, panel, widget, module inherits this.
      ══════════════════════════════════════════════════════════════════════════ */
   .lis-surface {
-    background:      rgba(8, 12, 24, 0.55);
+    background:      var(--lis-bg);
     backdrop-filter: blur(30px) saturate(180%);
     -webkit-backdrop-filter: blur(30px) saturate(180%);
     border:          1px solid var(--careeros-card-border);
@@ -293,7 +464,7 @@ main {
      LIS CARD — Adds interactive hover behaviour on top of lis-surface
      ══════════════════════════════════════════════════════════════════════════ */
   .lis-card {
-    background:      rgba(8, 12, 24, 0.55);
+    background:      var(--lis-bg);
     backdrop-filter: blur(30px) saturate(180%);
     -webkit-backdrop-filter: blur(30px) saturate(180%);
     border:          1px solid var(--careeros-card-border);
@@ -362,7 +533,7 @@ main {
      LIS PANEL — Slightly lighter surface for nested containers
      ══════════════════════════════════════════════════════════════════════════ */
   .lis-panel {
-    background:      rgba(6, 10, 20, 0.45);
+    background:      var(--lis-panel-bg);
     backdrop-filter: blur(20px) saturate(160%);
     -webkit-backdrop-filter: blur(20px) saturate(160%);
     border:          1px solid rgba(255, 255, 255, 0.06);
@@ -378,7 +549,7 @@ main {
      LIS SIDEBAR — Liquid Command Rail
      ══════════════════════════════════════════════════════════════════════════ */
   .lis-sidebar {
-    background:      rgba(7, 10, 22, 0.72);
+    background:      var(--lis-sidebar-bg);
     backdrop-filter: blur(40px) saturate(200%);
     -webkit-backdrop-filter: blur(40px) saturate(200%);
     border:          1px solid rgba(255, 255, 255, 0.07);
@@ -486,7 +657,7 @@ main {
      LIS INPUTS — Glass carved inputs
      ══════════════════════════════════════════════════════════════════════════ */
   .lis-input {
-    background:      rgba(4, 8, 16, 0.50);
+    background:      var(--lis-input-bg);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border:          1px solid rgba(255, 255, 255, 0.08);
@@ -649,7 +820,7 @@ main {
   .card-red,
   .card-danger,
   .card-mission {
-    background:      rgba(8, 12, 24, 0.55) !important;
+    background:      var(--lis-bg) !important;
     backdrop-filter: blur(30px) saturate(180%) !important;
     -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
     border:          1px solid var(--careeros-card-border) !important;
@@ -739,7 +910,7 @@ main {
 
   /* Legacy carved inputs — mapped to LIS */
   .carved-input {
-    background:      rgba(4, 8, 16, 0.50) !important;
+    background:      var(--lis-input-bg) !important;
     backdrop-filter: blur(12px) !important;
     border:          1px solid rgba(255, 255, 255, 0.08) !important;
     box-shadow:      inset 0 2px 6px rgba(0,0,0,0.30), inset 0 -1px 0 rgba(255,255,255,0.03) !important;
@@ -756,7 +927,7 @@ main {
 
   /* Legacy sidebar glass — mapped to LIS */
   .sidebar-glass {
-    background:      rgba(7, 10, 22, 0.72) !important;
+    background:      var(--lis-sidebar-bg) !important;
     backdrop-filter: blur(40px) saturate(200%) !important;
     -webkit-backdrop-filter: blur(40px) saturate(200%) !important;
     border:          1px solid rgba(255, 255, 255, 0.07) !important;

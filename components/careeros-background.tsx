@@ -21,7 +21,7 @@ function CareerOSBackgroundComponent() {
       <div
         className="absolute inset-0"
         style={{
-          backgroundImage:    "url('/background.webp')",
+          backgroundImage:    "var(--theme-bg-image, url('/background.webp'))",
           backgroundSize:     "cover",
           backgroundPosition: "center",
           backgroundRepeat:   "no-repeat",

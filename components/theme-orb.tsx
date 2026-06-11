@@ -7,11 +7,16 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const THEME_OPTIONS: Array<{ id: Theme; name: string; color: string }> = [
   { id: "careeros-dark", name: "CareerOS Dark", color: "#22D3EE" },
-  { id: "arctic-glass", name: "Arctic Glass", color: "#E2E8F0" },
-  { id: "midnight-violet", name: "Midnight Violet", color: "#C084FC" },
-  { id: "emerald-command", name: "Emerald Command", color: "#34D399" },
-  { id: "carbon-graphite", name: "Carbon Graphite", color: "#94A3B8" },
-  { id: "solar-gold", name: "Solar Gold", color: "#FBBF24" }
+  { id: "theme-executive", name: "Executive Luxury", color: "#a67564" },
+  { id: "theme-wealth", name: "Private Wealth", color: "#c0b283" },
+  { id: "theme-innovation", name: "Innovation Studio", color: "#a71f13" },
+  { id: "theme-tech-luxury", name: "Tech Luxury", color: "#a65e46" },
+  { id: "theme-finance", name: "Executive Finance", color: "#d9b061" },
+  { id: "theme-scandinavian", name: "Scandinavian", color: "#557373" },
+  { id: "theme-ai-lab", name: "AI Research", color: "#a6445d" },
+  { id: "theme-eco", name: "Sustainable Eco", color: "#617246" },
+  { id: "theme-enterprise", name: "Enterprise OS", color: "#819fa7" },
+  { id: "theme-minimal", name: "Minimal Workspace", color: "#bfafaf" }
 ];
 
 export function ThemeOrb() {
