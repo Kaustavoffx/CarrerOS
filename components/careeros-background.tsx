@@ -34,24 +34,24 @@ function CareerOSBackgroundComponent() {
   const bgImage = themeImageMap[theme] || "/background.webp";
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-[-10] overflow-hidden bg-[#030712]">
+    <div className="fixed top-0 left-0 right-0 bottom-0 w-[100vw] h-[100vh] pointer-events-none z-[-10] overflow-hidden bg-[#030712]">
 
       {/* ── Layer 1: Base WebP canvas (Crossfade Stack) ──────────────────── */}
       <AnimatePresence initial={false}>
         <motion.div
           key={bgImage}
-          initial={{ opacity: 0, scale: 1.02 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 1.02 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
           className="absolute inset-0"
           style={{
             backgroundImage:    `url('${bgImage}')`,
-            backgroundSize:     "cover",
-            backgroundPosition: "center",
+            backgroundSize:     "contain",
+            backgroundPosition: "center center",
             backgroundRepeat:   "no-repeat",
             filter:             "brightness(0.85) contrast(1.05) saturate(0.95)",
-            willChange:         "transform, opacity",
+            willChange:         "opacity",
           }}
         />
       </AnimatePresence>
