@@ -47,13 +47,13 @@ export default function RootLayout({
       </head>
       <body className={`${geom.variable} text-white antialiased`}>
         <ThemeProvider>
+          <CareerOSBackground />
+          <AppAtmosphere />
           <MotionConfig reducedMotion="user">
             <LazyMotion features={domAnimation}>
               <AuthProvider>
                 <RouteTransitionProvider>
                   <IntroProvider>
-                    <CareerOSBackground />
-                    <AppAtmosphere />
                     {children}
                   </IntroProvider>
                 </RouteTransitionProvider>

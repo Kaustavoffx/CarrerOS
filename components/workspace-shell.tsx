@@ -34,6 +34,21 @@ import { motion, AnimatePresence, usePresence } from "framer-motion";
 import { CAREEROS, sidebarItemStyle } from "@/styles/careeros-design-system";
 import { LiquidDust } from "@/components/ui/liquid-dust";
 import { ThemeOrb } from "@/components/theme-orb";
+import { useTheme, type Theme } from "@/components/theme-provider";
+
+const THEME_OPTIONS: Array<{ id: Theme; name: string; color: string }> = [
+  { id: "careeros-dark", name: "CareerOS Dark", color: "#22D3EE" },
+  { id: "theme-executive", name: "Executive Luxury", color: "#a67564" },
+  { id: "theme-wealth", name: "Private Wealth", color: "#c0b283" },
+  { id: "theme-innovation", name: "Innovation Studio", color: "#a71f13" },
+  { id: "theme-tech-luxury", name: "Tech Luxury", color: "#a65e46" },
+  { id: "theme-finance", name: "Executive Finance", color: "#d9b061" },
+  { id: "theme-scandinavian", name: "Scandinavian", color: "#557373" },
+  { id: "theme-ai-lab", name: "AI Research", color: "#a6445d" },
+  { id: "theme-eco", name: "Sustainable Eco", color: "#617246" },
+  { id: "theme-enterprise", name: "Enterprise OS", color: "#819fa7" },
+  { id: "theme-minimal", name: "Minimal Workspace", color: "#bfafaf" }
+];
 
 interface GuideContent {
   title: string;
@@ -505,6 +520,7 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
 
   // Route transition overlay context (provided by RouteTransitionProvider in layout.tsx)
   const { startTransition, isTransitioning, destination } = useRouteTransition();
@@ -911,77 +927,79 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
           </AnimatePresence>
         </main>
 
-        {/* ── FLOATING RADIAL NAVIGATION HUB (MOBILE ONLY) ── */}
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center justify-center select-none pb-safe">
+        {/* ── FLOATING ACTION HUB (MOBILE ONLY) ── */}
+        <div className="fixed bottom-[max(28px,env(safe-area-inset-bottom))] right-6 z-50 flex flex-col items-end justify-end select-none">
           {/* Prefetch Links */}
           <div className="hidden">
             {radialModules.map(mod => <Link key={`prefetch-${mod.href}`} href={mod.href} prefetch={true} />)}
           </div>
 
-          {/* Radial Items Container */}
+          {/* Hub Container */}
           <AnimatePresence>
             {isRadialNavOpen && (
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 pointer-events-none"
+                initial={{ opacity: 0, scale: 0.9, y: 20, originX: 1, originY: 1 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                className="mb-4 overflow-hidden rounded-3xl border border-white/[0.08] shadow-2xl flex flex-col p-3 w-[calc(100vw-48px)] max-w-[340px]"
+                style={{
+                  background: "rgba(5, 8, 15, 0.82)",
+                  backdropFilter: "blur(24px)",
+                  WebkitBackdropFilter: "blur(24px)",
+                  boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 30px 60px rgba(0, 0, 0, 0.6)"
+                }}
               >
-                {radialModules.map((mod, idx) => {
-                  // Concentric Double Arc Geometry
-                  // First 4 items in inner arc, remaining 7 in outer arc
-                  const isInner = idx < 4;
-                  const N = isInner ? 4 : 7;
-                  const subIdx = isInner ? idx : idx - 4;
-                  
-                  const angle = Math.PI - (subIdx * (Math.PI / (N - 1)));
-                  const radius = isInner ? 90 : 155; 
-                  const x = Math.cos(angle) * radius;
-                  const y = -Math.sin(angle) * radius - 12;
-
-                  const Icon = mod.icon;
-                  return (
-                    <motion.div
-                      key={mod.href}
-                      initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
-                      animate={{ opacity: 1, scale: 1, x, y }}
-                      exit={{ opacity: 0, scale: 0, x: 0, y: 0 }}
-                      transition={{ 
-                        type: "spring", 
-                        stiffness: 280, 
-                        damping: 22, 
-                        delay: idx * 0.02
-                      }}
-                      className="absolute flex flex-col items-center justify-center pointer-events-auto"
-                      style={{ 
-                        left: "50%", 
-                        top: "50%",
-                        marginLeft: "-22px", 
-                        marginTop: "-22px"
+                {/* Theme Selector Row */}
+                <div className="mb-3 px-2 pb-3 border-b border-white/[0.06] flex items-center justify-between gap-2 overflow-x-auto scrollbar-none">
+                  {THEME_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.id}
+                      onClick={() => setTheme(opt.id)}
+                      className="shrink-0 flex items-center justify-center rounded-full p-1 transition-transform active:scale-95"
+                      style={{
+                        border: theme === opt.id ? `2px solid ${opt.color}` : "2px solid transparent",
                       }}
                     >
-                      <button
+                      <span
+                        className="w-5 h-5 rounded-full shadow-inner"
+                        style={{ backgroundColor: opt.color }}
+                      />
+                    </button>
+                  ))}
+                </div>
+
+                {/* Grid of Icons */}
+                <div className="grid grid-cols-4 gap-y-4 gap-x-2">
+                  {radialModules.map((mod, idx) => {
+                    const Icon = mod.icon;
+                    return (
+                      <motion.button
+                        key={mod.href}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.015, ease: [0.22, 1, 0.36, 1] }}
                         onClick={() => handleRadialAction(mod.href)}
-                        className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-900 border border-white/10 hover:border-cyan-500/50 shadow-xl shadow-black/80 transition-colors active:scale-95 group relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
-                        title={mod.label}
+                        className="flex flex-col items-center gap-1.5 group active:scale-95 transition-transform"
                       >
-                        <Icon className="h-5 w-5 text-cyan-400 group-hover:text-cyan-300 transition-colors" />
-                        
-                        <div className="absolute -top-9 bg-slate-900/95 border border-white/10 px-3 py-1 rounded-full text-[10px] font-semibold text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-lg">
-                          {mod.label}
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.03] border border-white/[0.06] shadow-inner group-active:bg-white/[0.08]">
+                          <Icon className="h-5 w-5 text-cyan-400" />
                         </div>
-                      </button>
-                    </motion.div>
-                  );
-                })}
+                        <span className="text-[9px] font-medium text-slate-300 text-center leading-tight px-1">
+                          {mod.label}
+                        </span>
+                      </motion.button>
+                    );
+                  })}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Central Orb */}
+          {/* Central Launcher Orb */}
           <button
             onClick={() => setIsRadialNavOpen(prev => !prev)}
-            aria-label="Toggle Radial Navigation"
+            aria-label="Toggle Navigation Hub"
             aria-expanded={isRadialNavOpen}
             className="flex h-[60px] w-[60px] items-center justify-center rounded-full transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 relative z-10"
             style={{ 

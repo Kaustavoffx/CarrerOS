@@ -38,17 +38,48 @@ export function ThemeOrb() {
   return (
     <div
       ref={containerRef}
-      className="fixed bottom-[calc(4.5rem+16px+env(safe-area-inset-bottom,0px))] right-4 xl:bottom-8 xl:right-8 z-40 flex flex-col items-end select-none"
+      className="fixed top-6 right-6 z-[99] hidden xl:flex flex-col items-end select-none"
     >
+      {/* Floating Theme Button (Orb) */}
+      <motion.button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        aria-label="Open Theme Picker"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className="lis-float flex h-12 w-12 items-center justify-center rounded-full border shadow-lg cursor-pointer transition-all duration-300 relative group overflow-hidden"
+        style={{
+          background: "rgba(8, 12, 24, 0.65)",
+          borderColor: "var(--careeros-card-border)",
+          boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 0 20px var(--careeros-card-glow)"
+        }}
+      >
+        {/* Subtle moving light effect inside the orb */}
+        <div
+          className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.05] to-white/[0.12] opacity-50"
+          style={{
+            background: "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15) 0%, transparent 60%)"
+          }}
+        />
+
+        {/* Dynamic theme glow */}
+        <div
+          className="absolute inset-0 filter blur-[8px] opacity-10 group-hover:opacity-20 transition-all duration-[250ms] rounded-full scale-90"
+          style={{ background: "var(--careeros-primary)" }}
+        />
+
+        <Palette className="h-5 w-5 text-white transition-transform duration-[250ms] group-hover:rotate-12 group-active:-rotate-12" />
+      </motion.button>
+
       {/* Theme Picker Popover */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+            initial={{ opacity: 0, scale: 0.9, y: -10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 10 }}
+            exit={{ opacity: 0, scale: 0.9, y: -10 }}
             transition={{ type: "spring", stiffness: 350, damping: 25 }}
-            className="mb-3 w-56 rounded-2xl p-2.5 border border-white/[0.08] shadow-2xl relative overflow-hidden"
+            className="mt-3 w-56 rounded-2xl p-2.5 border border-white/[0.08] shadow-2xl relative overflow-hidden"
             style={{
               background: "rgba(8, 12, 24, 0.85)",
               boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 20px 50px rgba(0, 0, 0, 0.5)",
@@ -100,36 +131,6 @@ export function ThemeOrb() {
         )}
       </AnimatePresence>
 
-      {/* Floating Theme Button (Orb) */}
-      <motion.button
-        type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
-        aria-label="Open Theme Picker"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        className="lis-float flex h-12 w-12 items-center justify-center rounded-full border shadow-lg cursor-pointer transition-all duration-300 relative group overflow-hidden"
-        style={{
-          background: "rgba(8, 12, 24, 0.65)",
-          borderColor: "var(--careeros-card-border)",
-          boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 0 20px var(--careeros-card-glow)"
-        }}
-      >
-        {/* Subtle moving light effect inside the orb */}
-        <div
-          className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.05] to-white/[0.12] opacity-50"
-          style={{
-            background: "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15) 0%, transparent 60%)"
-          }}
-        />
-
-        {/* Dynamic theme glow */}
-        <div
-          className="absolute inset-0 filter blur-[8px] opacity-10 group-hover:opacity-20 transition-all duration-[250ms] rounded-full scale-90"
-          style={{ background: "var(--careeros-primary)" }}
-        />
-
-        <Palette className="h-5 w-5 text-white transition-transform duration-[250ms] group-hover:rotate-12 group-active:-rotate-12" />
-      </motion.button>
     </div>
   );
 }
