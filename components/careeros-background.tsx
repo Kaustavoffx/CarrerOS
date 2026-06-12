@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTheme } from "@/components/theme-provider";
 
@@ -33,28 +33,57 @@ function CareerOSBackgroundComponent() {
   const { theme } = useTheme();
   const bgImage = themeImageMap[theme] || "/background.webp";
 
+  const [isPortrait, setIsPortrait] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsPortrait(window.innerHeight > window.innerWidth);
+    };
+    
+    // Initial check
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("orientationchange", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("orientationchange", handleResize);
+    };
+  }, []);
+
   return (
     <div className="fixed top-0 left-0 right-0 bottom-0 w-[100vw] h-[100vh] pointer-events-none z-[-10] overflow-hidden bg-[#030712]">
 
       {/* ── Layer 1: Base WebP canvas (Crossfade Stack) ──────────────────── */}
-      <AnimatePresence initial={false}>
-        <motion.div
-          key={bgImage}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-          className="absolute inset-0"
-          style={{
-            backgroundImage:    `url('${bgImage}')`,
-            backgroundSize:     "contain",
-            backgroundPosition: "center center",
-            backgroundRepeat:   "no-repeat",
-            filter:             "brightness(0.85) contrast(1.05) saturate(0.95)",
-            willChange:         "opacity",
-          }}
-        />
-      </AnimatePresence>
+      <div
+        className="absolute top-1/2 left-1/2"
+        style={{
+          width: isPortrait ? "100vh" : "100vw",
+          height: isPortrait ? "100vw" : "100vh",
+          transform: `translate(-50%, -50%) rotate(${isPortrait ? "-90deg" : "0deg"})`,
+          transition: "transform 600ms cubic-bezier(0.22, 1, 0.36, 1)",
+          willChange: "transform",
+        }}
+      >
+        <AnimatePresence initial={false}>
+          <motion.div
+            key={bgImage}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute inset-0 w-full h-full"
+            style={{
+              backgroundImage:    `url('${bgImage}')`,
+              backgroundSize:     "contain",
+              backgroundPosition: "center center",
+              backgroundRepeat:   "no-repeat",
+              filter:             "brightness(0.85) contrast(1.05) saturate(0.95)",
+              willChange:         "opacity",
+            }}
+          />
+        </AnimatePresence>
+      </div>
 
 
 
