@@ -54,7 +54,8 @@ export async function GET() {
     // We will group by city coordinates to render pillars on the globe
     const cityMap: Record<string, { lat: number; lng: number; categories: Record<string, number>; total: number }> = {};
 
-    reports?.forEach((report) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    reports?.forEach((report: any) => {
       const cat = report.category as NeedCategory;
       let mappedCategory = "Support Demand";
 

@@ -95,11 +95,13 @@ export async function GET() {
     };
 
     const forecasts = CATEGORIES.map((cat) => {
-      const catReports = allReports.filter((r) => r.category === cat);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const catReports = allReports.filter((r: any) => r.category === cat);
 
       // Build 5 weekly buckets (week 0 = oldest, week 4 = most recent)
       const weekCounts = [0, 0, 0, 0, 0];
-      catReports.forEach((r) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      catReports.forEach((r: any) => {
         const daysAgo = Math.floor(
           (Date.now() - new Date(r.created_at as string).getTime()) / (1000 * 60 * 60 * 24)
         );

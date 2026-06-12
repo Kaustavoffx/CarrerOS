@@ -53,7 +53,8 @@ export async function GET() {
         let scoreSum = 0;
         let scoreCount = 0;
         
-        profiles.forEach((p) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        profiles.forEach((p: any) => {
           if (p.readiness_score !== undefined && p.readiness_score !== null) {
             scoreSum += p.readiness_score;
             scoreCount++;
@@ -100,7 +101,8 @@ export async function GET() {
 
       if (actions && !actionsError) {
         totalAgentActions = actions.length;
-        actions.forEach((act) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        actions.forEach((act: any) => {
           if (act.status === "completed") {
             completedAgentActions++;
           }
