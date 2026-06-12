@@ -548,13 +548,21 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
               </div>
             </div>
 
-            <div className="pt-2">
+            <div className="pt-2 grid grid-cols-2 gap-3">
               <MagneticButton type="button" onClick={savePreferences} className="w-full">
                 <button
                   style={buttonStyle("secondary")}
                   className="w-full text-xs font-bold"
                 >
-                  Save Workspace Preferences
+                  Save Preferences
+                </button>
+              </MagneticButton>
+              <MagneticButton type="button" onClick={() => window.dispatchEvent(new Event("careeros:replay-intro"))} className="w-full">
+                <button
+                  style={buttonStyle("ghost")}
+                  className="w-full text-xs font-bold border border-white/10"
+                >
+                  Replay Intro
                 </button>
               </MagneticButton>
             </div>

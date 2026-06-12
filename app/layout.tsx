@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { LazyMotion, MotionConfig, domAnimation } from "framer-motion";
-import { IntroSystem } from "@/components/intro-system";
+import { IntroProvider } from "@/components/intro-provider";
 import { AppAtmosphere } from "@/components/app-atmosphere";
 import { CareerOSBackground } from "@/components/careeros-background";
 import { AuthProvider } from "@/components/auth-provider";
@@ -47,14 +47,15 @@ export default function RootLayout({
       </head>
       <body className={`${geom.variable} text-white antialiased`}>
         <ThemeProvider>
-          <IntroSystem />
-          <CareerOSBackground />
           <MotionConfig reducedMotion="user">
             <LazyMotion features={domAnimation}>
               <AuthProvider>
                 <RouteTransitionProvider>
-                  <AppAtmosphere />
-                  {children}
+                  <IntroProvider>
+                    <CareerOSBackground />
+                    <AppAtmosphere />
+                    {children}
+                  </IntroProvider>
                 </RouteTransitionProvider>
               </AuthProvider>
             </LazyMotion>
