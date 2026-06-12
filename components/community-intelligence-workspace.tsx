@@ -58,6 +58,10 @@ type DashboardData = {
     type: string;
     title: string;
     description: string;
+    whatIsNeeded: string;
+    whyItIsNeeded: string;
+    whoNeedsHelp: string;
+    predictedDemand: string;
     confidence: number;
     impact: string;
   }>;
@@ -105,12 +109,20 @@ const AIInsightCard = React.memo(function AIInsightCard({
   type,
   title,
   description,
+  whatIsNeeded,
+  whyItIsNeeded,
+  whoNeedsHelp,
+  predictedDemand,
   confidence,
   impact
 }: {
   type: string;
   title: string;
   description: string;
+  whatIsNeeded: string;
+  whyItIsNeeded: string;
+  whoNeedsHelp: string;
+  predictedDemand: string;
   confidence: number;
   impact: string;
 }) {
@@ -128,7 +140,28 @@ const AIInsightCard = React.memo(function AIInsightCard({
       <p className="text-[11px] text-slate-300 leading-relaxed bg-slate-950/45 border border-white/5 p-2.5 rounded-xl">
         {description}
       </p>
-      <div className="flex justify-between items-center text-[9px] text-slate-500 border-t border-white/5 pt-2 font-mono">
+
+      <div className="grid grid-cols-2 gap-2 mt-2 border-t border-white/5 pt-2">
+        <div>
+          <span className="text-[8px] uppercase text-emerald-400 font-bold">What is needed</span>
+          <p className="text-[10px] text-white font-medium">{whatIsNeeded || "Unspecified"}</p>
+        </div>
+        <div>
+          <span className="text-[8px] uppercase text-cyan-400 font-bold">Who needs help</span>
+          <p className="text-[10px] text-white font-medium">{whoNeedsHelp || "Community"}</p>
+        </div>
+        <div className="col-span-2">
+          <span className="text-[8px] uppercase text-indigo-400 font-bold">Why it is needed</span>
+          <p className="text-[10px] text-slate-300 leading-snug">{whyItIsNeeded || "Derived from statistical correlation."}</p>
+        </div>
+        <div className="col-span-2 bg-slate-950/50 p-1.5 rounded text-[9px] border border-white/5 flex gap-1 items-center">
+          <TrendingUp className="h-3 w-3 text-amber-400" />
+          <span className="text-slate-400 font-bold uppercase tracking-wider">Demand Prediction:</span>
+          <span className="text-slate-300">{predictedDemand || "Stable"}</span>
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center text-[9px] text-slate-500 border-t border-white/5 pt-2 font-mono mt-3">
         <span>IMPACT: <strong className={impact === "High" ? "text-cyan-400" : "text-amber-400"}>{impact}</strong></span>
         <span>ENGINE // LIVE DEPLOYMENT</span>
       </div>
@@ -589,6 +622,10 @@ export function CommunityIntelligenceWorkspace({ profile }: CommunityIntelligenc
                   type={insight.type}
                   title={insight.title}
                   description={insight.description}
+                  whatIsNeeded={insight.whatIsNeeded}
+                  whyItIsNeeded={insight.whyItIsNeeded}
+                  whoNeedsHelp={insight.whoNeedsHelp}
+                  predictedDemand={insight.predictedDemand}
                   confidence={insight.confidence}
                   impact={insight.impact}
                 />

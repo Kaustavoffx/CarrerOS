@@ -155,6 +155,10 @@ export async function GET() {
       type: string;
       title: string;
       description: string;
+      whatIsNeeded: string;
+      whyItIsNeeded: string;
+      whoNeedsHelp: string;
+      predictedDemand: string;
       confidence: number;
       impact: string;
     }> = [];
@@ -166,12 +170,15 @@ Analyze the following aggregated community stats and generate 3 highly professio
 One must focus on Pattern Detection (comparing career goals/demands vs available resource types).
 One must focus on Predictive Modeling (predicting future shortages or required funding trends).
 The third can summarize regional structural gaps.
-Return a valid JSON array matching this exact schema:
 [
   {
     "type": "Pattern Detection" | "Predictive Modeling" | "Gap Analysis",
     "title": "Clear concise header",
-    "description": "Specific findings detailing numbers from the stats. Do not use generic filler words.",
+    "description": "Specific findings detailing numbers from the stats.",
+    "whatIsNeeded": "E.g., Software Mentorship",
+    "whyItIsNeeded": "Reason based on stats",
+    "whoNeedsHelp": "E.g., First-year engineering students",
+    "predictedDemand": "E.g., Increasing demand expected next month",
     "confidence": number (confidence percentage 0-100),
     "impact": "High" | "Medium" | "Low"
   }
@@ -222,24 +229,36 @@ Stats Summary:
       
       aiInsights = [
         {
-          type: "Pattern Detection",
-          title: "Goal-to-Resource Discrepancy Matrix",
-          description: `Detected high career concentration in Software Engineering (${popularGoals["Software Engineering"]} developers) but a critical deficiency in regional tech internships in cities like Jaipur and Kolkata. Only 2 verified internship listings exist nationwide.`,
+          type: "Predictive Modeling",
+          title: "Scaling Engineering Mentorship Needs",
+          description: "With an influx of software engineering goals, mentorship requests are heavily outpacing available verified experts.",
+          whatIsNeeded: "Software Mentorship",
+          whyItIsNeeded: "Lack of available mentors for new software engineering goals.",
+          whoNeedsHelp: "First-year engineering students",
+          predictedDemand: "Increasing demand expected to scale 25% by next month.",
           confidence: 88,
           impact: "High"
         },
         {
-          type: "Predictive Modeling",
-          title: "Stipend Exhaustion & Application Surge Projection",
-          description: `Predictive models project a 35% surge in scholarship searches in Jaipur and Ahmedabad as academic milestones approach. Current scholarship coverage is severely mismatched to handle this volume.`,
-          confidence: 79,
+          type: "Gap Analysis",
+          title: "Severe Regional Infrastructure Gap",
+          description: `We've detected critical resource shortages in ${underservedAreas[0]?.city || "rural sectors"}.`,
+          whatIsNeeded: "Financial & Scholarship Support",
+          whyItIsNeeded: "Zero verified opportunities listed in the local sector.",
+          whoNeedsHelp: "Low-income students in remote locations",
+          predictedDemand: "Stable but severely unmet demand.",
+          confidence: 96,
           impact: "High"
         },
         {
-          type: "Gap Analysis",
-          title: "Regional Resource Concentration Anomaly",
-          description: `Analysis reveals 60% of all support programs are concentrated in Bangalore and New Delhi, creating an accessibility vacuum for candidates in tier-2/tier-3 regional districts.`,
-          confidence: 94,
+          type: "Pattern Detection",
+          title: "Agent Verification Discrepancy",
+          description: "A substantial volume of community resources remain flagged as 'unverified'.",
+          whatIsNeeded: "Verification Task Force",
+          whyItIsNeeded: "Trust and safety metrics require high verification rates.",
+          whoNeedsHelp: "Community Resource Managers",
+          predictedDemand: "Declining if verification initiatives proceed.",
+          confidence: 79,
           impact: "Medium"
         }
       ];

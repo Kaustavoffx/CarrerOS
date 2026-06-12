@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { ChevronDown, Brain, Target, Compass, Zap, AlertTriangle, HelpCircle, GitPullRequest, XCircle } from "lucide-react";
+import { ChevronDown, Brain, Target, Compass, Zap, AlertTriangle, HelpCircle, GitPullRequest, XCircle, Activity, ArrowRight, Lightbulb } from "lucide-react";
 
 export interface MatchedCriteria {
   skills?: string[];
@@ -9,6 +9,7 @@ export interface MatchedCriteria {
   goals?: string[];
   location?: string;
   constraints?: string[];
+  supportNeeds?: string[];
 }
 
 export interface ExplainabilityData {
@@ -18,6 +19,9 @@ export interface ExplainabilityData {
   missingInformation: string[];
   potentialRisks: string[];
   rankingReason: string;
+  expectedOutcome?: string;
+  howItWorks?: string;
+  whatNext?: string;
 }
 
 export interface AiExplainabilityCardProps {
@@ -108,9 +112,20 @@ export function AiExplainabilityCard({ data, className = "" }: AiExplainabilityC
                 )}
                 
                 {data.matchedCriteria.location && (
-                   <div className="bg-white/[0.02] border border-white/5 rounded-lg p-2.5 sm:col-span-2">
+                   <div className="bg-white/[0.02] border border-white/5 rounded-lg p-2.5">
                     <span className="block text-[9px] uppercase text-slate-500 font-bold mb-1.5">Location Proximity</span>
                     <span className="bg-white/5 text-slate-300 border border-white/10 px-2 py-0.5 rounded text-[10px] font-medium">{data.matchedCriteria.location}</span>
+                  </div>
+                )}
+                
+                {data.matchedCriteria.supportNeeds && data.matchedCriteria.supportNeeds.length > 0 && (
+                  <div className="bg-white/[0.02] border border-white/5 rounded-lg p-2.5 sm:col-span-2">
+                    <span className="block text-[9px] uppercase text-slate-500 font-bold mb-1.5">Support Needs Addressed</span>
+                    <div className="flex flex-wrap gap-1">
+                      {data.matchedCriteria.supportNeeds.map(sn => (
+                        <span key={sn} className="bg-rose-500/10 text-rose-300 border border-rose-500/20 px-1.5 py-0.5 rounded text-[9px] font-medium">{sn}</span>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -167,6 +182,36 @@ export function AiExplainabilityCard({ data, className = "" }: AiExplainabilityC
                     </span>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* WHY, HOW, WHAT NEXT */}
+            {(data.expectedOutcome || data.howItWorks || data.whatNext) && (
+              <div className="pt-3 border-t border-white/5 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {data.howItWorks && (
+                  <div className="space-y-1.5">
+                    <p className="text-[9px] uppercase text-cyan-400 font-bold tracking-widest flex items-center gap-1.5">
+                      <Lightbulb className="h-3 w-3" /> How It Works
+                    </p>
+                    <p className="text-[10px] text-slate-300 leading-relaxed">{data.howItWorks}</p>
+                  </div>
+                )}
+                {data.expectedOutcome && (
+                  <div className="space-y-1.5">
+                    <p className="text-[9px] uppercase text-emerald-400 font-bold tracking-widest flex items-center gap-1.5">
+                      <Activity className="h-3 w-3" /> Expected Outcome
+                    </p>
+                    <p className="text-[10px] text-slate-300 leading-relaxed">{data.expectedOutcome}</p>
+                  </div>
+                )}
+                {data.whatNext && (
+                  <div className="space-y-1.5">
+                    <p className="text-[9px] uppercase text-amber-400 font-bold tracking-widest flex items-center gap-1.5">
+                      <ArrowRight className="h-3 w-3" /> What Next
+                    </p>
+                    <p className="text-[10px] text-slate-300 leading-relaxed">{data.whatNext}</p>
+                  </div>
+                )}
               </div>
             )}
             

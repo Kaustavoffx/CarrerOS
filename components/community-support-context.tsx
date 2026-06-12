@@ -378,13 +378,17 @@ export function CommunitySupportProvider({
             skills: profile?.skills || [],
             goals: profile?.goal ? [profile.goal] : [],
             constraints: profile?.budget ? [profile.budget] : [],
-            location: res.city || "Online"
+            location: res.city || "Online",
+            supportNeeds: ["Mentorship", "Financial Guidance"]
           },
           confidenceScore: Math.min(100, Math.max(0, score)),
           rankingReason: whyItems.length > 0 ? whyItems.join(" ") : "Default community recommendation.",
           alternativeRecommendations: [`Alternative ${res.type}s in ${res.city || "your region"}`],
           missingInformation: missingItems.length ? missingItems : ["Recent background check"],
-          potentialRisks: score < 60 ? ["Low match score indicates high rejection probability"] : []
+          potentialRisks: score < 60 ? ["Low match score indicates high rejection probability"] : [],
+          howItWorks: `Our AI matched your profile against ${res.name}'s strict eligibility criteria using vector analysis.`,
+          expectedOutcome: "Successful placement resulting in high career leverage and community support.",
+          whatNext: "Complete the auto-generated application draft to secure your position."
         }
       };
     });

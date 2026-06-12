@@ -62,7 +62,7 @@ interface GuideContent {
 }
 
 const GUIDE_DATA: Record<string, GuideContent> = {
-  "/demo": {
+  "/judge-demo": {
     title: "Demo Mode Guide",
     whatItDoes: "Interactive walkthrough of the platform designed to guide judges and mentors through core AI capabilities in under 2 minutes.",
     aiCapabilities: [
@@ -295,7 +295,7 @@ const navGroups: NavSectionConfig[] = [
   {
     title: "Judge Showcase",
     items: [
-      { label: "Demo Mode",     href: "/demo",          icon: Play },
+      { label: "Demo Mode",     href: "/judge-demo",    icon: Play },
       { label: "Impact Center", href: "/impact-center", icon: TrendingUp },
       { label: "Demo Guide",    href: "/demo-guide",    icon: Info },
     ],
@@ -304,6 +304,7 @@ const navGroups: NavSectionConfig[] = [
     title: "Core Space",
     items: [
       { label: "Dashboard",   href: "/dashboard",   icon: LayoutDashboard },
+      { label: "Weekly Mission",href: "/mission",   icon: Activity        },
       { label: "Roadmaps",    href: "/roadmaps",    icon: Map             },
       { label: "Career Twin", href: "/career-twin", icon: Users           },
       { label: "AI Mentor",   href: "/mentor",      icon: MessageSquare   },
@@ -335,6 +336,7 @@ const allNavItems = navGroups.flatMap((g) => g.items);
 // Mobile radial navigation modules (11 modules)
 const radialModules = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Weekly Mission", href: "/mission", icon: Activity },
   { label: "Roadmaps", href: "/roadmaps", icon: Map },
   { label: "Career Twin", href: "/career-twin", icon: Users },
   { label: "AI Mentor", href: "/mentor", icon: MessageSquare },

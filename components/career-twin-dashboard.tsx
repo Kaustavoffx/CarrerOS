@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 // Framer Motion removed — CSS-only animations for 120fps performance
 import {
   Sparkles, Brain, Briefcase, CheckSquare, Square, RefreshCw,
-  ArrowRight, History, Plus, Trash2, TrendingUp, AlertCircle
+  ArrowRight, History, Plus, Trash2, TrendingUp, AlertCircle, ShieldAlert
 } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { updateProfile } from "@/lib/app-data";
@@ -381,15 +381,54 @@ export function CareerTwinDashboard({ profile, workspace, communityNeeds = [] }:
                 </ul>
               </div>
 
-              <div className="border border-white/5 bg-white/[0.01] p-4 rounded-xl sm:col-span-2">
-                <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest block mb-1">Execution Risks</span>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {risks.map((r, i) => (
-                    <span key={i} className="text-xs text-rose-300 bg-rose-950/10 border border-rose-500/10 px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5">
-                      <AlertCircle className="h-3 w-3 text-rose-400" />
-                      {r}
+              {/* Career Risk Score & Intelligence */}
+              <div className="border border-white/5 bg-gradient-to-br from-rose-950/20 to-black p-5 rounded-xl sm:col-span-2 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/10 rounded-full blur-3xl" />
+                <div className="flex justify-between items-start mb-4 relative z-10">
+                  <div>
+                    <span className="text-[10px] text-rose-400 font-bold uppercase tracking-widest block mb-1 flex items-center gap-2">
+                      <ShieldAlert className="h-3.5 w-3.5" />
+                      Career Risk Intelligence
                     </span>
-                  ))}
+                    <h3 className="text-sm font-bold text-white">Execution Risk Assessment</h3>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-2xl font-black text-rose-400 font-geom">
+                      {risks.length > 0 && !risks[0].includes("Nominal") ? Math.min(85, risks.length * 25 + 10) : 15}%
+                    </span>
+                    <span className="text-[9px] text-slate-500 block uppercase font-bold tracking-wider">Risk Score</span>
+                  </div>
+                </div>
+
+                <div className="space-y-3 relative z-10">
+                  {risks.map((r, i) => {
+                    const isNominal = r.includes("Nominal");
+                    return (
+                      <div key={i} className={`p-3 rounded-xl border ${isNominal ? 'bg-emerald-950/10 border-emerald-500/10' : 'bg-rose-950/10 border-rose-500/10'}`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          {!isNominal && <AlertCircle className="h-4 w-4 text-rose-400" />}
+                          <h4 className={`text-xs font-bold ${isNominal ? 'text-emerald-400' : 'text-rose-300'}`}>{r}</h4>
+                        </div>
+                        
+                        {!isNominal && (
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+                            <div className="bg-black/40 p-2 rounded-lg border border-white/5">
+                              <span className="text-[8px] uppercase text-amber-400 font-bold block mb-1">Why Risk Exists</span>
+                              <p className="text-[10px] text-slate-300">Insufficient continuous momentum or missing critical integrations.</p>
+                            </div>
+                            <div className="bg-black/40 p-2 rounded-lg border border-white/5">
+                              <span className="text-[8px] uppercase text-rose-400 font-bold block mb-1">If Ignored</span>
+                              <p className="text-[10px] text-slate-300">High probability of roadmap failure and missed scholarship deadlines.</p>
+                            </div>
+                            <div className="bg-black/40 p-2 rounded-lg border border-white/5">
+                              <span className="text-[8px] uppercase text-emerald-400 font-bold block mb-1">How to Reduce</span>
+                              <p className="text-[10px] text-slate-300">Commit to the Weekly Mission daily tasks and connect GitHub.</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
