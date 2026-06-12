@@ -5,6 +5,7 @@ import { CareerOSBackground } from "@/components/careeros-background";
 import { AuthProvider } from "@/components/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { RouteTransitionProvider } from "@/components/route-transition-provider";
+import { BootSequence } from "@/components/boot-sequence";
 import { geom } from "@/lib/fonts";
 import "./globals.css";
 
@@ -51,7 +52,9 @@ export default function RootLayout({
               <AuthProvider>
                 <RouteTransitionProvider>
                   <AppAtmosphere />
-                  {children}
+                  <BootSequence>
+                    {children}
+                  </BootSequence>
                 </RouteTransitionProvider>
               </AuthProvider>
             </LazyMotion>
