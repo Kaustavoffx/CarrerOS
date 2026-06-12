@@ -3,6 +3,7 @@ import { createStarterWorkspace } from "./workspace";
 import { auditRoadmapQuality, buildRoadmapPlan, resolveDomainProfile, validateRoadmapDomainConsistency, validateGeneratedRoadmap, validateRoadmapDomain } from "./roadmap-plan";
 import { generateId } from "./id";
 import type { AppData, ChatThread, ExperienceLevel, NoteRecord, ProgressRecord, RoadmapAuditReport, RoadmapAuditSourceReport, RoadmapDifficulty, RoadmapMilestoneRecord, RoadmapRecord, RoadmapResourceLink, RoadmapStatus, RoadmapVersionRecord, UserProfileRecord, WorkspaceSnapshotRecord, CommunityNeedReport } from "./supabase/types";
+import { getDemoRoniData } from "./demo-roni-data";
 
 type ProfileWritePayload = {
   id: string;
@@ -572,6 +573,10 @@ async function persistRoadmapVersion(client: SupabaseClient, userId: string, roa
 }
 
 export async function loadAppData(client: SupabaseClient, userId: string): Promise<AppData> {
+  if (userId === "demo-roni-judge-id") {
+    return getDemoRoniData();
+  }
+
   const [profileResult, workspaceResult, roadmapRowsResult, roadmapHistoryResult, communityNeedsResult] = await Promise.all([
     client.from("profiles").select("*").eq("id", userId).maybeSingle<UserProfileRecord>(),
     client.from("career_workspace_state").select("*").eq("user_id", userId).maybeSingle<WorkspaceSnapshotRecord>(),
@@ -678,6 +683,8 @@ export async function seedWorkspace(client: SupabaseClient, userId: string, full
 }
 
 export async function updateProfile(client: SupabaseClient, userId: string, patch: Partial<UserProfileRecord>) {
+  if (userId === "demo-roni-judge-id") return; // No-op for demo mode
+
   const payload = {
     id: userId,
     updated_at: new Date().toISOString(),
@@ -697,6 +704,8 @@ export async function updateProfile(client: SupabaseClient, userId: string, patc
 }
 
 export async function updateWorkspace(client: SupabaseClient, userId: string, patch: Partial<WorkspaceSnapshotRecord>) {
+  if (userId === "demo-roni-judge-id") return; // No-op for demo mode
+
   const { data: existing } = await client.from("career_workspace_state").select("*").eq("user_id", userId).maybeSingle<WorkspaceSnapshotRecord>();
   const existingRoadmaps = normalizeRoadmapArray(existing?.roadmaps);
   const existingProgress = toArray<ProgressRecord>(existing?.progress);

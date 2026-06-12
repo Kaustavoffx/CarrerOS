@@ -159,7 +159,7 @@ export function IntroProvider({ children }: { children: React.ReactNode }) {
       // Success! Fade in audio
       fadeAudio(0.85, 400);
       setAudioBlocked(false);
-    } catch (err) {
+    } catch {
       // Autoplay blocked
       setAudioBlocked(true);
       videoRef.current.pause();

@@ -11,7 +11,7 @@ export async function getSupabaseServerClient() {
   const { url, anonKey } = getSupabaseConfig();
   const cookieStore = await cookies();
 
-  return createServerClient(url, anonKey, {
+  const client = createServerClient(url, anonKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
@@ -27,4 +27,14 @@ export async function getSupabaseServerClient() {
       }
     }
   }) as SupabaseClient;
+
+  if (cookieStore.get("careeros_judge_demo")?.value === "true") {
+    client.auth.getUser = async () => ({
+      data: { user: { id: "demo-roni-judge-id", email: "roni@demo.careeros" } },
+      error: null
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+  }
+
+  return client;
 }

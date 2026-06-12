@@ -27,7 +27,8 @@ import {
   Database,
   Zap,
   Play,
-  TrendingUp
+  TrendingUp,
+  ShieldAlert
 } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { motion, AnimatePresence, usePresence } from "framer-motion";
@@ -307,6 +308,7 @@ const navGroups: NavSectionConfig[] = [
       { label: "Career Twin", href: "/career-twin", icon: Users           },
       { label: "AI Mentor",   href: "/mentor",      icon: MessageSquare   },
       { label: "Agentic Swarm", href: "/agentic-swarm", icon: Brain       },
+      { label: "Emergency SOS", href: "/emergency-guidance", icon: ShieldAlert },
     ],
   },
   {
@@ -337,6 +339,7 @@ const radialModules = [
   { label: "Career Twin", href: "/career-twin", icon: Users },
   { label: "AI Mentor", href: "/mentor", icon: MessageSquare },
   { label: "Agentic Swarm", href: "/agentic-swarm", icon: Brain },
+  { label: "Emergency SOS", href: "/emergency-guidance", icon: ShieldAlert },
   { label: "Community Intel", href: "/community-intelligence", icon: Brain },
   { label: "Support Navigator", href: "/support-navigator", icon: Shield },
   { label: "Resource Directory", href: "/resource-discovery", icon: Globe },
@@ -720,18 +723,28 @@ export function WorkspaceShell({ profile, children }: WorkspaceShellProps) {
         <LiquidDust origin="bl" color="indigo" intensity={0.06} />
         <div className="flex h-full flex-col relative z-10">
           {/* Logo Header */}
-          <div className={`flex items-center gap-3 px-4 py-4 border-b border-white/5 ${collapsed ? "justify-center" : ""}`}>
-            <Image
-              src="/logo.png"
-              alt="CareerOS Logo"
-              width={32}
-              height={32}
-              className="shrink-0 object-contain"
-            />
-            {!collapsed && (
-              <div>
-                <p className="text-sm font-semibold tracking-wide text-white">CareerOS</p>
-                <p className="text-[10px] uppercase tracking-widest text-slate-500">Intelligence Command</p>
+          <div className={`flex flex-col gap-2 px-4 py-4 border-b border-white/5 ${collapsed ? "items-center" : ""}`}>
+            <div className={`flex items-center gap-3 ${collapsed ? "justify-center" : ""}`}>
+              <Image
+                src="/logo.png"
+                alt="CareerOS Logo"
+                width={32}
+                height={32}
+                className="shrink-0 object-contain"
+              />
+              {!collapsed && (
+                <div>
+                  <p className="text-sm font-semibold tracking-wide text-white">CareerOS</p>
+                  <p className="text-[10px] uppercase tracking-widest text-slate-500">Intelligence Command</p>
+                </div>
+              )}
+            </div>
+            {!collapsed && profile?.id === "demo-roni-judge-id" && (
+              <div className="bg-cyan-950/40 border border-cyan-400/30 rounded flex items-center justify-center py-1 mt-1 shadow-[0_0_10px_rgba(34,211,238,0.2)]">
+                <span className="text-[9px] uppercase tracking-widest text-cyan-400 font-bold flex items-center gap-1.5">
+                  <ShieldAlert className="w-3 h-3" />
+                  JUDGE DEMO MODE
+                </span>
               </div>
             )}
           </div>
