@@ -151,7 +151,6 @@ export function IntroProvider({ children }: { children: React.ReactNode }) {
             controlsList="nodownload nofullscreen noremoteplayback"
             className="w-full h-full object-contain pointer-events-none"
           >
-            <source src={isPortrait ? "/intro_portrait.webm" : "/intro_landscape.webm"} type="video/webm" />
             <source src={isPortrait ? "/intro_portrait.mp4" : "/intro_landscape.mp4"} type="video/mp4" />
           </video>
           
