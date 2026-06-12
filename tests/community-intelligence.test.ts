@@ -74,7 +74,8 @@ test("Community Heatmap density aggregator API returns valid groupings and repor
   // Import the GET handler from the heatmap API route
   const { GET } = await import("../app/api/community/heatmap/route");
 
-  // Call the GET handler
+  // Call the GET handler with a mock Request object
+  const req = new Request("http://localhost/api/community/heatmap");
   const res = await GET();
 
   assert.equal(res.status, 200);

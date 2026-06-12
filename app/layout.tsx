@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { LazyMotion, MotionConfig, domAnimation } from "framer-motion";
+import { IntroSystem } from "@/components/intro-system";
 import { AppAtmosphere } from "@/components/app-atmosphere";
 import { CareerOSBackground } from "@/components/careeros-background";
 import { AuthProvider } from "@/components/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { RouteTransitionProvider } from "@/components/route-transition-provider";
-import { BootSequence } from "@/components/boot-sequence";
 import { geom } from "@/lib/fonts";
 import "./globals.css";
 
@@ -13,6 +13,7 @@ export const metadata: Metadata = {
   title: "CareerOS | Private Career Workspace",
   description: "A Supabase-backed career workspace with auth, onboarding, persistent roadmaps, and a premium dashboard experience.",
   metadataBase: new URL("https://careeros.local"),
+  manifest: "/manifest.json",
   icons: {
     icon: "/icons/favicon-32.png",
     shortcut: "/icons/favicon-32.png",
@@ -46,15 +47,14 @@ export default function RootLayout({
       </head>
       <body className={`${geom.variable} text-white antialiased`}>
         <ThemeProvider>
+          <IntroSystem />
           <CareerOSBackground />
           <MotionConfig reducedMotion="user">
             <LazyMotion features={domAnimation}>
               <AuthProvider>
                 <RouteTransitionProvider>
                   <AppAtmosphere />
-                  <BootSequence>
-                    {children}
-                  </BootSequence>
+                  {children}
                 </RouteTransitionProvider>
               </AuthProvider>
             </LazyMotion>
