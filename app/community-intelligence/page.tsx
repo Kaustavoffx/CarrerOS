@@ -4,8 +4,8 @@ import { CommunitySupportProvider } from "@/components/community-support-context
 import { CommunitySupportLayout } from "@/components/community-support-layout";
 import dynamic from "next/dynamic";
 
-const CommunityIntelligenceWorkspace = dynamic(
-  () => import("@/components/community-intelligence-workspace").then((mod) => mod.CommunityIntelligenceWorkspace),
+const CommunityNeedDashboard = dynamic(
+  () => import("@/components/community-need-dashboard").then((mod) => mod.CommunityNeedDashboard),
   {
     loading: () => <div className="animate-pulse bg-white/[0.02] border border-white/5 rounded-2xl h-[450px] w-full" />
   }
@@ -65,7 +65,7 @@ export default async function CommunityIntelligencePage(props: {
           </CommunitySupportLayout>
         </CommunitySupportProvider>
       ) : (
-        <CommunityIntelligenceWorkspace profile={profile} workspace={workspace} />
+        <CommunityNeedDashboard />
       )}
     </WorkspaceShell>
   );
