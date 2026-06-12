@@ -132,7 +132,7 @@ export function IntroProvider({ children }: { children: React.ReactNode }) {
     <>
       {showIntro && (
         <div 
-          className="fixed inset-0 w-full h-full bg-[#000000] z-[999999] overflow-hidden"
+          className="fixed inset-0 w-[100vw] h-[100vh] overflow-hidden flex items-center justify-center bg-[#000000] z-[999999]"
           style={{
             opacity: videoFading ? 0 : 1,
             transition: "opacity 350ms ease-out",
@@ -150,6 +150,7 @@ export function IntroProvider({ children }: { children: React.ReactNode }) {
             disablePictureInPicture
             controlsList="nodownload nofullscreen noremoteplayback"
             className="w-full h-full object-contain pointer-events-none"
+            style={{ objectPosition: "center center" }}
           >
             <source src={isPortrait ? "/intro_portrait.mp4" : "/intro_landscape.mp4"} type="video/mp4" />
           </video>
@@ -158,7 +159,6 @@ export function IntroProvider({ children }: { children: React.ReactNode }) {
             <button
               onClick={skipIntro}
               className="absolute top-6 right-6 px-4 py-2 text-[10px] font-bold text-white/70 hover:text-white uppercase tracking-[0.2em] z-10 transition-all duration-300 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-md shadow-[0_4px_24px_rgba(0,0,0,0.4)]"
-              style={{ transform: "translateZ(0)" }}
             >
               Skip Intro
             </button>
