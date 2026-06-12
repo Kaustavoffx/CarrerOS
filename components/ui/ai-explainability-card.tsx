@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { ChevronDown, Brain, Target, Compass, Zap, AlertTriangle, HelpCircle, GitPullRequest, ArrowRight, XCircle } from "lucide-react";
-import { buttonStyle } from "@/styles/careeros-design-system";
+import { ChevronDown, Brain, Target, Compass, Zap, AlertTriangle, HelpCircle, GitPullRequest, XCircle } from "lucide-react";
 
 export interface MatchedCriteria {
   skills?: string[];

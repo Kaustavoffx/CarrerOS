@@ -306,6 +306,7 @@ const navGroups: NavSectionConfig[] = [
       { label: "Roadmaps",    href: "/roadmaps",    icon: Map             },
       { label: "Career Twin", href: "/career-twin", icon: Users           },
       { label: "AI Mentor",   href: "/mentor",      icon: MessageSquare   },
+      { label: "Agentic Swarm", href: "/agentic-swarm", icon: Brain       },
     ],
   },
   {
@@ -335,6 +336,7 @@ const radialModules = [
   { label: "Roadmaps", href: "/roadmaps", icon: Map },
   { label: "Career Twin", href: "/career-twin", icon: Users },
   { label: "AI Mentor", href: "/mentor", icon: MessageSquare },
+  { label: "Agentic Swarm", href: "/agentic-swarm", icon: Brain },
   { label: "Community Intel", href: "/community-intelligence", icon: Brain },
   { label: "Support Navigator", href: "/support-navigator", icon: Shield },
   { label: "Resource Directory", href: "/resource-discovery", icon: Globe },

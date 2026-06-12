@@ -151,6 +151,15 @@ export function ResourceDiscoveryWorkspace() {
                 )}
               </div>
 
+              {matchScores[res.id] && (
+                <div className="flex gap-4 text-[10px] font-mono border-y border-white/5 py-1.5 overflow-x-auto hide-scrollbar">
+                  <span className="flex items-center gap-1"><span className="text-slate-500 font-bold uppercase font-sans tracking-wider text-[9px]">Eligibility:</span> <span className="text-cyan-400 font-bold">{matchScores[res.id]?.eligibilityScore || 0}%</span></span>
+                  <span className="flex items-center gap-1"><span className="text-slate-500 font-bold uppercase font-sans tracking-wider text-[9px]">Impact:</span> <span className="text-fuchsia-400 font-bold">{matchScores[res.id]?.impactScore || 0}%</span></span>
+                  <span className="flex items-center gap-1"><span className="text-slate-500 font-bold uppercase font-sans tracking-wider text-[9px]">Probability:</span> <span className="text-amber-400 font-bold">{matchScores[res.id]?.successProbability || 0}%</span></span>
+                  <span className="flex items-center gap-1"><span className="text-slate-500 font-bold uppercase font-sans tracking-wider text-[9px]">Urgency:</span> <span className={`font-bold uppercase font-sans tracking-widest text-[9px] ${matchScores[res.id]?.urgency === "High" ? "text-rose-400" : matchScores[res.id]?.urgency === "Medium" ? "text-amber-400" : "text-emerald-400"}`}>{matchScores[res.id]?.urgency || "Low"}</span></span>
+                </div>
+              )}
+
               <p className="text-xs text-slate-400 leading-relaxed">{res.description}</p>
 
               {/* Strict eligibility requirements */}

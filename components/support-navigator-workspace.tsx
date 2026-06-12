@@ -66,6 +66,25 @@ export function SupportNavigatorWorkspace() {
                 <p className="text-[10px] text-slate-500 mt-0.5">{activeMatchResource.city || "Online"} • Verified Platform</p>
               </div>
 
+              <div className="grid grid-cols-4 gap-2 pt-2 border-t border-white/5">
+                <div className="p-2 rounded-lg bg-white/[0.02] border border-white/5 flex flex-col items-center text-center">
+                  <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Eligibility</span>
+                  <span className="text-sm font-mono font-bold text-cyan-400 mt-1">{matchScores[activeMatchResource.id]?.eligibilityScore || 0}%</span>
+                </div>
+                <div className="p-2 rounded-lg bg-white/[0.02] border border-white/5 flex flex-col items-center text-center">
+                  <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Impact</span>
+                  <span className="text-sm font-mono font-bold text-fuchsia-400 mt-1">{matchScores[activeMatchResource.id]?.impactScore || 0}%</span>
+                </div>
+                <div className="p-2 rounded-lg bg-white/[0.02] border border-white/5 flex flex-col items-center text-center">
+                  <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Probability</span>
+                  <span className="text-sm font-mono font-bold text-amber-400 mt-1">{matchScores[activeMatchResource.id]?.successProbability || 0}%</span>
+                </div>
+                <div className="p-2 rounded-lg bg-white/[0.02] border border-white/5 flex flex-col items-center text-center">
+                  <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Urgency</span>
+                  <span className={`text-[11px] uppercase tracking-widest font-bold mt-1.5 ${matchScores[activeMatchResource.id]?.urgency === "High" ? "text-rose-400" : matchScores[activeMatchResource.id]?.urgency === "Medium" ? "text-amber-400" : "text-emerald-400"}`}>{matchScores[activeMatchResource.id]?.urgency || "Low"}</span>
+                </div>
+              </div>
+
               {matchScores[activeMatchResource.id]?.explainabilityData && (
                 <div className="border-t border-white/5 pt-3">
                   <AiExplainabilityCard data={matchScores[activeMatchResource.id]?.explainabilityData} />

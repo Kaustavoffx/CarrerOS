@@ -8,90 +8,88 @@ import type { UserProfileRecord } from "@/lib/supabase/types";
  */
 function calculateFallbackMatches(resources: CommunityResource[], profile: UserProfileRecord) {
   return resources.map((res) => {
-    let score = 50; // base score
-    const reasons: string[] = [];
+    let eligibilityScore = 60;
+    let impactScore = 50;
+    let successProbability = 40;
     const missing: string[] = [];
     let eligibilityStatus: "Fully Eligible" | "Partially Eligible" | "Ineligible" = "Fully Eligible";
 
     // Detected need
     let detectedNeed = "Career Readiness & Community Placement";
-    if (res.type === "wellness") {
-      detectedNeed = "Mental Wellness & Student Counseling Support";
-    } else if (res.type === "scholarship" || res.type === "scheme") {
-      detectedNeed = "Financial Aid & Scholarship Schemes";
-    } else if (res.type === "certification") {
-      detectedNeed = "Technical Skill Certification & Learning";
-    }
+    if (res.type === "wellness") detectedNeed = "Mental Wellness Support";
+    else if (res.type === "scholarship" || res.type === "scheme") detectedNeed = "Financial Aid & Scholarships";
 
-    // Goal alignment
+    // Goal alignment (Impact)
     const goal = (profile.goal || "").toLowerCase();
-    if (goal.includes("software") || goal.includes("developer") || goal.includes("engineer") || goal.includes("sde")) {
-      if (res.tags && Array.isArray(res.tags) && res.tags.some((t: string) => ["technical", "coding", "aws", "ibm", "google", "tech"].includes(t.toLowerCase()))) {
-        score += 25;
-        reasons.push("Aligns directly with your software engineering career objectives.");
+    if (goal.includes("software") || goal.includes("developer")) {
+      if (res.tags && res.tags.some(t => t.toLowerCase().includes("tech") || t.toLowerCase().includes("coding"))) {
+        impactScore += 35;
       }
     }
 
-    // Budget alignment
+    // Budget alignment (Eligibility & Impact)
     const budget = (profile.budget || "").toLowerCase();
     if (budget.includes("free") || budget.includes("low")) {
-      if (res.description.toLowerCase().includes("free") || (res.tags && Array.isArray(res.tags) && res.tags.some((t: string) => ["scholarship", "need-based", "free"].includes(t.toLowerCase())))) {
-        score += 20;
-        reasons.push("Matches your budget requirements by providing free access or funding.");
-      } else if (res.eligibility && res.eligibility.need_based) {
+      if (res.description.toLowerCase().includes("free") || res.tags?.some(t => t.toLowerCase().includes("free"))) {
+        impactScore += 20;
+        eligibilityScore += 20;
+      } else if (res.eligibility?.need_based) {
         eligibilityStatus = "Partially Eligible";
         missing.push("Requires financial need assessment documents validation.");
       }
     }
 
-    // Gender check mock
-    if (res.eligibility && res.eligibility.gender === "Female" && profile.full_name && !profile.full_name.toLowerCase().includes("girl") && !profile.full_name.toLowerCase().includes("female")) {
-      // Rule threshold checks
+    // Gender check
+    if (res.eligibility?.gender === "Female" && profile.full_name && !profile.full_name.toLowerCase().includes("girl")) {
       eligibilityStatus = "Partially Eligible";
+      eligibilityScore -= 30;
       missing.push("Requires verification of female applicant criteria.");
     }
 
-    // Obstacles alignment
-    if (profile.obstacles && Array.isArray(profile.obstacles)) {
-      const obsStr = profile.obstacles.join(" ").toLowerCase();
-      if (obsStr.includes("financial") || obsStr.includes("money") || obsStr.includes("fee")) {
-        if (res.type === "scholarship" || res.type === "scheme") {
-          score += 15;
-          reasons.push("Provides financial support to mitigate your listed financial challenges.");
-        }
-      }
+    // Experience/Skills (Success Probability)
+    if (profile.skills && profile.skills.length > 0) {
+      successProbability += 30;
     }
 
     // Urgency
     let urgency: "High" | "Medium" | "Low" = "Low";
     const deadline = res.deadline || "";
-    if (deadline.includes("2026-07") || deadline.includes("2026-08")) {
-      urgency = "High";
-    } else if (deadline.includes("2026-09") || deadline.includes("2026-10")) {
-      urgency = "Medium";
-    }
+    if (deadline.includes("2026-07") || deadline.includes("2026-08")) urgency = "High";
+    else if (deadline.includes("2026-09") || deadline.includes("2026-10")) urgency = "Medium";
 
-    // Cap score at 98
-    const finalScore = Math.min(98, score);
-    const reason = reasons.length > 0 
-      ? reasons.join(" ") 
-      : `Tailored support match corresponding to your target track as a ${profile.goal || "professional"}.`;
+    eligibilityScore = Math.max(0, Math.min(100, eligibilityScore));
+    impactScore = Math.max(0, Math.min(100, impactScore));
+    successProbability = Math.max(0, Math.min(100, successProbability));
+
+    const finalScore = Math.round((eligibilityScore * 0.4) + (impactScore * 0.3) + (successProbability * 0.3));
 
     return {
       resourceId: res.id,
       score: finalScore,
-      detectedNeed,
-      whyMatch: reason,
+      eligibilityScore,
+      impactScore,
+      successProbability,
       urgency,
+      detectedNeed,
+      whyMatch: "Tailored fallback match based on your core profile metrics.",
       eligibilityStatus,
       missingRequirements: missing,
-      actionPlan: res.application_steps || [
-        "Check official portal eligibility guidelines",
-        "Prepare identity and qualifications proof certificates",
-        "Submit online application form with personal context statement"
-      ]
+      actionPlan: res.application_steps || ["Check official portal guidelines", "Prepare required identity documents", "Submit online application"],
+      explainabilityData: {
+        matchedCriteria: {
+          goals: profile.goal ? [profile.goal] : ["General Growth"],
+          constraints: profile.budget ? [profile.budget] : [],
+          skills: profile.skills || [],
+          location: res.city || "Online"
+        },
+        confidenceScore: finalScore,
+        rankingReason: "Highest aggregate score balancing eligibility, potential career impact, and success probability.",
+        alternativeRecommendations: ["General Career Counseling", "Online Mentorship Portal"],
+        missingInformation: missing,
+        potentialRisks: ["Program capacity may fill up before the deadline.", "Eligibility criteria might change."]
+      }
     };
-  }).sort((a: { score: number }, b: { score: number }) => b.score - a.score).slice(0, 5);
+  }).sort((a, b) => b.score - a.score).slice(0, 5);
 }
 
 export async function POST(req: Request) {
@@ -122,20 +120,37 @@ export async function POST(req: Request) {
     }
 
     // Call OpenAI GPT API for premium matching
-    const systemPrompt = `You are a Community Support Intelligence matching system for CareerOS.
+    const systemPrompt = `You are a world-class Opportunity Matching Engine for CareerOS.
 Analyze the user profile and matched resources list, and return a JSON payload indicating the best opportunities.
 Return ONLY a valid JSON object matching this schema, without markdown formatting:
 {
   "matches": [
     {
       "resourceId": "string-matching-exact-resource-id",
-      "score": number (Confidence score from 0 to 100),
-      "detectedNeed": "specific detected user need statement matching their obstacles",
-      "whyMatch": "detailed custom explainable matching rationale linking user profile parameters to this opportunity",
+      "score": number (Overall ranking composite score from 0 to 100),
+      "eligibilityScore": number (0-100 based on strict requirements),
+      "impactScore": number (0-100 based on potential career/life impact),
+      "successProbability": number (0-100 based on skills and experience),
       "urgency": "High" | "Medium" | "Low",
+      "detectedNeed": "specific detected user need statement",
+      "whyMatch": "detailed custom explainable rationale",
       "eligibilityStatus": "Fully Eligible" | "Partially Eligible" | "Ineligible",
-      "missingRequirements": ["list of profile attributes that conflict or are missing relative to the rules"],
-      "actionPlan": ["Step 1", "Step 2", "Step 3 tailored application steps"]
+      "missingRequirements": ["list of conflicting profile attributes"],
+      "actionPlan": ["Step 1", "Step 2", "Step 3 tailored application steps"],
+      "explainabilityData": {
+        "matchedCriteria": {
+          "skills": ["Skill 1", "Skill 2"],
+          "interests": ["Interest 1"],
+          "goals": ["Goal 1"],
+          "location": "Location Name",
+          "constraints": ["Constraint 1"]
+        },
+        "confidenceScore": number (same as score),
+        "rankingReason": "Why this was ranked at its current position vs alternative opportunities",
+        "alternativeRecommendations": ["Name of an alternative program"],
+        "missingInformation": ["Information that would improve matching confidence"],
+        "potentialRisks": ["Why this might not work out"]
+      }
     }
   ]
 }

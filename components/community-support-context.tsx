@@ -7,12 +7,16 @@ import { CommunityResource, SEEDED_RESOURCES } from "@/lib/community-db";
 export interface AiMatchOpportunity {
   resourceId: string;
   score: number;
+  eligibilityScore: number;
+  impactScore: number;
+  successProbability: number;
   detectedNeed: string;
   whyMatch: string;
   urgency: "High" | "Medium" | "Low";
   eligibilityStatus: "Fully Eligible" | "Partially Eligible" | "Ineligible";
   missingRequirements: string[];
   actionPlan: string[];
+  explainabilityData?: import("@/components/ui/ai-explainability-card").ExplainabilityData;
 }
 
 // Interface for AI Chat Message
@@ -66,7 +70,17 @@ type CommunitySupportContextType = {
   runAiMatching: () => Promise<void>;
   selectedMatchResourceId: string;
   setSelectedMatchResourceId: (id: string) => void;
-  matchScores: Record<string, { score: number; why: string; missing: string[]; checklist: string[]; explainabilityData?: import("@/components/ui/ai-explainability-card").ExplainabilityData }>;
+  matchScores: Record<string, { 
+    score: number; 
+    eligibilityScore: number;
+    impactScore: number;
+    successProbability: number;
+    why: string; 
+    missing: string[]; 
+    checklist: string[]; 
+    urgency: "High" | "Medium" | "Low";
+    explainabilityData?: import("@/components/ui/ai-explainability-card").ExplainabilityData 
+  }>;
   sortedMatchingResources: CommunityResource[];
   activeMatchResource: CommunityResource | undefined;
   matchActionPlanChecked: Record<string, boolean>;
@@ -312,15 +326,22 @@ export function CommunitySupportProvider({
 
   // --- Dynamic local match score calculation ---
   const matchScores = useMemo(() => {
-    const scores: Record<string, { score: number; why: string; missing: string[]; checklist: string[]; explainabilityData?: import("@/components/ui/ai-explainability-card").ExplainabilityData }> = {};
+    const scores: Record<string, { score: number; eligibilityScore: number; impactScore: number; successProbability: number; urgency: "High" | "Medium" | "Low"; why: string; missing: string[]; checklist: string[]; explainabilityData?: import("@/components/ui/ai-explainability-card").ExplainabilityData }> = {};
 
     SEEDED_RESOURCES.forEach((res) => {
       let score = 55;
+      let eligibilityScore = 60;
+      let impactScore = 50;
+      let successProbability = 40;
       const whyItems: string[] = [];
       const missingItems: string[] = [];
       const checklist = res.strict_requirements || ["Complete standard profile validations"];
 
       if (profile) {
+        if (profile.skills && profile.skills.length > 0) {
+          successProbability += 20;
+        }
+
         const userGoal = (profile.goal || "").toLowerCase();
         const resName = res.name.toLowerCase();
         const resDesc = res.description.toLowerCase();
@@ -329,12 +350,15 @@ export function CommunitySupportProvider({
           res.tags.some((t) => userGoal.includes(t.toLowerCase()));
 
         if (hasGoalOverlap) {
+          impactScore += 30;
           score += 20;
           whyItems.push(`Matches active goal: "${profile.goal}".`);
         }
 
         const userBudget = (profile.budget || "").toLowerCase();
         if (res.eligibility.need_based && (userBudget.includes("free") || userBudget.includes("scholarship"))) {
+          eligibilityScore += 20;
+          impactScore += 15;
           score += 15;
           whyItems.push("Aligns with preferred budget constraints.");
         }
@@ -342,14 +366,19 @@ export function CommunitySupportProvider({
 
       scores[res.id] = {
         score: Math.min(100, Math.max(0, score)),
+        eligibilityScore: Math.min(100, Math.max(0, eligibilityScore)),
+        impactScore: Math.min(100, Math.max(0, impactScore)),
+        successProbability: Math.min(100, Math.max(0, successProbability)),
+        urgency: "Medium",
         why: whyItems.length > 0 ? whyItems.join(" ") : "Recommended support opportunity matching your career path.",
         missing: missingItems.length ? missingItems : ["None detected. High eligibility confidence."],
         checklist,
         explainabilityData: {
           matchedCriteria: {
-            skills: res.tags || [],
-            location: res.city || "Online",
-            constraints: res.eligibility?.need_based ? ["Financial Need Assessed"] : []
+            skills: profile?.skills || [],
+            goals: profile?.goal ? [profile.goal] : [],
+            constraints: profile?.budget ? [profile.budget] : [],
+            location: res.city || "Online"
           },
           confidenceScore: Math.min(100, Math.max(0, score)),
           rankingReason: whyItems.length > 0 ? whyItems.join(" ") : "Default community recommendation.",
@@ -360,8 +389,27 @@ export function CommunitySupportProvider({
       };
     });
 
+    // Merge API AiMatches if available
+    if (aiMatches && aiMatches.length > 0) {
+      aiMatches.forEach((match) => {
+        if (scores[match.resourceId]) {
+          scores[match.resourceId] = {
+            score: match.score,
+            eligibilityScore: match.eligibilityScore || 60,
+            impactScore: match.impactScore || 50,
+            successProbability: match.successProbability || 40,
+            urgency: match.urgency || "Low",
+            why: match.whyMatch,
+            missing: match.missingRequirements,
+            checklist: match.actionPlan,
+            explainabilityData: match.explainabilityData || scores[match.resourceId].explainabilityData
+          };
+        }
+      });
+    }
+
     return scores;
-  }, [profile]);
+  }, [profile, aiMatches]);
 
   const sortedMatchingResources = useMemo(() => {
     return [...SEEDED_RESOURCES].sort((a, b) => {
