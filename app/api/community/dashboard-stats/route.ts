@@ -252,6 +252,7 @@ Stats Summary:
       difficulty: string;
       impact: string;
       status: string;
+      explainabilityData?: import("@/components/ui/ai-explainability-card").ExplainabilityData;
     }> = [];
     if (underservedAreas.some((gap) => gap.city === "Jaipur" && gap.resourceType === "internship")) {
       recommendedActions.push({
@@ -261,7 +262,19 @@ Stats Summary:
         description: "Fund virtual coding internship programs in partnership with Rajasthan tech developers.",
         difficulty: "Medium",
         impact: "High",
-        status: "pending"
+        status: "pending",
+        explainabilityData: {
+          matchedCriteria: {
+            location: "Jaipur",
+            skills: ["Technical Internship"],
+            constraints: ["Critical resource shortage detected"]
+          },
+          confidenceScore: 92,
+          rankingReason: "Ranked highly due to the complete absence of tech internship resources in Jaipur.",
+          alternativeRecommendations: ["Partner with remote internship providers", "Run local coding bootcamps"],
+          missingInformation: ["Exact number of students seeking internships locally", "Available corporate partners"],
+          potentialRisks: ["Lack of local mentors to support the interns"]
+        }
       });
     }
     if (underservedAreas.some((gap) => gap.city === "Kolkata" && gap.resourceType === "mentorship")) {
@@ -272,7 +285,19 @@ Stats Summary:
         description: "Establish hybrid group mentoring cohorts leveraging local NGO hubs like Child Rights and You (CRY).",
         difficulty: "Low",
         impact: "Medium",
-        status: "pending"
+        status: "pending",
+        explainabilityData: {
+          matchedCriteria: {
+            location: "Kolkata",
+            goals: ["Community building", "Knowledge sharing"],
+            constraints: ["Low density of existing mentors"]
+          },
+          confidenceScore: 85,
+          rankingReason: "Mentorship gaps are easier to fill remotely, making this a high-ROI but secondary priority compared to internships.",
+          alternativeRecommendations: ["Host one-off online webinars", "Sponsor local meetups"],
+          missingInformation: ["Willingness of local NGOs to partner", "Availability of remote mentors"],
+          potentialRisks: ["Low initial engagement from students without incentives"]
+        }
       });
     }
     recommendedActions.push({
@@ -282,7 +307,19 @@ Stats Summary:
       description: "Scale agentic validation checks on National Overseas Scholarships to reduce application processing time by 15 days.",
       difficulty: "High",
       impact: "High",
-      status: "completed"
+      status: "completed",
+      explainabilityData: {
+        matchedCriteria: {
+          skills: ["System Automation", "Verification"],
+          goals: ["Reduce processing bottlenecks"],
+          constraints: ["High volume of applications"]
+        },
+        confidenceScore: 95,
+        rankingReason: "Automating validation directly reduces manual workload, addressing core system efficiency.",
+        alternativeRecommendations: ["Hire more manual reviewers", "Increase application deadlines"],
+        missingInformation: ["Percentage of edge-cases that fail automation"],
+        potentialRisks: ["False rejections of valid applications"]
+      }
     });
 
     return NextResponse.json({

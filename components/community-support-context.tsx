@@ -66,7 +66,7 @@ type CommunitySupportContextType = {
   runAiMatching: () => Promise<void>;
   selectedMatchResourceId: string;
   setSelectedMatchResourceId: (id: string) => void;
-  matchScores: Record<string, { score: number; why: string; missing: string[]; checklist: string[] }>;
+  matchScores: Record<string, { score: number; why: string; missing: string[]; checklist: string[]; explainabilityData?: import("@/components/ui/ai-explainability-card").ExplainabilityData }>;
   sortedMatchingResources: CommunityResource[];
   activeMatchResource: CommunityResource | undefined;
   matchActionPlanChecked: Record<string, boolean>;
@@ -312,7 +312,7 @@ export function CommunitySupportProvider({
 
   // --- Dynamic local match score calculation ---
   const matchScores = useMemo(() => {
-    const scores: Record<string, { score: number; why: string; missing: string[]; checklist: string[] }> = {};
+    const scores: Record<string, { score: number; why: string; missing: string[]; checklist: string[]; explainabilityData?: import("@/components/ui/ai-explainability-card").ExplainabilityData }> = {};
 
     SEEDED_RESOURCES.forEach((res) => {
       let score = 55;
@@ -344,7 +344,19 @@ export function CommunitySupportProvider({
         score: Math.min(100, Math.max(0, score)),
         why: whyItems.length > 0 ? whyItems.join(" ") : "Recommended support opportunity matching your career path.",
         missing: missingItems.length ? missingItems : ["None detected. High eligibility confidence."],
-        checklist
+        checklist,
+        explainabilityData: {
+          matchedCriteria: {
+            skills: res.tags || [],
+            location: res.city || "Online",
+            constraints: res.eligibility?.need_based ? ["Financial Need Assessed"] : []
+          },
+          confidenceScore: Math.min(100, Math.max(0, score)),
+          rankingReason: whyItems.length > 0 ? whyItems.join(" ") : "Default community recommendation.",
+          alternativeRecommendations: [`Alternative ${res.type}s in ${res.city || "your region"}`],
+          missingInformation: missingItems.length ? missingItems : ["Recent background check"],
+          potentialRisks: score < 60 ? ["Low match score indicates high rejection probability"] : []
+        }
       };
     });
 

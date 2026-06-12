@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Search, MapPin, CheckCircle2, ArrowRight } from "lucide-react";
 import { useCommunitySupport, TARGET_CITIES } from "./community-support-context";
-import { CardSurface } from "@/components/ui";
+import { CardSurface, AiExplainabilityCard } from "@/components/ui";
 import { buttonStyle, inputStyle } from "@/styles/careeros-design-system";
 
 // ─── Design Input Wrappers ───────────────────────────────────────────────────
@@ -74,7 +74,8 @@ export function ResourceDiscoveryWorkspace() {
     setSelectedCategory,
     selectedCityFilter,
     setSelectedCityFilter,
-    filteredResources
+    filteredResources,
+    matchScores
   } = useCommunitySupport();
 
   return (
@@ -162,6 +163,10 @@ export function ResourceDiscoveryWorkspace() {
                     ))}
                   </ul>
                 </div>
+              )}
+
+              {matchScores[res.id]?.explainabilityData && (
+                <AiExplainabilityCard data={matchScores[res.id]?.explainabilityData} />
               )}
 
               <div className="flex items-center justify-between pt-1 border-t border-white/5 gap-2 flex-wrap">

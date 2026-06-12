@@ -11,6 +11,7 @@ export interface UserIntelligencePriority {
   reasons: string[];
   confidence: number;
   sources: string[];
+  explainabilityData?: import("@/components/ui/ai-explainability-card").ExplainabilityData;
 }
 
 export interface UserIntelligenceProfile {
@@ -146,7 +147,19 @@ export function buildUserIntelligenceProfile(
         `Direct action required to maintain community support safety index`
       ],
       confidence: 90,
-      sources: ["Profile", "Community Signals"]
+      sources: ["Profile", "Community Signals"],
+      explainabilityData: {
+        matchedCriteria: {
+          skills: [],
+          goals: ["Safety", "Community Access"],
+          location: "Proximity zone matching user zip",
+        },
+        confidenceScore: 90,
+        rankingReason: `Urgent needs always rank #1 to ensure user safety and well-being. This was prioritized over standard career roadmaps due to the '${primaryNeed.urgency}' severity tag.`,
+        alternativeRecommendations: ["Ignore need", "Delay resolution"],
+        missingInformation: ["Exact distance to resource", "Current availability status"],
+        potentialRisks: ["Immediate safety concern if left unaddressed"],
+      }
     });
   }
 
@@ -187,7 +200,18 @@ export function buildUserIntelligenceProfile(
       whyExplain: explanation,
       reasons,
       confidence,
-      sources: ["Roadmap", "Profile"]
+      sources: ["Roadmap", "Profile"],
+      explainabilityData: {
+        matchedCriteria: {
+          goals: [activeRoadmap.career_domain || "Career Growth"],
+          constraints: ["Time constraints considered based on weekly hours"],
+        },
+        confidenceScore: confidence,
+        rankingReason: `Ranked #2 due to the importance of consistent skill acquisition. It was not ranked #1 because immediate community needs (if any) take precedence.`,
+        alternativeRecommendations: ["Switch learning tracks", "Pause roadmap"],
+        missingInformation: ["Exact daily availability schedule"],
+        potentialRisks: roadmapProgress < 45 ? ["Project velocity lagging", "Skill gap widening"] : ["Burnout risk if rushed"],
+      }
     });
   } else {
     priorities.push({
@@ -204,7 +228,17 @@ export function buildUserIntelligenceProfile(
         "Goal parameters lack structured weekly milestones"
       ],
       confidence: 95,
-      sources: ["Profile", "System Rules"]
+      sources: ["Profile", "System Rules"],
+      explainabilityData: {
+        matchedCriteria: {
+          goals: ["Career establishment"],
+        },
+        confidenceScore: 95,
+        rankingReason: `Without an active roadmap, CareerOS cannot benchmark your progress. Therefore, this action is critical for system calibration.`,
+        alternativeRecommendations: ["Continue without tracking"],
+        missingInformation: ["User's preferred learning style", "Target career domain"],
+        potentialRisks: ["Lack of direction", "Inaccurate Twin mapping"],
+      }
     });
   }
 
@@ -224,7 +258,17 @@ export function buildUserIntelligenceProfile(
         "Improves similarity scores on the opportunity match board"
       ],
       confidence: 89,
-      sources: ["Profile", "Market Indicators"]
+      sources: ["Profile", "Market Indicators"],
+      explainabilityData: {
+        matchedCriteria: {
+          goals: ["Increased job matching accuracy"],
+        },
+        confidenceScore: 89,
+        rankingReason: `Connecting a resume enables vector embedding, increasing overall twin intelligence by ~30%. Ranked high due to ROI on effort.`,
+        alternativeRecommendations: ["Manual profile entry"],
+        missingInformation: ["Historical work experience", "Education details"],
+        potentialRisks: ["Missed job opportunities", "Low market match score"],
+      }
     });
   }
 
@@ -244,7 +288,17 @@ export function buildUserIntelligenceProfile(
         "Enables automated verification audits of design files"
       ],
       confidence: 81,
-      sources: ["Profile", "Market Indicators"]
+      sources: ["Profile", "Market Indicators"],
+      explainabilityData: {
+        matchedCriteria: {
+          skills: ["Proof of Work", "Development"],
+        },
+        confidenceScore: 81,
+        rankingReason: `Ranked behind Resume linking as resumes provide broader semantic context, but portfolio links are critical for top-tier developer roles.`,
+        alternativeRecommendations: ["No portfolio"],
+        missingInformation: ["Quality of projects", "Tech stack used in projects"],
+        potentialRisks: ["Filtering out by ATS systems requiring portfolios"],
+      }
     });
   }
 
@@ -264,7 +318,17 @@ export function buildUserIntelligenceProfile(
         "Unlocks advanced roadmap course suggestions"
       ],
       confidence: 83,
-      sources: ["Profile"]
+      sources: ["Profile"],
+      explainabilityData: {
+        matchedCriteria: {
+          skills: skills,
+        },
+        confidenceScore: 83,
+        rankingReason: `Basic skill population is necessary for foundational matching. Ranked lower than Roadmap tasks which inherently build skills.`,
+        alternativeRecommendations: ["Auto-extract from resume"],
+        missingInformation: ["Proficiency levels for each skill"],
+        potentialRisks: ["Suboptimal course recommendations", "False negative job matches"],
+      }
     });
   }
 
@@ -284,7 +348,17 @@ export function buildUserIntelligenceProfile(
         "Activates context-sync conversational memory"
       ],
       confidence: 76,
-      sources: ["Roadmap", "Community Signals"]
+      sources: ["Roadmap", "Community Signals"],
+      explainabilityData: {
+        matchedCriteria: {
+          goals: ["Interview readiness", "Knowledge gap identification"],
+        },
+        confidenceScore: 76,
+        rankingReason: `Mock interviews are highly valuable but require active time commitment. Ranked low priority to allow user to focus on core roadmap tasks first.`,
+        alternativeRecommendations: ["Peer mock interviews", "Static quizzes"],
+        missingInformation: ["User's anxiety levels", "Specific weak domains"],
+        potentialRisks: ["Confidence drop if scored low unexpectedly"],
+      }
     });
   }
 

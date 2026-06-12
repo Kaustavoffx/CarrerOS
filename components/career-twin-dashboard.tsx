@@ -10,7 +10,7 @@ import {
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { updateProfile } from "@/lib/app-data";
 import type { UserProfileRecord, WorkspaceSnapshotRecord, CommunityNeedReport } from "@/lib/supabase/types";
-import { PageHero, CardSurface, EmptyState } from "@/components/ui";
+import { PageHero, CardSurface, EmptyState, AiExplainabilityCard } from "@/components/ui";
 import { buttonStyle, inputStyle } from "@/styles/careeros-design-system";
 import { buildUserIntelligenceProfile } from "@/lib/user-intelligence";
 
@@ -225,6 +225,7 @@ export function CareerTwinDashboard({ profile, workspace, communityNeeds = [] }:
     reasons: prio.reasons,
     confidence: prio.confidence,
     sources: prio.sources,
+    explainabilityData: prio.explainabilityData,
   }));
 
   // ─── Job Matches Opportunity Board ────────────────────────────────────────
@@ -538,22 +539,9 @@ export function CareerTwinDashboard({ profile, workspace, communityNeeds = [] }:
                       </p>
                       <p className="text-[10px] text-slate-400 leading-relaxed leading-normal">{rec.impact}</p>
                       
-                      {!isChecked && (
-                        <div className="space-y-1.5 pt-2 border-t border-white/5">
-                          <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Why am I seeing this?</p>
-                          <ul className="list-disc list-inside text-[10px] text-slate-300 space-y-0.5">
-                            {rec.reasons?.map((reason, i) => (
-                              <li key={i} className="truncate">{reason}</li>
-                            ))}
-                          </ul>
-                          <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                            <span className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">Sources Used:</span>
-                            {rec.sources?.map((src) => (
-                              <span key={src} className="text-[8px] font-bold bg-white/[0.03] border border-white/5 px-1.5 py-0.5 rounded text-slate-400">
-                                {src}
-                              </span>
-                            ))}
-                          </div>
+                      {!isChecked && rec.explainabilityData && (
+                        <div className="pt-2 border-t border-white/5">
+                          <AiExplainabilityCard data={rec.explainabilityData} />
                         </div>
                       )}
 

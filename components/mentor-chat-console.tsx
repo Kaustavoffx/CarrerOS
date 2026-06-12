@@ -14,7 +14,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { generateId } from "@/lib/id";
 import { updateWorkspace, updateProfile } from "@/lib/app-data";
 import type { ChatMessage, UserProfileRecord, WorkspaceSnapshotRecord, CommunityNeedReport } from "@/lib/supabase/types";
-import { PageHero, CardSurface, EmptyState } from "@/components/ui";
+import { PageHero, CardSurface, EmptyState, AiExplainabilityCard } from "@/components/ui";
 import { buttonStyle, inputStyle } from "@/styles/careeros-design-system";
 import { buildUserIntelligenceProfile } from "@/lib/user-intelligence";
 
@@ -659,9 +659,39 @@ ${nextStep}`;
         </h4>
         <div className="space-y-3">
           {[
-            { id: "ar1", action: "Resume Review Simulation", query: "Please run diagnostic checks on my credentials resume.", impact: "Optimizes recruiter targeting score", priority: "High" },
-            { id: "ar2", action: "State Management Challenge", query: "Let's perform mock interview drills for React/Redux.", impact: "Improves technical coding confidence", priority: "High" },
-            { id: "ar3", action: "LinkedIn SEO Calibration", query: "How should I structure keyword indexes on LinkedIn?", impact: "Triggers recruiter match loops", priority: "Medium" }
+            { 
+              id: "ar1", action: "Resume Review Simulation", query: "Please run diagnostic checks on my credentials resume.", impact: "Optimizes recruiter targeting score", priority: "High",
+              explainabilityData: {
+                matchedCriteria: { skills: ["Resume Optimization"], goals: ["Job Readiness"] },
+                confidenceScore: 88,
+                rankingReason: "Directly impacts application success rates. High priority for junior developers.",
+                alternativeRecommendations: ["Manual review", "Peer review"],
+                missingInformation: ["Current resume link"],
+                potentialRisks: ["ATS rejection if formatting fails"]
+              }
+            },
+            { 
+              id: "ar2", action: "State Management Challenge", query: "Let's perform mock interview drills for React/Redux.", impact: "Improves technical coding confidence", priority: "High",
+              explainabilityData: {
+                matchedCriteria: { skills: ["React", "State Management"], goals: ["Technical Interview Pass"] },
+                confidenceScore: 92,
+                rankingReason: "Matches your target goal of Frontend Engineer and targets core React competencies.",
+                alternativeRecommendations: ["System Design Mock", "CSS Drill"],
+                missingInformation: ["Specific weak points in React"],
+                potentialRisks: []
+              }
+            },
+            { 
+              id: "ar3", action: "LinkedIn SEO Calibration", query: "How should I structure keyword indexes on LinkedIn?", impact: "Triggers recruiter match loops", priority: "Medium",
+              explainabilityData: {
+                matchedCriteria: { goals: ["Inbound Recruiter Traffic"] },
+                confidenceScore: 78,
+                rankingReason: "Secondary to core skills but highly effective for passive opportunities.",
+                alternativeRecommendations: ["GitHub profile optimization"],
+                missingInformation: ["Current LinkedIn URL"],
+                potentialRisks: ["Over-optimization leading to spam"]
+              }
+            }
           ].map((rec) => {
             const isChecked = checkedRecs[rec.id] ?? false;
             return (
@@ -715,6 +745,11 @@ ${nextStep}`;
                         >
                           Save Note
                         </button>
+                      </div>
+                    )}
+                    {!isChecked && rec.explainabilityData && (
+                      <div className="pt-2 border-t border-white/5 mt-2">
+                        <AiExplainabilityCard data={rec.explainabilityData} />
                       </div>
                     )}
                   </div>

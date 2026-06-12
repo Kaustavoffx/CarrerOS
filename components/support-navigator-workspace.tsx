@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useCommunitySupport } from "./community-support-context";
-import { CardSurface } from "@/components/ui";
+import { CardSurface, AiExplainabilityCard } from "@/components/ui";
 import { inputStyle } from "@/styles/careeros-design-system";
 
 export function SupportNavigatorWorkspace() {
@@ -66,12 +66,11 @@ export function SupportNavigatorWorkspace() {
                 <p className="text-[10px] text-slate-500 mt-0.5">{activeMatchResource.city || "Online"} • Verified Platform</p>
               </div>
 
-              <div className="space-y-1.5 border-t border-white/5 pt-3">
-                <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">AI Compatibility Explanation</p>
-                <p className="text-xs text-slate-300 leading-normal bg-cyan-950/15 border border-cyan-500/10 rounded-xl p-3">
-                  {matchScores[activeMatchResource.id]?.why}
-                </p>
-              </div>
+              {matchScores[activeMatchResource.id]?.explainabilityData && (
+                <div className="border-t border-white/5 pt-3">
+                  <AiExplainabilityCard data={matchScores[activeMatchResource.id]?.explainabilityData} />
+                </div>
+              )}
 
               <div className="space-y-1.5">
                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Missing Eligibility Risk Factors</p>

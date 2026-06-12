@@ -21,6 +21,7 @@ import {
 import Link from "next/link";
 import type { UserProfileRecord, WorkspaceSnapshotRecord } from "@/lib/supabase/types";
 import { PageHero, CardSurface, ErrorState } from "@/components/ui";
+import { AiExplainabilityCard } from "@/components/ui/ai-explainability-card";
 import { buttonStyle } from "@/styles/careeros-design-system";
 
 
@@ -68,6 +69,7 @@ type DashboardData = {
     difficulty: string;
     impact: string;
     status: string;
+    explainabilityData?: import("@/components/ui/ai-explainability-card").ExplainabilityData;
   }>;
 };
 
@@ -146,13 +148,16 @@ const ActionRowItem = React.memo(function ActionRowItem({
     difficulty: string;
     impact: string;
     status: string;
+    explainabilityData?: import("@/components/ui/ai-explainability-card").ExplainabilityData;
   };
   onToggle: (id: string) => void;
 }) {
   const isDone = action.status === "completed";
+  const [showExplanation, setShowExplanation] = React.useState(false);
 
   return (
-    <CardSurface
+    <div className="space-y-2">
+      <CardSurface
       variant="glass"
       hover={!isDone}
       noPadding
@@ -181,8 +186,25 @@ const ActionRowItem = React.memo(function ActionRowItem({
         <p className="text-[10px] text-slate-400 leading-normal">
           {action.description}
         </p>
+        
+        {/* Toggle Explainability Card */}
+        {action.explainabilityData && (
+          <button 
+            onClick={() => setShowExplanation(!showExplanation)}
+            className="mt-2 text-[10px] font-semibold text-cyan-400 hover:text-cyan-300 transition-colors uppercase tracking-wider flex items-center gap-1"
+          >
+            {showExplanation ? "Hide Explanation" : "Why this recommendation?"}
+          </button>
+        )}
       </div>
     </CardSurface>
+
+    {showExplanation && action.explainabilityData && (
+      <div className="mt-2 animate-in slide-in-from-top-2 duration-300 fade-in">
+        <AiExplainabilityCard data={action.explainabilityData} />
+      </div>
+    )}
+    </div>
   );
 });
 
