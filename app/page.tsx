@@ -137,7 +137,7 @@ export default function HomePage() {
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
                 href="/login"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-cyan-400/50 bg-cyan-500/20 hover:bg-cyan-500/30 backdrop-blur-md px-6 py-3.5 text-xs font-bold text-white transition-all hover:scale-[1.02] shadow-[0_4px_24px_rgba(6,182,212,0.4)]"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-cyan-400/70 bg-cyan-500/40 hover:bg-cyan-500/50 backdrop-blur-md px-6 py-3.5 text-xs font-extrabold text-white transition-all hover:scale-[1.02] shadow-[0_4px_24px_rgba(34,211,238,0.5)]"
               >
                 Start Building
                 <ArrowRight className="h-3.5 w-3.5 stroke-[2.5]" />
@@ -146,7 +146,7 @@ export default function HomePage() {
                 onClick={() => window.dispatchEvent(new Event("careeros:play-demo"))}
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-[#202028] bg-white/[0.03] hover:bg-white/[0.06] px-6 py-3.5 text-xs font-bold text-white transition hover:scale-[1.02]"
               >
-                View Demo
+                Replay Intro
               </button>
             </div>
           </div>
@@ -693,7 +693,7 @@ export default function HomePage() {
               <div className="pt-4">
                 <Link
                   href="/login"
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-cyan-400/50 bg-cyan-500/20 hover:bg-cyan-500/30 backdrop-blur-md px-8 py-4 text-xs font-bold text-white transition hover:scale-[1.02] shadow-[0_4px_24px_rgba(6,182,212,0.4)]"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-cyan-400/70 bg-cyan-500/40 hover:bg-cyan-500/50 backdrop-blur-md px-8 py-4 text-xs font-extrabold text-white transition hover:scale-[1.02] shadow-[0_4px_24px_rgba(34,211,238,0.5)]"
                 >
                   Start Building My Workspace
                   <ArrowRight className="h-3.5 w-3.5 stroke-[2.5]" />

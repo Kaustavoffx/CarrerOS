@@ -124,6 +124,18 @@ export function IntroProvider({ children }: { children: React.ReactNode }) {
     };
   }, [showIntro, triggerExitTransition]);
 
+  // Scroll lock during intro playback
+  useEffect(() => {
+    if (showIntro) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [showIntro]);
+
   if (!mounted) return null;
 
   const isPortrait = initialOrientationRef.current === "portrait";

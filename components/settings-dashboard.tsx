@@ -557,12 +557,12 @@ export function SettingsDashboard({ profile, initialProviders, userEmail, userId
                   Save Preferences
                 </button>
               </MagneticButton>
-              <MagneticButton type="button" onClick={() => window.dispatchEvent(new Event("careeros:replay-intro"))} className="w-full">
+              <MagneticButton type="button" onClick={() => window.dispatchEvent(new Event("careeros:play-demo"))} className="w-full">
                 <button
                   style={buttonStyle("ghost")}
                   className="w-full text-xs font-bold border border-white/10"
                 >
-                  Replay Intro
+                  Replay CareerOS Intro
                 </button>
               </MagneticButton>
             </div>
