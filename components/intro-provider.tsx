@@ -40,7 +40,7 @@ export function IntroProvider({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(timer);
   }, [showIntro]);
 
-  // Handle replay event
+  // Handle replay and demo events
   useEffect(() => {
     const handleReplay = () => {
       localStorage.removeItem("careeros_intro_seen");
@@ -49,8 +49,22 @@ export function IntroProvider({ children }: { children: React.ReactNode }) {
       setShowSkip(false);
       setShowIntro(true);
     };
+
+    const handlePlayDemo = () => {
+      // Demo playback does not clear localStorage, just forces playback
+      setVideoFading(false);
+      setAppRevealing(false);
+      setShowSkip(false);
+      setShowIntro(true);
+    };
+
     window.addEventListener("careeros:replay-intro", handleReplay);
-    return () => window.removeEventListener("careeros:replay-intro", handleReplay);
+    window.addEventListener("careeros:play-demo", handlePlayDemo);
+    
+    return () => {
+      window.removeEventListener("careeros:replay-intro", handleReplay);
+      window.removeEventListener("careeros:play-demo", handlePlayDemo);
+    };
   }, []);
 
   const triggerExitTransition = useCallback(() => {
@@ -135,11 +149,7 @@ export function IntroProvider({ children }: { children: React.ReactNode }) {
             fetchPriority="high"
             disablePictureInPicture
             controlsList="nodownload nofullscreen noremoteplayback"
-            className="w-full h-full object-cover pointer-events-none"
-            style={{ 
-              transform: "translateZ(0)", 
-              willChange: "transform"
-            }}
+            className="w-full h-full object-contain pointer-events-none"
           >
             <source src={isPortrait ? "/intro_portrait.webm" : "/intro_landscape.webm"} type="video/webm" />
             <source src={isPortrait ? "/intro_portrait.mp4" : "/intro_landscape.mp4"} type="video/mp4" />
@@ -161,9 +171,8 @@ export function IntroProvider({ children }: { children: React.ReactNode }) {
         className="relative w-full min-h-screen bg-[#030712]"
         style={{
           opacity: appRevealing ? 1 : 0,
-          transform: appRevealing ? "scale(1) translateZ(0)" : "scale(0.985) translateZ(0)",
-          transition: "opacity 450ms cubic-bezier(0.22, 1, 0.36, 1), transform 450ms cubic-bezier(0.22, 1, 0.36, 1)",
-          willChange: "opacity, transform"
+          transition: "opacity 450ms cubic-bezier(0.22, 1, 0.36, 1)",
+          willChange: "opacity"
         }}
       >
         {children}
